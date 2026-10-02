@@ -99,7 +99,7 @@ export const PAGE_TOURS: Record<TourScreenId, PageTourDef> = {
         title: "Stay in the loop",
         body: "Like and comment on what others post, and save the ones you want to find again later.",
         highlight: "Like · Comment · Save",
-        steps: ["Tap the heart to like", "Comment to start a conversation", "Bookmark to save for later"],
+        steps: ["Tap the star to like", "Comment to start a conversation", "Bookmark to save for later"],
       },
     ],
   },

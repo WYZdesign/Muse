@@ -549,7 +549,7 @@ export const ProfileScreen = memo(function ProfileScreen({
                     <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,215,0,0.6)", fontSize: "1.6em", fontWeight: 700 }}>{(a.title || "").trim().charAt(0).toUpperCase()}</div>
                   )}
                   <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "8px", background: "linear-gradient(to top,rgba(10,6,18,0.9),transparent)" }}>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.title}</div>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.title}</span>
                   </div>
                 </div>
                 );
@@ -587,7 +587,7 @@ export const ProfileScreen = memo(function ProfileScreen({
               const from = (a.from && String(a.from).trim()) || "Someone";
               const text = a.text || "interacted with your profile";
               const time = a.time || "";
-              const typeIcon: Record<string, string> = { like: "♥", match: "✦", message: "💬", profile_view: "👁", booking: "📅", quest: "⚡", brief: "📋", community: "👥" };
+              const typeIcon: Record<string, string> = { like: "✦", match: "✦", message: "💬", profile_view: "👁", booking: "📅", quest: "⚡", brief: "📋", community: "👥" };
               const icon = typeIcon[(a as any).type] || "•";
               return (
                 <div key={a.id} style={{ display: "flex", gap: 10, padding: "10px", background: "rgba(255,255,255,0.02)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.04)", alignItems: "center" }}>

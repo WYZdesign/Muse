@@ -2,7 +2,7 @@
 
 import React, { memo, useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
-import { FiArrowLeft, FiUsers, FiCalendar, FiShare2, FiUser, FiSettings, FiStar, FiX, FiBell, FiHeart, FiMessageCircle, FiZap, FiPackage, FiBriefcase, FiTrash2 } from "react-icons/fi";
+import { FiArrowLeft, FiUsers, FiCalendar, FiShare2, FiUser, FiSettings, FiStar, FiX, FiBell, FiTrash2 } from "react-icons/fi";
 import type { Screen, Match } from "../components/types";
 import StreakWidget from "../components/StreakWidget";
 import { useFocusTrap } from "../hooks/useFocusTrap";
@@ -53,9 +53,8 @@ function NotificationAvatar({ name, src, letter }: { name?: string; src?: string
 // then removes it (and fires the backend delete). Only one row is draggable at a
 // time (governed by activeDragId from the parent); while one is active, all other
 // rows' handlers short-circuit and stay inert.
-function SwipeableNotification({ a, notifIcon, activeDragId, setActiveDragId, onRemove, disabled = false }: {
+function SwipeableNotification({ a, activeDragId, setActiveDragId, onRemove, disabled = false }: {
   a: any;
-  notifIcon: React.ReactNode;
   activeDragId: any;
   setActiveDragId: (id: any) => void;
   onRemove: (id: any) => void;
@@ -176,7 +175,6 @@ function SwipeableNotification({ a, notifIcon, activeDragId, setActiveDragId, on
         <NotificationAvatar name={a.from} src={a.avatar} letter={a._systemAvatar} />
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 14, color: "var(--text)", display: "flex", alignItems: "flex-start", gap: 6 }}>
-            <span style={{ flexShrink: 0, marginTop: 2 }}>{notifIcon}</span>
             <span><strong>{a.from}</strong> {a.text}</span>
           </div>
           <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>{new Date(a.created_at).toLocaleString()}</div>
@@ -370,21 +368,9 @@ onMarkAllRead?.();
           </div>
           {notifications.length === 0
             ? <EmptyState icon="🔔" title="No notifications yet" sub="Likes, matches, bookings and activity will appear here." />
-            : notifications.map(a => {
-                const typeIcons: Record<string, React.ReactNode> = {
-                  like: <FiHeart size={16} color="#FF69B4" />,
-                  match: <FiStar size={16} color="#FFD700" />,
-                  message: <FiMessageCircle size={16} color="#7B68EE" />,
-                  booking: <FiBriefcase size={16} color="#00E676" />,
-                  quest: <FiZap size={16} color="#FFA500" />,
-                  brief: <FiPackage size={16} color="#87CEEB" />,
-                  community: <FiUsers size={16} color="#D4A5FF" />,
-                };
-                const notifIcon = typeIcons[a.type] || <FiBell size={16} color="var(--gold)" />;
-                return (
-                  <SwipeableNotification key={a.id} a={a} notifIcon={notifIcon} activeDragId={activeDragId} setActiveDragId={setActiveDragId} onRemove={removeNotification} disabled={demo} />
-                );
-              })}
+          : notifications.map(a => (
+              <SwipeableNotification key={a.id} a={a} activeDragId={activeDragId} setActiveDragId={setActiveDragId} onRemove={removeNotification} disabled={demo} />
+          ))}
           {/* Audit fix (2026-09-08): notifHasMore starts true and is only
               flipped to false once a fetch actually resolves — if that
               fetch errors (network hiccup, auth not ready yet) the catch

@@ -28,7 +28,7 @@ export function UnmatchModal({
         <button className="modal-close" onClick={()=>setUnmatchTarget(null)} aria-label="Close"><FiX size={18} /></button>
       </div>
       <div className="modal-body" style={{textAlign:"center"}}>
-        <div style={{fontSize:48,marginBottom:16}}>💔</div>
+        <div style={{fontSize:48,marginBottom:16}}>✦</div>
         <div style={{fontSize:18,fontWeight:700,color:"var(--text)",marginBottom:8}}>Unmatch with {unmatchTarget.name}?</div>
         <div style={{fontSize:14,color:"var(--text2)",marginBottom:24,lineHeight:1.6}}>This will remove them from your matches and delete all messages. This cannot be undone.</div>
         <div style={{display:"flex",flexDirection:"column",gap:12}}>

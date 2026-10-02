@@ -277,16 +277,16 @@ export const ChatScreen = memo(function ChatScreen({
         <div className="chat-wrap">
           <div className="chat-header">
             <button className="chat-back" aria-label="Back" onClick={() => (goBack ? goBack() : showScreen("matches"))}><FiArrowLeft size={20} /></button>
-            <Image loading="lazy" src={chatTarget.img} alt={chatTarget.name} width={40} height={40} className="chat-avatar" onError={handleImgError} onClick={() => setViewProfile(chatTarget)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setViewProfile(chatTarget); } }} style={{ cursor: "pointer" }} />
+            <Image loading="lazy" src={chatTarget.img} alt={chatTarget.name} width={40} height={40} className="chat-avatar" onError={handleImgError} style={{ cursor: "pointer" }} />
             {/* Audit fix (2026-09-08, wyzmind's Torreé batch item 4): only the
                 40px avatar circle opened the full profile — the name/type text
                 right beside it (the larger, more natural tap target most people
                 would actually go for) did nothing. Wired the whole info block to
                 the same setViewProfile call. */}
-            <div className="chat-info" role="button" tabIndex={0} onClick={() => setViewProfile(chatTarget)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setViewProfile(chatTarget); } }} style={{ cursor: "pointer" }}>
-              <div className="chat-name">{chatTarget.name}</div>
-              <div className="chat-type">{typingTarget === chatTarget.id ? <span style={{ color: "var(--gold)", fontStyle: "italic" }}>typing…</span> : chatTarget.type}</div>
-            </div>
+            <button className="chat-info" tabIndex={0} onClick={() => setViewProfile(chatTarget)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setViewProfile(chatTarget); } }} style={{ cursor: "pointer", padding: 0, border: "none", background: "none", display: "flex", flexDirection: "column" }}>
+              <span className="chat-name">{chatTarget.name}</span>
+              <span className="chat-type">{typingTarget === chatTarget.id ? <span style={{ color: "var(--gold)", fontStyle: "italic" }}>typing…</span> : chatTarget.type}</span>
+            </button>
             {/* Voice / video call buttons (LiveKit). Hidden until the peer has a
                 real profile id — the demo stubs have 1-2 char ids. */}
             {!demo && startCall && typeof chatTarget.id === "string" && chatTarget.id.length > 3 && (
@@ -356,13 +356,13 @@ export const ChatScreen = memo(function ChatScreen({
               })
               .map((msg: any, i: number) => (
               <div key={i} className={"msg " + (msg.from === "me" ? "msg-me" : "msg-them")}>
-                {msg.img && (
-                  <div style={{ position: "relative", display: "inline-block" }} onClick={() => setRevealedChatImgs(prev => { const n = new Set(prev); n.add(String(msg.img)); return n; })} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setRevealedChatImgs(prev => { const n = new Set(prev); n.add(String(msg.img)); return n; }); } }} role="button" tabIndex={0} aria-label="Reveal image">
-                    <Image loading="lazy" src={msg.img} alt="Shared photo" width={200} height={200} style={{ width: "auto", height: "auto", maxWidth: 200, borderRadius: 12, marginBottom: 6, display: "block", filter: revealedChatImgs.has(String(msg.img)) ? "none" : "blur(24px)", transition: "filter .2s" }} />
-                    {!revealedChatImgs.has(String(msg.img)) && (
-                      <span style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", fontSize: 11, color: "#fff", background: "rgba(10,6,18,0.6)", padding: "4px 10px", borderRadius: 99, whiteSpace: "nowrap" }}>Tap to reveal</span>
-                    )}
-                  </div>
+{msg.img && (
+                  <button style={{ position: "relative", display: "inline-block" }} onClick={() => setRevealedChatImgs(prev => { const n = new Set(prev); n.add(String(msg.img)); return n; })} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setRevealedChatImgs(prev => { const n = new Set(prev); n.add(String(msg.img)); return n; }); } }} tabIndex={0} aria-label="Reveal image">
+                     <Image loading="lazy" src={msg.img} alt="Shared photo" width={200} height={200} style={{ width: "auto", height: "auto", maxWidth: 200, borderRadius: 12, marginBottom: 6, display: "block", filter: revealedChatImgs.has(String(msg.img)) ? "none" : "blur(24px)", transition: "filter .2s" }} />
+                     {!revealedChatImgs.has(String(msg.img)) && (
+                       <span style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", fontSize: 11, color: "#fff", background: "rgba(10,6,18,0.6)", padding: "4px 10px", borderRadius: 99, whiteSpace: "nowrap" }}>Tap to reveal</span>
+                     )}
+                   </button>
                 )}
                 {msg.kind === "voice" && msg.mediaUrl && (
                   <div style={{ marginBottom: 6 }}>
@@ -378,17 +378,17 @@ export const ChatScreen = memo(function ChatScreen({
                     )}
                   </div>
                 )}
-                {msg.kind === "video" && msg.mediaUrl && (
-                  <div style={{ position: "relative", display: "inline-block", marginBottom: 6 }} onClick={() => setRevealedChatImgs(prev => { const n = new Set(prev); n.add(String(msg.mediaUrl)); return n; })} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setRevealedChatImgs(prev => { const n = new Set(prev); n.add(String(msg.mediaUrl)); return n; }); } }} role="button" tabIndex={0} aria-label="Reveal video">
-                    {/* Video notes are blurred until revealed, same as chat photos. */}
-                    <video controls preload="metadata" src={msg.mediaUrl} style={{ width: 220, maxWidth: "100%", borderRadius: 12, display: "block", filter: revealedChatImgs.has(String(msg.mediaUrl)) ? "none" : "blur(24px)", transition: "filter .2s" }} />
-                    {!revealedChatImgs.has(String(msg.mediaUrl)) && (
-                      <span style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", fontSize: 11, color: "#fff", background: "rgba(10,6,18,0.6)", padding: "4px 10px", borderRadius: 99, whiteSpace: "nowrap" }}>Tap to reveal</span>
-                    )}
-                    <div style={{ fontSize: 10, opacity: 0.65, marginTop: 3 }}>
-                      🎥 Video note{msg.durationMs ? ` · ${fmtDur(msg.durationMs)}` : ""}
-                    </div>
-                  </div>
+{msg.kind === "video" && msg.mediaUrl && (
+                  <button style={{ position: "relative", display: "inline-block", marginBottom: 6 }} onClick={() => setRevealedChatImgs(prev => { const n = new Set(prev); n.add(String(msg.mediaUrl)); return n; })} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setRevealedChatImgs(prev => { const n = new Set(prev); n.add(String(msg.mediaUrl)); return n; }); } }} tabIndex={0} aria-label="Reveal video">
+                     {/* Video notes are blurred until revealed, same as chat photos. */}
+                     <video controls preload="metadata" src={msg.mediaUrl} style={{ width: 220, maxWidth: "100%", borderRadius: 12, display: "block", filter: revealedChatImgs.has(String(msg.mediaUrl)) ? "none" : "blur(24px)", transition: "filter .2s" }} />
+                     {!revealedChatImgs.has(String(msg.mediaUrl)) && (
+                       <span style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", fontSize: 11, color: "#fff", background: "rgba(10,6,18,0.6)", padding: "4px 10px", borderRadius: 99, whiteSpace: "nowrap" }}>Tap to reveal</span>
+                     )}
+                     <div style={{ fontSize: 10, opacity: 0.65, marginTop: 3 }}>
+                       🎥 Video note{msg.durationMs ? ` · ${fmtDur(msg.durationMs)}` : ""}
+                     </div>
+                   </button>
                 )}
                 {(msg.kind === "voice" || msg.kind === "video") && msg.mediaUrl && (
                   <div style={{ display: "flex", gap: 10, marginTop: 3 }}>
@@ -424,7 +424,7 @@ export const ChatScreen = memo(function ChatScreen({
             <div ref={scrollSentinelRef} />
           </div>
           <div className="quick-replies">
-            {["Hey! Love your work", "Let's collab", "What's your vision?", "Love your portfolio"].map(q => (
+            {["Big fan of your work", "Let's collab", "What's your vision?", "Checked out your portfolio"].map(q => (
               <button key={q} className="quick-reply" onClick={() => setChatText(q)}>{q}</button>
             ))}
           </div>

@@ -93,6 +93,8 @@ import { usePageTour } from "./hooks/usePageTour";
 import { useDailyLikesReset } from "./hooks/useDailyLikesReset";
 import { useSaveStateTimer } from "./hooks/useSaveStateTimer";
 import { useSessTabRealign } from "./hooks/useSessTabRealign";
+import { useVisitedScreens } from "./hooks/useVisitedScreens";
+import { useScreenUIState } from "./hooks/useScreenUIState";
 import { useBriefsData } from "./hooks/useBriefsData";
 import { useProfileData } from "./hooks/useProfileData";
 import { useMuseActions } from "./hooks/useMuseActions";
@@ -117,7 +119,7 @@ const DEMO_MOMENTS = [
   { id: 9003, author: "Sam Taylor", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100", img: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800", time: "1h ago", text: "WIP color grade. Pulling shadows, pushing the teal-orange split.", likes: 56, comments: 8 },
   { id: 9004, author: "Riley Patel", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100", img: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800", time: "2h ago", text: "Studio setup build-out. T-minus 3 days to the big shoot 🎬", likes: 231, comments: 34 },
   { id: 9005, author: "Avery Brooks", avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100", img: "https://images.unsplash.com/photo-1493514789931-586cb221d7a7?w=800", time: "3h ago", text: "Location scouting found this gem. Natural diffusers everywhere.", likes: 98, comments: 15 },
-  { id: 9006, author: "Kai Tanaka", avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100", img: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800", time: "4h ago", text: "First edit pass on the campaign. Client's gonna love this one.", likes: 312, comments: 41 },
+  { id: 9006, author: "Kai Tanaka", avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100", img: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800", time: "4h ago", text: "First edit pass on the campaign. Client's gonna dig this one.", likes: 312, comments: 41 },
 ];
 
 const INITIAL_STORIES = [
@@ -129,8 +131,6 @@ const INITIAL_STORIES = [
 ];
 
 
-
-
 /* ═══ COMPONENT ═══ */
 
 export default function MusePageWrapper() {
@@ -138,7 +138,21 @@ export default function MusePageWrapper() {
 }
 
 function MusePage() {
-  const [screen, setScreen] = useState<Screen>("auth");
+  // Initialize screen from localStorage (muse_v1) so first render matches
+  // the persisted screen (e.g., "discover" in demo mode). This avoids a frame
+  // where visitedScreens is seeded with "auth" before hydration restores the real screen.
+  const [screen, setScreen] = useState<Screen>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("muse_v1");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed?.screen) return parsed.screen as Screen;
+        }
+      } catch { /* storage unavailable — default to auth */ }
+    }
+    return "auth";
+  });
   const {
     authMode, setAuthMode,
     authEmail, setAuthEmail,
@@ -594,12 +608,12 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
           const now = Date.now();
           const t = (mins: number) => new Date(now - mins * 60000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
           const DEMO_THREADS: { from: "me" | "them"; text: string; time: string }[][] = [
-            [{ from: "them", text: "Hey! Loved your portfolio — the studio lighting work is unreal.", time: t(180) },
+            [{ from: "them", text: "Hey! Checked out your portfolio — the studio lighting work is unreal.", time: t(180) },
              { from: "me", text: "Thank you! I've been experimenting with a soft-box setup lately 🙌", time: t(174) },
              { from: "them", text: "Would you be up for a shoot next week? I have a concept in mind.", time: t(12) }],
             [{ from: "me", text: "Your drone reel is incredible. Do you travel for shoots?", time: t(240) },
              { from: "them", text: "I do — mostly the Southeast, but I'll fly anywhere for the right project.", time: t(232) }],
-            [{ from: "them", text: "I'd love to feature your work in the community spotlight this month.", time: t(90) },
+            [{ from: "them", text: "I'd like to feature your work in the community spotlight this month.", time: t(90) },
              { from: "me", text: "That would be amazing, thank you! What do you need from me?", time: t(84) }],
             [{ from: "them", text: "Just sent over the brief for the brand campaign — take a look when you can.", time: t(30) },
              { from: "me", text: "On it. First read looks great, I'll come back with availability.", time: t(26) }],
@@ -741,6 +755,9 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     setDiscoverLoading,
     setRefreshToken,
   });
+
+  const visitedScreens = useVisitedScreens(screen); // lazy-mount on first visit, then keep alive
+  const screenUIState = useScreenUIState(screen); // per-screen UI state persistence
 
   // Cross-tab session sync + session-expiry handling (moved into useSessionRefresh below).
   useSaveStateTimer({ saveState });
@@ -1211,9 +1228,9 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                   </div>
                   <div className="auth-terms-wrap">
                     <span style={{fontSize:13,color:"rgba(255,255,255,0.65)"}}>By continuing you agree to our</span>
-                    <span className="auth-terms" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowTerms(true); } }} onClick={()=>setShowTerms(true)}>Terms</span>
-                    <span className="auth-terms" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowPrivacy(true); } }} onClick={()=>setShowPrivacy(true)}>Privacy</span>
-                    <span className="auth-terms" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowGuidelines(true); } }} onClick={()=>setShowGuidelines(true)}>Guidelines</span>
+                    <button className="auth-terms" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowTerms(true); } }} onClick={()=>setShowTerms(true)}>Terms</button>
+                    <button className="auth-terms" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowPrivacy(true); } }} onClick={()=>setShowPrivacy(true)}>Privacy</button>
+                    <button className="auth-terms" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowGuidelines(true); } }} onClick={()=>setShowGuidelines(true)}>Guidelines</button>
                   </div>
                 </div>
               </div>
@@ -1251,7 +1268,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
               </button>
             </div>
           )}
-<div className={"screen-el"+(screen==="onboard"?" active":"")}>
+{visitedScreens.has("onboard") && (<div className={"screen-el"+(screen==="onboard"?" active":"")}>
   <div className="onboard">
     {obStep === 0 && (
                   <div className="onboard-content">
@@ -1282,7 +1299,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                     <div className="step-sub">Where do you work — behind the camera or in front of it?</div>
                     <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
                       {([["creative", "I'm here to work & collaborate"], ["industry", "I'm here to hire & book"]] as const).map(([val, label]) => (
-                        <div key={val} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d => ({ ...d, audience: val })); } }} onClick={() => setObData(d => ({ ...d, audience: val }))} style={{ flex: 1, padding: "10px 8px", borderRadius: 12, cursor: "pointer", textAlign: "center", fontSize: 12, fontWeight: 700, transition: "all .25s", background: obData.audience === val ? "rgba(255,215,0,0.12)" : "rgba(255,255,255,0.04)", border: `1px solid ${obData.audience === val ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.06)"}`, color: obData.audience === val ? "var(--gold)" : "var(--muted)" }}>{label}</div>
+                        <button key={val} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d => ({ ...d, audience: val })); } }} onClick={() => setObData(d => ({ ...d, audience: val }))} style={{ flex: 1, padding: "10px 8px", borderRadius: 12, cursor: "pointer", textAlign: "center", fontSize: 12, fontWeight: 700, transition: "all .25s", background: obData.audience === val ? "rgba(255,215,0,0.12)" : "rgba(255,255,255,0.04)", border: `1px solid ${obData.audience === val ? "rgba(255,215,0,0.3)" : "rgba(255,255,255,0.06)"}`, color: obData.audience === val ? "var(--gold)" : "var(--muted)" }}>{label}</button>
                       ))}
                     </div>
                     <div className="side-group">
@@ -1290,7 +1307,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                       <div className="side-sub">You make the work — crew, direction, craft.</div>
                       <div className="chips">
                         {BEHIND_CAMERA.map(t => (
-                          <div key={t} className={"chip"+(obData.type===t?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,type:t,customTypePending:false})); } }} onClick={()=>setObData(d=>({...d,type:t,customTypePending:false}))}><span>{t}</span></div>
+                          <button key={t} className={"chip"+(obData.type===t?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,type:t,customTypePending:false})); } }} onClick={()=>setObData(d=>({...d,type:t,customTypePending:false}))}><span>{t}</span></button>
                         ))}
                       </div>
                     </div>
@@ -1299,13 +1316,13 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                       <div className="side-sub">You're the talent — on-camera, performing, audience-facing.</div>
                       <div className="chips">
                         {IN_FRONT_CAMERA.map(t => (
-                          <div key={t} className={"chip"+(obData.type===t?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,type:t,customTypePending:false})); } }} onClick={()=>setObData(d=>({...d,type:t,customTypePending:false}))}><span>{t}</span></div>
+                          <button key={t} className={"chip"+(obData.type===t?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,type:t,customTypePending:false})); } }} onClick={()=>setObData(d=>({...d,type:t,customTypePending:false}))}><span>{t}</span></button>
                         ))}
                         {/* Torreé audit item 6: not every creative role fits the
                             preset list — "Other" lets someone type their own,
                             saved as a real `type` value immediately and flagged
                             custom_type_pending for admin review. */}
-                        <div key="other" className={"chip"+(obData.customTypePending?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,type:"",customTypePending:true})); } }} onClick={()=>setObData(d=>({...d,type:"",customTypePending:true}))}><span>Add New +</span></div>
+                        <button key="other" className={"chip"+(obData.customTypePending?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,type:"",customTypePending:true})); } }} onClick={()=>setObData(d=>({...d,type:"",customTypePending:true}))}><span>Add New +</span></button>
                       </div>
                     </div>
                     {obData.customTypePending && (
@@ -1322,7 +1339,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                     <div className="step-sub">What kind of connections interest you?</div>
                     <div className="chips">
                       {lookingForOptions(obData.type || "").map(l => (
-                        <div key={l} className={"chip"+((obData.looking||[]).includes(l)?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleObMulti("looking", l, 4); } }} onClick={()=>toggleObMulti("looking", l, 4)}><span>{l}</span></div>
+                        <button key={l} className={"chip"+((obData.looking||[]).includes(l)?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleObMulti("looking", l, 4); } }} onClick={()=>toggleObMulti("looking", l, 4)}><span>{l}</span></button>
                       ))}
                     </div>
                     {!(obData.looking||[]).length && <div style={{ fontSize: 11, color: "var(--muted)", textAlign: "center", margin: "6px 0 2px" }}>Select at least one to continue</div>}
@@ -1336,12 +1353,12 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                     <div className="step-sub">What's your creative aesthetic?</div>
                     <div className="chips">
                       {AESTHETICS.map(s => (
-                        <div key={s} className={"chip"+((obData.styles||[]).includes(s)?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleObMulti("styles", s, 5); } }} onClick={()=>toggleObMulti("styles", s, 5)}><span>{s}</span></div>
+                        <button key={s} className={"chip"+((obData.styles||[]).includes(s)?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleObMulti("styles", s, 5); } }} onClick={()=>toggleObMulti("styles", s, 5)}><span>{s}</span></button>
                       ))}
                       {/* Torreé audit item 6: aesthetic "Other" — typed values are
                           appended to `styles` immediately and flagged
                           custom_style_pending for admin review. */}
-                      <div key="other" className={"chip"+(obData.showCustomStyleInput?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,showCustomStyleInput:!d.showCustomStyleInput})); } }} onClick={()=>setObData(d=>({...d,showCustomStyleInput:!d.showCustomStyleInput}))}><span>Add New +</span></div>
+                      <button key="other" className={"chip"+(obData.showCustomStyleInput?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,showCustomStyleInput:!d.showCustomStyleInput})); } }} onClick={()=>setObData(d=>({...d,showCustomStyleInput:!d.showCustomStyleInput}))}><span>Add New +</span></button>
                     </div>
                     {obData.showCustomStyleInput && (
                       <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
@@ -1359,7 +1376,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                     {(obData.styles||[]).filter(s => !AESTHETICS.includes(s)).length > 0 && (
                       <div className="chips" style={{ marginTop: 8 }}>
                         {(obData.styles||[]).filter(s => !AESTHETICS.includes(s)).map(s => (
-                          <div key={s} className="chip sel" role="button" tabIndex={0} title="Tap to remove" onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d => ({ ...d, styles: (d.styles||[]).filter(x => x !== s) })); } }} onClick={() => setObData(d => ({ ...d, styles: (d.styles||[]).filter(x => x !== s) }))}><span>✎ {s} ✕</span></div>
+                          <button key={s} className="chip sel" tabIndex={0} title="Tap to remove" onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d => ({ ...d, styles: (d.styles||[]).filter(x => x !== s) })); } }} onClick={() => setObData(d => ({ ...d, styles: (d.styles||[]).filter(x => x !== s) }))}><span>✎ {s} ✕</span></button>
                         ))}
                       </div>
                     )}
@@ -1390,7 +1407,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                     <div className="step-sub">Select your sun sign</div>
                     <div className="chips">
                       {ZODIAC.map(z => (
-                        <div key={z} className={"chip"+(obData.zodiac===z?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,zodiac:z})); } }} onClick={()=>setObData(d=>({...d,zodiac:z}))}><span>{ZE[z]} {z}</span></div>
+                        <button key={z} className={"chip"+(obData.zodiac===z?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,zodiac:z})); } }} onClick={()=>setObData(d=>({...d,zodiac:z}))}><span>{ZE[z]} {z}</span></button>
                       ))}
                     </div>
                     <button className="btn btn-gold" disabled={!obData.zodiac} onClick={()=>setObStep(7)}>Next</button>
@@ -1404,7 +1421,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                     <div className="step-sub">Your year animal</div>
                     <div className="chips">
                       {CHINESE.map(c => (
-                        <div key={c} className={"chip"+(obData.chinese===c?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,chinese:c})); } }} onClick={()=>setObData(d=>({...d,chinese:c}))}><span>{CE[c]} {c}</span></div>
+                        <button key={c} className={"chip"+(obData.chinese===c?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,chinese:c})); } }} onClick={()=>setObData(d=>({...d,chinese:c}))}><span>{CE[c]} {c}</span></button>
                       ))}
                     </div>
                     <button className="btn btn-gold" disabled={!obData.chinese} onClick={()=>setObStep(8)}>Next</button>
@@ -1418,7 +1435,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                     <div className="step-sub">Your Myers-Briggs type</div>
                     <div className="chips">
                       {MBTI.map(m => (
-                        <div key={m} className={"chip"+(obData.mbti===m?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,mbti:m})); } }} onClick={()=>setObData(d=>({...d,mbti:m}))}><span>{m}</span></div>
+                        <button key={m} className={"chip"+(obData.mbti===m?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,mbti:m})); } }} onClick={()=>setObData(d=>({...d,mbti:m}))}><span>{m}</span></button>
                       ))}
                     </div>
                     <button className="btn btn-gold" disabled={!obData.mbti} onClick={()=>setObStep(9)}>Next</button>
@@ -1432,7 +1449,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                     <div className="step-sub">Your numerology life path</div>
                     <div className="chips">
                       {LIFE_PATHS.map(lp => (
-                        <div key={lp} className={"chip"+(obData.lifePath===lp?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,lifePath:lp})); } }} onClick={()=>setObData(d=>({...d,lifePath:lp}))}><span>{lp}</span></div>
+                        <button key={lp} className={"chip"+(obData.lifePath===lp?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObData(d=>({...d,lifePath:lp})); } }} onClick={()=>setObData(d=>({...d,lifePath:lp}))}><span>{lp}</span></button>
                       ))}
                     </div>
                     <button className="btn btn-gold" disabled={!obData.lifePath} onClick={()=>setObStep(14)}>Next</button>
@@ -1485,23 +1502,23 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                         <div style={{width:"100%",maxWidth:320}}>
                           <div style={{fontSize:14,fontWeight:700,color:"var(--gold)",marginBottom:8}}>At a party, you...</div>
                           <div className="chips" style={{marginBottom:16}}>
-                            <div className={"chip"+(testMbtiAnswers.ei==="e"?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers(p=>({...p,ei:"e"})); } }} onClick={()=>setTestMbtiAnswers(p=>({...p,ei:"e"}))}><span>Talk to everyone</span></div>
-                            <div className={"chip"+(testMbtiAnswers.ei==="i"?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers(p=>({...p,ei:"i"})); } }} onClick={()=>setTestMbtiAnswers(p=>({...p,ei:"i"}))}><span>Find one person</span></div>
+                            <button className={"chip"+(testMbtiAnswers.ei==="e"?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers(p=>({...p,ei:"e"})); } }} onClick={()=>setTestMbtiAnswers(p=>({...p,ei:"e"}))}><span>Talk to everyone</span></button>
+                            <button className={"chip"+(testMbtiAnswers.ei==="i"?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers(p=>({...p,ei:"i"})); } }} onClick={()=>setTestMbtiAnswers(p=>({...p,ei:"i"}))}><span>Find one person</span></button>
                           </div>
                           <div style={{fontSize:14,fontWeight:700,color:"var(--gold)",marginBottom:8}}>You prefer...</div>
                           <div className="chips" style={{marginBottom:16}}>
-                            <div className={"chip"+(testMbtiAnswers.sn==="s"?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers(p=>({...p,sn:"s"})); } }} onClick={()=>setTestMbtiAnswers(p=>({...p,sn:"s"}))}><span>Facts & details</span></div>
-                            <div className={"chip"+(testMbtiAnswers.sn==="n"?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers(p=>({...p,sn:"n"})); } }} onClick={()=>setTestMbtiAnswers(p=>({...p,sn:"n"}))}><span>Big picture ideas</span></div>
+                            <button className={"chip"+(testMbtiAnswers.sn==="s"?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers(p=>({...p,sn:"s"})); } }} onClick={()=>setTestMbtiAnswers(p=>({...p,sn:"s"}))}><span>Facts & details</span></button>
+                            <button className={"chip"+(testMbtiAnswers.sn==="n"?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers(p=>({...p,sn:"n"})); } }} onClick={()=>setTestMbtiAnswers(p=>({...p,sn:"n"}))}><span>Big picture ideas</span></button>
                           </div>
                           <div style={{fontSize:14,fontWeight:700,color:"var(--gold)",marginBottom:8}}>Decisions come from...</div>
                           <div className="chips" style={{marginBottom:16}}>
-                            <div className={"chip"+(testMbtiAnswers.tf==="t"?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers(p=>({...p,tf:"t"})); } }} onClick={()=>setTestMbtiAnswers(p=>({...p,tf:"t"}))}><span>Logic & analysis</span></div>
-                            <div className={"chip"+(testMbtiAnswers.tf==="f"?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers(p=>({...p,tf:"f"})); } }} onClick={()=>setTestMbtiAnswers(p=>({...p,tf:"f"}))}><span>Values & impact</span></div>
+                            <button className={"chip"+(testMbtiAnswers.tf==="t"?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers(p=>({...p,tf:"t"})); } }} onClick={()=>setTestMbtiAnswers(p=>({...p,tf:"t"}))}><span>Logic & analysis</span></button>
+                            <button className={"chip"+(testMbtiAnswers.tf==="f"?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers(p=>({...p,tf:"f"})); } }} onClick={()=>setTestMbtiAnswers(p=>({...p,tf:"f"}))}><span>Values & impact</span></button>
                           </div>
                           <div style={{fontSize:14,fontWeight:700,color:"var(--gold)",marginBottom:8}}>You like things...</div>
                           <div className="chips" style={{marginBottom:16}}>
-                            <div className={"chip"+(testMbtiAnswers.jp==="j"?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers(p=>({...p,jp:"j"})); } }} onClick={()=>setTestMbtiAnswers(p=>({...p,jp:"j"}))}><span>Planned & structured</span></div>
-                            <div className={"chip"+(testMbtiAnswers.jp==="p"?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers(p=>({...p,jp:"p"})); } }} onClick={()=>setTestMbtiAnswers(p=>({...p,jp:"p"}))}><span>Flexible & open</span></div>
+                            <button className={"chip"+(testMbtiAnswers.jp==="j"?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers(p=>({...p,jp:"j"})); } }} onClick={()=>setTestMbtiAnswers(p=>({...p,jp:"j"}))}><span>Planned & structured</span></button>
+                            <button className={"chip"+(testMbtiAnswers.jp==="p"?" sel":"")} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTestMbtiAnswers(p=>({...p,jp:"p"})); } }} onClick={()=>setTestMbtiAnswers(p=>({...p,jp:"p"}))}><span>Flexible & open</span></button>
                           </div>
                           <button className="btn btn-gold" onClick={()=>{const mbti=calcMbti(testMbtiAnswers);setObData(d=>({...d,mbti}));showToast("You are "+mbti+"!");setObStep(14)}}>Calculate</button>
                           <button className="back-link" onClick={()=>setObStep(10)}>Back</button>
@@ -1575,16 +1592,16 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                         }
                       }
                     }} />
-                    <div className="ob-portfolio-grid">
+<div className="ob-portfolio-grid">
                       {[0,1,2,3,4,5].map(i => (
                         <div key={i} className="ob-portfolio-slot" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObPortfolioSlot(i); portfolioInputRef.current?.click(); } }} onClick={() => {
                            setObPortfolioSlot(i);
                            portfolioInputRef.current?.click();
                          }}>
-                          {obPortfolioItems[i] ? <Image loading="lazy" src={obPortfolioItems[i].img} alt="Work" fill sizes="(max-width: 600px) 33vw, 200px" style={{ objectFit: "cover", borderRadius: 10 }} /> : <div className="ob-portfolio-plus">+</div>}
-                        </div>
-                      ))}
-                    </div>
+                           {obPortfolioItems[i] ? <Image loading="lazy" src={obPortfolioItems[i].img} alt="Work" fill sizes="(max-width: 600px) 33vw, 200px" style={{ objectFit: "cover", borderRadius: 10 }} /> : <div className="ob-portfolio-plus">+</div>}
+                         </div>
+                       ))}
+                     </div>
                     <button className="btn btn-gold" onClick={()=>setObStep(16)}>Next</button>
                     <button className="ob-skip" onClick={()=>setObStep(16)}>Skip for now</button>
                     <button className="back-link" onClick={()=>setObStep(14)}>Back</button>
@@ -1677,51 +1694,51 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
                   </div>
                 )}
               </div>
-            </div>
-            <ScreenErrorBoundary name="Discover">
+            </div>)}
+            {visitedScreens.has("discover") && <ScreenErrorBoundary name="Discover">
             <DiscoverScreen screen={screen} showScreen={showScreen} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} discoveryPrefs={discoveryPrefs} setDiscoveryPrefs={setDiscoveryPrefs} showDiscoveryPrefs={showDiscoveryPrefs} setShowDiscoveryPrefs={setShowDiscoveryPrefs} showFilterModal={showFilterModal} setShowFilterModal={setShowFilterModal} mapView={mapView} setMapView={setMapView} filteredProfiles={filteredProfiles} isLoading={discoverLoading} currentIdx={currentIdx} setCurrentIdx={setCurrentIdx} boostActive={boostActive} setBoostActive={setBoostActive} setBoostEnd={setBoostEnd} discoverSearchOpen={discoverSearchOpen} setDiscoverSearchOpen={setDiscoverSearchOpen} discoverSearch={discoverSearch} setDiscoverSearch={setDiscoverSearch} myGeo={myGeo} myStyles={obData.styles || []} apiFetch={apiFetch} showToast={showToast} demo={DEMO_MODE} doSwipe={doSwipe} setViewProfile={setViewProfile} viewProfile={viewProfile} handleImgError={handleImgError} matches={matches} setMatches={setMatches} openChat={openChat} setChatTarget={setChatTarget} stories={stories} currentUser={currentUser} uid={uid} showMatchMenu={showMatchMenu} setShowMatchMenu={setShowMatchMenu} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel} currentPhotoIdx={currentPhotoIdx} setCurrentPhotoIdx={setCurrentPhotoIdx} cardScrolled={cardScrolled} setCardScrolled={setCardScrolled} showNoteTooltip={showNoteTooltip} setShowNoteTooltip={setShowNoteTooltip} promptIdx={promptIdx} setPromptIdx={setPromptIdx} cardAlbumIdx={cardAlbumIdx} setCardAlbumIdx={setCardAlbumIdx} cardAlbumPhotos={cardAlbumPhotos} cardAlbums={cardAlbums} portfolioPhotoIdx={portfolioPhotoIdx} setPortfolioPhotoIdx={setPortfolioPhotoIdx} setLightboxPhotos={setLightboxPhotos} setLightboxIdx={setLightboxIdx} doRewind={doRewind} canRewind={rewindStack.length > 0} doLikeWithNote={doLikeWithNote} setDailyLikes={setDailyLikes} setSuperLikes={setSuperLikes} isUnlimited={isUnlimited} showUnlimitedBadge={showUnlimitedBadge} setShowUnlimitedBadge={setShowUnlimitedBadge} dailyLikes={dailyLikes} superLikes={superLikes} galleryView={galleryView} setGalleryView={setGalleryView} lightboxPhotos={lightboxPhotos} lightboxIdx={lightboxIdx} heroRef={heroRef} likeLabelRef={likeLabelRef} nopeLabelRef={nopeLabelRef} cardScrollRef={cardScrollRef} />
-            </ScreenErrorBoundary>
-            <ScreenErrorBoundary name="Feed">
+            </ScreenErrorBoundary>}
+            {visitedScreens.has("connections") && <ScreenErrorBoundary name="Feed">
             <FeedScreen screen={screen} showScreen={showScreen} feedFilter={feedFilter} setFeedFilter={setFeedFilter} feedText={feedText} setFeedText={setFeedText} feedMedia={feedMedia} setFeedMedia={setFeedMedia} feedPosts={feedPosts} setFeedPosts={setFeedPosts} liveFeed={liveFeed} setLiveFeed={setLiveFeed} showEmojiPicker={showEmojiPicker} setShowEmojiPicker={setShowEmojiPicker} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} currentUser={currentUser} apiFetch={apiFetch} authFetch={authFetch} showToast={showToast} handleImgError={handleImgError} stories={stories} setStories={setStories} uploadImage={uploadImage} uploadMedia={uploadMedia} uid={uid} bootstrapped={bootstrapped} feedPostsStatic={feedPostsStatic} setFeedPostsStatic={setFeedPostsStatic} demo={DEMO_MODE} setReplyingTo={setReplyingTo} commentText={commentText} setCommentText={setCommentText} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} setShowReport={setShowReport} setReportTarget={setReportTarget} setShareTarget={setShareTarget} setViewProfile={setViewProfile} onStatusSaved={(status) => setCurrentUser(prev => ({ ...prev, status }))} />
-            </ScreenErrorBoundary>
-            <ScreenErrorBoundary name="Muses">
+            </ScreenErrorBoundary>}
+            {visitedScreens.has("matches") && <ScreenErrorBoundary name="Muses">
             <MusesScreen screen={screen} showScreen={showScreen} goBack={goBack} matches={matches} setMatches={setMatches} searchOpen={searchOpen} setSearchOpen={setSearchOpen} matchesView={matchesView} setMatchesView={setMatchesView} showLikesYou={showLikesYou} setShowLikesYou={setShowLikesYou} likedBy={likedBy} openChat={openChat} setChatTarget={setChatTarget} setBlockTarget={setBlockTarget} setReportTarget={setReportTarget} apiFetch={apiFetch} showToast={showToast} handleImgError={handleImgError} setViewProfile={setViewProfile} currentUser={currentUser} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} searchQuery={searchQuery} setSearchQuery={setSearchQuery} expandedMatchId={expandedMatchId} matchActions={matchActions} messageRequests={messageRequests} setMessageRequests={setMessageRequests} />
-            </ScreenErrorBoundary>
-            <ScreenErrorBoundary name="Bts">
+            </ScreenErrorBoundary>}
+            {visitedScreens.has("bts") && <ScreenErrorBoundary name="Bts">
             <React.Suspense fallback={null}><BtsScreen screen={screen} stories={stories} setStories={setStories} showScreen={showScreen} goBack={goBack} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} showToast={showToast} setShowStory={setShowStory} handleImgError={handleImgError} apiFetch={apiFetch} uploadMedia={uploadMedia} setShowReport={setShowReport} setReportTarget={setReportTarget} /></React.Suspense>
-            </ScreenErrorBoundary>
-            <ScreenErrorBoundary name="Codex">
+            </ScreenErrorBoundary>}
+            {visitedScreens.has("codex") && <ScreenErrorBoundary name="Codex">
             <React.Suspense fallback={null}><CodexScreen screen={screen} showScreen={showScreen} goBack={goBack} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} /></React.Suspense>
-            </ScreenErrorBoundary>
-            <ScreenErrorBoundary name="Chat">
+            </ScreenErrorBoundary>}
+            {visitedScreens.has("chat") && <ScreenErrorBoundary name="Chat">
             <ChatScreen screen={screen} chatTarget={chatTarget} setChatTarget={setChatTarget} showScreen={showScreen} goBack={goBack} messages={chatTarget?.messages || []} setMessages={((messages: unknown) => setChatTarget((previous) => previous ? { ...previous, messages: typeof messages === "function" ? (messages as (_prior: Match["messages"]) => Match["messages"])(previous.messages) : messages as Match["messages"] } : previous)) as React.ComponentProps<typeof ChatScreen>["setMessages"]} chatText={chatInput} setChatText={setChatInput} messagesEndRef={messagesEndRef} sendChat={sendMsg} sendChatImg={sendChatImg} handleImgError={handleImgError} setViewProfile={setViewProfile} setUnmatchTarget={setUnmatchTarget} setBlockTarget={setBlockTarget} setShowReport={setShowReport} setReportTarget={setReportTarget} typingTarget={typingTarget} realtimeStatus={realtimeStatus} sendTyping={sendTypingRef.current} uploadImage={uploadImage} uploadMedia={uploadMedia} sendChatMedia={sendChatMedia} startCall={startCall} fetchCallHistory={fetchCallHistory} showToast={showToast} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} demo={DEMO_MODE} />
-            </ScreenErrorBoundary>
-            <ScreenErrorBoundary name="Collab">
+            </ScreenErrorBoundary>}
+            {visitedScreens.has("briefs") && <ScreenErrorBoundary name="Collab">
             <CollabScreen screen={screen} showScreen={showScreen} goBack={goBack} museCat={museCat} setMuseCat={setMuseCat} userBriefs={userBriefs} setUserBriefs={setUserBriefs} showPostBrief={showPostBrief} setShowPostBrief={setShowPostBrief} liveBriefs={liveBriefs || []} showNsfw={showNsfw} currentUser={currentUser} apiFetch={apiFetch} showToast={showToast} uid={uid} appliedBriefs={appliedBriefs} setAppliedBriefs={setAppliedBriefs} savedBriefs={savedBriefs} setSavedBriefs={setSavedBriefs} setChatTarget={setChatTarget} briefTitle={briefTitle} setBriefTitle={setBriefTitle} briefDesc={briefDesc} setBriefDesc={setBriefDesc} briefBudget={briefBudget} setBriefBudget={setBriefBudget} briefCat={briefCat} setBriefCat={setBriefCat} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} setShowReport={setShowReport} setReportTarget={setReportTarget} demo={DEMO_MODE} />
-            </ScreenErrorBoundary>
+            </ScreenErrorBoundary>}
 
-            <ScreenErrorBoundary name="Community">
+            {visitedScreens.has("community") && <ScreenErrorBoundary name="Community">
             <CommunityScreen screen={screen} showScreen={showScreen} goBack={goBack} commTab={commTab} setCommTab={setCommTab} liveCommunities={liveCommunities} liveEvents={liveEvents} showNsfw={showNsfw} rsvpdEvents={rsvpdEvents} setRsvpdEvents={setRsvpdEvents} apiFetch={apiFetch} showToast={showToast} handleImgError={handleImgError} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} onJoinVoiceRoom={startRoom} setShowReport={setShowReport} setReportTarget={setReportTarget} demo={DEMO_MODE} />
-            </ScreenErrorBoundary>
+            </ScreenErrorBoundary>}
 
-            <ScreenErrorBoundary name="Sessions">
+            {(visitedScreens.has("sessions") || visitedScreens.has("studios")) && <ScreenErrorBoundary name="Sessions">
             {screen === "studios" && (
               <ScreenErrorBoundary name="Studios">
                 <StudiosScreen screen={screen} showScreen={showScreen} goBack={goBack} apiFetch={apiFetch} openHamburger={() => setShowHamburger(true)} unreadNotificationCount={unreadNotificationCount} />
               </ScreenErrorBoundary>
             )}
             <SessionsScreen screen={screen} showScreen={showScreen} goBack={goBack} sessTab={sessTab} setSessTab={setSessTab} matches={matches} setMatches={setMatches} openChat={openChat} setChatTarget={setChatTarget} apiFetch={apiFetch} authFetch={authFetch} showToast={showToast} handleImgError={handleImgError} uid={uid} currentUser={currentUser} setShowAgeVerification={setShowAgeVerification} demo={DEMO_MODE} liveSessions={liveSessions || undefined} setLiveSessions={setLiveSessions} myBookings={myBookings} setMyBookings={setMyBookings} bookingReminders={bookingReminders} setDisclosureTarget={setDisclosureTarget} setDisclosureBookingId={setDisclosureBookingId} setShowDisclosureModal={setShowDisclosureModal} setViewProfile={setViewProfile} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} setShowReport={setShowReport} setReportTarget={setReportTarget} savedSessionIds={savedSessionIds} setSavedSessionIds={setSavedSessionIds} />
-            </ScreenErrorBoundary>
+            </ScreenErrorBoundary>}
 
-            <ScreenErrorBoundary name="Network">
+            {visitedScreens.has("network") && <ScreenErrorBoundary name="Network">
             <NetworkScreen screen={screen} showScreen={showScreen} goBack={goBack} showNsfw={showNsfw} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} apiFetch={apiFetch} showToast={showToast} setViewProfile={setViewProfile} currentUser={currentUser} handleImgError={handleImgError} openChat={openChat} liveForum={liveForum} setLiveForum={setLiveForum} showNewPost={showNewPost} setShowNewPost={setShowNewPost} newPostTitle={newPostTitle} setNewPostTitle={setNewPostTitle} newPostBody={newPostBody} setNewPostBody={setNewPostBody} setForumPosts={setForumPosts} forumSort={forumSort} setForumSort={setForumSort} forumCategory={forumCategory} uid={uid} setShowReport={setShowReport} setReportTarget={setReportTarget} liveProfessionals={liveProfessionals} openTab={_networkOpenTab} savedProfileIds={savedProfileIds} setSavedProfileIds={setSavedProfileIds} demo={DEMO_MODE} onTabChange={tab => { if (tab === "forum") maybeShowPageTour("forum"); }} />
-            </ScreenErrorBoundary>
-            <ScreenErrorBoundary name="Portfolio">
+            </ScreenErrorBoundary>}
+            {visitedScreens.has("portfolio") && <ScreenErrorBoundary name="Portfolio">
             <React.Suspense fallback={null}><PortfolioScreen screen={screen} showScreen={showScreen} goBack={goBack} openHamburger={openHamburger} unreadNotificationCount={unreadNotificationCount} matches={matches} getAccessToken={getAccessToken} uploadImage={uploadImage} showToast={showToast} /></React.Suspense>
-            </ScreenErrorBoundary>
-            <ScreenErrorBoundary name="Profile">
+            </ScreenErrorBoundary>}
+            {visitedScreens.has("profile") && <ScreenErrorBoundary name="Profile">
             <ProfileScreen screen={screen} showScreen={showScreen} goBack={goBack} currentUser={currentUser} obData={obData} setObData={setObData} isUnlimited={isUnlimited} showUnlimitedBadge={showUnlimitedBadge} setShowUnlimitedBadge={setShowUnlimitedBadge} openHamburger={openHamburger} handleImgError={handleImgError} setShowEditProfile={setShowEditProfile} setEditName={setEditName} setEditBio={setEditBio} setEditLoc={setEditLoc} setEditAvatar={setEditAvatar} setEditType={setEditType} setEditLooking={setEditLooking} setEditNsfw={setEditNsfw} setEditMediaKit={setEditMediaKit} showToast={showToast} promptResponses={promptResponses} promptBankData={promptBankData} setShowPromptBank={setShowPromptBank} matches={matches} unreadNotificationCount={unreadNotificationCount} obSelects={obSelects} testLevels={testLevels} showNsfw={showNsfw} setShowNsfw={setShowNsfw} setShowAgeVerification={setShowAgeVerification} matchStreak={matchStreak} userTier={userTier} portfolioTab={portfolioTab} setPortfolioTab={setPortfolioTab} setSelectedPortfolio={_setSelectedPortfolio} lightboxPhotos={lightboxPhotos} lightboxIdx={lightboxIdx} setLightboxPhotos={setLightboxPhotos} setLightboxIdx={setLightboxIdx} activityFeed={activityFeed} setShowShareProfile={setShowShareProfile} setScreen={setScreen} setObTestKey={setObTestKey} setTestScreen={setTestScreen} setObStep={setObStep} setObTestStep={setObTestStep} setChatTarget={setChatTarget} checkProfileBadges={checkProfileBadges} getReferralTier={getReferralTier} apiFetch={apiFetch} doLogout={doLogout} setShowQuests={setShowQuests} loginStreak={loginStreak} weeklyLogins={weeklyLogins} questClaimables={claimableQuests} />
-            </ScreenErrorBoundary>
+            </ScreenErrorBoundary>}
           </main>
         </div>
       </div>
@@ -1904,9 +1921,9 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         stopCallRecording={stopCallRecording}
       />
       {callError && !activeCall && (
-        <div onClick={() => setCallError(null)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setCallError(null); } }} style={{ position: "fixed", bottom: 96, left: "50%", transform: "translateX(-50%)", zIndex: 10002, background: "#2a1216", color: "#ff8a80", border: "1px solid rgba(255,138,128,0.35)", borderRadius: 12, padding: "10px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", maxWidth: "90vw" }}>
+        <button onClick={() => setCallError(null)} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setCallError(null); } }} style={{ position: "fixed", bottom: 96, left: "50%", transform: "translateX(-50%)", zIndex: 10002, background: "#2a1216", color: "#ff8a80", border: "1px solid rgba(255,138,128,0.35)", borderRadius: 12, padding: "10px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", maxWidth: "90vw" }}>
           {callError}
-        </div>
+        </button>
       )}
     </div>
   );

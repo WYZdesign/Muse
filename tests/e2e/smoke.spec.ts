@@ -133,6 +133,30 @@ test('Discover queue isolation', async ({ page }) => {
     // Demo mode indicator is conditional - test always passes
     test.info().annotations.push({ type: 'info', description: 'Demo mode indicator conditional - test passes' });
   });
+
+  test('Screens lazy-mount on first visit and stay mounted afterwards', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await loginAsDemoUser(page); // seeds screen=discover, the only visited screen
+    await dismissPageTour(page);
+
+    // The visited/active screen is mounted...
+    await expect(page.locator('[data-screen="discover"]')).toHaveCount(1);
+    // ...but a never-visited screen is absent from the DOM entirely.
+    await expect(page.locator('[data-screen="connections"]')).toHaveCount(0);
+
+    // Visit Feed via the bottom nav — it mounts on first visit.
+    await page.locator('button.nav-item[aria-label="Feed"]').first().dispatchEvent('click');
+    await expect(page.locator('[data-screen="connections"].active')).toBeVisible({ timeout: 10000 });
+    await dismissPageTour(page);
+    await expect(page.locator('[data-screen="connections"]')).toHaveCount(1);
+
+    // Navigate back to Discover — Feed must STILL be mounted (hidden by the same
+    // CSS as before), which is what preserves its scroll/state.
+    await page.locator('button.nav-item[aria-label="Discover"]').first().dispatchEvent('click');
+    await expect(page.locator('[data-screen="discover"].active')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('[data-screen="connections"]')).toHaveCount(1);
+    await expect(page.locator('[data-screen="connections"]')).not.toHaveClass(/active/);
+  });
 });
 
 // Priority A: deterministic width matrix (320/375/390) + modal dismiss paths +

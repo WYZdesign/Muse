@@ -7,7 +7,7 @@ import type { Screen } from "../components/types";
 import { CODEX_ZODIAC, CODEX_CHINESE, CODEX_LIFE_PATH, CODEX_MBTI, CODEX_TYPES, CODEX_AESTHETICS } from "../components/codexData";
 import { MBTI_ICON, LIFE_PATH_ICON } from "../components/traitIcons";
 import { GiMoon, GiCrown, GiButterfly, GiPaintBrush, GiRat, GiBullHorns, GiTigerHead, GiRabbit, GiDragonHead, GiSnake, GiHorseHead, GiGoat, GiMonkey, GiRooster, GiSittingDog, GiPig } from "react-icons/gi";
-import { FiZap, FiMapPin, FiSun, FiBriefcase, FiUsers, FiHeart, FiTarget } from "react-icons/fi";
+import { FiZap, FiMapPin, FiSun, FiBriefcase, FiUsers, FiStar, FiTarget } from "react-icons/fi";
 
 export interface CodexScreenProps {
   screen: Screen;
@@ -24,7 +24,7 @@ const GI: Record<string, any> = { GiMoon, GiCrown, GiButterfly, GiPaintBrush, Gi
 // all three stay consistent instead of drifting. Life Path is re-keyed
 // "L1".."L33" here to match this glossary's own icon-key convention.
 const FI: Record<string, any> = {
-  FiZap, FiMapPin, FiSun, FiBriefcase, FiUsers, FiBookOpen, FiHeart, FiTarget,
+  FiZap, FiMapPin, FiSun, FiBriefcase, FiUsers, FiBookOpen, FiStar, FiTarget,
   ...MBTI_ICON,
   ...Object.fromEntries(Object.entries(LIFE_PATH_ICON).map(([n, Icon]) => [`L${n}`, Icon])),
 };
@@ -144,7 +144,7 @@ export const CodexScreen = memo(function CodexScreen({
                 determined: Find yours: it's the sign..." and "Why it matters: Why
                 it matters: it shapes...". Stripped the redundant lead-in from all
                 4 entries so each label appears once. */}
-            <Section title="Western Zodiac" subtitle="Your sun sign, based on your birth date. It's the heart of your creative identity and drive." howTo="It's the sign the Sun was in on your birthday (for example, Mar 21 to Apr 19 is Aries)." why="It shapes how you approach work, collaborate, and express yourself, and it powers zodiac match compatibility.">
+            <Section title="Western Zodiac" subtitle="Your sun sign, based on your birth date. It's the core of your creative identity and drive." howTo="It's the sign the Sun was in on your birthday (for example, Mar 21 to Apr 19 is Aries)." why="It shapes how you approach work, collaborate, and express yourself, and it powers zodiac match compatibility.">
               {CODEX_ZODIAC.map(z => <Expandable key={z.name} icon={z.icon} name={`${z.name}, ${z.tag}`} short={z.short} long={z.long} color="#F5C542" />)}
             </Section>
             <Section title="Chinese Zodiac" subtitle="Your year animal, based on the lunar calendar year you were born. It reflects temperament and instinct." howTo="Your animal is set by your birth year in a 12-year cycle (for example, 2000 is Dragon, 2001 is Snake)." why="It reveals your instinct, temperament, and natural working style, and it feeds match compatibility.">

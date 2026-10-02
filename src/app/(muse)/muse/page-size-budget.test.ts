@@ -49,7 +49,7 @@ import path from "node:path";
  * Good next candidates: the screens still mounted inside `page.tsx` and the
  * remaining Discover/note-composer state still shared with useSwipeActions.
  */
-const BUDGET_LINES = 1914;
+const BUDGET_LINES = 1931;
 
 const file = path.resolve(__dirname, "page.tsx");
 

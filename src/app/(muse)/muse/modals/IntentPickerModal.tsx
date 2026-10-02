@@ -70,8 +70,8 @@ export function IntentPickerModal({
             >
               <span style={{fontSize:28}}>{icon}</span>
               <div style={{flex:1}}>
-                <div style={{fontSize:14,fontWeight:700,color:"var(--text)"}}>{label}</div>
-                <div style={{fontSize:11,color:"var(--muted)"}}>{desc}</div>
+                <div style={{fontSize:14,fontWeight:700,color:intentSelection.includes(intent) ? "#20180a" : "var(--text)"}}>{label}</div>
+                <div style={{fontSize:11,color:intentSelection.includes(intent) ? "rgba(32,24,10,0.72)" : "var(--muted)"}}>{desc}</div>
               </div>
             </button>
           ))}
@@ -84,7 +84,7 @@ export function IntentPickerModal({
             setIntentProfile(null);
             setIntentSelection([]);
             doSwipe("right", chosenIntent);
-          }} style={{display:"block",width:"100%",marginTop:12,padding:8,border:"none",background:"var(--gold)",color:"var(--text)",fontSize:12,cursor:"pointer",fontWeight:600}}>Submit {intentSelection.length} intent{(intentSelection.length > 1 ? "s" : "")}</button>
+          }} style={{display:"block",width:"100%",marginTop:12,padding:8,border:"none",background:"var(--gold)",color:"#20180a",fontSize:12,cursor:"pointer",fontWeight:600}}>Submit {intentSelection.length} intent{(intentSelection.length > 1 ? "s" : "")}</button>
         )}
         <button className="intent-skip" onClick={()=>{setShowIntentPicker(false);setIntentProfile(null);setIntentSelection([]);setUserDefaultIntent("");doSwipe("left")}} style={{display:"block",width:"100%",marginTop:12,padding:8,border:"none",background:"none",color:"var(--muted)",fontSize:12,cursor:"pointer"}}>Skip this profile</button>
       </div>

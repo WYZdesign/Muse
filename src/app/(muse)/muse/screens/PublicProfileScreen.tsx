@@ -2,12 +2,7 @@
 
 import React, { memo, useState, useEffect, useCallback } from "react";
 import Image from "next/image";
-import {
-  FiChevronLeft, FiMoreVertical, FiMapPin, FiMessageCircle,
-  FiExternalLink, FiInstagram, FiTwitter, FiYoutube, FiGlobe,
-  FiHeart, FiStar, FiClock, FiShield, FiCheck, FiFlag, FiSlash, FiVolumeX,
-  FiBriefcase, FiUsers, FiTrendingUp, FiZap,
-} from "react-icons/fi";
+import { FiChevronLeft, FiMoreVertical, FiMapPin, FiMessageCircle, FiExternalLink, FiInstagram, FiTwitter, FiYoutube, FiGlobe, FiStar, FiClock, FiShield, FiCheck, FiFlag, FiSlash, FiVolumeX, FiBriefcase, FiUsers, FiTrendingUp, FiZap } from "react-icons/fi";
 import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon, ChineseZodiacIcon } from "../components/traitIcons";
 import { ZODIAC_FULL, MBTI_FULL, CHINESE_FULL, LIFE_PATH_FULL, STYLE_FULL, BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
 import Lightbox from "../components/Lightbox";
@@ -113,7 +108,7 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
     // section isn't silently hidden behind an empty live fetch.
     if (process.env.NEXT_PUBLIC_DEMO_MODE !== "false") {
       setReviews([
-        { id: "dr1", rating: 5, text: "Absolutely nailed the brief and delivered ahead of schedule. Would book again in a heartbeat.", author: "Jordan Blake", created_at: new Date(Date.now() - 9 * 86400000).toISOString() },
+        { id: "dr1", rating: 5, text: "Absolutely nailed the brief and delivered ahead of schedule. Would book again any time.", author: "Jordan Blake", created_at: new Date(Date.now() - 9 * 86400000).toISOString() },
         { id: "dr2", rating: 5, text: "Professional, calm on set and great with direction. The final edits were gorgeous.", author: "Priya Nair", created_at: new Date(Date.now() - 26 * 86400000).toISOString() },
         { id: "dr3", rating: 4, text: "Great communication and a really collaborative shoot. Highly recommend.", author: "Lena Ortiz", created_at: new Date(Date.now() - 54 * 86400000).toISOString() },
       ]);
@@ -493,7 +488,7 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
                   <video src={v} style={{ width: "100%", height: "100%", objectFit: "cover" }} preload="metadata" />
                   <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid rgba(255,255,255,0.3)" }}>
-                      <FiHeart size={18} style={{ color: "#fff", marginLeft: 2 }} />
+                      <FiStar size={18} style={{ color: "#fff", marginLeft: 2 }} />
                     </div>
                   </div>
                 </div>
@@ -517,7 +512,7 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
                   <div style={{ padding: "12px 14px" }}>
                     {post.text && <p style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5, margin: "0 0 8px" }}>{post.text}</p>}
                     <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 12, color: "var(--muted)" }}>
-                      {typeof post.likes === "number" && <span style={{ display: "flex", alignItems: "center", gap: 4 }}><FiHeart size={12} /> {post.likes}</span>}
+                      {typeof post.likes === "number" && <span style={{ display: "flex", alignItems: "center", gap: 4 }}><FiStar size={12} /> {post.likes}</span>}
                       {typeof post.comments === "number" && <span style={{ display: "flex", alignItems: "center", gap: 4 }}><FiMessageCircle size={12} /> {post.comments}</span>}
                     </div>
                   </div>

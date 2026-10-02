@@ -9,7 +9,7 @@
 // behavior change.
 // ══════════════════════════════════════════════════════════════════════════════
 import { checkRate, checkRateUser } from "@/lib/rate-limit";
-import { sanitizeAvailabilityStatus, sanitizeTravelDestinations } from "@/lib/muse-availability";
+import { sanitizeAvailabilityStatus, sanitizeTravelDestinations, sanitizeTravelDates, sanitizeBudgetRange } from "@/lib/muse-availability";
 import { normalizePortfolioVisibility } from "@/lib/muse-portfolio-visibility";
 import { UUID_RE, NextResponse, safeServerError, type ActionContext } from "./shared";
 
@@ -51,6 +51,19 @@ export const preferencesSave = async ({ sb, profile, rest }: ActionContext) => {
   // (everyone | matches | private). Unknown values collapse to the default.
   if ("portfolioVisibility" in prefs) {
     prefs.portfolioVisibility = normalizePortfolioVisibility(prefs.portfolioVisibility);
+  }
+  // Sanitize availability fields before persisting
+  if ("availabilityStatus" in prefs) {
+    prefs.availabilityStatus = sanitizeAvailabilityStatus(String(prefs.availabilityStatus || ""));
+  }
+  if ("travelDates" in prefs) {
+    prefs.travelDates = sanitizeTravelDates(prefs.travelDates);
+  }
+  if ("travelDestinations" in prefs) {
+    prefs.travelDestinations = sanitizeTravelDestinations(prefs.travelDestinations);
+  }
+  if ("budgetRange" in prefs) {
+    prefs.budgetRange = sanitizeBudgetRange(String(prefs.budgetRange || ""));
   }
   // Handle nested notification preference toggles (e.g. notifications.match = false)
   if (rest.toggleNotificationPref && typeof rest.toggleNotificationPref === "object") {

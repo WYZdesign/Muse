@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { FiCamera, FiUsers, FiZap, FiShield, FiHeart, FiStar, FiArrowRight, FiMessageSquare, FiMapPin, FiClock, FiLock, FiGlobe, FiLink, FiChevronDown, FiSend, FiGift } from "react-icons/fi";
+import { FiCamera, FiUsers, FiZap, FiShield, FiStar, FiArrowRight, FiMessageSquare, FiMapPin, FiClock, FiLock, FiGlobe, FiLink, FiChevronDown, FiSend, FiGift } from "react-icons/fi";
 import BackgroundScene from "@/components/BackgroundScene";
 import "@/components/BackgroundScene.css";
 import "./landing.css";
@@ -250,7 +250,7 @@ function Marquee() {
 }
 
 const FEATURES = [
-  { icon: <FiHeart size={28} />, title: "Discover & Match", desc: "Swipe through creatives near you. Match when you're both into it." },
+  { icon: <FiStar size={28} />, title: "Discover & Match", desc: "Swipe through creatives near you. Match when you're both into it." },
   { icon: <FiZap size={28} />, title: "Collab Briefs", desc: "Post a paid or TFP project. Creatives apply directly. No middlemen." },
   { icon: <FiMessageSquare size={28} />, title: "Chat & Booking", desc: "Message instantly. Book with escrow and disclosure forms built in." },
   { icon: <FiShield size={28} />, title: "Safety First", desc: "Disclosure forms, check-ins, and instant block for every shoot." },

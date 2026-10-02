@@ -533,9 +533,8 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                           </div>
                           {isTop && photos.length > 1 && (
                             <>
-                              <div
+                              <button
                                 className={"card-photo-zone card-photo-zone-left" + (cardScrolled ? " hidden" : "")}
-                                role="button"
                                 tabIndex={0}
                                 aria-label="Previous photo"
                                 onPointerDown={(e) => e.stopPropagation()}
@@ -550,10 +549,9 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                   e.stopPropagation();
                                   setCurrentPhotoIdx?.((p) => ((p ?? 0) > 0 ? (p as number) - 1 : photos.length - 1));
                                 }}
-                              ><span className="card-photo-nav" aria-hidden="true">‹</span></div>
-                              <div
+                              ><span className="card-photo-nav" aria-hidden="true">‹</span></button>
+                              <button
                                 className={"card-photo-zone card-photo-zone-right" + (cardScrolled ? " hidden" : "")}
-                                role="button"
                                 tabIndex={0}
                                 aria-label="Next photo"
                                 onPointerDown={(e) => e.stopPropagation()}
@@ -568,7 +566,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                   e.stopPropagation();
                                   setCurrentPhotoIdx?.((p) => ((p ?? 0) + 1) % photos.length);
                                 }}
-                              ><span className="card-photo-nav" aria-hidden="true">›</span></div>
+                              ><span className="card-photo-nav" aria-hidden="true">›</span></button>
                             </>
                           )}
                           <div className={"card-photo-dots" + (cardScrolled ? " hidden" : "")} aria-hidden={cardScrolled || undefined} inert={cardScrolled || undefined}>
@@ -657,13 +655,13 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                         onClick={() => { setLightboxPhotos(albumPhotos); setLightboxIdx(portIdx); }}
                                       >
                                          <Image loading="lazy" src={albumPhotos[portIdx]} alt={`${profile.name}'s portfolio photo ${portIdx + 1}`} fill sizes="(max-width: 600px) 50vw, 300px" style={{ objectFit: "cover", filter: (profile as any).nsfw && !revealedNsfw.has(String(profile.id)) ? "blur(26px) brightness(0.7)" : "none", transition: "filter .3s" }} onError={handleImgError} />
-                                        {(profile as any).nsfw && !revealedNsfw.has(String(profile.id)) && (
-                                           <div role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setRevealedNsfw(prev => { const n = new Set(prev); n.add(String(profile.id)); return n; }); } }} onClick={(e) => { e.stopPropagation(); setRevealedNsfw(prev => { const n = new Set(prev); n.add(String(profile.id)); return n; }); }} style={{ position: "absolute", inset: 0, zIndex: 4, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: "rgba(10,6,18,0.45)", cursor: "pointer" }}>
-                                            <div style={{ fontSize: 24, fontWeight: 800, color: "#ff8a80" }}>18+</div>
-                                            <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", letterSpacing: 0.03 }}>NSFW content</div>
-                                            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.7)" }}>Tap to reveal</div>
-                                          </div>
-                                        )}
+{(profile as any).nsfw && !revealedNsfw.has(String(profile.id)) && (
+                                           <button tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setRevealedNsfw(prev => { const n = new Set(prev); n.add(String(profile.id)); return n; }); } }} onClick={(e) => { e.stopPropagation(); setRevealedNsfw(prev => { const n = new Set(prev); n.add(String(profile.id)); return n; }); }} style={{ position: "absolute", inset: 0, zIndex: 4, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: "rgba(10,6,18,0.45)", cursor: "pointer" }}>
+                                             <div style={{ fontSize: 24, fontWeight: 800, color: "#ff8a80" }}>18+</div>
+                                             <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", letterSpacing: 0.03 }}>NSFW content</div>
+                                             <div style={{ fontSize: 10, color: "rgba(255,255,255,0.7)" }}>Tap to reveal</div>
+                                           </button>
+                                         )}
                                         {/* Tap zones */}
                                         {albumPhotos.length > 1 && (
                                           <>
@@ -709,7 +707,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                 <button className={"match-radial-btn btn-rewind" + (canRewind ? "" : " is-disabled")} style={{ left: -110, top: 7, width: 44, height: 44 }} onClick={canRewind ? doRewind : undefined} disabled={!canRewind} aria-disabled={!canRewind} aria-label="Rewind"><span aria-hidden="true">↺</span></button>
                                 <button className="match-radial-btn btn-nope" style={{ left: -106, top: -40, width: 44, height: 44 }} onClick={() => doSwipe("left")} aria-label="Pass"><span aria-hidden="true">✕</span></button>
                                 <button className="match-radial-btn btn-super" style={{ left: -77, top: -77, width: 44, height: 44, fontSize: 16 }} onClick={() => doSwipe("super")} aria-label="Super Like"><span aria-hidden="true">★</span></button>
-                                <button className="match-radial-btn btn-like" style={{ left: -40, top: -106, width: 44, height: 44, flexDirection: "column", fontSize: 16, lineHeight: 1 }} onClick={() => doSwipe("right")} aria-label="Like this match"><span aria-hidden="true" style={{ fontSize: 18 }}>♥</span></button>
+                                <button className="match-radial-btn btn-like" style={{ left: -40, top: -106, width: 44, height: 44, flexDirection: "column", fontSize: 16, lineHeight: 1 }} onClick={() => doSwipe("right")} aria-label="Like this match"><span aria-hidden="true" style={{ fontSize: 18 }}>✦</span></button>
                                 <button className="match-radial-btn btn-note" style={{ left: 7, top: -110, width: 44, height: 44 }} onClick={() => doLikeWithNote()} aria-label="Like + Note"><span aria-hidden="true">✎</span></button>
                               </div>
                               </div>

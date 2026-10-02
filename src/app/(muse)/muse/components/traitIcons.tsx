@@ -17,11 +17,7 @@
  */
 
 import type { IconType } from "react-icons";
-import {
-  FiTarget, FiCpu, FiTrendingUp, FiEdit3, FiEye, FiFeather, FiUsers, FiSmile,
-  FiCheckSquare, FiShield, FiBriefcase, FiHeart, FiPlay, FiTool, FiMusic, FiCamera,
-  FiFlag, FiCompass, FiSearch, FiZap, FiGlobe, FiLayers, FiAward,
-} from "react-icons/fi";
+import { FiTarget, FiCpu, FiTrendingUp, FiEdit3, FiEye, FiFeather, FiUsers, FiSmile, FiCheckSquare, FiShield, FiBriefcase, FiStar, FiPlay, FiTool, FiMusic, FiCamera, FiFlag, FiCompass, FiSearch, FiZap, FiGlobe, FiLayers, FiAward } from "react-icons/fi";
 import {
   GiRat, GiBullHorns, GiTigerHead, GiRabbit, GiDragonHead, GiSnake,
   GiHorseHead, GiGoat, GiMonkey, GiRooster, GiSittingDog, GiPig,
@@ -38,14 +34,14 @@ export const ZODIAC_GLYPH: Record<string, string> = {
 export const MBTI_ICON: Record<string, IconType> = {
   INTJ: FiTarget, INTP: FiCpu, ENTJ: FiTrendingUp, ENTP: FiEdit3,
   INFJ: FiEye, INFP: FiFeather, ENFJ: FiUsers, ENFP: FiSmile,
-  ISTJ: FiCheckSquare, ISFJ: FiShield, ESTJ: FiBriefcase, ESFJ: FiHeart,
+  ISTJ: FiCheckSquare, ISFJ: FiShield, ESTJ: FiBriefcase, ESFJ: FiStar,
   ISTP: FiTool, ISFP: FiCamera, ESTP: FiPlay, ESFP: FiMusic,
 };
 
 // One distinct vector icon per Life Path number, including the 11/22/33
 // master numbers.
 export const LIFE_PATH_ICON: Record<number, IconType> = {
-  1: FiFlag, 2: FiUsers, 3: FiFeather, 4: FiTool, 5: FiCompass, 6: FiHeart,
+  1: FiFlag, 2: FiUsers, 3: FiFeather, 4: FiTool, 5: FiCompass, 6: FiStar,
   7: FiSearch, 8: FiZap, 9: FiGlobe, 11: FiEye, 22: FiLayers, 33: FiAward,
 };
 

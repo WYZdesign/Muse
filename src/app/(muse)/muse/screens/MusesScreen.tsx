@@ -3,7 +3,7 @@
 import React, { memo, useEffect, useState, useRef } from "react";
 import { ensureDeviceTiltActive, getDeviceTilt, createSpatialScene } from "../hooks/useDeviceTilt";
 import Image from "next/image";
-import { FiArrowLeft, FiSearch, FiGrid, FiList, FiX, FiHeart, FiFlag, FiUserX } from "react-icons/fi";
+import { FiArrowLeft, FiSearch, FiGrid, FiList, FiX, FiStar, FiFlag, FiUserX } from "react-icons/fi";
 import MatchCard from "../components/MatchCard";
 import Nav from "../components/Nav";
 import UpsellModal from "../components/UpsellModal";

@@ -196,7 +196,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Account suspended", code: "ACCOUNT_SUSPENDED" }, { status: 403 });
       }
 
-      // Presence heartbeat — every "online" badge elsewhere was previously
+      // Presence pulse — every "online" badge elsewhere was previously
       // fake (hardcoded seed data or Math.random()); this is the one real
       // signal of activity available (session checks fire on login and app
       // resume). Fire-and-forget: a failed/slow touch shouldn't block the

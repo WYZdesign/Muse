@@ -41,7 +41,7 @@ const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
 // progress, target, description.
 const DEMO_QUESTS = [
   { id: "d1", icon: "🔥", title: "Log in today", tier: "daily", completed: true, claimed: true, progress: 1, target: 1, description: "Open Muses by WYZ to keep your streak alive." },
-  { id: "d2", icon: "💛", title: "Like 3 creatives", tier: "daily", completed: true, claimed: false, progress: 3, target: 3, description: "Show love to three profiles on Discover." },
+  { id: "d2", icon: "⚡", title: "Like 3 creatives", tier: "daily", completed: true, claimed: false, progress: 3, target: 3, description: "Support three profiles on Discover." },
   { id: "d3", icon: "💬", title: "Reply to a comment", tier: "daily", completed: false, claimed: false, progress: 1, target: 2, description: "Keep the conversation going on your posts." },
   { id: "w1", icon: "📸", title: "Post to your feed", tier: "weekly", completed: true, claimed: false, progress: 1, target: 1, description: "Share a new piece of work with the community." },
   { id: "w2", icon: "✉️", title: "Send 5 messages", tier: "weekly", completed: false, claimed: false, progress: 2, target: 5, description: "Reach out to matches and collaborators." },

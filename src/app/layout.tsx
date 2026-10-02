@@ -25,7 +25,7 @@ import { getMuseUrl, getTermsUrl, getPrivacyUrl } from "@/lib/urls";
 // own rAF/timer callbacks. No in-page JS can detect or recover from that
 // while it's happening; the only real fix is preventing it in the first
 // place (see lib/safe-observer.ts's circuit breaker, now used by every
-// MutationObserver in the app). What the heartbeat below *does* catch is
+// MutationObserver in the app). What the pulse below *does* catch is
 // the broader, more common class of "hung but not fully wedged" freeze —
 // a slow-but-finite loop, a stuck await, a deadlocked state update — where
 // the main thread still gets occasional turns. It also leaves a
@@ -39,7 +39,7 @@ const BLANK_SCREEN_WATCHDOG = `(function () {
     var isApp = path === "/muse" || path === "/muse/landing";
     if (!isApp) return;
     var RECOVER_KEY = "muse_wd_recovered";
-    var HEARTBEAT_KEY = "muse_wd_heartbeat";
+    var PULSE_KEY = "muse_wd_pulse";
     var HANG_MARK_KEY = "muse_wd_last_hang";
 
     function appRendered() {
@@ -100,7 +100,7 @@ const BLANK_SCREEN_WATCHDOG = `(function () {
       if (!appRendered()) recover("no_render_within_8s");
     }, 8000);
 
-    // 3) Continuous post-render heartbeat. rAF is throttled/paused while the
+    // 3) Continuous post-render pulse. rAF is throttled/paused while the
     // tab is hidden (normal, not a bug) — skip the staleness check then.
     // Only starts once the app has actually rendered once, so it never
     // fights with check #2 above.
@@ -112,7 +112,7 @@ const BLANK_SCREEN_WATCHDOG = `(function () {
     var STALE_MS = 12000;
     var CHECK_EVERY_MS = 3000;
     var rendered = false;
-    var heartbeatInterval = setInterval(function () {
+    var pulseInterval = setInterval(function () {
       if (!rendered) {
         if (!appRendered()) return;
         rendered = true;
@@ -121,7 +121,7 @@ const BLANK_SCREEN_WATCHDOG = `(function () {
       if (document.visibilityState !== "visible") return;
       var staleFor = Date.now() - lastFrame;
       if (staleFor > STALE_MS) {
-        clearInterval(heartbeatInterval);
+        clearInterval(pulseInterval);
         recover("post_render_freeze_" + staleFor + "ms");
       }
     }, CHECK_EVERY_MS);

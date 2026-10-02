@@ -130,13 +130,13 @@ export function useSwipeActions({
     setTimeout(() => { swipeLocked.current = false; }, 500);
     setSwipeDir(dir === "left" ? "left" : "right");
     setTimeout(() => setSwipeDir(null), 800);
-    if (!isUnlimited && dailyLikes <= 0 && dir === "right") { setUpsell({ feature: "Unlimited Likes", reason: "You've used all your likes for today. Go Pro to like as many creatives as you want, with no daily limit.", icon: "💛" }); return; }
+    if (!isUnlimited && dailyLikes <= 0 && dir === "right") { setUpsell({ feature: "Unlimited Likes", reason: "You've used all your likes for today. Go Pro to like as many creatives as you want, with no daily limit.", icon: "⚡" }); return; }
     const p = filteredProfiles[currentIdx];
     if (!p) return;
     // Non-blocking screen-reader announcement of the swipe outcome. The live
     // status region + announce() helper existed but had no callers (dead code).
     announce(dir === "left" ? `Passed on ${p.name}` : dir === "super" ? `Super liked ${p.name}` : `Liked ${p.name}`);
-    if (!isUnlimited && dir === "super" && superLikes <= 0) { setUpsell({ feature: "More Super Likes", reason: "You're out of super likes for today. Muses Pro's unlimited likes means you're never stuck waiting for a reset.", icon: "💜" }); return; }
+    if (!isUnlimited && dir === "super" && superLikes <= 0) { setUpsell({ feature: "More Super Likes", reason: "You're out of super likes for today. Muses Pro's unlimited likes means you're never stuck waiting for a reset.", icon: "⚡" }); return; }
     analytics.discoverSwipe(dir as "left" | "right" | "super", String(p.id), p.type);
     if (dir === "right" || dir === "super") {
       const effectiveIntent = intentOverride || userDefaultIntent;
@@ -257,7 +257,7 @@ export function useSwipeActions({
     setShowNoteTooltip(false); safeSetItem("muse_note_seen","1");
     const p = filteredProfiles[currentIdx];
     if (!p) return;
-    if (!isUnlimited && dailyLikes <= 0) { setUpsell({ feature: "Unlimited Likes", reason: "You've used all your likes for today. Go Pro to like as many creatives as you want, with no daily limit.", icon: "💛" }); return; }
+    if (!isUnlimited && dailyLikes <= 0) { setUpsell({ feature: "Unlimited Likes", reason: "You've used all your likes for today. Go Pro to like as many creatives as you want, with no daily limit.", icon: "⚡" }); return; }
     setNoteTargetProfile(p);
     setLikeNoteAnchor(anchor ?? null);
     // Prefill the note from the anchor (still editable) so the composer opens

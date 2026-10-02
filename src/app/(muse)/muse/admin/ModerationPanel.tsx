@@ -198,9 +198,9 @@ export default function AdminModerationPanel() {
           <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 0 }}>🛡️ Community Safety</h1>
         </div>
         <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 12 }}>Review reports, manage accounts, and keep the community safe.</p>
-        <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
-          <a href="/muse/admin" style={{ display: "inline-block", padding: "8px 16px", borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>📊 Dashboard</a>
-          <a href="/muse" style={{ display: "inline-block", padding: "8px 16px", borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>🏠 Back to Muses by WYZ</a>
+        <div style={{ display: "flex", gap: 8, marginBottom: 24, overflowX: "auto", flexWrap: "nowrap", WebkitOverflowScrolling: "touch", scrollbarWidth: "thin" }}>
+          <a href="/muse/admin" style={{ display: "inline-block", padding: "8px 16px", borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 600, textDecoration: "none", flexShrink: 0, whiteSpace: "nowrap" }}>📊 Dashboard</a>
+          <a href="/muse" style={{ display: "inline-block", padding: "8px 16px", borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 600, textDecoration: "none", flexShrink: 0, whiteSpace: "nowrap" }}>🏠 Back to Muses by WYZ</a>
         </div>
 
         {/* NSFW Batch Scan */}
@@ -214,9 +214,9 @@ export default function AdminModerationPanel() {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: "flex", gap: 4, marginBottom: 24, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 4 }}>
+        <div style={{ display: "flex", gap: 4, marginBottom: 24, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 4, overflowX: "auto", flexWrap: "nowrap", WebkitOverflowScrolling: "touch", scrollbarWidth: "thin" }}>
           {([["reports", `Reports (${reports.length})`], ["refunds", "Refunds"], ["strikes", `Warnings (${strikes.length})`], ["scans", `Review Queue${incidents.length ? ` ⚠${incidents.length}` : ""}`], ["custom", `Custom Values (${customValueProfiles.length})`], ["brain", "🧠 AI Assistant"], ["audit", "Activity Log"]] as const).map(([key, label]) => (
-            <button key={key} onClick={() => loadTab(key)} style={{ flex: 1, padding: "10px 0", borderRadius: 8, background: tab === key ? "rgba(255,215,0,0.15)" : "transparent", border: "none", color: tab === key ? "#ffd700" : "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+            <button key={key} onClick={() => loadTab(key)} style={{ flex: "1 0 auto", padding: "10px 14px", borderRadius: 8, background: tab === key ? "rgba(255,215,0,0.15)" : "transparent", border: "none", color: tab === key ? "#ffd700" : "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
               {label}
             </button>
           ))}
@@ -406,9 +406,9 @@ export default function AdminModerationPanel() {
                 </button>
               </div>
 
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 12 }}>
+              <div style={{ display: "flex", gap: 6, flexWrap: "nowrap", marginTop: 12, overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "thin" }}>
                 {["How many members?", "Show recent reports", "Who's been active this week?", "Any warnings issued?", "Content reviews pending", "Safety check-ins"].map(q => (
-                  <button key={q} onClick={() => { setBrainQuery(q); }} style={{ padding: "4px 10px", borderRadius: 6, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)", fontSize: 11, cursor: "pointer" }}>{q}</button>
+                  <button key={q} onClick={() => { setBrainQuery(q); }} style={{ padding: "4px 10px", borderRadius: 6, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)", fontSize: 11, cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap" }}>{q}</button>
                 ))}
               </div>
             </div>

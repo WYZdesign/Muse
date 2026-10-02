@@ -234,7 +234,7 @@ export const TIERS_BY_SIDE: Record<"creative" | "industry", typeof TIERS> = {
 
 export const AESTHETICS = ["Portrait","Editorial","Commercial","Music Video","Documentary","Branding","Body Art","Fine Art","Fashion","Experimental","Dark","Dreamy","Bold","Vintage","Abstract","Film"];
 
-// ═══ CREATIVE SIDES — the duality at the heart of Muse ═══
+// ═══ CREATIVE SIDES — the duality at the core of Muse ═══
 // "behind" = the person making the work (crew / off-camera)
 // "front"  = the person in the work (talent / on-camera / audience-facing)
 export type CreativeSide = "behind" | "front";

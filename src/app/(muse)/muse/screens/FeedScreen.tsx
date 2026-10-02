@@ -487,8 +487,8 @@ export const FeedScreen = memo(function FeedScreen({
             </div>
             {showEmojiPicker && (
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", padding: "8px 0" }}>
-                {["😍", "🔥", "❤️", "😂", "😢", "😡", "👍", "🎉", "✨", "💯", "👏", "🙌"].map(emoji => (
-                  <span key={emoji} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFeedText(prev => prev + " " + emoji); setShowEmojiPicker(false); } }} style={{ fontSize: 22, cursor: "pointer", transition: "transform .15s" }} onClick={() => { setFeedText(prev => prev + " " + emoji); setShowEmojiPicker(false); }} onMouseEnter={ev => ev.currentTarget.style.transform = "scale(1.3)"} onMouseLeave={ev => ev.currentTarget.style.transform = "scale(1)"}>{emoji}</span>
+                {["😍", "🔥", "⭐", "😂", "😢", "😡", "👍", "🎉", "✨", "💯", "👏", "🙌"].map(emoji => (
+                  <button key={emoji} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFeedText(prev => prev + " " + emoji); setShowEmojiPicker(false); } }} style={{ fontSize: 22, cursor: "pointer", transition: "transform .15s", background: "none", border: "none", padding: 0 }} onClick={() => { setFeedText(prev => prev + " " + emoji); setShowEmojiPicker(false); }} onMouseEnter={ev => ev.currentTarget.style.transform = "scale(1.3)"} onMouseLeave={ev => ev.currentTarget.style.transform = "scale(1)"}>{emoji}</button>
                 ))}
               </div>
             )}
@@ -547,12 +547,11 @@ export const FeedScreen = memo(function FeedScreen({
                     </div>
                     <div style={{ fontSize: 11, color: "var(--muted)" }}>{post.time}</div>
                   </div>
-                                       <div style={{ position: "absolute", top: 10, right: 10, width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text2)", fontSize: 13, zIndex: 2 }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); } }} onClick={(e) => { e.stopPropagation(); setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); }} aria-label="Report post"><FiFlag size={13} /></div>
+                                       <div style={{ position: "absolute", top: 10, right: 10, width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text2)", fontSize: 13, zIndex: 2 }} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); } }} onClick={(e) => { e.stopPropagation(); setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); }} aria-label="Report post"><FiFlag size={13} /></div>
                 </div>
                 <div
                   className="feed-caption-clamp"
                   style={{ padding: "10px 18px", fontSize: 14, color: "var(--text)", lineHeight: 1.6, whiteSpace: "pre-wrap", cursor: "pointer", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}
-                  role="button"
                   tabIndex={0}
                   onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPostDetail(post.id); } }}
                   onClick={() => openPostDetail(post.id)}
@@ -630,7 +629,9 @@ export const FeedScreen = memo(function FeedScreen({
                   <div style={{ borderTop: "1px solid var(--border-subtle)" }}>
                     {(postReplies[post.id] || []).map((reply: any, i: number) => (
                       <div key={i} style={{ display: "flex", gap: 10, padding: "10px 16px", borderBottom: "1px solid var(--border-subtle)" }}>
-                        <Image loading="lazy" src={reply.avatar || currentUser.avatar} alt={`${reply.author || "User"}'s avatar`} width={36} height={36} className="feed-avatar" style={{ flexShrink: 0, cursor: "pointer" }} onError={handleImgError} onClick={(e) => openAuthorProfile({ id: reply.author, name: reply.author, avatar: reply.avatar }, e)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setViewProfile({ id: reply.author, name: reply.author, img: reply.avatar, type: "Creative" }); } }} />
+                        <button tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setViewProfile({ id: reply.author, name: reply.author, img: reply.avatar, type: "Creative" }); } }} onClick={(e) => { e.stopPropagation(); openAuthorProfile({ id: reply.author, name: reply.author, avatar: reply.avatar }, e); }} style={{ flexShrink: 0, cursor: "pointer", padding: 0, border: "none", background: "none" }}>
+                          <Image loading="lazy" src={reply.avatar || currentUser.avatar} alt={`${reply.author || "User"}'s avatar`} width={36} height={36} className="feed-avatar" style={{ flexShrink: 0, cursor: "pointer", borderRadius: "50%", objectFit: "cover" }} onError={handleImgError} />
+                        </button>
                         <div style={{ flex: 1 }}>
                           <div style={{ fontSize: 12, fontWeight: 700 }}>{reply.author || "User"}</div>
                           <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.5 }}>{reply.text}</div>
@@ -734,7 +735,9 @@ export const FeedScreen = memo(function FeedScreen({
               )}
               {replies.map((reply: any, i: number) => (
                 <div key={i} style={{ display: "flex", gap: 10, padding: "10px 0", borderBottom: "1px solid var(--border-subtle)" }}>
-                   <Image loading="lazy" src={reply.avatar || currentUser.avatar} alt={`${reply.author || "User"}'s avatar`} width={30} height={30} className="feed-avatar" style={{ flexShrink: 0, borderRadius: "50%", objectFit: "cover", cursor: "pointer" }} onError={handleImgError} onClick={(e) => openAuthorProfile({ id: reply.author, name: reply.author, avatar: reply.avatar }, e)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setViewProfile({ id: reply.author, name: reply.author, img: reply.avatar, type: "Creative" }); } }} />
+                   <button tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setViewProfile({ id: reply.author, name: reply.author, img: reply.avatar, type: "Creative" }); } }} onClick={(e) => { e.stopPropagation(); openAuthorProfile({ id: reply.author, name: reply.author, avatar: reply.avatar }, e); }} style={{ flexShrink: 0, cursor: "pointer", padding: 0, border: "none", background: "none" }}>
+                     <Image loading="lazy" src={reply.avatar || currentUser.avatar} alt={`${reply.author || "User"}'s avatar`} width={30} height={30} className="feed-avatar" style={{ flexShrink: 0, borderRadius: "50%", objectFit: "cover" }} onError={handleImgError} />
+                   </button>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 12, fontWeight: 700 }}>{reply.author || "User"} <span style={{ fontWeight: 400, color: "var(--muted)", fontSize: 11 }}>· {reply.time || "now"}</span></div>
                     <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.5 }}>{reply.text}</div>

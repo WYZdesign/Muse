@@ -34,7 +34,7 @@ export const MBTI_FULL: Record<string, { tag: string; desc: string }> = {
   ENTP: { tag: "The Debater", desc: "Quick-witted idea generator who loves a challenge. Sparks fresh thinking through questions and exploration." },
   INFJ: { tag: "The Advocate", desc: "Quiet visionary with strong principles. Finds deep meaning and chases causes with steady focus." },
   INFP: { tag: "The Mediator", desc: "Idealistic and deeply creative. Turns emotion and imagination into authentic work." },
-  ENFJ: { tag: "The Protagonist", desc: "Charismatic, big-hearted leader. Brings out the best in people and makes everyone feel valued." },
+  ENFJ: { tag: "The Protagonist", desc: "Charismatic, big-spirited leader. Brings out the best in people and makes everyone feel valued." },
   ENFP: { tag: "The Campaigner", desc: "Enthusiastic, spontaneous, and endlessly social. Brings energy and possibility everywhere." },
   ISTJ: { tag: "The Logistician", desc: "Dependable, detail-oriented, and organized. Delivers clean execution and keeps every commitment." },
   ISFJ: { tag: "The Defender", desc: "Warm, careful, and protective. The steady backbone of any creative crew." },
@@ -58,7 +58,7 @@ export const CHINESE_FULL: Record<string, string> = {
   Monkey: "Clever, playful, and inventive. Finds smart solutions and keeps things fun.",
   Rooster: "Confident, observant, and exacting. Proud of the craft and detail-oriented.",
   Dog: "Loyal, honest, and protective. A true collaborator you can always count on.",
-  Pig: "Generous, warm, and sincere. Brings heart and authenticity to every project.",
+  Pig: "Generous, warm, and sincere. Brings passion and authenticity to every project.",
 };
 
 export const LIFE_PATH_FULL: Record<string, string> = {
