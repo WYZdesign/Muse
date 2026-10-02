@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import Image from "next/image";
 import { FiCamera, FiUsers, FiZap, FiShield, FiStar, FiArrowRight, FiMessageSquare, FiMapPin, FiClock, FiLock, FiGlobe, FiLink, FiChevronDown, FiSend, FiGift } from "react-icons/fi";
 import BackgroundScene from "@/components/BackgroundScene";
 import "@/components/BackgroundScene.css";
@@ -417,7 +418,7 @@ export default function MuseLandingPage() {
       <div className="muse-content">
       {/* Nav */}
       <nav className={`muse-nav ${navScrolled ? "scrolled" : ""}`}>
-        <div className="muse-nav-logo"><img src="/muse-app-icon.png" alt="Muses by WYZ" className="muse-nav-icon" /></div>
+        <div className="muse-nav-logo"><Image src="/muse-app-icon.png" alt="Muses by WYZ" className="muse-nav-icon" width={30} height={30} priority /></div>
         <div className="muse-nav-links">
           <a href="#features">Features</a>
           <a href="#how">How It Works</a>
@@ -796,7 +797,7 @@ export default function MuseLandingPage() {
           </div>
           <div className="muse-enter-content">
             <div className="muse-enter-icon-wrap">
-              <img src="/muse-app-icon.png" alt="Muses by WYZ app" className="muse-enter-icon" />
+              <Image src="/muse-app-icon.png" alt="Muses by WYZ app" className="muse-enter-icon" width={174} height={174} />
             </div>
             <div className="muse-enter-logo">Muses <span>by WYZ</span></div>
             <div className="muse-enter-sub">Creative Professional Network</div>

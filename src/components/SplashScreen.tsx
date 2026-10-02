@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 
 const DURATION = 3000;
 
@@ -119,7 +120,7 @@ export default function SplashScreen() {
 
       {/* Centered branding + loader — raised high, oversized */}
       <div style={{ position: "relative", zIndex: 4, width: "100%", display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "34vh", padding: "0 20px", boxSizing: "border-box" }}>
-        <img src="/muse-app-icon.png" alt="Muses by WYZ" style={{ width: 112, height: 112, borderRadius: 31, objectFit: "cover", boxShadow: "0 12px 60px rgba(0,0,0,0.55)", animation: "splashIconFloat 4.2s ease-in-out infinite" }} />
+        <Image src="/muse-app-icon.png" alt="Muses by WYZ" width={112} height={112} priority style={{ width: 112, height: 112, borderRadius: 31, objectFit: "cover", boxShadow: "0 12px 60px rgba(0,0,0,0.55)", animation: "splashIconFloat 4.2s ease-in-out infinite" }} />
         <div style={{
           fontFamily: "'Playfair Display', serif", fontStyle: "italic", fontSize: "clamp(30px, 9vw, 56px)", fontWeight: 900, letterSpacing: 0,
           background: "linear-gradient(120deg,#FFD700,#FF8A80,#D4A5FF,#FFB5C2,#FF8C69,#FFD700)",
