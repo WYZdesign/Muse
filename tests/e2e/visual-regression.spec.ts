@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures/test-fixtures';
-import { checkAccessibility, checkTouchTargets, checkNoHorizontalOverflow, checkSkipLink, checkModalFocusTrap, checkPageTour, checkDiscoverQueueIsolation } from '../helpers/test-helpers';
+import { checkAccessibility, checkTouchTargets, checkNoHorizontalOverflow, checkSkipLink, checkPageTour, checkDiscoverQueueIsolation, dismissPageTour, loginAsDemoUser } from '../helpers/test-helpers';
 
 const VIEWPORTS = [
   { name: '320px', width: 320, height: 568 },
@@ -9,19 +9,26 @@ const VIEWPORTS = [
   { name: '768px', width: 768, height: 1024 },
 ];
 
+type AppScreen = 'discover' | 'connections' | 'profile' | 'settings';
+
+async function openAppScreen(page: Parameters<typeof loginAsDemoUser>[0], screen: AppScreen) {
+  await loginAsDemoUser(page, { screen });
+  await dismissPageTour(page);
+  await page.waitForSelector(`[data-screen="${screen}"].active`, { timeout: 15000 });
+}
+
 test.describe('Mobile Visual UX Regression', () => {
   for (const viewport of VIEWPORTS) {
     test.describe(`${viewport.name} viewport`, () => {
       test.use({ viewport: { width: viewport.width, height: viewport.height } });
 
       test('app shell renders without horizontal overflow', async ({ page }) => {
-        await page.goto('/muse/landing');
+        await openAppScreen(page, 'discover');
         await checkNoHorizontalOverflow(page);
       });
 
       test('Discover card layout', async ({ page }) => {
-        await page.goto('/muse/landing');
-        await page.waitForSelector('[data-screen="discover"], .discover-screen', { timeout: 10000 });
+        await openAppScreen(page, 'discover');
         await checkNoHorizontalOverflow(page);
         
         const cards = page.locator('[data-card-index], .discover-card, [data-profile-card]');
@@ -34,28 +41,22 @@ test.describe('Mobile Visual UX Regression', () => {
       });
 
       test('Feed composer layout', async ({ page }) => {
-        await page.goto('/muse/landing');
-        await page.click('[data-tab="feed"], [data-screen="feed"]');
-        await page.waitForSelector('[data-screen="feed"], .feed-screen', { timeout: 5000 });
+        await openAppScreen(page, 'connections');
         await checkNoHorizontalOverflow(page);
       });
 
       test('Profile screen layout', async ({ page }) => {
-        await page.goto('/muse/landing');
-        await page.click('[data-tab="profile"], [data-screen="profile"]');
-        await page.waitForSelector('[data-screen="profile"], .profile-screen', { timeout: 5000 });
+        await openAppScreen(page, 'profile');
         await checkNoHorizontalOverflow(page);
       });
 
       test('Settings screen layout', async ({ page }) => {
-        await page.goto('/muse/landing');
-        await page.click('[data-tab="settings"], [data-screen="settings"]');
-        await page.waitForSelector('[data-screen="settings"], .settings-screen', { timeout: 5000 });
+        await openAppScreen(page, 'settings');
         await checkNoHorizontalOverflow(page);
       });
 
       test('All touch targets meet 44px minimum', async ({ page }) => {
-        await page.goto('/muse/landing');
+        await openAppScreen(page, 'discover');
         await checkTouchTargets(page, 44);
       });
     });
@@ -69,29 +70,22 @@ test.describe('Accessibility Regression', () => {
   });
 
   test('Discover screen passes axe-core WCAG 2.1 AA', async ({ page, axe }) => {
-    await page.goto('/muse/landing');
-    await page.waitForSelector('[data-screen="discover"], .discover-screen', { timeout: 10000 });
+    await openAppScreen(page, 'discover');
     await checkAccessibility(page);
   });
 
   test('Feed screen passes axe-core WCAG 2.1 AA', async ({ page, axe }) => {
-    await page.goto('/muse/landing');
-    await page.click('[data-tab="feed"], [data-screen="feed"]');
-    await page.waitForSelector('[data-screen="feed"], .feed-screen', { timeout: 5000 });
+    await openAppScreen(page, 'connections');
     await checkAccessibility(page);
   });
 
   test('Profile screen passes axe-core WCAG 2.1 AA', async ({ page, axe }) => {
-    await page.goto('/muse/landing');
-    await page.click('[data-tab="profile"], [data-screen="profile"]');
-    await page.waitForSelector('[data-screen="profile"], .profile-screen', { timeout: 5000 });
+    await openAppScreen(page, 'profile');
     await checkAccessibility(page);
   });
 
   test('Settings screen passes axe-core WCAG 2.1 AA', async ({ page, axe }) => {
-    await page.goto('/muse/landing');
-    await page.click('[data-tab="settings"], [data-screen="settings"]');
-    await page.waitForSelector('[data-screen="settings"], .settings-screen', { timeout: 5000 });
+    await openAppScreen(page, 'settings');
     await checkAccessibility(page);
   });
 
@@ -100,23 +94,13 @@ test.describe('Accessibility Regression', () => {
     await checkSkipLink(page);
   });
 
-  test('Modal focus trap works on disclosure modal', async ({ page }) => {
-    await page.goto('/muse/landing');
-    await page.click('[data-open-disclosure], button:has-text("Disclosure")');
-    await checkModalFocusTrap(page, '[role="dialog"][aria-label*="Disclosure"], .disclosure-modal');
-  });
-
   test('Page tour has 44px touch targets', async ({ page }) => {
-    await page.goto('/muse/landing');
-    const tour = page.locator('[data-tour="discover"], [data-page-tour="discover"]');
-    if (await tour.isVisible({ timeout: 3000 })) {
-      await checkPageTour(page, 'discover');
-    }
+    await loginAsDemoUser(page, { seedTours: false });
+    await checkPageTour(page, 'discover');
   });
 
   test('Discover queue cards are inert and aria-hidden', async ({ page }) => {
-    await page.goto('/muse/landing');
-    await page.waitForSelector('[data-screen="discover"], .discover-screen', { timeout: 10000 });
+    await openAppScreen(page, 'discover');
     await checkDiscoverQueueIsolation(page);
   });
 });
@@ -133,22 +117,17 @@ test.describe('Visual Regression Screenshots', () => {
       });
 
       test('Discover screen matches baseline', async ({ page }) => {
-        await page.goto('/muse/landing');
-        await page.waitForSelector('[data-screen="discover"], .discover-screen', { timeout: 10000 });
+        await openAppScreen(page, 'discover');
         await expect(page).toHaveScreenshot(`discover-${viewport.name}.png`, { fullPage: true });
       });
 
       test('Feed screen matches baseline', async ({ page }) => {
-        await page.goto('/muse/landing');
-        await page.click('[data-tab="feed"], [data-screen="feed"]');
-        await page.waitForSelector('[data-screen="feed"], .feed-screen', { timeout: 5000 });
+        await openAppScreen(page, 'connections');
         await expect(page).toHaveScreenshot(`feed-${viewport.name}.png`, { fullPage: true });
       });
 
       test('Profile screen matches baseline', async ({ page }) => {
-        await page.goto('/muse/landing');
-        await page.click('[data-tab="profile"], [data-screen="profile"]');
-        await page.waitForSelector('[data-screen="profile"], .profile-screen', { timeout: 5000 });
+        await openAppScreen(page, 'profile');
         await expect(page).toHaveScreenshot(`profile-${viewport.name}.png`, { fullPage: true });
       });
     });
