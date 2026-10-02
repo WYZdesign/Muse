@@ -26,6 +26,14 @@
 	<true/>
 	<key>NSMotionUsageDescription</key>
 	<string>Muses by WYZ uses your phone's motion to add subtle tilt effects to the background and swipe cards.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Muses by WYZ uses your camera to capture profile photos, posts, and creative work.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Muses by WYZ uses your microphone for voice clips and video calls when you choose to record or join a call.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Muses by WYZ lets you choose photos and videos from your library for your profile and creative work.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Muses by WYZ uses your location while the app is open to help you discover nearby creatives and show distance sorting.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
