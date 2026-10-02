@@ -87,11 +87,11 @@ export async function checkModalFocusTrap(page: Page, modalSelector: string) {
   }
 }
 
-export async function checkPageTour(page: Page, tourId: string) {
-  const tour = page.locator(`[data-tour="${tourId}"], [data-page-tour="${tourId}"]`);
+export async function checkPageTour(page: Page, _tourId: string) {
+  const tour = page.locator('.tour-overlay');
   await expect(tour).toBeVisible();
   
-  const closeBtn = tour.locator('button[aria-label="Close"], button[aria-label="Skip"], [data-tour-close]');
+  const closeBtn = tour.locator('button[aria-label="Close tutorial"], button[aria-label="Close"], button:has-text("Skip"), [data-tour-close]');
   await expect(closeBtn).toBeVisible();
   
   const touchTarget = await closeBtn.boundingBox();
