@@ -70,6 +70,7 @@ import { useSessionData } from "./hooks/useSessionData";
 import { useSessionApply } from "./hooks/useSessionApply";
 import { useBootstrapHydration } from "./hooks/useBootstrapHydration";
 import { useBootstrapData } from "./hooks/useBootstrapData";
+import { useMusePersistence } from "./hooks/useMusePersistence";
 import { useSwipeActions } from "./hooks/useSwipeActions";
 import { useThemeEffect } from "./hooks/useThemeEffect";
 import { usePreferenceSync } from "./hooks/usePreferenceSync";
@@ -113,14 +114,6 @@ type DiscoveryProfile = typeof PROFILES[number] & {
   lng?: number;
 };
 
-const DEMO_MOMENTS = [
-  { id: 9001, author: "Maya Chen", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100", img: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800", time: "12m ago", text: "Golden hour setup for tonight's shoot. The light is unreal right now 🌅", likes: 87, comments: 12 },
-  { id: 9002, author: "Jordan Rivera", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100", img: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800", time: "28m ago", text: "Lens test on the new 85mm. Creamy bokeh for days 📷", likes: 143, comments: 21 },
-  { id: 9003, author: "Sam Taylor", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100", img: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800", time: "1h ago", text: "WIP color grade. Pulling shadows, pushing the teal-orange split.", likes: 56, comments: 8 },
-  { id: 9004, author: "Riley Patel", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100", img: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800", time: "2h ago", text: "Studio setup build-out. T-minus 3 days to the big shoot 🎬", likes: 231, comments: 34 },
-  { id: 9005, author: "Avery Brooks", avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100", img: "https://images.unsplash.com/photo-1493514789931-586cb221d7a7?w=800", time: "3h ago", text: "Location scouting found this gem. Natural diffusers everywhere.", likes: 98, comments: 15 },
-  { id: 9006, author: "Kai Tanaka", avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100", img: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800", time: "4h ago", text: "First edit pass on the campaign. Client's gonna dig this one.", likes: 312, comments: 41 },
-];
 
 const INITIAL_STORIES = [
   {id:501,author:"Maya Chen",avatar:"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100",type:"photo",text:"Behind the scenes of today's editorial shoot. The light was absolutely magical.",likes:87,comments:12,shares:3,time:"12m ago",img:"https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600"},
@@ -478,141 +471,12 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
     setBootstrapped, setDiscoverLoading,
   });
 
-  // ─── PERSISTENCE ───
-  const STORAGE_KEY = "muse_v1";
-  const STATE_VERSION = 2;
-  const lastSyncRef = useRef(0);
-  const saveState = useCallback(() => {
-    try {
-      const MAX_ITEMS = 50;
-      const data = {
-        v: STATE_VERSION,
-        currentUser, obData, obStep, matches: matches.slice(-MAX_ITEMS), dailyLikes, superLikes,
-        savedBriefs, appliedBriefs, savedSessionIds, savedProfileIds, userBriefs: userBriefs.slice(-MAX_ITEMS), blockedUsers, notifPrefs,
-        obConnectedSocials, showNsfw, showOnline, showDistance, showZodiac, showAge, showMbti, showLifePath, showChinese, showMatchPercent, rsvpdEvents, forumPosts: forumPosts.slice(-MAX_ITEMS), feedPosts: feedPosts.slice(-MAX_ITEMS),
-        testLevels, obSelects, obProfilePic, obPortfolioItems,         likedBy: likedBy.slice(-MAX_ITEMS),
-        profileViews: DEMO_MODE ? profileViews : 0, profileViewers: DEMO_MODE ? profileViewers.slice(-20) : [], stories: stories.slice(-20), theme, activityFeed: activityFeed.slice(-MAX_ITEMS),
-        discoveryPrefs, chatImages: Object.fromEntries(Object.entries(chatImages).slice(-20).map(([k,v]) => [k, v.slice(-20)])), screen, filterStyles, filterScore,
-        searchQuery, connTab, museCat, authUser: authRemember ? authUser : null, chatTarget
-      };
-      safeSetItem(STORAGE_KEY, JSON.stringify(data));
-      // Throttle the server sync to once per 30s (was every saveState tick) — big load reduction at scale.
-      const now = Date.now();
-      if (now - lastSyncRef.current > 30000) {
-        lastSyncRef.current = now;
-        apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "sync", matches, feedPosts, forumPosts, userBriefs, stats: currentUser.stats }) }).catch(() => {});
-      }
-    } catch { console.debug("[muse] persisted client state could not be saved"); }
-  }, [apiFetch, currentUser,obData,obStep,matches,dailyLikes,superLikes,savedBriefs,appliedBriefs,savedSessionIds,savedProfileIds,userBriefs,blockedUsers,notifPrefs,obConnectedSocials,showNsfw,showOnline,showDistance,showZodiac,showAge,showMbti,showLifePath,showChinese,showMatchPercent,rsvpdEvents,forumPosts,feedPosts,testLevels,obSelects,obProfilePic,obPortfolioItems,likedBy,profileViews,profileViewers,stories,theme,activityFeed,discoveryPrefs,chatImages,screen,filterStyles,filterScore,searchQuery,connTab,museCat,authUser,authRemember,chatTarget]);
-
-  const loadState = useCallback(async () => {
-    try {
-      const raw = await safeGetItemAsync(STORAGE_KEY);
-      if (!raw) return;
-      const d = JSON.parse(raw);
-      // Schema version gate: discard stale/future schemas to avoid corrupting hydration.
-      if (typeof d.v !== "number" || d.v > STATE_VERSION) {
-        safeRemoveItem(STORAGE_KEY);
-        return;
-      }
-      if (d.currentUser) setCurrentUser(prev => ({ ...prev, ...d.currentUser, tier: "free", foundingTier: "", proExpiresAt: "", stats: { ...prev.stats, ...(d.currentUser.stats || {}) }, portfolios: Array.isArray(d.currentUser.portfolios) ? d.currentUser.portfolios : (prev.portfolios || []) }));
-      if (d.obData) setObData(d.obData);
-      if (d.obStep) setObStep(d.obStep);
-      if (d.authUser) setAuthUser(d.authUser);
-      if (d.matches) setMatches(d.matches.map((m: Match & { target_id?: Partial<Profile> & { last_seen_at?: string } }) => {
-        const t: Partial<Profile> & { last_seen_at?: string } = m.target_id || {};
-        const lastSeen = t.last_seen_at || null;
-        const online = !!lastSeen && (Date.now() - new Date(lastSeen).getTime()) < 5 * 60 * 1000;
-        return { ...m, name: t.name || m.name, img: t.avatar || m.img, type: t.type || m.type, bio: t.bio || m.bio, location: t.loc || m.location, online, lastSeen, nsfw: t.nsfw || m.nsfw };
-      }));
-      if (!d.matches || d.matches.length === 0) {
-        // DEMO_MODE only: never seed a real user's Matches list with fabricated
-        // profiles (ARCANA/AUDREY/CHER) in live production. An empty matches list
-        // shows the real empty state instead of 6 invented matches.
-        if (DEMO_MODE) {
-          // Seeded conversation threads so demo matches open with real history
-          // instead of an empty "no messages" state (owner requirement: demo
-          // mode must look published).
-          const now = Date.now();
-          const t = (mins: number) => new Date(now - mins * 60000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-          const DEMO_THREADS: { from: "me" | "them"; text: string; time: string }[][] = [
-            [{ from: "them", text: "Hey! Checked out your portfolio — the studio lighting work is unreal.", time: t(180) },
-             { from: "me", text: "Thank you! I've been experimenting with a soft-box setup lately 🙌", time: t(174) },
-             { from: "them", text: "Would you be up for a shoot next week? I have a concept in mind.", time: t(12) }],
-            [{ from: "me", text: "Your drone reel is incredible. Do you travel for shoots?", time: t(240) },
-             { from: "them", text: "I do — mostly the Southeast, but I'll fly anywhere for the right project.", time: t(232) }],
-            [{ from: "them", text: "I'd like to feature your work in the community spotlight this month.", time: t(90) },
-             { from: "me", text: "That would be amazing, thank you! What do you need from me?", time: t(84) }],
-            [{ from: "them", text: "Just sent over the brief for the brand campaign — take a look when you can.", time: t(30) },
-             { from: "me", text: "On it. First read looks great, I'll come back with availability.", time: t(26) }],
-            [{ from: "me", text: "Congrats on the gallery opening! The turnout looked packed.", time: t(600) },
-             { from: "them", text: "Thank you! We sold three pieces on the first night 🥂", time: t(590) }],
-            [{ from: "them", text: "Are you free to hop on a quick call about the collaboration?", time: t(20) }],
-          ];
-          const demoMatches = PROFILES.slice(0, 6).map((p, i) => ({
-            id: p.id, name: p.name, img: p.img, type: p.type,
-            bio: p.bio, location: p.loc, booked: false, online: !!p.online,
-            messages: DEMO_THREADS[i] || [], _demo: true
-          }));
-          setMatches(demoMatches);
-        } else {
-          setMatches([]);
-        }
-      }
-      if (d.dailyLikes!=null) setDailyLikes(d.dailyLikes);
-      if (d.superLikes!=null) setSuperLikes(d.superLikes);
-      if (d.savedBriefs) setSavedBriefs(d.savedBriefs);
-      if (d.appliedBriefs) setAppliedBriefs(d.appliedBriefs);
-      if (d.savedSessionIds) setSavedSessionIds(d.savedSessionIds);
-      if (d.savedProfileIds) setSavedProfileIds(d.savedProfileIds);
-      if (d.userBriefs) setUserBriefs(d.userBriefs);
-      if (d.blockedUsers) setBlockedUsers(d.blockedUsers);
-      if (d.notifPrefs) setNotifPrefs(d.notifPrefs);
-      if (d.obConnectedSocials) setObConnectedSocials(d.obConnectedSocials);
-      if (d.showNsfw!=null) setShowNsfw(d.showNsfw);
-      if (d.showOnline!=null) setShowOnline(d.showOnline);
-      if (d.showDistance!=null) setShowDistance(d.showDistance);
-      if (d.showZodiac!=null) setShowZodiac(d.showZodiac);
-      if (d.showAge!=null) setShowAge(d.showAge);
-      if (d.showMbti!=null) setShowMbti(d.showMbti);
-      if (d.showLifePath!=null) setShowLifePath(d.showLifePath);
-      if (d.showChinese!=null) setShowChinese(d.showChinese);
-      if (d.showMatchPercent!=null) setShowMatchPercent(d.showMatchPercent);
-      if (d.rsvpdEvents) setRsvpdEvents(d.rsvpdEvents);
-      if (d.forumPosts) setForumPosts(d.forumPosts);
-      if (d.feedPosts) setFeedPosts(d.feedPosts);
-      if (d.testLevels) setTestLevels(d.testLevels);
-      if (d.obSelects) setObSelects(d.obSelects);
-      if (d.obProfilePic) setObProfilePic(d.obProfilePic);
-      if (d.obPortfolioItems) setObPortfolioItems(d.obPortfolioItems);
-      if (d.likedBy) setLikedBy(d.likedBy);
-      if (DEMO_MODE) {
-        if (d.profileViews) setProfileViews(d.profileViews);
-        if (d.profileViewers) setProfileViewers(d.profileViewers);
-      }
-      if (d.stories && d.stories.length) setStories(d.stories);
-      else setStories(DEMO_MOMENTS);
-      if (d.theme) setTheme((["lasunset","deepspace","nebula","deepsea","cinder","boreal","sunrise","daylight","sky","rose","meadow","frost"].includes(d.theme) ? d.theme : "lasunset"));
-      if (d.activityFeed) setActivityFeed(d.activityFeed);
-      if (d.discoveryPrefs) setDiscoveryPrefs(d.discoveryPrefs);
-      if (d.chatImages) setChatImages(d.chatImages);
-      if (d.chatTarget) setChatTarget(d.chatTarget);
-      // "moments" was BTS's old screen key before it was renamed to "bts" — kept
-      // dropping it and never adding "bts" meant reloading mid-BTS silently
-      // bounced you back to Discover. "community" is gated behind the closed-beta
-      // flag so a stale persisted value from before the flag existed can't restore
-      // straight into a screen the menu no longer offers a way to reach.
-      const VALID_SCREENS = ["onboard","discover","connections","matches","chat","briefs","sessions","network","portfolio","bts","profile","settings","subscription","codex","studios","analytics", ...(MUSE_CLOSED_BETA_HIDE_SOCIAL ? [] : ["community"])];
-      if (d.screen && VALID_SCREENS.includes(d.screen)) {
-        // Chat requires a chatTarget to render (screen-el guards on chatTarget);
-        // chatTarget is now persisted, but fallback to matches if somehow missing.
-        setScreen(d.screen === "chat" && !d.chatTarget ? "matches" : d.screen);
-      }
-      if (d.authUser) setAuthUser(d.authUser);
-      if (d.authUser && !VALID_SCREENS.includes(d.screen||"")) setScreen("discover");
-    } catch { console.debug("[muse] persisted client state could not be restored"); }
-    try { const b=safeGetItem("muse_boost"); if(b){const e=parseInt(b);if(e>Date.now()){setBoostActive(true);setBoostEnd(e);}else{safeRemoveItem("muse_boost");}} } catch { console.debug("[muse] persisted boost state could not be restored"); }
-  }, [setAppliedBriefs, setBlockedUsers, setBoostActive, setBoostEnd, setChatImages, setChatTarget, setDailyLikes, setFeedPosts, setForumPosts, setLikedBy, setMatches, setObConnectedSocials, setObData, setObPortfolioItems, setObProfilePic, setObSelects, setObStep, setRsvpdEvents, setSavedBriefs, setSavedProfileIds, setSavedSessionIds, setStories, setSuperLikes, setTestLevels, setUserBriefs]);
+  // ─── PERSISTENCE (moved into useMusePersistence) ───
+  // Memoized on exactly the fields the old `saveState` useCallback listed, so
+  // useSaveStateTimer still re-fires the debounced save only when they change.
+  const persistValues = useMemo(() => ({ currentUser, obData, obStep, matches, dailyLikes, superLikes, savedBriefs, appliedBriefs, savedSessionIds, savedProfileIds, userBriefs, blockedUsers, notifPrefs, obConnectedSocials, showNsfw, showOnline, showDistance, showZodiac, showAge, showMbti, showLifePath, showChinese, showMatchPercent, rsvpdEvents, forumPosts, feedPosts, testLevels, obSelects, obProfilePic, obPortfolioItems, likedBy, profileViews, profileViewers, stories, theme, activityFeed, discoveryPrefs, chatImages, screen, filterStyles, filterScore, searchQuery, connTab, museCat, authUser, authRemember, chatTarget }), [currentUser, obData, obStep, matches, dailyLikes, superLikes, savedBriefs, appliedBriefs, savedSessionIds, savedProfileIds, userBriefs, blockedUsers, notifPrefs, obConnectedSocials, showNsfw, showOnline, showDistance, showZodiac, showAge, showMbti, showLifePath, showChinese, showMatchPercent, rsvpdEvents, forumPosts, feedPosts, testLevels, obSelects, obProfilePic, obPortfolioItems, likedBy, profileViews, profileViewers, stories, theme, activityFeed, discoveryPrefs, chatImages, screen, filterStyles, filterScore, searchQuery, connTab, museCat, authUser, authRemember, chatTarget]);
+  const persistSetters = useMemo(() => ({ setCurrentUser, setObData, setObStep, setAuthUser, setMatches, setDailyLikes, setSuperLikes, setSavedBriefs, setAppliedBriefs, setSavedSessionIds, setSavedProfileIds, setUserBriefs, setBlockedUsers, setNotifPrefs, setObConnectedSocials, setShowNsfw, setShowOnline, setShowDistance, setShowZodiac, setShowAge, setShowMbti, setShowLifePath, setShowChinese, setShowMatchPercent, setRsvpdEvents, setForumPosts, setFeedPosts, setTestLevels, setObSelects, setObProfilePic, setObPortfolioItems, setLikedBy, setProfileViews, setProfileViewers, setStories, setTheme, setActivityFeed, setDiscoveryPrefs, setChatImages, setChatTarget, setScreen, setBoostActive, setBoostEnd }), []);
+  const { saveState, loadState } = useMusePersistence({ values: persistValues, setters: persistSetters, apiFetch, safeSetItem, safeGetItem, safeGetItemAsync, safeRemoveItem });
 
   useBoostExpiry({ boostActive, boostEnd, setBoostActive, safeRemoveItem });
 
