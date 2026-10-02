@@ -46,15 +46,15 @@ import path from "node:path";
  * verification-banner dismissed/closing, hydrated, myGeo, realtimeStatus,
  * server notification count, the nine profile-edit fields, showStory,
  * activePageTour and sessTab) no longer live in page.tsx.
- * P2 controller-hook split (in progress): `bootstrapData` moved to
- * hooks/useBootstrapData.ts; `saveState`/`loadState` (+ the persistence
- * constants and DEMO_MOMENTS) moved to hooks/useMusePersistence.ts with a
- * parity test for the field<->setter mapping. Remaining inline useCallbacks to
- * extract: apiFetch, showToast (both tiny and ordering-sensitive).
- * Good next candidates: the screens still mounted inside `page.tsx` and the
- * remaining Discover/note-composer state still shared with useSwipeActions.
+ * P2 controller-hook split: `bootstrapData` -> hooks/useBootstrapData.ts;
+ * `saveState`/`loadState` (+ constants + DEMO_MOMENTS) ->
+ * hooks/useMusePersistence.ts (with a parity test); the multi-step onboarding
+ * flow -> components/OnboardingFlow.tsx. Remaining inline useCallbacks:
+ * apiFetch, showToast (tiny + ordering-sensitive).
+ * Good next candidates: the auth screen JSX and the remaining
+ * Discover/note-composer state still shared with useSwipeActions.
  */
-const BUDGET_LINES = 1722;
+const BUDGET_LINES = 1331;
 
 const file = path.resolve(__dirname, "page.tsx");
 
