@@ -27,11 +27,11 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `18c322893b8dee79f4c92ff8e3a4507dd5b4c579`
+## Confirmed merged, last verified at: `10f657379d5338906e756823ec43e9a3a7bf3642`
 
 ### Context reconciliation — 2026-10-02 (Codex)
 
-Fetched origin/main at the SHA above. Previous header `65c07dbae2fb63117abecfe617333abc2e681e6a` was stale. Subsequent Git history confirms migration/RLS security fixes, demo and accessibility work, controller extraction, birthdate/availability/portfolio privacy work, brand updates, and security-audit/Zod waitlist work. Historical entries retain their dates; later work may supersede their blockers. This header confirms Git ancestry only, not production deployment or database applied-state. See CONTEXT_RECONCILIATION_2026-10-02.md for independent verification.
+Fetched origin/main at the SHA above. The support endpoint validation rollout and subsequent app-icon optimization are merged; this exact SHA was independently reported READY on the production alias by Vercel. Previous header `65c07dbae2fb63117abecfe617333abc2e681e6a` was stale. Subsequent Git history confirms migration/RLS security fixes, demo and accessibility work, controller extraction, birthdate/availability/portfolio privacy work, brand updates, and security-audit/Zod waitlist work. Historical entries retain their dates; later work may supersede their blockers. This header confirms Git ancestry only, not production deployment or database applied-state. See CONTEXT_RECONCILIATION_2026-10-02.md for independent verification.
 
 ### Priority E — read-only migration audit (verified 2026-09-24)
 
