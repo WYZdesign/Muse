@@ -49,12 +49,13 @@ import path from "node:path";
  * P2 controller-hook split: `bootstrapData` -> hooks/useBootstrapData.ts;
  * `saveState`/`loadState` (+ constants + DEMO_MOMENTS) ->
  * hooks/useMusePersistence.ts (with a parity test); the multi-step onboarding
- * flow -> components/OnboardingFlow.tsx. Remaining inline useCallbacks:
- * apiFetch, showToast (tiny + ordering-sensitive).
- * Good next candidates: the auth screen JSX and the remaining
- * Discover/note-composer state still shared with useSwipeActions.
+ * flow -> components/OnboardingFlow.tsx; the auth screen ->
+ * components/AuthScreen.tsx. Remaining inline useCallbacks: apiFetch, showToast
+ * (tiny + ordering-sensitive). P2 total: ~4000 -> 1308 lines.
+ * Good next candidates: the remaining Discover/note-composer state still
+ * shared with useSwipeActions.
  */
-const BUDGET_LINES = 1331;
+const BUDGET_LINES = 1308;
 
 const file = path.resolve(__dirname, "page.tsx");
 
