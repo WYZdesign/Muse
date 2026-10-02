@@ -46,10 +46,13 @@ import path from "node:path";
  * verification-banner dismissed/closing, hydrated, myGeo, realtimeStatus,
  * server notification count, the nine profile-edit fields, showStory,
  * activePageTour and sessTab) no longer live in page.tsx.
+ * P2 controller-hook split (in progress): `bootstrapData` moved to
+ * hooks/useBootstrapData.ts. Remaining inline useCallbacks to extract:
+ * apiFetch, showToast, saveState, loadState.
  * Good next candidates: the screens still mounted inside `page.tsx` and the
  * remaining Discover/note-composer state still shared with useSwipeActions.
  */
-const BUDGET_LINES = 1931;
+const BUDGET_LINES = 1858;
 
 const file = path.resolve(__dirname, "page.tsx");
 
