@@ -29,3 +29,10 @@ export const WaitlistSchema = z.object({
   source: z.string().max(64).nullish(),
 });
 export type WaitlistInput = z.infer<typeof WaitlistSchema>;
+
+/** Support chat question. Accepts either `question` or the short `q` alias. */
+export const SupportSchema = z.object({
+  question: z.string().max(4000).optional(),
+  q: z.string().max(4000).optional(),
+});
+export type SupportInput = z.infer<typeof SupportSchema>;

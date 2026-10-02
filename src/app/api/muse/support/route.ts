@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { askMuseAI, retrieveContext } from "@/lib/aiDocs";
 import { isDemoMode } from "@/lib/demo-mode";
+import { parseWith, SupportSchema } from "@/lib/validate";
 
 export const runtime = "nodejs";
 
@@ -29,7 +30,8 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const question = (body.question || body.q || "").toString().trim().slice(0, 2000);
+    const parsed = parseWith(SupportSchema, body);
+    const question = (parsed.ok ? (parsed.data.question || parsed.data.q || "") : "").trim().slice(0, 2000);
     if (!question) return NextResponse.json({ error: "question required" }, { status: 400 });
 
     // Keep demo help self-contained: do not send visitor prompts to the AI

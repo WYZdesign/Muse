@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseWith, WaitlistSchema, emailField } from "./validate";
+import { parseWith, WaitlistSchema, SupportSchema, emailField } from "./validate";
 
 describe("parseWith / WaitlistSchema", () => {
   it("accepts a valid email and trims it", () => {
@@ -37,5 +37,25 @@ describe("parseWith / WaitlistSchema", () => {
     expect(emailField.safeParse("x@y.z").success).toBe(true);
     expect(emailField.safeParse("x@y").success).toBe(false);
     expect(emailField.safeParse("x y@z.co").success).toBe(false);
+  });
+});
+
+describe("parseWith / SupportSchema", () => {
+  it("accepts question or the q alias", () => {
+    expect(parseWith(SupportSchema, { question: "hi" }).ok).toBe(true);
+    expect(parseWith(SupportSchema, { q: "hi" }).ok).toBe(true);
+  });
+
+  it("rejects a non-string question", () => {
+    expect(parseWith(SupportSchema, { question: 123 }).ok).toBe(false);
+  });
+
+  it("rejects an over-long question", () => {
+    expect(parseWith(SupportSchema, { question: "a".repeat(4001) }).ok).toBe(false);
+  });
+
+  it("accepts an empty object (route then returns 400 question required)", () => {
+    const r = parseWith(SupportSchema, {});
+    expect(r.ok).toBe(true);
   });
 });
