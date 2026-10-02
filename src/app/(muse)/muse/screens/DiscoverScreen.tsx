@@ -743,7 +743,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
       </div>
       <>
       {galleryView && (
-        <div className="gallery-view" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setGalleryView(null); } }} onClick={() => setGalleryView(null)}>
+        <div className="gallery-view" onClick={() => setGalleryView(null)}>
           <button className="gallery-view-close" onClick={(e) => { e.stopPropagation(); setGalleryView(null); }} aria-label="Close"><FiX size={22} /></button>
           {galleryView.photos.length > 1 && (
             <>

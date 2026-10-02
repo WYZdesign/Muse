@@ -94,7 +94,6 @@ import { useDailyLikesReset } from "./hooks/useDailyLikesReset";
 import { useSaveStateTimer } from "./hooks/useSaveStateTimer";
 import { useSessTabRealign } from "./hooks/useSessTabRealign";
 import { useVisitedScreens } from "./hooks/useVisitedScreens";
-import { useScreenUIState } from "./hooks/useScreenUIState";
 import { useBriefsData } from "./hooks/useBriefsData";
 import { useProfileData } from "./hooks/useProfileData";
 import { useMuseActions } from "./hooks/useMuseActions";
@@ -757,7 +756,6 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   });
 
   const visitedScreens = useVisitedScreens(screen); // lazy-mount on first visit, then keep alive
-  const screenUIState = useScreenUIState(screen); // per-screen UI state persistence
 
   // Cross-tab session sync + session-expiry handling (moved into useSessionRefresh below).
   useSaveStateTimer({ saveState });
