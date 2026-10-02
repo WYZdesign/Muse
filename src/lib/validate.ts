@@ -36,3 +36,15 @@ export const SupportSchema = z.object({
   q: z.string().max(4000).optional(),
 });
 export type SupportInput = z.infer<typeof SupportSchema>;
+
+/** MFA (TOTP) actions — security-sensitive, so the action is a closed enum. */
+export const MfaSchema = z.object({
+  action: z.enum(
+    ["enroll", "verify", "verify-code", "unenroll", "challenge", "verify-session"],
+    { error: "Unknown action" },
+  ),
+  factorId: z.string().max(200).optional(),
+  code: z.string().max(32).optional(),
+  friendlyName: z.string().max(60).optional(),
+});
+export type MfaInput = z.infer<typeof MfaSchema>;

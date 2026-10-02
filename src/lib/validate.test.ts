@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseWith, WaitlistSchema, SupportSchema, emailField } from "./validate";
+import { parseWith, WaitlistSchema, SupportSchema, MfaSchema, emailField } from "./validate";
 
 describe("parseWith / WaitlistSchema", () => {
   it("accepts a valid email and trims it", () => {
@@ -57,5 +57,24 @@ describe("parseWith / SupportSchema", () => {
   it("accepts an empty object (route then returns 400 question required)", () => {
     const r = parseWith(SupportSchema, {});
     expect(r.ok).toBe(true);
+  });
+});
+
+describe("parseWith / MfaSchema", () => {
+  it("accepts known actions", () => {
+    for (const action of ["enroll", "verify", "verify-code", "unenroll", "challenge", "verify-session"]) {
+      expect(parseWith(MfaSchema, { action }).ok).toBe(true);
+    }
+  });
+
+  it("rejects an unknown action with the route's message", () => {
+    const r = parseWith(MfaSchema, { action: "drop-table" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toBe("Unknown action");
+  });
+
+  it("passes through optional fields and rejects over-long ones", () => {
+    expect(parseWith(MfaSchema, { action: "verify", factorId: "abc", code: "123456" }).ok).toBe(true);
+    expect(parseWith(MfaSchema, { action: "verify", factorId: "x".repeat(201) }).ok).toBe(false);
   });
 });

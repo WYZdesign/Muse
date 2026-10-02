@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, getUserScopedClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
+import { parseWith, MfaSchema } from "@/lib/validate";
 
 // ═══ MFA / 2FA (Supabase Auth TOTP) ═══
 // Supabase Auth has TOTP MFA enabled for this project (mfa_totp_enroll_enabled,
@@ -14,8 +15,6 @@ import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 // Available: GET ?type=mfa-status | mfa-factors, POST { action: enroll|verify|unenroll|challenge }
 // This uses the anon client (browser-supplied session token) — MFA must run for
 // the logged-in user, not the service role.
-
-const MFA_ACTIONS = new Set(["enroll", "verify", "verify-code", "unenroll", "challenge", "verify-session"]);
 
 export async function GET(req: NextRequest) {
   try {
@@ -74,8 +73,12 @@ export async function POST(req: NextRequest) {
     if (!await checkRate(ip, "mfa-write", 30)) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
+    // Validate action/fields up front — this is a security-sensitive surface.
+    const rawBody = await req.json().catch(() => ({}));
+    const parsed = parseWith(MfaSchema, rawBody);
+    if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
+    const body = parsed.data;
     // Extra lock on verify (brute-force sensitive)
-    const body = await req.json().catch(() => ({}));
     if ((body.action === "verify" || body.action === "verify-code") && !await checkRate(ip, "mfa-verify", 5)) {
       return NextResponse.json({ error: "Too many verification attempts" }, { status: 429 });
     }
@@ -86,8 +89,7 @@ export async function POST(req: NextRequest) {
     // this request's token, not the shared singleton.
     const client = getUserScopedClient(token);
 
-  const action = String(body.action || "");
-  if (!MFA_ACTIONS.has(action)) return NextResponse.json({ error: "Unknown action" }, { status: 400 });
+  const action = body.action;
 
   if (action === "enroll") {
     const { data, error } = await client.auth.mfa.enroll({
