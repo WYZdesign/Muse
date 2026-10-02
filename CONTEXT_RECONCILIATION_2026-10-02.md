@@ -81,3 +81,12 @@ This establishes a naming collision, not trademark ownership or availability. Ol
 ## Document review scope
 The attached new handover and canonical board were read along with the active delivery records and current strategy/operations documents. A 71-document historical corpus was collected and indexed; selected current handovers and historical audit/release sections were reviewed. This is not a claim that every historical line was independently revalidated. Huge cumulative HANDOFF/HANDOVER files contain superseded claims.
 The accompanying inventory retains paths and sizes so later sessions can trace evidence without treating old prose as pending work. Historical docs were preserved. No app source was changed by this review.
+
+# Corner-system audit
+
+The requested cross-overlay corner review is recorded in
+`CORNER_SYSTEM_AUDIT_2026-10-02.md`. The only immediate visual adjustment is
+to soften the daily-login card from 20px to 24px. The broader recommendation is
+to consolidate the existing modal/sheet/card values behind a semantic radius
+scale; it is intentionally an implementation handoff for the active UI owner,
+not a source change on this review branch.
