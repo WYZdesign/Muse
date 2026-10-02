@@ -3,6 +3,7 @@ import { getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { sendEmail, waitlistWelcome } from "@/lib/email";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
+import { parseWith, WaitlistSchema } from "@/lib/validate";
 export async function POST(req: NextRequest) {
   const sb = getServiceClient();
   try {
@@ -14,21 +15,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
 
-    const { email: rawEmail, phone, source } = await req.json();
-
-    if (typeof rawEmail !== "string") {
-      return NextResponse.json({ error: "Valid email required" }, { status: 400 });
-    }
-    // Normalize once, use for both dedup check and insert. Previously the check
-    // ran against raw mixed-case input while inserts lowercased — "Foo@x.com" and
-    // "foo@x.com" both passed dedup as "unique" rows, each firing a welcome email
-    // (case-varying spam vector on a victim's address).
-    const email = rawEmail.trim().toLowerCase();
-    // Keep this deliberately practical rather than attempting full RFC 5322
-    // parsing: reject malformed addresses before persisting or emailing them.
-    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return NextResponse.json({ error: "Valid email required" }, { status: 400 });
-    }
+    let body: unknown;
+    try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
+    // Validate + normalize once, use for both dedup check and insert. Previously
+    // the check ran against raw mixed-case input while inserts lowercased —
+    // "Foo@x.com" and "foo@x.com" both passed dedup as "unique" rows, each
+    // firing a welcome email (case-varying spam vector on a victim's address).
+    const parsed = parseWith(WaitlistSchema, body);
+    if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
+    const { phone, source } = parsed.data;
+    const email = parsed.data.email.toLowerCase();
 
     // Atomic insert — unique(email) is the race guard (no select-then-insert window).
     // 23505 = unique_violation → already on list (idempotent 409).
@@ -66,7 +62,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Send confirmation email (fail-open — never block signup on email).
-    sendEmail(waitlistWelcome(email.toLowerCase(), source)).catch(() => {});
+    sendEmail(waitlistWelcome(email.toLowerCase(), source ?? undefined)).catch(() => {});
 
     return NextResponse.json({ success: true, message: "You're on the list!" });
   } catch (error) {
