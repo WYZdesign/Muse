@@ -17,6 +17,8 @@ import { OnboardingBirthdateField } from "./components/OnboardingBirthdateField"
 import { OnboardingFlow } from "./components/OnboardingFlow";
 import { AuthScreen } from "./components/AuthScreen";
 import { buildFilteredProfiles } from "./lib/discover-deck";
+import { makeConfettiPieces } from "./lib/confetti";
+import { VerificationBanner } from "./components/VerificationBanner";
 import { safeSetItem, safeGetItem, safeGetItemAsync, safeRemoveItem, setRefreshToken, getRefreshToken, clearRefreshToken } from "./lib/safe-storage";
 import { getAccessToken, authFetch, fetchWithTimeout } from "./lib/api";
 import { analytics, setAnalyticsUser, initAnalyticsSession } from "./lib/analytics";
@@ -411,16 +413,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const rafRef = useRef<number>(0);
   const dragValuesRef = useRef({x:0,y:0,opacity:0});
 
-  const confettiPieces = useMemo(() => Array.from({length:40}).map((_,i)=>({
-    left: Math.random()*100+"%",
-    width: (Math.random()*6+4)+"px",
-    height: (Math.random()*8+6)+"px",
-    background: ["var(--gold)","var(--amber)","var(--pink)","var(--lavender)","var(--coral)","var(--mint)","#fff"][i%7],
-    animationDuration: (Math.random()*2+2)+"s",
-    animationDelay: Math.random()*1.5+"s",
-    "--drift": (Math.random()*120-60)+"px",
-    "--rot": (Math.random()*720)+"deg"
-  })), []);
+  const confettiPieces = useMemo(() => makeConfettiPieces(), []);
 
   // Global broken-image fallback sweep (moved into useVisualEffects below).
 
@@ -957,19 +950,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
           {/* Live status region — non-blocking announcements for async actions */}
           <div role="status" aria-live="polite" aria-atomic="true" id="muse-live-status" className="sr-only" />
           {/* VERIFICATION EXPIRY BANNER — inside <main> for the axe region fix; absolute, so visually unchanged. */}
-          {((!ageVerified) || verificationExpiringSoon) && !verificationBannerDismissed && (
-            <div className={"verify-banner" + (verificationBannerClosing ? " verify-banner-closing" : "")} style={{ position: "absolute", bottom: "var(--nav-h, calc(72px + env(safe-area-inset-bottom, 0px)))", left: 0, right: 0, zIndex: 9999, background: verificationExpiringSoon ? "linear-gradient(135deg, #ff8c00, #ffd700)" : "linear-gradient(135deg, #ff4444, #ff6b6b)", padding: "10px 44px 10px 10px", boxShadow: "0 -4px 20px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.12)", textAlign: "center", fontSize: 12, fontWeight: 700, color: "#0a0612", display: "flex", alignItems: "center", justifyContent: "center", gap: 2, whiteSpace: "nowrap", overflow: "hidden", opacity: 0.85 }}>
-              <span>{verificationExpiringSoon ? "Your verification is expiring soon" : "Verify identity for full features."}</span>
-              <button onClick={() => setShowAgeVerification(true)} style={{ minWidth: 44, minHeight: 44, background: "none", border: "none", color: "#0a0612", textDecoration: "underline", cursor: "pointer", fontWeight: 800, padding: 0, whiteSpace: "nowrap", flexShrink: 0 }}>Verify Now</button>
-              <button
-                onClick={dismissVerificationBanner}
-                aria-label="Dismiss"
-                style={{ position: "absolute", top: "50%", right: 4, transform: "translateY(-50%)", width: 44, height: 44, background: "none", border: "none", color: "#0a0612", opacity: 0.75, cursor: "pointer", padding: 4, display: "flex", alignItems: "center", justifyContent: "center" }}
-              >
-                <FiX size={15} />
-              </button>
-            </div>
-          )}
+          <VerificationBanner ageVerified={ageVerified} verificationExpiringSoon={verificationExpiringSoon} dismissed={verificationBannerDismissed} closing={verificationBannerClosing} onVerify={() => setShowAgeVerification(true)} onDismiss={dismissVerificationBanner} />
 {visitedScreens.has("onboard") && (<div className={"screen-el"+(screen==="onboard"?" active":"")}>
             <OnboardingFlow
               obStep={obStep}

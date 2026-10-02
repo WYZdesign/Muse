@@ -52,12 +52,13 @@ import path from "node:path";
  * flow -> components/OnboardingFlow.tsx; the auth screen ->
  * components/AuthScreen.tsx; the Discover swipe-deck builder (the ~70-line
  * filteredProfiles useMemo) -> lib/discover-deck.ts (with behaviour tests).
- * Remaining inline useCallbacks: apiFetch, showToast (tiny + ordering-sensitive).
- * P2 total: ~4000 -> ~1242 lines.
+ * Also: VerificationBanner component + lib/confetti.ts helper. Remaining inline
+ * useCallbacks: apiFetch, showToast (tiny + ordering-sensitive).
+ * P2 total: ~4000 -> ~1224 lines.
  * Good next candidates: the remaining Discover/note-composer state still
  * shared with useSwipeActions.
  */
-const BUDGET_LINES = 1242;
+const BUDGET_LINES = 1224;
 
 const file = path.resolve(__dirname, "page.tsx");
 
