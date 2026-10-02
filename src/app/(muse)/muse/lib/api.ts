@@ -26,6 +26,35 @@ function withTimeout(options: RequestInit, timeoutMs: number): { options: Reques
 
 const DEFAULT_FETCH_TIMEOUT_MS = 15000;
 
+// ── In-flight GET dedupe (Roadmap 1.2) ──────────────────────────────────────
+// Several hooks independently fetch the SAME GET endpoint on mount (e.g.
+// bootstrapData's `type=feed` and useFeedData's own effect), so the browser
+// fires duplicate requests. This shares one in-flight promise per identical
+// GET and hands each caller its own `Response.clone()` (a body stream can only
+// be read once). It is deliberately NOT a TTL cache: the entry is dropped the
+// moment the request settles, so a later refetch always hits the network — no
+// staleness window, which matters for this real-time app. Only method GET, no
+// caller-supplied AbortSignal, and no request body are deduped.
+const _inflightGets = new Map<string, Promise<Response>>();
+
+function isDedupable(method: string, rest: RequestInit): boolean {
+  return method === "GET" && !rest.signal && rest.body == null;
+}
+
+async function deduped(key: string, run: () => Promise<Response>): Promise<Response> {
+  let p = _inflightGets.get(key);
+  if (!p) {
+    p = run();
+    _inflightGets.set(key, p);
+    // Drop the entry once settled (success or failure) so the next call is live.
+    void p.catch(() => {}).finally(() => { if (_inflightGets.get(key) === p) _inflightGets.delete(key); });
+  }
+  const res = await p;
+  // Real fetch Responses are cloneable; a body can only be read once, so each
+  // caller gets its own clone. Guard for non-cloneable stubs (tests).
+  return typeof (res as Response)?.clone === "function" ? res.clone() : res;
+}
+
 /**
  * Same timeout protection as authFetch, for the handful of call sites that
  * don't need auth (login/signup itself, password reset, public reads) and
@@ -38,8 +67,13 @@ const DEFAULT_FETCH_TIMEOUT_MS = 15000;
  */
 export async function fetchWithTimeout(url: string, options: RequestInit & { timeoutMs?: number } = {}): Promise<Response> {
   const { timeoutMs = DEFAULT_FETCH_TIMEOUT_MS, ...rest } = options;
-  const { options: opts, cancel } = withTimeout(rest, timeoutMs);
-  try { return await fetch(url, opts); } finally { cancel(); }
+  const doFetch = async () => {
+    const { options: opts, cancel } = withTimeout(rest, timeoutMs);
+    try { return await fetch(url, opts); } finally { cancel(); }
+  };
+  const method = (rest.method || "GET").toUpperCase();
+  if (isDedupable(method, rest)) return deduped(`pub:${url}`, doFetch);
+  return doFetch();
 }
 
 // Simple alias for compatibility with existing code
@@ -98,6 +132,13 @@ async function refreshAccessToken(): Promise<string> {
 export async function authFetch(url: string, options: RequestInit & { timeoutMs?: number } = {}): Promise<Response> {
   const { timeoutMs = DEFAULT_FETCH_TIMEOUT_MS, ...rest } = options;
   const token = getAccessToken();
+  const method = (rest.method || "GET").toUpperCase();
+  const run = () => doAuthFetch(url, rest, timeoutMs, token);
+  if (isDedupable(method, rest)) return deduped(`auth:${url}:${token}`, run);
+  return run();
+}
+
+async function doAuthFetch(url: string, rest: RequestInit, timeoutMs: number, token: string): Promise<Response> {
   const headers = new Headers(rest.headers);
   if (token) headers.set("Authorization", `Bearer ${token}`);
   // Only set Content-Type for string bodies (JSON). For FormData / Blob /
