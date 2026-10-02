@@ -27,11 +27,11 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `55d4788f10c5b4b00f9b460bda6fc5cba80a2387`
+## Confirmed merged, last verified at: `dae2b1f95ee093c8c13b03e53d5a39160ef1eb77`
 
 ### Context reconciliation — 2026-10-02 (Codex)
 
-Fetched origin/main at the SHA above. The prior header `18c322893b8dee79f4c92ff8e3a4507dd5b4c579` was stale. Commits since then add Next/Image app-icon delivery, Zod validation for support, MFA, and verification actions, page-split type cleanup, and iOS permission-purpose metadata. Historical entries retain their dates; later work may supersede their blockers. This header confirms Git ancestry only, not production deployment or database applied-state. See CONTEXT_RECONCILIATION_2026-10-02.md for independent verification.
+Fetched origin/main at the SHA above. The prior header `55d4788f10c5b4b00f9b460bda6fc5cba80a2387` was stale. Commits since then add accessibility touch-target/report affordances and normalizer coverage; this ledger's preceding reconciliation commit is also now confirmed on main. Historical entries retain their dates; later work may supersede their blockers. This header confirms Git ancestry only, not production deployment or database applied-state. See CONTEXT_RECONCILIATION_2026-10-02.md for independent verification.
 
 ### Priority E — read-only migration audit (verified 2026-09-24)
 
