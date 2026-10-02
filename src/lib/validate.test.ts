@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseWith, WaitlistSchema, SupportSchema, MfaSchema, emailField } from "./validate";
+import { parseWith, WaitlistSchema, SupportSchema, MfaSchema, VerificationSchema, emailField } from "./validate";
 
 describe("parseWith / WaitlistSchema", () => {
   it("accepts a valid email and trims it", () => {
@@ -76,5 +76,19 @@ describe("parseWith / MfaSchema", () => {
   it("passes through optional fields and rejects over-long ones", () => {
     expect(parseWith(MfaSchema, { action: "verify", factorId: "abc", code: "123456" }).ok).toBe(true);
     expect(parseWith(MfaSchema, { action: "verify", factorId: "x".repeat(201) }).ok).toBe(false);
+  });
+});
+
+describe("parseWith / VerificationSchema", () => {
+  it("accepts the known actions", () => {
+    for (const action of ["create-verification-session", "get-verification-status", "create-age-gate-session"]) {
+      expect(parseWith(VerificationSchema, { action }).ok).toBe(true);
+    }
+  });
+
+  it("rejects an invalid action", () => {
+    const r = parseWith(VerificationSchema, { action: "nope" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toBe("Invalid action");
   });
 });

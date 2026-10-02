@@ -5,6 +5,7 @@ import { sendEmail, notify } from "@/lib/email";
 import { isAgeVerificationCurrent } from "@/lib/muse-actions/shared";
 import Stripe from "stripe";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
+import { parseWith, VerificationSchema } from "@/lib/validate";
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,7 +24,10 @@ export async function POST(req: NextRequest) {
     const { data: profile } = await sb.from("muse_profiles").select("id").eq("auth_id", user.id).maybeSingle();
     if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
 
-    const { action } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const parsed = parseWith(VerificationSchema, body);
+    if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
+    const action = parsed.data.action;
 
     // Rate limit verification sessions to prevent Stripe API abuse
     const ip = clientIp(req);

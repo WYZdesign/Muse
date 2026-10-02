@@ -37,6 +37,15 @@ export const SupportSchema = z.object({
 });
 export type SupportInput = z.infer<typeof SupportSchema>;
 
+/** Identity/age verification actions (Stripe Identity). */
+export const VerificationSchema = z.object({
+  action: z.enum(
+    ["create-verification-session", "get-verification-status", "create-age-gate-session"],
+    { error: "Invalid action" },
+  ),
+});
+export type VerificationInput = z.infer<typeof VerificationSchema>;
+
 /** MFA (TOTP) actions — security-sensitive, so the action is a closed enum. */
 export const MfaSchema = z.object({
   action: z.enum(
