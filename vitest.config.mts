@@ -29,11 +29,15 @@ export default defineConfig({
       // actual after that push: ~81% statements / ~70% branches / ~86%
       // functions / ~86% lines. These values sit just below that measured
       // baseline and exist to prevent regression. They may only go UP.
+      // RATCHET — may only go UP. Re-measured 2026-10-02 after the P2 type-clean
+      // + normalizers/api/validate/component test additions:
+      // 81.87 stmts / 70.75 branches / 86.98 funcs / 86.81 lines. Set just below
+      // actual to prevent regression without being brittle.
       thresholds: {
-        lines: 84,
-        functions: 84,
-        statements: 78,
-        branches: 65,
+        lines: 86,
+        functions: 86,
+        statements: 81,
+        branches: 70,
       },
     },
   },
