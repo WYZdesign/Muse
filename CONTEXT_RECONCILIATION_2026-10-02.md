@@ -90,3 +90,11 @@ to soften the daily-login card from 20px to 24px. The broader recommendation is
 to consolidate the existing modal/sheet/card values behind a semantic radius
 scale; it is intentionally an implementation handoff for the active UI owner,
 not a source change on this review branch.
+
+## Closed-beta gate
+
+`CLOSED_BETA_READINESS_2026-10-02.md` is the current evidence-based readiness
+ledger. It supersedes any interpretation of the historical 1,000- or
+2,000-point audits as a release sign-off: automated quality is strong, while
+production security, staging, provider, native-device, recovery, and store
+proof remain mandatory before launch.
