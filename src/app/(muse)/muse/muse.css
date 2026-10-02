@@ -862,7 +862,7 @@ img{background-color:var(--card-bg)}
 .conn-tabs::-webkit-scrollbar{width:0}
 .conn-tab{flex-shrink:0;padding:10px 16px;text-align:center;font-size:13px;font-weight:600;color:var(--text2);border-bottom:2.5px solid transparent;transition:all .15s;cursor:pointer;white-space:nowrap}
 .conn-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
-.conn-tab-sub{padding:6px 14px;border-radius:99px;font-size:12px;font-weight:600;color:var(--muted);background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);cursor:pointer;transition:all .25s;white-space:nowrap;flex-shrink:0}
+.conn-tab-sub{min-height:44px;padding:6px 14px;border-radius:99px;font-size:12px;font-weight:600;color:var(--muted);background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);cursor:pointer;transition:all .25s;white-space:nowrap;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center}
 .conn-tab-sub.active{color:var(--gold);border-color:rgba(255,215,0,0.3);background:rgba(255,215,0,0.08)}
 .conn-tag{display:inline-block;padding:4px 10px;border-radius:99px;background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.08);font-size:11px;font-weight:600;color:var(--gold)}
 .conn-card{margin:0 0 14px;padding:18px;border-radius:20px;background:var(--glass);border:1px solid rgba(255,255,255,0.05);display:flex;gap:14px;align-items:flex-start;transition:all .3s;cursor:pointer;animation:cardIn .5s cubic-bezier(.22,1.2,.36,1) both}
@@ -2327,7 +2327,6 @@ img{background-color:var(--card-bg)}
 /* Screen transitions */
 .screen-el{opacity:0;pointer-events:none}
 .screen-el.active{opacity:1;pointer-events:auto}
-.screen-el.active *{pointer-events:auto}
 
 .card-prompts{display:flex;align-items:center;gap:8px;padding:10px 16px;margin:4px 16px 10px;background:rgba(255,255,255,0.03);border-radius:14px;border:1px solid rgba(255,255,255,0.06)}
 .card-prompt-arrow{background:none;border:none;color:rgba(255,255,255,0.4);font-size:24px;cursor:pointer;padding:10px 8px;line-height:1;flex-shrink:0;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center}
@@ -2510,11 +2509,13 @@ img{background-color:var(--card-bg)}
 }
 
 /* BTS stories row: report affordance on the outer edge of each circle.
-   Hidden by default and on touch devices (no hover) — those rely on
-   hold-to-report instead — and revealed on hover only for mouse/desktop. */
+   Touch users need the same visible, tappable safety action as mouse users. */
 .bts-story-report-btn{display:flex;opacity:0;pointer-events:none;transition:opacity .15s}
 @media (hover:hover) and (pointer:fine){
   .bts-story-item:hover .bts-story-report-btn{opacity:1;pointer-events:auto}
+}
+@media (hover:none), (pointer:coarse){
+  .bts-story-report-btn{opacity:1;pointer-events:auto}
 }
 .bts-story-item:focus-within .bts-story-report-btn,.bts-story-report-btn:focus-visible{opacity:1;pointer-events:auto}
 

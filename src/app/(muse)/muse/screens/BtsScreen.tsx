@@ -474,7 +474,8 @@ export const BtsScreen = memo(function BtsScreen({
               aria-selected={activeFilter === t}
               onClick={() => setActiveFilter(t)}
               style={{
-                padding: "6px 14px",
+              padding: "6px 14px",
+              minHeight: 44,
                 borderRadius: 99,
                 border: activeFilter === t ? "1.5px solid rgba(255,20,147,0.4)" : "1px solid rgba(255,255,255,0.08)",
                 fontSize: 11,

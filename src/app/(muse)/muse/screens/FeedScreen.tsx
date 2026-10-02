@@ -547,7 +547,6 @@ export const FeedScreen = memo(function FeedScreen({
                     </div>
                     <div style={{ fontSize: 11, color: "var(--muted)" }}>{post.time}</div>
                   </div>
-                                       <div style={{ position: "absolute", top: 10, right: 10, width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text2)", fontSize: 13, zIndex: 2 }} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); } }} onClick={(e) => { e.stopPropagation(); setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); }} aria-label="Report post"><FiFlag size={13} /></div>
                 </div>
                 <div
                   className="feed-caption-clamp"
@@ -624,6 +623,7 @@ export const FeedScreen = memo(function FeedScreen({
                   }}>💬 {post.comments}</button>
                   <button className="feed-action-btn" style={{ flex: 1, minWidth: 0, height: 44, background: "transparent", border: "none", color: "var(--text2)", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => setShareTarget(post)}>Share</button>
                   <button className="feed-action-btn" title="Save for later" style={{ flex: 1, minWidth: 0, height: 44, background: "transparent", border: "none", color: post.saved ? "#FFD700" : "var(--text2)", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => { const newSaved = !post.saved; if (feedPostsStatic.some(p => p.id === post.id)) { setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? ({ ...p, saved: newSaved }) : p)); } else { updateFeedPostState(post.id, p => ({ ...p, saved: newSaved })); } showToast(newSaved ? "Saved ✓" : "Removed from saves"); }}>{post.saved ? "Saved" : "Save"}</button>
+                  <button type="button" className="feed-action-btn" aria-label={`Report ${post.author}'s post`} title="Report post" style={{ flex: 1, minWidth: 0, height: 44, background: "transparent", border: "none", color: "#ff6b6b", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={(e) => { e.stopPropagation(); setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); }}><FiFlag size={13} /> Report</button>
                 </div>
                 {replyingTo === post.id && (
                   <div style={{ borderTop: "1px solid var(--border-subtle)" }}>
