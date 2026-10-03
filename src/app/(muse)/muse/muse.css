@@ -1942,7 +1942,9 @@ img{background-color:var(--card-bg)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"],[data-theme="meadow"],[data-theme="frost"]) .tour-body{color:var(--text2)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"],[data-theme="meadow"],[data-theme="frost"]) .tour-highlight{color:var(--text)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"],[data-theme="meadow"],[data-theme="frost"]) .tour-step{color:var(--text2)}
-:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"],[data-theme="meadow"],[data-theme="frost"]) .tour-dot{background:var(--surface-active)}
+/* Light-theme tint belongs on the small dot mark, NOT the 44px button box —
+   filling the button made each tour dot render as a large rounded square. */
+:is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"],[data-theme="meadow"],[data-theme="frost"]) .tour-dot::after{background:var(--surface-active)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"],[data-theme="meadow"],[data-theme="frost"]) .tour-btn-ghost{color:var(--text2)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"],[data-theme="meadow"],[data-theme="frost"]) .text-input{border-color:var(--border-med)}
 :is([data-theme="sunrise"],[data-theme="daylight"],[data-theme="sky"],[data-theme="rose"],[data-theme="meadow"],[data-theme="frost"]) .access-pill{border-color:var(--border-med)}
