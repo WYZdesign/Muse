@@ -87,7 +87,7 @@ export function getDeviceTilt(): DeviceTilt {
  */
 export function requestMotionPermission() {
   if (permissionRequested || typeof window === "undefined") return;
-  const anyDOE = (window as any).DeviceOrientationEvent;
+  const anyDOE = (window as unknown as { DeviceOrientationEvent?: { requestPermission?: () => Promise<PermissionState> } }).DeviceOrientationEvent;
   if (!anyDOE || typeof anyDOE.requestPermission !== "function") return; // nothing to request on this platform
   permissionRequested = true;
   anyDOE.requestPermission().catch(() => {

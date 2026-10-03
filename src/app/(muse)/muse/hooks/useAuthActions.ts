@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, type Dispatch, type SetStateAction } from "react";
+import type { CurrentUser, AuthUser } from "../page-models";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Screen } from "../components/types";
 import { analytics } from "../lib/analytics";
@@ -27,8 +28,8 @@ export type UseAuthActionsArgs = {
   setAuthPass: Dispatch<SetStateAction<string>>;
   setAuthLoading: Dispatch<SetStateAction<boolean>>;
   setFormErrors: Dispatch<SetStateAction<Record<string, string>>>;
-  setAuthUser: (value: any) => void;
-  setCurrentUser: (updater: (prev: any) => any) => void;
+  setAuthUser: Dispatch<SetStateAction<AuthUser>>;
+  setCurrentUser: Dispatch<SetStateAction<CurrentUser>>;
   setUserTier: Dispatch<SetStateAction<string>>;
   setObStep: Dispatch<SetStateAction<number>>;
   setScreen: Dispatch<SetStateAction<Screen>>;

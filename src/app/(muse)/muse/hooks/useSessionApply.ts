@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, type Dispatch, type SetStateAction } from "react";
+import type { CurrentUser } from "../page-models";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Screen } from "../components/types";
 
@@ -24,7 +25,7 @@ export type UseSessionApplyArgs = {
   OWNER_EMAIL: string;
   AGE_VERIFICATION_VALID_DAYS: number;
   setAuthUser: Dispatch<SetStateAction<{ id: string; email: string; profile?: { id: string; [key: string]: unknown } } | null>>;
-  setCurrentUser: (updater: (prev: any) => any) => void;
+  setCurrentUser: Dispatch<SetStateAction<CurrentUser>>;
   setPushEnabled: Dispatch<SetStateAction<boolean>>;
   setUserTier: Dispatch<SetStateAction<string>>;
   setAgeVerified: Dispatch<SetStateAction<boolean>>;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState, type Dispatch, type SetStateAction } from "react";
+import type { CurrentUser } from "../page-models";
 import { getGeolocation } from "@/app/muse-realtime";
 import { trackError } from "@/lib/errorTracker";
 import type { OnboardingData } from "./useAuthOnboardingState";
@@ -18,7 +19,7 @@ export type UseProfileActionsArgs = {
   obData: OnboardingData;
   currentUser: { nsfw?: boolean };
   setObData: Dispatch<SetStateAction<OnboardingData>>;
-  setCurrentUser: (updater: (prev: any) => any) => void;
+  setCurrentUser: Dispatch<SetStateAction<CurrentUser>>;
   setShowEditProfile: Dispatch<SetStateAction<boolean>>;
   authFetch: (url: string, init?: RequestInit & { timeoutMs?: number }) => Promise<Response>;
   trackQuest: (...actionKeys: string[]) => void | Promise<void>;

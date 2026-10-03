@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, type Dispatch, type PointerEvent as ReactPointerEvent, type SetStateAction } from "react";
+import type { CurrentUser } from "../page-models";
 import type { LikeAnchor, Match, Profile } from "../components/types";
 import type { OnboardingData } from "./useAuthOnboardingState";
 
@@ -45,7 +46,7 @@ export type UseSwipeActionsArgs = {
   setMatchAnimVariant: Dispatch<SetStateAction<number>>;
   setSuperLikes: Dispatch<SetStateAction<number>>;
   setDailyLikes: Dispatch<SetStateAction<number>>;
-  setCurrentUser: (updater: (prev: any) => any) => void;
+  setCurrentUser: Dispatch<SetStateAction<CurrentUser>>;
   setRewindStack: Dispatch<SetStateAction<number[]>>;
   setCurrentIdx: Dispatch<SetStateAction<number>>;
   setCurrentPhotoIdx: Dispatch<SetStateAction<number>>;
