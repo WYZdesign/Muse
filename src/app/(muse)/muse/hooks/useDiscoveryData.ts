@@ -12,8 +12,13 @@ export type UseDiscoveryDataArgs = {
   profileId: string | null;
 };
 
+type RawRow = Record<string, unknown>;
+type RankedProfile = ReturnType<typeof normalizeProfile> & {
+  matchScore: number; boosted: boolean; sideMatches: boolean; verified: boolean; boost_expires_at: string | null;
+};
+
 export function useDiscoveryData({ apiFetch, authFetch, profileId }: UseDiscoveryDataArgs) {
-  const [liveProfiles, setLiveProfiles] = useState<any[] | null>(null);
+  const [liveProfiles, setLiveProfiles] = useState<RankedProfile[] | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
   const [likedBy, setLikedBy] = useState<Profile[]>([]);
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
@@ -30,13 +35,13 @@ export function useDiscoveryData({ apiFetch, authFetch, profileId }: UseDiscover
       .then(r => r.json())
       .then(d => {
         if (cancelled || !Array.isArray(d.profiles)) return;
-        const enriched = d.profiles.map((p: any) => ({
+        const enriched: RankedProfile[] = (d.profiles as RawRow[]).map((p) => ({
           ...normalizeProfile(p),
           matchScore: Number(p.matchScore || 0),
           boosted: !!p.boosted,
           sideMatches: !!p.sideMatches,
           verified: !!p.verified,
-          boost_expires_at: p.boost_expires_at || null,
+          boost_expires_at: (p.boost_expires_at as string | null) || null,
         }));
         setLiveProfiles(enriched);
       })
@@ -52,18 +57,18 @@ export function useDiscoveryData({ apiFetch, authFetch, profileId }: UseDiscover
       .then(r => r.json())
       .then(d => {
         if (cancelled || !Array.isArray(d.matches) || !d.matches.length) return;
-        const real: Match[] = d.matches
-          .map((m: any) => {
-            const t = m.target_id || {};
+        const real: Match[] = (d.matches as RawRow[])
+          .map((m) => {
+            const t = (m.target_id || {}) as { id?: string; name?: string; avatar?: string; nsfw?: boolean; type?: string; bio?: string; loc?: string; last_seen_at?: string };
             if (!t.id) return null;
             const online = !!t.last_seen_at && (Date.now() - new Date(t.last_seen_at).getTime()) < 5 * 60 * 1000;
             // t.avatar is already stripped server-side (get.ts's "matches"
             // handler) when nsfw && the viewer isn't age-verified — nsfw is
             // carried through so the UI can show a locked/blurred state
             // instead of a broken image when that happens.
-            return { id: t.id, name: t.name || "Unknown", img: t.avatar || "", nsfw: !!t.nsfw, type: t.type || "", bio: t.bio || "", location: t.loc || "", booked: false, online, messages: [] } as Match;
+            return { id: t.id, name: t.name || "Unknown", img: t.avatar || "", nsfw: !!t.nsfw, type: t.type || "", bio: t.bio || "", location: t.loc || "", booked: false, online, messages: [] } as unknown as Match;
           })
-          .filter((m: any): m is Match => m !== null);
+          .filter((m): m is Match => m !== null);
         if (real.length) setMatches(real);
       })
       .catch((err) => { trackError("fetch_matches", { err: String(err) }); });

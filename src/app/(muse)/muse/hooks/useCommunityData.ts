@@ -10,8 +10,8 @@ export type UseCommunityDataArgs = {
 };
 
 export function useCommunityData({ authFetch, profileId }: UseCommunityDataArgs) {
-  const [liveCommunities, setLiveCommunities] = useState<any[] | null>(null);
-  const [liveEvents, setLiveEvents] = useState<any[] | null>(null);
+  const [liveCommunities, setLiveCommunities] = useState<ReturnType<typeof normalizeCommunity>[] | null>(null);
+  const [liveEvents, setLiveEvents] = useState<ReturnType<typeof normalizeEvent>[] | null>(null);
   const [rsvpdEvents, setRsvpdEvents] = useState<number[]>([]);
 
   // ═══ EVENTS: fetch real events from API ═══

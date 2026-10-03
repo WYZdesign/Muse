@@ -10,7 +10,7 @@ export type UseBriefsDataArgs = {
 };
 
 export function useBriefsData({ authFetch, profileId }: UseBriefsDataArgs) {
-  const [liveBriefs, setLiveBriefs] = useState<any[] | null>(null);
+  const [liveBriefs, setLiveBriefs] = useState<ReturnType<typeof normalizeBrief>[] | null>(null);
 
   // ═══ BRIEFS: fetch real briefs from API ═══
   useEffect(() => {
