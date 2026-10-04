@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
+import { parseWith, CheckoutSchema } from "@/lib/validate";
 
 export const runtime = "nodejs";
 
@@ -40,17 +41,22 @@ export async function POST(req: NextRequest) {
     const secret = process.env.STRIPE_SECRET_KEY;
     if (!secret) return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
 
-    const body = await req.json();
-    const { plan, email, promo } = body as { plan?: string; email?: string; promo?: string };
+    // Parse + validate. Malformed JSON is a 400 (it used to bubble to the outer
+    // catch as a 500); an unknown plan is rejected at the boundary.
+    let raw: unknown;
+    try { raw = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
+    const parsed = parseWith(CheckoutSchema, raw);
+    if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
+    const { plan, email, promo, access_token } = parsed.data;
 
-    if (!plan || !PRICE_MAP[plan]) return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
+    if (!PRICE_MAP[plan]) return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
 
     // Resolve identity from the verified session token — never trust a
     // client-supplied userId (that would let anyone tie a checkout to
     // another account and trigger tier changes on their profile).
     const header = req.headers.get("authorization") || "";
     const bearer = header.replace(/^Bearer\s+/i, "").trim();
-    const token = bearer || (typeof body.access_token === "string" ? body.access_token : "") || "";
+    const token = bearer || access_token || "";
     if (!token) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { data: authData, error: authErr } = await supabase.auth.getUser(token);
     if (authErr || !authData.user) return NextResponse.json({ error: "Invalid session" }, { status: 401 });

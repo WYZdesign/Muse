@@ -37,6 +37,15 @@ export const SupportSchema = z.object({
 });
 export type SupportInput = z.infer<typeof SupportSchema>;
 
+/** Stripe checkout body. `plan` must be a known price-map key. */
+export const CheckoutSchema = z.object({
+  plan: z.enum(["muse_pro", "muse_pro_annual", "muse_studio", "muse", "sovereign"], { error: "Invalid plan" }),
+  email: emailField.optional(),
+  promo: z.string().max(64).optional(),
+  access_token: z.string().max(4096).optional(),
+});
+export type CheckoutInput = z.infer<typeof CheckoutSchema>;
+
 /** Identity/age verification actions (Stripe Identity). */
 export const VerificationSchema = z.object({
   action: z.enum(
