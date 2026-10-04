@@ -53,3 +53,22 @@ Enable **leaked password protection** in Supabase Auth. This is a dashboard/conf
 ## Current status
 
 No production schema, function, policy, or Auth setting was changed by this review. The next implementation work must be isolated from active wyzmind code changes and reviewed against the test matrix above.
+
+## Production evidence refresh — 2026-10-03
+
+Read-only production inspection confirmed that migrations `0022` through `0030`
+are recorded in `public.schema_migrations`, including private album storage,
+account-deletion scheduling, the cleanup worker, album-RLS recursion repair,
+PII policy tightening, and birthdate support. This resolves the earlier
+unknown **applied-state** for those repository migrations.
+
+Migration `0031_harden_internal_function_privileges.sql` is committed to the
+repository but is **not yet recorded as applied**. Production inspection also
+confirmed the exact exposure described above: `atomic_like_count`,
+`claim_founding_status`, `log_muse_activity`, and
+`auto_claim_founding_trigger` are `SECURITY DEFINER`, have no pinned
+`search_path`, and are executable by both `anon` and `authenticated`.
+`report_to_ncmec` and `check_rate` also lack pinned search paths; their source
+call paths use the service client. The migration is the bounded remedy, but it
+still requires disposable-environment proof for trigger behavior and direct
+RPC denial before production application.
