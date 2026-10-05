@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseWith, WaitlistSchema, SupportSchema, MfaSchema, VerificationSchema, emailField } from "./validate";
+import { AdminPromoteWaitlistSchema, parseWith, WaitlistSchema, SupportSchema, MfaSchema, VerificationSchema, emailField } from "./validate";
 
 describe("parseWith / WaitlistSchema", () => {
   it("accepts a valid email and trims it", () => {
@@ -90,5 +90,19 @@ describe("parseWith / VerificationSchema", () => {
     const r = parseWith(VerificationSchema, { action: "nope" });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toBe("Invalid action");
+  });
+});
+
+
+describe("parseWith / AdminPromoteWaitlistSchema", () => {
+  it("accepts one address or a bounded batch", () => {
+    expect(parseWith(AdminPromoteWaitlistSchema, { email: "owner@example.com" }).ok).toBe(true);
+    expect(parseWith(AdminPromoteWaitlistSchema, { emails: ["a@example.com", "b@example.com"] }).ok).toBe(true);
+  });
+
+  it("rejects malformed, missing, and oversized promotion input", () => {
+    expect(parseWith(AdminPromoteWaitlistSchema, {}).ok).toBe(false);
+    expect(parseWith(AdminPromoteWaitlistSchema, { emails: ["nope"] }).ok).toBe(false);
+    expect(parseWith(AdminPromoteWaitlistSchema, { emails: Array.from({ length: 51 }, (_, i) => `user${i}@example.com`) }).ok).toBe(false);
   });
 });
