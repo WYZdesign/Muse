@@ -6,6 +6,7 @@ import { MUSE_HOST_COMMISSION_RATE, MUSE_BUYER_SERVICE_FEE_RATE } from "@/lib/co
 import { isAgeVerificationCurrent } from "@/lib/muse-actions/shared";
 import Stripe from "stripe";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
+import { ConnectSchema, parseWith } from "@/lib/validate";
 
 export const runtime = "nodejs";
 
@@ -36,7 +37,11 @@ export async function POST(req: NextRequest) {
       .eq("auth_id", authData.user.id).maybeSingle();
     if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
 
-    const body = await req.json();
+    let rawBody: unknown;
+    try { rawBody = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
+    const parsedBody = parseWith(ConnectSchema, rawBody);
+    if (!parsedBody.ok) return NextResponse.json({ error: parsedBody.error }, { status: 400 });
+    const body = parsedBody.data;
     const { action } = body;
 
     // Connect account setup, checkout, refunds, and transfers are all real
