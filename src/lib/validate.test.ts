@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseWith, WaitlistSchema, SupportSchema, MfaSchema, VerificationSchema, emailField } from "./validate";
+import { ConnectSchema, parseWith, WaitlistSchema, SupportSchema, MfaSchema, VerificationSchema, emailField } from "./validate";
 
 describe("parseWith / WaitlistSchema", () => {
   it("accepts a valid email and trims it", () => {
@@ -90,5 +90,32 @@ describe("parseWith / VerificationSchema", () => {
     const r = parseWith(VerificationSchema, { action: "nope" });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toBe("Invalid action");
+  });
+});
+
+
+describe("parseWith / ConnectSchema", () => {
+  it("accepts the supported financial actions", () => {
+    for (const action of ["create-account", "create-account-session", "create-payment", "account-status", "transfer", "create-booking-checkout", "create-boost-checkout", "request-refund", "cancel-refund-request"]) {
+      expect(parseWith(ConnectSchema, { action }).ok).toBe(true);
+    }
+  });
+
+  it("rejects an unknown action before a financial handler runs", () => {
+    const r = parseWith(ConnectSchema, { action: "charge-anyone" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toBe("Unknown action");
+  });
+
+  it("coerces legacy numeric request values while enforcing safe bounds", () => {
+    const accepted = parseWith(ConnectSchema, { action: "create-boost-checkout", quantity: "2", duration: "72h" });
+    expect(accepted.ok).toBe(true);
+    if (accepted.ok) expect(accepted.data.quantity).toBe(2);
+    expect(parseWith(ConnectSchema, { action: "create-boost-checkout", quantity: 21 }).ok).toBe(false);
+  });
+
+  it("rejects oversized financial request fields", () => {
+    expect(parseWith(ConnectSchema, { action: "create-payment", payeeId: "x".repeat(201) }).ok).toBe(false);
+    expect(parseWith(ConnectSchema, { action: "request-refund", reason: "x".repeat(1001) }).ok).toBe(false);
   });
 });
