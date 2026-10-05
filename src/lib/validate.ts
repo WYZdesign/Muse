@@ -66,3 +66,11 @@ export const MfaSchema = z.object({
   friendlyName: z.string().max(60).optional(),
 });
 export type MfaInput = z.infer<typeof MfaSchema>;
+
+
+/** Owner-only beta promotion accepts one valid address or a bounded batch. */
+export const AdminPromoteWaitlistSchema = z.union([
+  z.object({ email: emailField }),
+  z.object({ emails: z.array(emailField).min(1, "Provide at least one email").max(50, "A maximum of 50 emails can be promoted at once") }),
+]);
+export type AdminPromoteWaitlistInput = z.infer<typeof AdminPromoteWaitlistSchema>;
