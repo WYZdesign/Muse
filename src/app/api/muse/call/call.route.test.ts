@@ -137,7 +137,8 @@ describe("call route", () => {
     expect(state.inserts.some((i: any) => i.tbl === "muse_calls" && i.v?.recording_egress_id)).toBe(false);
   });
 
-  it("records a lifecycle update", async () => {
+  it("records a lifecycle update for a call participant", async () => {
+    state.tables.muse_calls = { id: "44444444-4444-4444-4444-444444444444", caller_id: ME, callee_id: PEER };
     const r = await POST(req({ action: "answer", toId: PEER, kind: "voice", callId: "44444444-4444-4444-4444-444444444444" }));
     expect(r.status).toBe(200);
     expect(state.inserts.some((i: any) => i.tbl === "muse_calls")).toBe(true);
