@@ -66,3 +66,26 @@ export const MfaSchema = z.object({
   friendlyName: z.string().max(60).optional(),
 });
 export type MfaInput = z.infer<typeof MfaSchema>;
+
+
+/** Stripe Connect actions. Inputs are bounded before they reach financial flows. */
+export const ConnectSchema = z.object({
+  action: z.enum(
+    [
+      "create-account", "create-account-session", "create-payment", "account-status",
+      "transfer", "create-booking-checkout", "create-boost-checkout",
+      "request-refund", "cancel-refund-request",
+    ],
+    { error: "Unknown action" },
+  ),
+  payeeId: z.string().trim().min(1).max(200).optional(),
+  amountCents: z.coerce.number().int().positive().max(10_000_000).optional(),
+  description: z.string().trim().max(500).optional(),
+  bookingId: z.string().trim().min(1).max(200).optional(),
+  quantity: z.coerce.number().int().min(1).max(20).optional(),
+  duration: z.enum(["24h", "72h", "7d"]).optional(),
+  paymentId: z.string().trim().min(1).max(200).optional(),
+  reason: z.string().trim().max(1000).optional(),
+  requestId: z.string().trim().min(1).max(200).optional(),
+});
+export type ConnectInput = z.infer<typeof ConnectSchema>;
