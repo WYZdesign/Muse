@@ -1,4 +1,4 @@
-import type { KeyboardEvent, Ref } from "react";
+import type { Ref } from "react";
 import { FiArrowLeft, FiX } from "react-icons/fi";
 
 type ReportTarget = {
@@ -42,11 +42,6 @@ export function ReportModal({ target, dialogRef, apiFetch, onClose, onReported }
     onClose();
   };
 
-  const onReasonKeyDown = (event: KeyboardEvent<HTMLDivElement>, reason: string) => {
-    if (event.key !== "Enter" && event.key !== " ") return;
-    event.preventDefault();
-    void submit(reason);
-  };
 
   return (
     <div className="modal-overlay" ref={dialogRef} role="dialog" aria-modal="true" aria-label="Report">
@@ -57,20 +52,19 @@ export function ReportModal({ target, dialogRef, apiFetch, onClose, onReported }
       </div>
       <div className="modal-body">
         {REPORT_REASONS.map((reason) => (
-          <div
+          <button
+            type="button"
             key={reason.label}
             className="report-option"
-            role="button"
-            tabIndex={0}
-            onKeyDown={(event) => onReasonKeyDown(event, reason.label)}
             onClick={() => void submit(reason.label)}
+            style={{ textAlign: "left", width: "100%" }}
           >
             <div className="report-option-icon">{reason.icon}</div>
             <div>
               <div className="report-option-text">{reason.label}</div>
               <div className="report-option-desc">{reason.desc}</div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
     </div>

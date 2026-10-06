@@ -602,7 +602,7 @@ export const SettingsScreen = memo(function SettingsScreen({
   ];
 
   const renderRow = (item: { icon: React.ReactNode; label: string; desc: string; action: () => void; dot?: boolean }) => (
-    <div key={item.label} className="settings-item" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); item.action(); } }} onClick={item.action}>
+    <button type="button" key={item.label} className="settings-item" onClick={item.action} style={{ textAlign: "left", width: "100%" }}>
       <div className="settings-item-left">
         <div className="settings-icon" style={{ position: "relative" }}>
           {item.icon}
@@ -611,7 +611,7 @@ export const SettingsScreen = memo(function SettingsScreen({
         <div><div className="settings-label">{item.label}</div><div className="settings-sublabel">{item.desc}</div></div>
       </div>
       <div className="settings-arrow">→</div>
-    </div>
+    </button>
   );
 
   return (
@@ -1090,9 +1090,8 @@ export const SettingsScreen = memo(function SettingsScreen({
                 <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 8, textAlign: "center" }}>{label}</div>
                 <div className="chips" style={{ marginBottom: 0 }}>
                   {options.map(o => (
-                    <div key={String(o)} className={"chip" + (value === o ? " sel" : "")} role="button" tabIndex={0}
-                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setValue(o); } }}
-                      onClick={() => setValue(o)}><span>{o}</span></div>
+                    <button type="button" key={String(o)} aria-pressed={value === o} className={"chip" + (value === o ? " sel" : "")}
+                      onClick={() => setValue(o)}><span>{o}</span></button>
                   ))}
                 </div>
               </div>
@@ -1131,9 +1130,8 @@ export const SettingsScreen = memo(function SettingsScreen({
                   {options.map(o => {
                     const sel = multi ? (value as string[]).includes(o) : value === o;
                     return (
-                      <div key={o} className={"chip" + (sel ? " sel" : "")} role="button" tabIndex={0}
-                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPick(o); } }}
-                        onClick={() => onPick(o)}><span>{o}</span></div>
+                      <button type="button" key={o} aria-pressed={sel} className={"chip" + (sel ? " sel" : "")}
+                        onClick={() => onPick(o)}><span>{o}</span></button>
                     );
                   })}
                 </div>
@@ -1149,9 +1147,8 @@ export const SettingsScreen = memo(function SettingsScreen({
                     for admin review at /muse/admin/moderation. */}
                 <div style={{ marginBottom: 16 }}>
                   <div className="chips" style={{ marginBottom: 0 }}>
-                    <div className={"chip" + (cpCustomTypePending ? " sel" : "")} role="button" tabIndex={0}
-                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setCpType(""); setCpCustomTypePending(true); } }}
-                      onClick={() => { setCpType(""); setCpCustomTypePending(true); }}><span>Add New +</span></div>
+                    <button type="button" aria-pressed={cpCustomTypePending} className={"chip" + (cpCustomTypePending ? " sel" : "")}
+                      onClick={() => { setCpType(""); setCpCustomTypePending(true); }}><span>Add New +</span></button>
                   </div>
                   {cpCustomTypePending && (
                     <input className="inp" aria-label="Creative role" placeholder="Type your creative role..." value={cpType} onChange={e => setCpType(e.target.value)} style={{ marginTop: 10 }} autoFocus />
@@ -1161,13 +1158,11 @@ export const SettingsScreen = memo(function SettingsScreen({
                 {row("Aesthetic", AESTHETICS, cpStyles, (v) => toggle(cpStyles, v, setCpStyles, 6), true)}
                 <div style={{ marginBottom: 16 }}>
                   <div className="chips" style={{ marginBottom: 0 }}>
-                    <div className={"chip" + (cpShowCustomStyleInput ? " sel" : "")} role="button" tabIndex={0}
-                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setCpShowCustomStyleInput(v => !v); } }}
-                      onClick={() => setCpShowCustomStyleInput(v => !v)}><span>Add New +</span></div>
+                    <button type="button" aria-pressed={cpShowCustomStyleInput} className={"chip" + (cpShowCustomStyleInput ? " sel" : "")}
+                      onClick={() => setCpShowCustomStyleInput(v => !v)}><span>Add New +</span></button>
                     {cpStyles.filter(s => !AESTHETICS.includes(s)).map(s => (
-                      <div key={s} className="chip sel" role="button" tabIndex={0} title="Tap to remove"
-                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setCpStyles(cs => cs.filter(x => x !== s)); } }}
-                        onClick={() => setCpStyles(cs => cs.filter(x => x !== s))}><span>✎ {s} ✕</span></div>
+                      <button type="button" key={s} className="chip sel" title="Tap to remove"
+                        onClick={() => setCpStyles(cs => cs.filter(x => x !== s))}><span>✎ {s} ✕</span></button>
                     ))}
                   </div>
                   {cpShowCustomStyleInput && (

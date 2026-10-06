@@ -65,15 +65,14 @@ export default function SelfDiscoveryModal({ open, onClose, obData, onSaved, api
   ];
 
   const chip = (selected: boolean, onClick: () => void, label: string) => (
-    <div
+    <button
+      type="button"
+      aria-pressed={selected}
       className={"chip" + (selected ? " sel" : "")}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }}
       onClick={onClick}
     >
       <span>{label}</span>
-    </div>
+    </button>
   );
 
   return (

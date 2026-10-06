@@ -487,9 +487,11 @@ export const NetworkScreen = memo(function NetworkScreen({
           <button
             type="button"
             key={t}
+            id={`network-tab-${t}`}
             role="tab"
             tabIndex={0}
             aria-selected={netTab === t}
+            aria-controls="network-panel"
             className={"conn-tab" + (netTab === t ? " active" : "")}
             onClick={() => setNetTab(t)}
             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setNetTab(t); } }}
@@ -500,7 +502,10 @@ export const NetworkScreen = memo(function NetworkScreen({
       </div>
       )}
 
-      <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "0 16px 80px" }}>
+      {/* One shared scroll container (pros/forum conditionally rendered inside
+          it, same pattern as CommunityScreen's groups/events) — the panel's
+          id/aria-labelledby swaps to whichever tab is active. */}
+      <div id="network-panel" role="tabpanel" aria-labelledby={`network-tab-${netTab}`} style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "0 16px 80px" }}>
         {netTab === "pros" && (
           <>
             {/* Audit fix (2026-09-08, wyzmind's Torreé batch item 6): centered under

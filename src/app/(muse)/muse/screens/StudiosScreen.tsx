@@ -121,11 +121,11 @@ export const StudiosScreen = memo(function StudiosScreen({
         {/* Studio rules dropdown (FD has the detailed client guide; others have a short one) */}
         {studio.rules && (
           <div style={{ marginTop: 16, padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
-            <div role="button" tabIndex={0} aria-expanded={rulesOpen} onClick={() => setRulesOpen(!rulesOpen)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setRulesOpen(!rulesOpen); } }} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", color: "var(--text)" }}>
+            <button type="button" aria-expanded={rulesOpen} onClick={() => setRulesOpen(!rulesOpen)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left", color: "var(--text)" }}>
               <div style={{ fontSize: 18 }}>📖</div>
               <div style={{ flex: 1, fontSize: 13, fontWeight: 800 }}>Studio Guide — booking, rules & FAQs</div>
               <div style={{ fontSize: 12, color: rulesOpen ? studio.color[0] : "var(--gold)", fontWeight: 700 }}>{rulesOpen ? "−" : "+"}</div>
-            </div>
+            </button>
             {rulesOpen && (
               <div style={{ marginTop: 10 }}>
                 {studio.rules.map((r) => (

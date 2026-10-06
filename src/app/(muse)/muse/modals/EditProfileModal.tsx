@@ -92,13 +92,13 @@ export function EditProfileModal({
           <div className="side-label">Creative Type</div>
           <div className="side-sub" style={{ marginBottom: 6 }}>🎬 Behind the Camera</div>
           <div className="chips" style={{ marginBottom: 8 }}>
-            {BEHIND_CAMERA.map(t => <div key={t} className={"chip"+(editType===t?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setEditType(t); setEditCustomTypePending(false); } }} onClick={()=>{setEditType(t);setEditCustomTypePending(false);}}><span>{t}</span></div>)}
+            {BEHIND_CAMERA.map(t => <button type="button" key={t} aria-pressed={editType===t} className={"chip"+(editType===t?" sel":"")} onClick={()=>{setEditType(t);setEditCustomTypePending(false);}}><span>{t}</span></button>)}
           </div>
           <div className="side-sub" style={{ marginBottom: 6 }}>📸 In Front of the Camera</div>
           <div className="chips">
-            {IN_FRONT_CAMERA.map(t => <div key={t} className={"chip"+(editType===t?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setEditType(t); setEditCustomTypePending(false); } }} onClick={()=>{setEditType(t);setEditCustomTypePending(false);}}><span>{t}</span></div>)}
+            {IN_FRONT_CAMERA.map(t => <button type="button" key={t} aria-pressed={editType===t} className={"chip"+(editType===t?" sel":"")} onClick={()=>{setEditType(t);setEditCustomTypePending(false);}}><span>{t}</span></button>)}
             {/* Torreé audit item 6 */}
-            <div key="other" className={"chip"+(editCustomTypePending?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setEditType(""); setEditCustomTypePending(true); } }} onClick={()=>{setEditType("");setEditCustomTypePending(true);}}><span>Add New +</span></div>
+            <button type="button" key="other" aria-pressed={editCustomTypePending} className={"chip"+(editCustomTypePending?" sel":"")} onClick={()=>{setEditType("");setEditCustomTypePending(true);}}><span>Add New +</span></button>
           </div>
           {editCustomTypePending && (
             <input className="inp" aria-label="Creative role" placeholder="Type your creative role..." value={editType} onChange={e=>setEditType(e.target.value)} style={{ marginTop: 10 }} />
@@ -107,9 +107,12 @@ export function EditProfileModal({
         <div style={{ marginBottom: 14 }}>
           <div className="side-label">Looking For</div>
           <div className="chips">
-            {lookingForOptions(editType || currentUser.type || "").map(l => (
-              <div key={l} className={"chip"+((editLooking.length?editLooking:obData.looking||[]).includes(l)?" sel":"")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); const cur: string[] = editLooking.length?editLooking:((obData.looking||[]) as string[]); setEditLooking(cur.includes(l)?cur.filter((x: string)=>x!==l):[...cur,l]); } }} onClick={()=>{const cur: string[] = editLooking.length?editLooking:((obData.looking||[]) as string[]); setEditLooking(cur.includes(l)?cur.filter((x: string)=>x!==l):[...cur,l]);}}><span>{l}</span></div>
-            ))}
+            {lookingForOptions(editType || currentUser.type || "").map(l => {
+              const sel = (editLooking.length?editLooking:obData.looking||[]).includes(l);
+              return (
+                <button type="button" key={l} aria-pressed={sel} className={"chip"+(sel?" sel":"")} onClick={()=>{const cur: string[] = editLooking.length?editLooking:((obData.looking||[]) as string[]); setEditLooking(cur.includes(l)?cur.filter((x: string)=>x!==l):[...cur,l]);}}><span>{l}</span></button>
+              );
+            })}
           </div>
         </div>
         <div style={{ marginBottom: 14, padding: "12px 0", borderTop: "1px solid rgba(255,255,255,0.06)" }}>

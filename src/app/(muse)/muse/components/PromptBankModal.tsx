@@ -110,13 +110,13 @@ export default function PromptBankModal({ prompts, responses, onSaveResponse, on
             ) : current.prompt_type === "single_choice" ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {current.choices.map(choice => (
-                  <div key={choice} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedChoices([choice]); } }} onClick={() => setSelectedChoices([choice])} style={choiceStyle(selectedChoices.includes(choice))}>{choice}</div>
+                  <button type="button" key={choice} aria-pressed={selectedChoices.includes(choice)} onClick={() => setSelectedChoices([choice])} style={{ ...choiceStyle(selectedChoices.includes(choice)), textAlign: "left" }}>{choice}</button>
                 ))}
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {current.choices.map(choice => (
-                  <div key={choice} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectedChoices(prev => prev.includes(choice) ? prev.filter(c => c !== choice) : [...prev, choice]); } }} onClick={() => setSelectedChoices(prev => prev.includes(choice) ? prev.filter(c => c !== choice) : [...prev, choice])} style={choiceStyle(selectedChoices.includes(choice))}>{choice}</div>
+                  <button type="button" key={choice} aria-pressed={selectedChoices.includes(choice)} onClick={() => setSelectedChoices(prev => prev.includes(choice) ? prev.filter(c => c !== choice) : [...prev, choice])} style={{ ...choiceStyle(selectedChoices.includes(choice)), textAlign: "left" }}>{choice}</button>
                 ))}
               </div>
             )}

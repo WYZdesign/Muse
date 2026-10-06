@@ -288,7 +288,7 @@ export const CommunityScreen = memo(function CommunityScreen({
       </div>
       <div className="conn-tabs" role="tablist" aria-label="Community tabs" style={{ padding: "0 16px" }}>
         {(["groups", "events"] as const).map(t => (
-          <button key={t} role="tab" tabIndex={0} aria-selected={commTab === t} className={"conn-tab" + (commTab === t ? " active" : "")} onClick={() => setCommTab(t)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setCommTab(t); } }}>{t === "groups" ? "Groups" : "Events"}</button>
+          <button key={t} id={`community-tab-${t}`} role="tab" tabIndex={0} aria-selected={commTab === t} aria-controls="community-panel" className={"conn-tab" + (commTab === t ? " active" : "")} onClick={() => setCommTab(t)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setCommTab(t); } }}>{t === "groups" ? "Groups" : "Events"}</button>
         ))}
       </div>
 
@@ -359,8 +359,8 @@ export const CommunityScreen = memo(function CommunityScreen({
                 <>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
                     <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "var(--text2)" }}><FiUsers size={14} /> {detailItem.members} members</span>
-                    {detailItem.cat && <span role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => setBadgeInfo({ name: detailItem.cat, desc: "The category this community belongs to.", icon: "🏷", color: "#FFD700" })} style={{ fontSize: 12, padding: "4px 12px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)", fontWeight: 600, cursor: "pointer" }}>{detailItem.cat}</span>}
-                    {detailItem.nsfw && <span role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => setBadgeInfo({ name: "18+", desc: "Adult / NSFW community — only shown to verified adults.", icon: "🔞", color: "#ff6b6b" })} style={{ fontSize: 12, padding: "4px 12px", borderRadius: 99, background: "rgba(255,69,0,0.15)", border: "1px solid rgba(255,69,0,0.3)", color: "#ff6b6b", fontWeight: 600, cursor: "pointer" }}>18+</span>}
+                    {detailItem.cat && <button type="button" onClick={() => setBadgeInfo({ name: detailItem.cat, desc: "The category this community belongs to.", icon: "🏷", color: "#FFD700" })} style={{ fontSize: 12, padding: "4px 12px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)", fontWeight: 600 }}>{detailItem.cat}</button>}
+                    {detailItem.nsfw && <button type="button" onClick={() => setBadgeInfo({ name: "18+", desc: "Adult / NSFW community — only shown to verified adults.", icon: "🔞", color: "#ff6b6b" })} style={{ fontSize: 12, padding: "4px 12px", borderRadius: 99, background: "rgba(255,69,0,0.15)", border: "1px solid rgba(255,69,0,0.3)", color: "#ff6b6b", fontWeight: 600 }}>18+</button>}
                   </div>
                   <div style={{ fontSize: 14, color: "var(--text2)", lineHeight: 1.6, marginBottom: 20 }}>{detailItem.desc || "No description yet."}</div>
 
@@ -514,7 +514,12 @@ export const CommunityScreen = memo(function CommunityScreen({
         </div>
       )}
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 80px" }}>
+      {/* One shared scroll container, not two separate panels — groups/events
+          content is conditionally rendered inside it, so the tab/tabpanel
+          relationship is expressed by swapping id/aria-labelledby to whichever
+          tab is active, with both tab buttons pointing aria-controls at this
+          single panel id. */}
+      <div id="community-panel" role="tabpanel" aria-labelledby={`community-tab-${commTab}`} style={{ flex: 1, overflowY: "auto", padding: "0 16px 80px" }}>
         {commTab === "groups" && filteredGroups.length === 0 && (
           <EmptyState icon={<FiUsers size={44} />} title="No communities yet" sub="Communities are starting soon — create one and gather your crew." />
         )}
