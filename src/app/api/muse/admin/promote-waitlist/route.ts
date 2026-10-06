@@ -3,6 +3,7 @@ import { getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { sendEmail, betaAccess } from "@/lib/email";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
+import { AdminPromoteWaitlistSchema, parseWith } from "@/lib/validate";
 
 /**
  * Admin endpoint: promote waitlist members to beta access.
@@ -16,7 +17,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   }
 
-  const body = await req.json().catch(() => ({}));
+  let rawBody: unknown;
+  try { rawBody = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
+  const parsedBody = parseWith(AdminPromoteWaitlistSchema, rawBody);
+  if (!parsedBody.ok) return NextResponse.json({ error: parsedBody.error }, { status: 400 });
   const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
   if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
@@ -30,34 +34,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
-  const emails: unknown[] = Array.isArray(body.emails)
-    ? body.emails
-    : typeof body.email === "string"
-      ? [body.email]
-      : [];
-  if (!emails.length) {
-    return NextResponse.json({ error: "Provide email or emails array" }, { status: 400 });
-  }
-  if (emails.length > 50) {
-    return NextResponse.json({ error: "A maximum of 50 emails can be promoted at once" }, { status: 400 });
-  }
+  const emails = "emails" in parsedBody.data ? parsedBody.data.emails : [parsedBody.data.email];
 
   const results: { email: string; sent: boolean; error?: string }[] = [];
 
   for (const rawEmail of emails) {
-    if (typeof rawEmail !== "string") {
-      results.push({ email: "", sent: false, error: "Invalid email" });
-      continue;
-    }
-    const email = rawEmail.toLowerCase().trim();
-    // NOTE: `[^\\s@]` was double-escaped — inside a regex LITERAL that means
-    // "not backslash, s, or @" and requires a literal backslash before the dot,
-    // so EVERY valid address (e.g. foo@example.com) was rejected as invalid and
-    // the member was never promoted. `[^\s@]` is the intended class.
-    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      results.push({ email: rawEmail, sent: false, error: "Invalid email" });
-      continue;
-    }
+    const email = rawEmail.toLowerCase();
 
     // Send beta access email (fail-open)
     const result = await sendEmail(betaAccess(email));
