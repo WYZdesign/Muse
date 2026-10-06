@@ -1,5 +1,9 @@
 import { getServiceClient } from "@/lib/supabase";
 
+// Shared helpers for the daily/weekly/monthly/lifetime quest system: the
+// period-bucketing logic quest progress rows key off of, and a notification
+// helper for quest completions that happen server-side (no client action to
+// hang a toast off of) so they still surface in the notification bell.
 type SupabaseClient = ReturnType<typeof getServiceClient>;
 
 /** Period bucket for quest progress. Weekly buckets are keyed by the Monday

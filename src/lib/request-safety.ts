@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Shared Content-Type/body-size guard called at the top of state-changing
+// route handlers, so every route gets the same baseline request shape
+// validation instead of each one reimplementing its own check.
 const MAX_BODY_SIZE = 10 * 1024 * 1024; // 10MB (matches upload route limit)
 
 /**

@@ -1,5 +1,10 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
+// The two Supabase client flavors the app uses: `supabase` (lazy, anon-key,
+// client-safe — browser auth/session calls go through this) and
+// getServiceClient() (service-role, bypasses RLS entirely — only for
+// server-side route/action handlers that have already done their own
+// authorization check). Never expose the service client to client code.
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
 
