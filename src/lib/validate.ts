@@ -37,6 +37,10 @@ export const SupportSchema = z.object({
 });
 export type SupportInput = z.infer<typeof SupportSchema>;
 
+/** Upload delete body. `path` is ownership-checked against the caller server-side. */
+export const UploadDeleteSchema = z.object({ path: z.string().min(1).max(512) });
+export type UploadDeleteInput = z.infer<typeof UploadDeleteSchema>;
+
 /** Referral actions. Codes are normalized/bounded; eligibility is server-derived. */
 export const ReferralSchema = z.object({
   action: z.enum(["generate", "apply", "status", "redeem-reward"], { error: "Unknown action" }),

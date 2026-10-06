@@ -4,6 +4,7 @@ import { safeServerError } from "@/lib/http";
 import { checkRateUser } from "@/lib/rate-limit";
 import { scanWithRekognition, scanWithSightengine, logScan, reportIncident, escalateToNcmec } from "@/lib/contentScan";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
+import { parseWith, UploadDeleteSchema } from "@/lib/validate";
 
 const ALLOWED_SIGNATURES: Record<string, { bytes: number[]; ext: string }> = {
   "89504e47": { bytes: [0x89,0x50,0x4E,0x47], ext: "png" },
@@ -193,8 +194,11 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Rate limited" }, { status: 429 });
     }
 
-    const { path } = await req.json();
-    if (!path) return NextResponse.json({ error: "No path" }, { status: 400 });
+    let rawPath: unknown;
+    try { rawPath = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
+    const parsedPath = parseWith(UploadDeleteSchema, rawPath);
+    if (!parsedPath.ok) return NextResponse.json({ error: "No path" }, { status: 400 });
+    const { path } = parsedPath.data;
     // Ownership gate: files are stored under {profileId}/ so only the uploader
     // may delete them. A path without the caller's profile prefix is rejected.
     if (!path.startsWith(`${profileId}/`)) return NextResponse.json({ error: "Not your file" }, { status: 403 });
