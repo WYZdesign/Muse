@@ -233,7 +233,11 @@ export async function POST(req: NextRequest) {
     const safetyErr = await enforceRequestSafety(req);
     if (safetyErr) return safetyErr;
 
-    const body = await req.json();
+    let body: { type?: string; action?: string } & Record<string, unknown>;
+    try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
     const { type: rawType, action: rawAction, ...rest } = body;
     // `action` takes priority over `type` when both are present. The forum
     // sub-actions (get-replies/reply/vote) send both — {action:"forum",
@@ -242,7 +246,7 @@ export async function POST(req: NextRequest) {
     // resolve to "reply"/"vote"/"get-replies" directly, matching no
     // top-level branch ("Unknown action type" on every forum reply/vote).
     // Every other call site sends exactly one of the two fields.
-    const actionType = rawAction || rawType;
+    const actionType = rawAction || rawType || "";
 
     const ip = clientIp(req);
 
