@@ -39,7 +39,7 @@ const ME = "11111111-1111-1111-1111-111111111111";
 const PEER = "22222222-2222-2222-2222-222222222222";
 const COMM = "33333333-3333-3333-3333-333333333333";
 
-const state: any = { tables: {}, inserts: [] };
+const state: any = { tables: {}, inserts: [], callLookupMissing: false };
 
 (globalThis as any).__sbMock = {
   from: (tbl: string) => {
@@ -55,7 +55,7 @@ const state: any = { tables: {}, inserts: [] };
       order: () => q,
       limit: () => q,
       single: async () => ({ data: state.tables[tbl] ?? null, error: null }),
-      maybeSingle: async () => ({ data: state.tables[tbl] ?? null, error: null }),
+      maybeSingle: async () => ({ data: state.callLookupMissing && tbl === "muse_calls" ? null : state.tables[tbl] ?? null, error: null }),
     };
     q.then = (resolve: any) => resolve({ data: state.tables[tbl] ?? null, error: null });
     return q;
@@ -77,6 +77,7 @@ function req(body: unknown, token = "tok") {
 beforeEach(() => {
   state.tables = {};
   state.inserts = [];
+  state.callLookupMissing = false;
   // Authenticated, age-verified caller by default.
   (globalThis as any).__authUser = { data: { user: { id: "auth-1" } } };
   state.tables.muse_profiles = { id: ME, name: "Tester", email: "t@example.com", suspended: false };
@@ -136,7 +137,8 @@ describe("call route", () => {
     expect(state.inserts.some((i: any) => i.tbl === "muse_calls" && i.v?.recording_egress_id)).toBe(false);
   });
 
-  it("records a lifecycle update", async () => {
+  it("records a lifecycle update for a call participant", async () => {
+    state.tables.muse_calls = { id: "44444444-4444-4444-4444-444444444444", caller_id: ME, callee_id: PEER };
     const r = await POST(req({ action: "answer", toId: PEER, kind: "voice", callId: "44444444-4444-4444-4444-444444444444" }));
     expect(r.status).toBe(200);
     expect(state.inserts.some((i: any) => i.tbl === "muse_calls")).toBe(true);
@@ -146,6 +148,14 @@ describe("call route", () => {
     const r = await POST(req({ action: "answer", toId: PEER, kind: "voice", callId: "bad" }));
     expect(r.status).toBe(400);
   });
+
+  it("does not let a non-participant update a guessed call ID", async () => {
+    state.callLookupMissing = true;
+    const r = await POST(req({ action: "answer", toId: PEER, kind: "voice", callId: "44444444-4444-4444-4444-444444444444" }));
+    expect(r.status).toBe(404);
+    expect(state.inserts.some((i: any) => i.tbl === "muse_calls")).toBe(false);
+  });
+
 
   it("returns call history", async () => {
     const r = await POST(req({ action: "history", toId: PEER, kind: "voice" }));

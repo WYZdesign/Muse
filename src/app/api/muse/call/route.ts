@@ -123,21 +123,32 @@ export async function POST(req: NextRequest) {
     const kind = body.kind === "voice" ? "voice" : "video";
 
     if (action === "end") {
+      // The deterministic room name is predictable from two profile IDs. Require
+      // a real call row owned by this participant before deleting its LiveKit room
+      // or changing its state, so a third party cannot end someone else's call.
+      const endedId = String(body.callId || body.call_id || "");
+      if (!UUID_RE.test(endedId)) return NextResponse.json({ error: "Invalid callId" }, { status: 400 });
+      const { data: endedCall, error: endedCallError } = await sb.from("muse_calls")
+        .select("id, room")
+        .eq("id", endedId)
+        .or(`caller_id.eq.${profile.id},callee_id.eq.${profile.id}`)
+        .maybeSingle();
+      if (endedCallError) return safeServerError(endedCallError, "end call lookup");
+      if (!endedCall) return NextResponse.json({ error: "Call not found" }, { status: 404 });
+
       try {
         const svc = new RoomServiceClient(httpUrl(), LK_KEY, LK_SECRET);
-        await svc.deleteRoom(room);
+        await svc.deleteRoom(endedCall.room);
       } catch { /* room may already be gone */ }
       // Close out the log row: duration is measured client-side (answered → end).
-      const endedId = String(body.callId || body.call_id || "");
-      if (UUID_RE.test(endedId)) {
-        const durationMs = Number.isFinite(Number(body.duration_ms)) ? Math.max(0, Math.round(Number(body.duration_ms))) : null;
-        await sb.from("muse_calls").update({
-          status: "ended",
-          ended_at: new Date().toISOString(),
-          duration_ms: durationMs,
-        }).eq("id", endedId);
-      }
-      return NextResponse.json({ success: true, room });
+      const durationMs = Number.isFinite(Number(body.duration_ms)) ? Math.max(0, Math.round(Number(body.duration_ms))) : null;
+      const { error: endError } = await sb.from("muse_calls").update({
+        status: "ended",
+        ended_at: new Date().toISOString(),
+        duration_ms: durationMs,
+      }).eq("id", endedId).or(`caller_id.eq.${profile.id},callee_id.eq.${profile.id}`);
+      if (endError) return safeServerError(endError, "end call update");
+      return NextResponse.json({ success: true, room: endedCall.room });
     }
 
     if (action === "start") {
@@ -234,6 +245,15 @@ export async function POST(req: NextRequest) {
     const callId = String(body.callId || body.call_id || "");
     if (action === "answer" || action === "decline" || action === "missed" || action === "voicemail") {
       if (!UUID_RE.test(callId)) return NextResponse.json({ error: "Invalid callId" }, { status: 400 });
+      // A valid UUID is not authorization. Every lifecycle transition belongs
+      // only to a caller or callee recorded on that call.
+      const { data: lifecycleCall, error: lifecycleCallError } = await sb.from("muse_calls")
+        .select("id")
+        .eq("id", callId)
+        .or(`caller_id.eq.${profile.id},callee_id.eq.${profile.id}`)
+        .maybeSingle();
+      if (lifecycleCallError) return safeServerError(lifecycleCallError, "call lifecycle lookup");
+      if (!lifecycleCall) return NextResponse.json({ error: "Call not found" }, { status: 404 });
 
       if (action === "voicemail") {
         const url = typeof body.voicemail_url === "string" ? body.voicemail_url : "";
@@ -272,7 +292,10 @@ export async function POST(req: NextRequest) {
       const patch: Record<string, unknown> = { status: action === "missed" ? "missed" : action };
       if (action === "answer") patch.answered_at = new Date().toISOString();
       if (action === "decline") patch.ended_at = new Date().toISOString();
-      await sb.from("muse_calls").update(patch).eq("id", callId);
+      const { error: lifecycleError } = await sb.from("muse_calls").update(patch)
+        .eq("id", callId)
+        .or(`caller_id.eq.${profile.id},callee_id.eq.${profile.id}`);
+      if (lifecycleError) return safeServerError(lifecycleError, "call lifecycle update");
       return NextResponse.json({ success: true });
     }
 
