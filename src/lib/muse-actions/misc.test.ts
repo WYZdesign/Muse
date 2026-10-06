@@ -219,6 +219,29 @@ describe("searchAll", () => {
     await searchAll(act({ query: "photo", destination: "   " }));
     expect(tableCalls(sb.__log, "muse_profiles").some((c) => c.method === "contains" && c.args[0] === "travel_destinations")).toBe(false);
   });
+  // Same "blocking was write-only" gap fixed across get.ts's list endpoints —
+  // searchAll never consulted muse_blocks either, so a blocked user (or
+  // their briefs/forum posts) could still turn up in search results.
+  it("excludes a blocked user, their briefs, and their forum posts from search results", async () => {
+    install({
+      muse_profiles: () => ({ data: [{ id: "blocked" }, { id: "ok" }] }),
+      muse_briefs: () => ({ data: [
+        { id: "b1", creator_id: { id: "blocked", name: "B" } },
+        { id: "b2", creator_id: { id: "ok", name: "O" } },
+      ] }),
+      muse_forum_posts: () => ({ data: [
+        { id: "f1", author_id: { id: "blocked", name: "B" } },
+        { id: "f2", author_id: { id: "ok", name: "O" } },
+      ] }),
+      muse_communities: () => ({ data: [] }),
+      muse_blocks: () => ({ data: [{ user_id: "me1", target_id: "blocked" }] }),
+    });
+    const body = await (await searchAll(act({ query: "photo" })) as Response).json();
+    expect(body.results.users.map((u: any) => u.id)).toEqual(["ok"]);
+    expect(body.results.briefs.map((b: any) => b.id)).toEqual(["b2"]);
+    expect(body.results.forum.map((f: any) => f.id)).toEqual(["f2"]);
+  });
+
   it("search type=messages searches the caller's conversations and resolves peers", async () => {
     install({
       muse_messages: () => ({ data: [{ id: "m1", sender_id: "me1", receiver_id: "peer1", text: "hi" }] }),

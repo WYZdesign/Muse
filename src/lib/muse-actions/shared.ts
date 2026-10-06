@@ -186,6 +186,21 @@ export function isConvoParticipant(matchId: string, profileId: string): boolean 
   return parts.includes(profileId);
 }
 
+/**
+ * The "blocking was write-only" bug family, factored out: `muse_blocks` rows
+ * were written on block but, call site after call site across get.ts/misc.ts/
+ * forum.ts, never actually consulted when serving content back — a blocked
+ * user's profile/posts/replies/etc. kept showing to the person who blocked
+ * them (and vice versa) until each listing was fixed one at a time. New call
+ * sites should use this instead of re-inlining the query. Returns the set of
+ * ids blocked in EITHER direction (I blocked them, or they blocked me).
+ */
+export async function getBlockedIds(sb: ReturnType<typeof getServiceClient>, profileId: string | null | undefined): Promise<Set<string>> {
+  if (!profileId) return new Set();
+  const { data: blocks } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
+  return new Set((blocks || []).map((b: any) => (String(b.user_id) === String(profileId) ? String(b.target_id) : String(b.user_id))));
+}
+
 // Typed action registry used by the monolith and every per-domain route.
 export type ActionContext = {
   sb: ReturnType<typeof getServiceClient>;
