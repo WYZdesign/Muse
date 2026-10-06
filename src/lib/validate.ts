@@ -89,9 +89,11 @@ export const ConnectSchema = z.object({
   requestId: z.string().trim().min(1).max(200).optional(),
 });
 export type ConnectInput = z.infer<typeof ConnectSchema>;
-/** Owner-only beta promotion accepts one valid address or a bounded batch. */
+/** Owner-only beta promotion accepts one address or a bounded batch. Shape only:
+ *  email FORMAT is validated per item in the route so a bad entry in a batch is
+ *  reported individually instead of failing the whole request. */
 export const AdminPromoteWaitlistSchema = z.union([
-  z.object({ email: emailField }),
-  z.object({ emails: z.array(emailField).min(1, "Provide at least one email").max(50, "A maximum of 50 emails can be promoted at once") }),
+  z.object({ email: z.string().trim().min(1).max(254) }),
+  z.object({ emails: z.array(z.string()).min(1, "Provide at least one email").max(50, "A maximum of 50 emails can be promoted at once") }),
 ]);
 export type AdminPromoteWaitlistInput = z.infer<typeof AdminPromoteWaitlistSchema>;

@@ -39,7 +39,14 @@ export async function POST(req: NextRequest) {
   const results: { email: string; sent: boolean; error?: string }[] = [];
 
   for (const rawEmail of emails) {
-    const email = rawEmail.toLowerCase();
+    const email = rawEmail.toLowerCase().trim();
+    // Per-item format check so one bad address doesn't fail the whole batch.
+    // (`[^\s@]`, not the double-escaped `[^\\s@]` that rejected every valid
+    // address and silently promoted nobody.)
+    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      results.push({ email: rawEmail, sent: false, error: "Invalid email" });
+      continue;
+    }
 
     // Send beta access email (fail-open)
     const result = await sendEmail(betaAccess(email));

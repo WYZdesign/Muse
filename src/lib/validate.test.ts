@@ -126,9 +126,9 @@ describe("parseWith / AdminPromoteWaitlistSchema", () => {
     expect(parseWith(AdminPromoteWaitlistSchema, { emails: ["a@example.com", "b@example.com"] }).ok).toBe(true);
   });
 
-  it("rejects malformed, missing, and oversized promotion input", () => {
+  it("rejects missing, empty, and oversized promotion input (shape only)", () => {
     expect(parseWith(AdminPromoteWaitlistSchema, {}).ok).toBe(false);
-    expect(parseWith(AdminPromoteWaitlistSchema, { emails: ["nope"] }).ok).toBe(false);
+    expect(parseWith(AdminPromoteWaitlistSchema, { emails: [] }).ok).toBe(false);
     expect(parseWith(AdminPromoteWaitlistSchema, { emails: Array.from({ length: 51 }, (_, i) => `user${i}@example.com`) }).ok).toBe(false);
   });
 });
