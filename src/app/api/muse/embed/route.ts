@@ -4,6 +4,7 @@ import { checkRate, clientIp } from "@/lib/rate-limit";
 import { embedText, aiEnabled } from "@/lib/ai";
 import { seedKnowledgeBase } from "@/lib/aiDocs";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
+import { parseWith, EmbedSchema } from "@/lib/validate";
 
 /**
  * Muse Embedding Pipeline — OpenRouter + Supabase (replaces Ollama + Qdrant).
@@ -30,8 +31,11 @@ export async function POST(req: NextRequest) {
     const { data: profile } = await sb.from("muse_profiles").select("id, name, email, tier").eq("auth_id", authData.user.id).maybeSingle();
     if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
 
-    const body = await req.json().catch(() => ({}));
-    const { action } = body;
+    let raw: unknown;
+    try { raw = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
+    const parsedE = parseWith(EmbedSchema, raw);
+    if (!parsedE.ok) return NextResponse.json({ error: parsedE.error }, { status: 400 });
+    const { action } = parsedE.data;
 
     async function buildProfileText(profId: string): Promise<{ text: string; prof: any }> {
       const { data: prof } = await sb.from("muse_profiles").select("*").eq("id", profId).maybeSingle();
@@ -78,7 +82,7 @@ export async function POST(req: NextRequest) {
       // free way to spend OpenRouter budget embedding arbitrary profiles.
       const admins = (process.env.ADMIN_EMAILS || "").split(",").map((e) => e.trim().toLowerCase());
       const isAdmin = admins.includes((profile.email || "").toLowerCase());
-      const targetId = isAdmin ? (body.userId || profile.id) : profile.id;
+      const targetId = isAdmin ? (parsedE.data.userId || profile.id) : profile.id;
       const r = await embedAndStore(targetId);
       if (!r.ok) return NextResponse.json({ error: r.error }, { status: 400 });
       return NextResponse.json({ success: true, dims: r.dims });

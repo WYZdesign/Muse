@@ -37,6 +37,13 @@ export const SupportSchema = z.object({
 });
 export type SupportInput = z.infer<typeof SupportSchema>;
 
+/** Embedding-pipeline actions. Admin-only actions are enforced in the route. */
+export const EmbedSchema = z.object({
+  action: z.enum(["embed-profile", "embed-all", "seed-kb", "status"], { error: "Unknown action" }),
+  userId: z.union([z.string().max(200), z.number()]).optional(),
+});
+export type EmbedInput = z.infer<typeof EmbedSchema>;
+
 /** Upload delete body. `path` is ownership-checked against the caller server-side. */
 export const UploadDeleteSchema = z.object({ path: z.string().min(1).max(512) });
 export type UploadDeleteInput = z.infer<typeof UploadDeleteSchema>;
