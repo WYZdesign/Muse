@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { createSb } from "@/test-support/sb";
 
 vi.mock("@/lib/rate-limit", () => ({ checkRate: async () => true, checkRateUser: async () => true, clientIp: () => "10.0.0.1" }));
 vi.mock("@/lib/request-safety", () => ({ sanitizeText: (s: string, n: number) => String(s).slice(0, n) }));
@@ -11,7 +12,7 @@ vi.mock("@/lib/supabase", () => ({
   supabase: { auth: { getUser: async () => ({ data: { user: null } }) } },
 }));
 
-import { messageSend } from "@/lib/muse-actions/messaging";
+import { messageSend, messageRequestsGet } from "@/lib/muse-actions/messaging";
 
 function makeQuery() {
   const q: any = {
@@ -84,5 +85,30 @@ describe("messageSend — message-request path is moderated like a real message"
     const body = await (r as Response).json();
     expect(body.code).toBe("DISCLOSURE_REQUIRED");
     expect(state.inserts.some((i: any) => "message_preview" in (i || {}))).toBe(false);
+  });
+});
+
+// Found while auditing this file's blocking/request-lifecycle coverage:
+// messageRequestsGet never filtered by status, so a request the recipient
+// already accepted, declined, or (via messageRequestBlock) blocked stayed in
+// the "Inbox" list — and its unread-style badge count — forever instead of
+// disappearing once handled. Locking in the fix: only "pending" requests
+// should ever come back from this query.
+describe("messageRequestsGet — only pending requests surface in the inbox", () => {
+  it("queries muse_message_requests scoped to this recipient and status=pending", async () => {
+    (globalThis as any).__sbMock = createSb((table, calls) => {
+      if (table === "muse_message_requests") {
+        const toCall = calls.find((c) => c.method === "eq" && c.args[0] === "request_to");
+        const statusCall = calls.find((c) => c.method === "eq" && c.args[0] === "status");
+        expect(toCall?.args[1]).toBe("me1");
+        expect(statusCall?.args[1]).toBe("pending");
+        return { data: [{ id: "req1", status: "pending" }], error: null };
+      }
+      return { data: null, error: null };
+    });
+    const r = await messageRequestsGet({ sb: (globalThis as any).__sbMock, profile: { id: "me1", name: "Ada" }, rest: {}, ip: "10.0.0.1", req: {} as any } as any);
+    expect((r as Response).status).toBe(200);
+    const body = await (r as Response).json();
+    expect(body.requests).toEqual([{ id: "req1", status: "pending" }]);
   });
 });
