@@ -58,9 +58,17 @@ export async function GET(req: NextRequest) {
     const { data: blocks } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profile.id},target_id.eq.${profile.id}`);
     const blockedIds = new Set((blocks || []).map((b: any) => (String(b.user_id) === String(profile.id) ? String(b.target_id) : String(b.user_id))));
 
+    // Same gap fixed in get.ts's discover-ranked handler: a profile the viewer
+    // already liked/matched (a muse_matches row with user_id = profile.id)
+    // kept resurfacing here indefinitely since this endpoint never consulted
+    // muse_matches. Only the viewer's own outgoing rows count.
+    const { data: ownMatches } = await sb.from("muse_matches").select("target_id").eq("user_id", profile.id);
+    const alreadyMatchedIds = new Set((ownMatches || []).map((m: any) => String(m.target_id)));
+
     const candidates = (allProfiles || []).filter((p: any) => {
       if (String(p.id) === String(profile.id)) return false;
       if (blockedIds.has(String(p.id))) return false;
+      if (alreadyMatchedIds.has(String(p.id))) return false;
       if (p.suspended) return false;
       const hasAvatar = typeof p.avatar === "string" && p.avatar.trim().length > 0;
       const hasPhotos = Array.isArray(p.photos) && p.photos.length > 0;

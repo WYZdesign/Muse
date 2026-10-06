@@ -38,6 +38,13 @@ vi.mock("@/lib/supabase", () => ({
           }),
         };
       }
+      if (table === "muse_matches") {
+        return {
+          select: () => ({
+            eq: async () => ({ data: (globalThis as any).__ownMatches || [], error: null }),
+          }),
+        };
+      }
       return {};
     },
   })),
@@ -194,5 +201,17 @@ describe("match route", () => {
     expect(body.profiles[0].age).toBeUndefined();
     expect(body.profiles[0].showAge).toBe(false);
     expect(body.profiles[0].birthdate).toBeUndefined();
+  });
+
+  // Known open issue (DELIVERY_STATUS.md): a candidate the viewer already
+  // liked/matched kept resurfacing indefinitely — this endpoint never
+  // consulted muse_matches at all. Locks in the fix.
+  it("excludes a candidate the viewer already liked/matched (muse_matches row)", async () => {
+    (globalThis as any).__ownMatches = [{ target_id: "c1" }];
+    const r = await GET(req({ authorization: "Bearer tok" }));
+    expect(r.status).toBe(200);
+    const body = await r.json();
+    expect(body.total).toBe(0);
+    expect(body.profiles.map((p: any) => p.id)).not.toContain("c1");
   });
 });
