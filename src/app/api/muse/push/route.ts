@@ -5,6 +5,7 @@ import { safeServerError } from "@/lib/http";
 import { sendPushToUser, getVapidPublicKey } from "@/lib/push";
 import { isAdminEmail } from "@/lib/muse-actions/shared";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
+import { parseWith, PushSchema } from "@/lib/validate";
 
 export const runtime = "nodejs";
 
@@ -15,8 +16,11 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     if (isDemoMode()) return NextResponse.json(demoModeUnavailable("Push notifications"), { status: 409 });
-    const body = await req.json();
-    const { action, subscription, access_token, userId: bodyUserId, payload } = body;
+    let raw: unknown;
+    try { raw = await req.json(); } catch { return NextResponse.json({ success: false, error: "Invalid JSON" }, { status: 400 }); }
+    const parsed = parseWith(PushSchema, raw);
+    if (!parsed.ok) return NextResponse.json({ success: false, error: parsed.error }, { status: 400 });
+    const { action, subscription, access_token, userId: bodyUserId, payload } = parsed.data;
 
     // All actions require authentication — the old code let "send" bypass auth.
     if (!access_token) {

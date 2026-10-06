@@ -37,6 +37,33 @@ export const SupportSchema = z.object({
 });
 export type SupportInput = z.infer<typeof SupportSchema>;
 
+/** Web-push actions. The actor is derived from the access token, not the body. */
+export const PushSchema = z.object({
+  action: z.enum(["send", "subscribe", "unsubscribe"], { error: "Unknown action" }),
+  access_token: z.string().max(4096).optional(),
+  userId: z.string().max(200).optional(),
+  subscription: z
+    .object({
+      endpoint: z.string().max(2048).optional(),
+      p256dh: z.string().max(2048).optional(),
+      auth: z.string().max(2048).optional(),
+    })
+    .optional(),
+  payload: z
+    .object({
+      title: z.string().max(200),
+      body: z.string().max(500),
+      icon: z.string().max(2048).optional(),
+      data: z.record(z.string(), z.unknown()).optional(),
+      actions: z.array(z.unknown()).max(10).optional(),
+      tag: z.string().max(100).optional(),
+      vibrate: z.array(z.number()).max(10).optional(),
+      badge: z.string().max(2048).optional(),
+    })
+    .optional(),
+});
+export type PushInput = z.infer<typeof PushSchema>;
+
 /** Stripe checkout body. `plan` must be a known price-map key. */
 export const CheckoutSchema = z.object({
   plan: z.enum(["muse_pro", "muse_pro_annual", "muse_studio", "muse", "sovereign"], { error: "Invalid plan" }),
