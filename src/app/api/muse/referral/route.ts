@@ -6,6 +6,7 @@ import { sendEmail, notify } from "@/lib/email";
 import { setReferralQuestProgress } from "@/lib/questEngine";
 import Stripe from "stripe";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
+import { parseWith, ReferralSchema } from "@/lib/validate";
 
 /**
  * Muse Referral System — double-sided referral codes.
@@ -27,8 +28,11 @@ export async function POST(req: NextRequest) {
       .eq("auth_id", authData.user.id).maybeSingle();
     if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
 
-    const body = await req.json();
-    const { action } = body;
+    let raw: unknown;
+    try { raw = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
+    const parsedR = parseWith(ReferralSchema, raw);
+    if (!parsedR.ok) return NextResponse.json({ error: parsedR.error }, { status: 400 });
+    const { action } = parsedR.data;
 
     // Rate limit referral operations to prevent abuse
     const ip = clientIp(req);
@@ -57,7 +61,7 @@ export async function POST(req: NextRequest) {
 
     // ═══ APPLY: Use someone's referral code during signup ═══
     if (action === "apply") {
-      const { referralCode } = body;
+      const { referralCode } = parsedR.data;
       if (!referralCode) return NextResponse.json({ error: "referralCode required" }, { status: 400 });
 
       const code = String(referralCode).trim().toUpperCase();
@@ -146,7 +150,7 @@ export async function POST(req: NextRequest) {
       const secret = process.env.STRIPE_SECRET_KEY;
       if (!secret) return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
 
-      const { referralId } = body;
+      const { referralId } = parsedR.data;
       if (!referralId) return NextResponse.json({ error: "referralId required" }, { status: 400 });
 
       const { data: referral } = await sb.from("muse_referrals")

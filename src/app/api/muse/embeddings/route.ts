@@ -3,6 +3,7 @@ import { supabase, getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { embedText, cosineSimilarity, aiEnabled } from "@/lib/ai";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
+import { parseWith, EmbeddingsSchema } from "@/lib/validate";
 
 /**
  * Muse Embeddings API — OpenRouter + Supabase (replaces Ollama + Qdrant).
@@ -24,13 +25,16 @@ export async function POST(req: NextRequest) {
     const { data: authData } = await supabase.auth.getUser(bearer);
     if (!authData.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const body = await req.json().catch(() => ({}));
-    const { action } = body;
+    let raw: unknown;
+    try { raw = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
+    const parsed = parseWith(EmbeddingsSchema, raw);
+    if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
+    const { action } = parsed.data;
 
     // ── EMBED: text → vector via OpenRouter ──
     if (action === "embed") {
-      const { text } = body;
-      if (!text || typeof text !== "string") return NextResponse.json({ error: "text required" }, { status: 400 });
+      const { text } = parsed.data;
+      if (!text) return NextResponse.json({ error: "text required" }, { status: 400 });
       if (!aiEnabled()) return NextResponse.json({ error: "AI not enabled" }, { status: 503 });
       const vector = await embedText(text);
       if (!vector) return NextResponse.json({ error: "Embedding failed" }, { status: 502 });
@@ -39,8 +43,8 @@ export async function POST(req: NextRequest) {
 
     // ── SEARCH: cosine similarity against cached profile embeddings ──
     if (action === "search") {
-      const { vector, excludeUserId, limit, minScore } = body;
-      if (!vector || !Array.isArray(vector)) return NextResponse.json({ error: "vector required" }, { status: 400 });
+      const { vector, excludeUserId, limit, minScore } = parsed.data;
+      if (!vector) return NextResponse.json({ error: "vector required" }, { status: 400 });
 
       const sb = getServiceClient();
       const { data: profiles, error: searchErr } = await sb.from("muse_profiles")
@@ -64,9 +68,8 @@ export async function POST(req: NextRequest) {
 
     // ── BATCH-EMBED: multiple texts at once ──
     if (action === "batch-embed") {
-      const { texts } = body;
-      if (!Array.isArray(texts) || texts.length === 0) return NextResponse.json({ error: "texts array required" }, { status: 400 });
-      if (texts.length > 20) return NextResponse.json({ error: "Max 20 texts per batch" }, { status: 400 });
+      const { texts } = parsed.data;
+      if (!texts || texts.length === 0) return NextResponse.json({ error: "texts array required" }, { status: 400 });
       if (!aiEnabled()) return NextResponse.json({ error: "AI not enabled" }, { status: 503 });
 
       const vectors: number[][] = [];

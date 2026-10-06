@@ -37,6 +37,26 @@ export const SupportSchema = z.object({
 });
 export type SupportInput = z.infer<typeof SupportSchema>;
 
+/** Referral actions. Codes are normalized/bounded; eligibility is server-derived. */
+export const ReferralSchema = z.object({
+  action: z.enum(["generate", "apply", "status", "redeem-reward"], { error: "Unknown action" }),
+  referralCode: z.string().trim().max(32).optional(),
+  referralId: z.union([z.string().max(200), z.number()]).optional(),
+});
+export type ReferralInput = z.infer<typeof ReferralSchema>;
+
+/** AI embedding actions. Bounds text/vector sizes (embed + batch-embed spend budget). */
+export const EmbeddingsSchema = z.object({
+  action: z.enum(["embed", "search", "batch-embed", "info"], { error: "Unknown action" }),
+  text: z.string().max(8000).optional(),
+  texts: z.array(z.string().max(8000)).max(20).optional(),
+  vector: z.array(z.number()).max(4096).optional(),
+  excludeUserId: z.union([z.string().max(200), z.number()]).optional(),
+  limit: z.coerce.number().int().min(1).max(50).optional(),
+  minScore: z.coerce.number().min(0).max(1).optional(),
+});
+export type EmbeddingsInput = z.infer<typeof EmbeddingsSchema>;
+
 /** Web-push actions. The actor is derived from the access token, not the body. */
 export const PushSchema = z.object({
   action: z.enum(["send", "subscribe", "unsubscribe"], { error: "Unknown action" }),
