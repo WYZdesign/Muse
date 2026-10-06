@@ -1,5 +1,5 @@
 {
-  "ignoreCommand": "if [ -n \"$VERCEL_GIT_PREVIOUS_SHA\" ]; then git diff --quiet $VERCEL_GIT_PREVIOUS_SHA HEAD -- . ':(exclude)tests' ':(exclude)*.md' ':(exclude)_STATE' ':(exclude).github'; else exit 1; fi",
+  "ignoreCommand": "if [ -n \"$VERCEL_GIT_PREVIOUS_SHA\" ]; then git diff --quiet $VERCEL_GIT_PREVIOUS_SHA HEAD -- . ':(exclude)tests' ':(exclude)*.md' ':(exclude)_STATE' ':(exclude).github' ':(exclude)sql'; else exit 1; fi",
   "redirects": [
     { "source": "/", "destination": "/muse", "permanent": true }
   ],
