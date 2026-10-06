@@ -8,6 +8,7 @@ import {
   getAuthedProfile, bearerTokenFromReq, isAdminEmail, isConvoParticipant,
   type ActionContext, type ActionHandler,
 } from "@/lib/muse-actions/shared";
+import { validateRest } from "@/lib/muse-actions/restSchemas";
 import { questGetQuests, questTrackQuest, questClaimQuest, questNotifyClaimable } from "@/lib/muse-actions/quests";
 import { albumCreate, albumUpdate, albumDelete, albumAddPhoto, albumRemovePhoto, albumGrantAccess, albumRevokeAccess, albumListAccess, albumView, albumLike } from "@/lib/muse-actions/albums";
 import { feedbackGetNotifications, feedbackMarkAllRead, feedbackDeleteNotification, feedbackClearNotifications, feedbackReportBug, feedbackSubmitIdea } from "@/lib/muse-actions/feedback";
@@ -248,6 +249,11 @@ export async function POST(req: NextRequest) {
     // Every other call site sends exactly one of the two fields.
     const actionType = rawAction || rawType || "";
 
+    // Per-action boundary validation (prototype-pollution + size guard on every
+    // action, plus field schemas for the high-traffic mutating actions).
+    const restCheck = validateRest(actionType, rest);
+    if (!restCheck.ok) return NextResponse.json({ error: restCheck.error }, { status: 400 });
+
     const ip = clientIp(req);
 
     // `track-*` would otherwise write production event rows from a public
@@ -275,7 +281,7 @@ export async function POST(req: NextRequest) {
     // analytics needs to capture that funnel too, not just logged-in actions.
     if (actionType === "track-event") {
       if (!await checkRate(ip, "track-event", 120)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const { name, props } = rest;
+      const { name, props } = restCheck.data;
       if (!name || typeof name !== "string" || name.length > 100) {
         return NextResponse.json({ error: "Invalid event name" }, { status: 400 });
       }
@@ -292,7 +298,7 @@ export async function POST(req: NextRequest) {
 
     if (actionType === "track-error") {
       if (!await checkRate(ip, "track-error", 60)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
-      const { name, params, time } = rest;
+      const { name, params, time } = restCheck.data;
       // Limit payload size
       const paramsStr = params && typeof params === "object" ? JSON.stringify(params) : "";
       if (paramsStr.length > 10000) {
@@ -318,7 +324,7 @@ export async function POST(req: NextRequest) {
     const handler = ACTIONS[actionType];
     if (!handler) return NextResponse.json({ error: "Unknown action type" }, { status: 400 });
 
-    return await handler({ sb, profile: profile as ActionContext["profile"], rest, ip, req, rawType });
+    return await handler({ sb, profile: profile as ActionContext["profile"], rest: restCheck.data, ip, req, rawType });
   } catch (e: unknown) {
     return safeServerError(e, "muse route");
   }
