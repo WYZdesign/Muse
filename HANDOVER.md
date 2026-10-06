@@ -7,6 +7,21 @@ but a round being described below does NOT mean it's live. Verify with
 `git log --oneline -1 origin/main` against `DELIVERY_STATUS.md`'s "Confirmed
 merged" line before trusting anything here.
 
+## FOR WYZMIND — branch `claude/restore-pending-fixes` ready to merge: 4 real fixes that were delivered earlier but never landed (2026-10-06, Claude)
+
+Torreé: "wyzmind made updates, do all outstanding tasks." Fetched `origin/main` and found it had moved `bcc2220` → `c8eff22` (60 commits since this file's own last-known header, `dae2b1f` — this file and `DELIVERY_STATUS.md` had drifted badly stale; both reconciled this round, see `DELIVERY_STATUS.md`'s new entry for the full diff summary). The new tip includes a `CLAUDE_TASKS.md` task packet addressed to this session with an updated protocol (branch `claude/<topic>`, hand off via `_STATE/handovers/`) — following it from here on.
+
+While reconciling, found that most of this session's own prior work — delivered across several earlier bundles (`claude-ci-unblock`, `claude-full-integration`) — was never actually merged into `origin/main`, despite being fully tested and handed off: confirmed by diffing `bcc2220..origin/main` on each affected file and getting zero lines back. Re-verified each fix is still correct (nothing that landed since touches these files) and rebuilt them as 4 clean commits on a fresh branch off `c8eff22`:
+
+1. Native-control migration (14 files, div/span[role="button"] → `<button>`, WCAG 4.1.2).
+2. Discover/match "already liked" exclusion + blocking enforcement on feed/briefs/forum/sessions/moments/events (the "blocking was write-only" bug family).
+3. Blocking enforcement on search results + forum replies (2 more instances of the same family).
+4. Message-request inbox filtered to `status=pending` (an accepted/declined/blocked request was staying in the Inbox forever).
+
+One item from the earlier work was deliberately **not** carried forward: a new RLS migration (`0032_lock_down_blocks_and_reports.sql`, closing a real `muse_blocks`/`muse_reports` policy hole open to `anon`) — per `CLAUDE_TASKS.md`'s new division of labor, DB/RLS is opencode's/Codex's/the owner's call, not this session's to push as app code. Flagging it for them instead; the file is still sitting in this session's workspace if someone wants to look at it.
+
+Full gate on the new branch: `tsc` 0, `lint` 0 errors, **`vitest` 161/1247**, `next build` clean. `npm audit --omit=dev --audit-level=high` shows 4 pre-existing vulnerabilities, confirmed present on bare `origin/main` too (not from this branch). No push access (confirmed via live 403). Delivered via chat bundle + `V:\Muse\_to_delete\`, and as `_STATE/handovers/2026-10-06-claude-to-opencode-restore-pending-fixes.md` per the new protocol.
+
 ## FOR WYZMIND — round 46 ready to merge: match-failed error surfacing + the full 10-variant match-celebration animation Torreé asked for (2026-09-18)
 
 **Built on top of round 45 (`5c08505`, in the same bundle) which is itself built on top of confirmed-merged `0f540ba`.** Two independent fixes, both requested directly by Torreé in the same message.

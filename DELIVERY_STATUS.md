@@ -27,7 +27,19 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `dae2b1f95ee093c8c13b03e53d5a39160ef1eb77`
+## Confirmed merged, last verified at: `c8eff22`
+
+### Context reconciliation — 2026-10-06 (Claude)
+
+Fetched `origin/main` and found the header badly stale: `dae2b1f` → `c8eff22`, **60 commits**, none of them reflected here — this file was never updated by whoever merged them (wyzmind pushed independently of the bundle workflow for a while; several of my own past reconciliation commits describing `5602048`/`bcc2220` as confirmed-merged apparently never made it into `origin/main`'s copy of this file either, even though those SHAs themselves are real ancestors). Diffed the full range (`git log --oneline dae2b1f..c8eff22`) and grouped it:
+
+- **Test coverage**: all 61 `hooks/` files now have colocated tests (13 batches), plus `/api/geocode`, `/api/health`, `/api/qr`, realtime/PWA utils, `uid()`/confetti/safe-storage (found and fixed a real `uid()` collision bug along the way), and several data-integrity component tests (badgeColors/photoOrientation/studios/codexData).
+- **Validation hardening**: zod applied to `/api/checkout` (P0 money route), `/api/muse/embed`, `/api/muse/embeddings`, `/api/muse/push`, `/api/muse/referral`, `/api/muse/upload` DELETE, and the main `/api/muse` dispatch itself (`restSchemas.ts` — per-action field schemas + prototype-pollution/size guards, ~16/120 actions typed so far, rest `passthrough`). `AdminPromoteWaitlistSchema`'s whole-batch-400 regression (same bug I found and fixed in my own now-superseded `claude-full-integration` branch) was independently found and fixed here too (`913c065`) — confirmed the fix is equivalent and correct, nothing more to do there.
+- **Merged in from Codex's parallel assignment**: `boardroom-readiness-audit` (the two new audit docs), `fix-device-tilt-eslint`, `secure-call-lifecycle` (the real call-lifecycle authorization fix), `validate-admin-promotion`, `validate-connect-request` (`ConnectSchema` is live in `validate.ts`) — confirmed via `git log --oneline origin/main..origin/codex/<branch>` showing 0 commits ahead for each. **`remove-unconditional-rls-policies` is the one exception**: it also shows 0 commits ahead of `origin/main`, but only because Codex never started it (0 commits total, identical to `main` from the day it was created) — "merged" there is vacuous, the actual fix never happened. This session wrote it from scratch earlier as migration `0032_lock_down_blocks_and_reports.sql` (same bug class as migrations 0027/0029 — `muse_blocks`/`muse_reports` policies open to `anon` with `USING(true)`), but per `CLAUDE_TASKS.md`'s new division of labor, DB/RLS is opencode's/Codex's/the owner's domain, not this session's to push — flagging it for them rather than delivering it as app code. The file still exists locally in this session's workspace if someone wants to look at it; not included in this round's bundle.
+- **a11y/perf/misc**: NetworkScreen vote touch targets + native post-title button, in-flight GET dedupe (Roadmap 1.2), light-theme tour-dot fix, type-drift (`any`) removal batches, migration `0031` (internal function privilege hardening, via Codex).
+- **New governance doc**: `c8eff22` adds `CLAUDE_TASKS.md` — a task packet addressed to "the third agent" (this session) with an updated division of labor: **never push to `main`** (branch `claude/<topic>`, hand off via `_STATE/handovers/` for opencode to merge), and DB/RLS/Supabase work is explicitly **opencode's and ChatGPT/Codex's domain, not this session's**. This supersedes the informal "no push access, deliver via bundle" framing in `AGENTS.md` with something more specific — the *mechanism* (no push, hand off finished work) is unchanged, but the *packaging* (branch name + `_STATE/handovers/` note vs. a bundle described only in this file) is now spelled out. Following it from this point forward; see the new `_STATE/handovers/` entry for this round's work.
+
+Re-ran the full local gate against `c8eff22` before trusting it: `npx tsc --noEmit` clean, `npm run lint` 0 errors, `npx vitest run` **161 files / 1247 tests** (matches `CLAUDE_TASKS.md`'s own stated 161/1234 baseline plus the tests restored this round), `npx next build` clean. `npm audit --omit=dev --audit-level=high` shows 2 high + 2 critical pre-existing dependency vulnerabilities (`sharp`/`source-map-js`/`@capacitor/ios`) — confirmed present on bare `origin/main` too (not introduced by anything in this session), flagging rather than blind-fixing since `npm audit fix` can pin breaking majors without review.
 
 ### Context reconciliation — 2026-10-02 (Codex)
 
@@ -407,6 +419,19 @@ WHERE table_name='muse_profiles' AND column_name IN ('custom_type_pending','cust
 Until it runs, saving a custom "Other" type/style will fail.
 
 ## Pending delivery — NOT in the codebase yet
+
+### Branch `claude/restore-pending-fixes` (off `origin/main`@`c8eff22`) — 2026-10-06 (Claude)
+
+Everything here was already fixed, tested, and delivered earlier in this engagement (as the `claude-ci-unblock` bundle and later `claude-full-integration`), but never actually landed as an ancestor of `origin/main` — confirmed by diffing `bcc2220..origin/main` on each affected file and getting 0 lines back, i.e. these files are byte-identical to the pre-fix state even after wyzmind's recent push. Re-verified each fix is still correct against the current codebase (nothing it touches was changed by the validation/testing work that did land) and re-ran the full gate clean before committing. Four commits:
+
+- **`5e6a929` — native-control migration (div/span[role="button"] → `<button>`)**: 14 files (MenuModal, SettingsScreen, EditProfileModal, SelfDiscoveryModal, ReportModal, StudiosScreen, FdStudioWidget, ReferralPanel, QuestPanel, CollabScreen, PromptBankModal, MatchCard, CommunityScreen, ShareProfileSheet) + the NetworkScreen/SessionsScreen tab `aria-controls` wiring. WCAG 4.1.2 semantics fix, no visual change (scoped to elements whose class/inline style already set color/padding/display explicitly).
+- **`500e0e7` — discover/match "already liked/matched" exclusion + blocking enforcement on feed/briefs/forum/sessions/moments/events**: `discover-ranked` and `/api/muse/match` now exclude `muse_matches` targets; these 6 listing types in `get.ts` now consult `muse_blocks` (previously write-only).
+- **`c48009d` — blocking enforcement on search results (`searchAll`) and forum replies (`get-replies`/`get-thread`)**: same write-only-blocking bug family, 2 more instances. Added `getBlockedIds()` helper in `shared.ts`.
+- **`1b6aad7` — message-request inbox filtered to `status=pending`**: `messageRequestsGet` never filtered by status, so accepted/declined/blocked requests stayed in the Inbox list and its badge count forever.
+
+Verified on this branch: `npx tsc --noEmit` clean, `npm run lint` 0 errors (2847 warnings, all pre-existing), `npx vitest run` **161 files / 1247 tests**, `npx next build` clean, `npm audit --omit=dev --audit-level=high` shows the same 4 pre-existing vulnerabilities present on bare `origin/main` (not introduced here).
+
+No push access (confirmed again via a live 403 from the git proxy). Per `CLAUDE_TASKS.md`'s updated protocol, this is also handed off as `_STATE/handovers/2026-10-06-claude-to-opencode-restore-pending-fixes.md`. Delivered to Torreé via chat as a `.bundle` file AND written to `V:\Muse\_to_delete\` on wyzmind's machine. To merge: `git fetch <bundle-path> claude/restore-pending-fixes:bundle/restore-pending-fixes && git merge bundle/restore-pending-fixes`, re-confirm the gate, push.
 
 ## Known open issues (not blocked on delivery, just unsolved)
 
