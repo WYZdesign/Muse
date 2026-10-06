@@ -1,5 +1,9 @@
 "use client";
 
+// First-paint splash shown over the app shell while bootstrap data loads.
+// Dismisses on whichever comes first: a real "muse:ready" event (bootstrap
+// finished) or the DURATION timeout, so a slow network never leaves the
+// splash stuck up indefinitely.
 import { useState, useEffect } from "react";
 import Image from "next/image";
 

@@ -1,4 +1,8 @@
 "use client";
+// Ambient starfield + comet-flash canvas layer behind the app shell — purely
+// decorative, so every value here (star count/positions, particle colors) is
+// deterministic (seeded off index, not Math.random()) to avoid SSR/client
+// hydration mismatches.
 import { useEffect, useRef, useMemo } from "react";
 
 const PC = ["#FFD700","#FF6B6B","#D4A5FF","#98FB98","#FFDAB9","#87CEEB","#FF8A80","#FFD1A4","#FFB5C2","#FFE4B5","#FF9A56","#E6E6FA"];
