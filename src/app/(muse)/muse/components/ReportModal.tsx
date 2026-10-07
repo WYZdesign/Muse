@@ -1,5 +1,6 @@
-import type { KeyboardEvent, Ref } from "react";
+import type { Ref } from "react";
 import { FiArrowLeft, FiX } from "react-icons/fi";
+import { trackError } from "@/lib/errorTracker";
 
 type ReportTarget = {
   id: number | string;
@@ -34,19 +35,17 @@ export function ReportModal({ target, dialogRef, apiFetch, onClose, onReported }
           body: JSON.stringify({ action: "report", target_id: target.id, target_type: target.type, reason }),
         });
         reported = response.ok;
-      } catch {
-        console.debug("[muse] report request failed");
+      } catch (err) {
+        // A failed report is a silent trust & safety gap, not a cosmetic
+        // glitch — the submitter sees "Failed to report" below, but without
+        // this the team has no way to know reports are failing in prod.
+        trackError("report_submit_failed", { targetType: target.type, err: String(err) });
       }
       onReported(reported ? `Reported: ${reason}` : "Failed to report");
     }
     onClose();
   };
 
-  const onReasonKeyDown = (event: KeyboardEvent<HTMLDivElement>, reason: string) => {
-    if (event.key !== "Enter" && event.key !== " ") return;
-    event.preventDefault();
-    void submit(reason);
-  };
 
   return (
     <div className="modal-overlay" ref={dialogRef} role="dialog" aria-modal="true" aria-label="Report">
@@ -57,20 +56,19 @@ export function ReportModal({ target, dialogRef, apiFetch, onClose, onReported }
       </div>
       <div className="modal-body">
         {REPORT_REASONS.map((reason) => (
-          <div
+          <button
+            type="button"
             key={reason.label}
             className="report-option"
-            role="button"
-            tabIndex={0}
-            onKeyDown={(event) => onReasonKeyDown(event, reason.label)}
             onClick={() => void submit(reason.label)}
+            style={{ textAlign: "left", width: "100%" }}
           >
             <div className="report-option-icon">{reason.icon}</div>
             <div>
               <div className="report-option-text">{reason.label}</div>
               <div className="report-option-desc">{reason.desc}</div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
     </div>

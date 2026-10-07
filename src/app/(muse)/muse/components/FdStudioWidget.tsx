@@ -225,7 +225,8 @@ export const FdStudioWidget = memo(function FdStudioWidget({ apiFetch }: FdStudi
         </div>
       ))}
 
-      <div
+      <button
+        type="button"
         style={{
           marginTop: 10,
           display: "flex",
@@ -235,21 +236,19 @@ export const FdStudioWidget = memo(function FdStudioWidget({ apiFetch }: FdStudi
           borderRadius: 12,
           background: "rgba(156,39,176,0.08)",
           border: "1px solid rgba(156,39,176,0.25)",
-          cursor: "pointer",
           fontSize: 12,
           fontWeight: 700,
           color: "var(--text)",
+          width: "100%",
+          textAlign: "left",
         }}
-        role="button"
-        tabIndex={0}
         aria-expanded={guideOpen}
         onClick={() => setGuideOpen(!guideOpen)}
-        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setGuideOpen(!guideOpen); } }}
       >
         <div style={{ fontSize: 16 }}>📖</div>
         <div style={{ flex: 1 }}>Client Guide — booking, shooting & rules</div>
         <div style={{ fontSize: 12, color: guideOpen ? "#CE93D8" : "var(--gold)", fontWeight: 700 }}>{guideOpen ? "−" : "+"}</div>
-      </div>
+      </button>
 
       {guideOpen && (
         <div style={{ marginTop: 8, padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", fontSize: 11.5, color: "var(--text2)", lineHeight: 1.7 }}>

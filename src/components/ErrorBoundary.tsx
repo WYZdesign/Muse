@@ -1,5 +1,9 @@
 "use client";
 
+// Top-level React error boundary for the Muse app shell. Catches render
+// errors that would otherwise unmount the whole app to a blank screen, shows
+// a recovery UI instead, and best-effort reports the error server-side so it
+// isn't only visible in the one browser it happened in.
 import React from "react";
 
 const SUPPORT = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "info@wyzdesign.com";

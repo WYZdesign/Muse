@@ -375,7 +375,7 @@ export const SessionsScreen = memo(function SessionsScreen({
         {/* Small leading icon per tab (audit finding tu-2) — same treatment as
             Collab's category row, for the same glance-ability reason. */}
         {([["sessions", "Browse", FiCompass], ["bookings", "My Bookings", FiCalendar], ["requests", "Requests", FiInbox]] as const).map(([t, label, Icon]) => (
-          <div key={t} className={"conn-tab" + (sessTab === t ? " active" : "")} role="tab" aria-selected={sessTab === t} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSessTab(t); } }} onClick={() => setSessTab(t)} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+          <div key={t} id={`sessions-tab-${t}`} className={"conn-tab" + (sessTab === t ? " active" : "")} role="tab" aria-selected={sessTab === t} aria-controls="sessions-panel" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSessTab(t); } }} onClick={() => setSessTab(t)} style={{ display: "flex", alignItems: "center", gap: 5 }}>
             <Icon size={11} />{label}
           </div>
         ))}
@@ -388,7 +388,9 @@ export const SessionsScreen = memo(function SessionsScreen({
           {sessionSearchQuery && <button onClick={() => setSessionSearchQuery("")} aria-label="Clear search" style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 12 }}>✕</button>}
         </div>
       )}
-<div style={{ flex: 1, overflowY: "auto", padding: "0 16px 80px" }}>
+      {/* One shared scroll container (sessions/bookings/requests conditionally
+          rendered inside it) — same pattern as Community/Network's panels. */}
+<div id="sessions-panel" role="tabpanel" aria-labelledby={`sessions-tab-${sessTab}`} style={{ flex: 1, overflowY: "auto", padding: "0 16px 80px" }}>
             {sessTab === "sessions" && (
               <>
                 <button className="btn btn-gold" style={{ width: "100%", padding: "14px 0", fontSize: 13, fontWeight: 700, borderRadius: 12, marginTop: 4, marginBottom: 12 }} onClick={() => setShowCreate(true)}>+ List a Session</button>

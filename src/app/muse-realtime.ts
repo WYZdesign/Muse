@@ -131,10 +131,24 @@ export type RealtimeStatus = "connecting" | "connected" | "disconnected";
 // unsubscribe() is called (component unmount / chat closed).
 const RECONNECT_DELAYS_MS = [1000, 2000, 5000, 10000, 20000, 30000];
 
+export type RealtimeMessageExtras = {
+  kind?: string;
+  mediaUrl?: string;
+  mediaType?: string;
+  durationMs?: number;
+  transcript?: string;
+};
+
 export function subscribeToConversation(opts: {
   myId: string;
   theirId: string;
-  onMessage: (senderId: string, text: string, img?: string) => void;
+  // `extras` carries the voice/video-note fields (kind/mediaUrl/mediaType/
+  // durationMs/transcript) through from the live INSERT row, the same way
+  // fetchConversationHistory() already maps them from a reload. Previously
+  // only `img` was forwarded here, so a voice/video note that arrived while
+  // the chat was open live rendered as a blank bubble with no player — it
+  // only looked right after a reload re-ran the history fetch.
+  onMessage: (senderId: string, text: string, img?: string, extras?: RealtimeMessageExtras) => void;
   onStatus?: (status: RealtimeStatus) => void;
   onTyping?: () => void;
 }): { unsubscribe: () => void; sendTyping: () => void } {
@@ -186,7 +200,13 @@ export function subscribeToConversation(opts: {
           const sender = row.sender_id;
           const text = row.text;
           if (sender === opts.myId) return; // ignore our own echo
-          opts.onMessage(sender, text, row.img || undefined);
+          opts.onMessage(sender, text, row.img || undefined, {
+            kind: row.kind || undefined,
+            mediaUrl: row.media_url || undefined,
+            mediaType: row.media_type || undefined,
+            durationMs: typeof row.duration_ms === "number" ? row.duration_ms : undefined,
+            transcript: row.transcript || undefined,
+          });
         }
       )
       .on("broadcast", { event: "typing" }, () => {

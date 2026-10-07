@@ -173,31 +173,27 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
             </div>
           </div>
           {streakOpen ? (
-            <div
-              role="button"
-              tabIndex={0}
+            <button
+              type="button"
               aria-expanded={streakOpen}
               onClick={() => setStreakOpen(false)}
-              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStreakOpen(false); } }}
-              style={{ flexShrink: 0, cursor: "pointer" }}
+              style={{ flexShrink: 0, textAlign: "center" }}
             >
               <StreakWidget weeklyLogins={weeklyLogins} loginStreak={loginStreak} />
               <div style={{ textAlign: "center", fontSize: 11, color: "var(--muted)", marginTop: 4 }}>▲ Collapse</div>
-            </div>
+            </button>
           ) : (
-            <div
-              role="button"
-              tabIndex={0}
+            <button
+              type="button"
               aria-expanded={streakOpen}
               onClick={() => setStreakOpen(true)}
-              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStreakOpen(true); } }}
-              style={{ flexShrink: 0, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 12, background: "var(--card-bg)", border: "1px solid var(--border-subtle)" }}
+              style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 12, background: "var(--card-bg)", border: "1px solid var(--border-subtle)" }}
             >
               <span style={{ fontSize: 22 }}>🔥</span>
               <span style={{ fontSize: 16, fontWeight: 700, color: "var(--gold)" }}>{loginStreak}</span>
               <span style={{ fontSize: 12, color: "var(--text2)" }}>day streak</span>
               <span style={{ marginLeft: "auto", color: "var(--muted)", fontSize: 13 }}>▼</span>
-            </div>
+            </button>
           )}
         </div>
 

@@ -41,3 +41,33 @@ export const BADGE_COLORS = {
 } as const;
 
 export type BadgeColorKey = keyof typeof BADGE_COLORS;
+
+export type ProBadge = { icon: string; label: string; c: string; bg: string; bd: string };
+
+// Shared badge-derivation logic for a "Professional" card — used by both
+// NetworkScreen's pro-card list and its detail modal. These two call sites
+// previously duplicated this exact if/else chain, with the modal re-deriving
+// its own hardcoded hex colors instead of sharing BADGE_COLORS (the "Pro"
+// badge alone had two different gold hex values depending on which view you
+// were in). Consolidated here so both views always agree on which badges
+// show and what color each one is.
+export function buildProfessionalBadges(
+  p: { exp?: string | number | null; openings?: number | null; skills?: string[] | null },
+  opts: { connected?: boolean } = {}
+): ProBadge[] {
+  const badges: ProBadge[] = [];
+  const yrs = parseInt(String(p.exp ?? ""), 10) || 0;
+  if (yrs >= 10) badges.push({ icon: "🏅", label: "Pro", ...BADGE_COLORS.gold });
+  else if (yrs >= 5) badges.push({ icon: "⭐", label: "Experienced", ...BADGE_COLORS.lavender });
+  else badges.push({ icon: "🌱", label: "Rising", ...BADGE_COLORS.blue });
+  if ((p.openings ?? 0) >= 5) badges.push({ icon: "🔥", label: "Hiring", ...BADGE_COLORS.red });
+  const skills = p.skills || [];
+  if (skills.includes("Fashion") || skills.includes("Editorial")) badges.push({ icon: "👗", label: "Fashion", ...BADGE_COLORS.lavender });
+  if (skills.includes("Commercial") || skills.includes("Branding")) badges.push({ icon: "💼", label: "Commercial", ...BADGE_COLORS.gold });
+  if (skills.includes("Music Video") || skills.includes("Film")) badges.push({ icon: "🎬", label: "Film", ...BADGE_COLORS.red });
+  if (skills.includes("Fine Art") || skills.includes("Body Art")) badges.push({ icon: "🎨", label: "Fine Art", ...BADGE_COLORS.lavender });
+  if (skills.includes("Experimental")) badges.push({ icon: "🧪", label: "Experimental", ...BADGE_COLORS.blue });
+  if (skills.includes("Photography") || skills.includes("Editorial")) badges.push({ icon: "📸", label: "Photo", ...BADGE_COLORS.blue });
+  if (opts.connected) badges.push({ icon: "🤝", label: "Connected", ...BADGE_COLORS.green });
+  return badges;
+}

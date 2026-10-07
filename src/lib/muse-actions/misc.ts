@@ -180,6 +180,17 @@ export const searchAll = async ({ sb, profile, rest, ip }: ActionContext) => {
   const limit = Number.isFinite(parsedLimit) ? Math.min(50, Math.max(1, Math.floor(parsedLimit))) : 20;
   const results: any = { users: [], briefs: [], communities: [] };
 
+  // Same "blocking was write-only" gap fixed across get.ts's list endpoints
+  // this session (feed/briefs/forum/sessions/moments/events) — searchAll
+  // never consulted muse_blocks either, so a blocked user (or their briefs/
+  // forum posts) could still turn up in search results for the person who
+  // blocked them. Computed once, used below for users/briefs/forum.
+  let searchBlockedIds = new Set<string>();
+  if (type === "all" || type === "users" || type === "briefs" || type === "forum") {
+    const { data: blocks } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profile.id},target_id.eq.${profile.id}`);
+    searchBlockedIds = new Set((blocks || []).map((b: any) => (String(b.user_id) === String(profile.id) ? String(b.target_id) : String(b.user_id))));
+  }
+
   if (type === "all" || type === "users") {
     let query = sb.from("muse_profiles")
       .select("id, name, type, avatar, loc, bio, styles, looking, verified, tier, travel_dates, availability_status, budget_range, travel_destinations, last_seen_at")
@@ -208,16 +219,16 @@ export const searchAll = async ({ sb, profile, rest, ip }: ActionContext) => {
     if (sort === "popular") query = query.order("views_count", { ascending: false });
     else if (sort === "newest") query = query.order("created_at", { ascending: false });
     const { data: users } = await query.limit(limit);
-    results.users = users || [];
+    results.users = (users || []).filter((u: any) => !searchBlockedIds.has(String(u.id)));
   }
 
   if (type === "all" || type === "briefs") {
     const { data: briefs } = await sb.from("muse_briefs")
-      .select("id, title, description, type, budget, status, creator_id(name, avatar)")
+      .select("id, title, description, type, budget, status, creator_id(id, name, avatar)")
       .or(`title.ilike.${pattern},description.ilike.${pattern},type.ilike.${pattern}`)
       .eq("status", "open")
       .limit(limit);
-    results.briefs = briefs || [];
+    results.briefs = (briefs || []).filter((b: any) => !searchBlockedIds.has(String(b.creator_id?.id)));
   }
 
   if (type === "all" || type === "communities") {
@@ -230,11 +241,11 @@ export const searchAll = async ({ sb, profile, rest, ip }: ActionContext) => {
 
   if (type === "all" || type === "forum") {
     const { data: posts } = await sb.from("muse_forum_posts")
-      .select("id, title, body, category, votes, author_id(name, avatar), created_at")
+      .select("id, title, body, category, votes, author_id(id, name, avatar), created_at")
       .or(`title.ilike.${pattern},body.ilike.${pattern},category.ilike.${pattern}`)
       .order("created_at", { ascending: false })
       .limit(limit);
-    results.forum = posts || [];
+    results.forum = (posts || []).filter((p: any) => !searchBlockedIds.has(String(p.author_id?.id)));
   }
 
   if (type === "messages") {

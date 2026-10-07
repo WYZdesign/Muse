@@ -335,7 +335,7 @@ onMarkAllRead?.();
   };
 
   const tabBtn = (key: any, label: string) => (
-    <div key={key} aria-pressed={hubTab === key} className={"conn-tab-sub" + (hubTab === key ? " active" : "")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setHubTab(key); } }} onClick={() => setHubTab(key)} style={{ cursor: "pointer", fontSize: 11, padding: "5px 10px", flexShrink: 0 }}>{label}</div>
+    <button type="button" key={key} aria-pressed={hubTab === key} className={"conn-tab-sub" + (hubTab === key ? " active" : "")} onClick={() => setHubTab(key)} style={{ fontSize: 11, padding: "5px 10px", flexShrink: 0 }}>{label}</button>
   );
 
   return (
@@ -356,7 +356,7 @@ onMarkAllRead?.();
         <>
           <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, paddingTop: 10, marginBottom: 10, scrollbarWidth: "none" }}>
             {(["all", "unread", "match", "message", "booking", "quest", "brief", "community"] as const).map(f => (
-              <div key={f} className={"conn-tab-sub" + (notifFilter === f ? " active" : "")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setNotifFilter(f); } }} onClick={() => setNotifFilter(f)} style={{ cursor: "pointer", fontSize: 10, padding: "4px 10px", flexShrink: 0, textTransform: "capitalize" }}>{f}</div>
+              <button type="button" key={f} aria-pressed={notifFilter === f} className={"conn-tab-sub" + (notifFilter === f ? " active" : "")} onClick={() => setNotifFilter(f)} style={{ fontSize: 10, padding: "4px 10px", flexShrink: 0, textTransform: "capitalize" }}>{f}</button>
             ))}
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
@@ -663,16 +663,14 @@ export const MenuModal = memo(function MenuModal({
     <div className={"hamburger-overlay" + (closing ? " closing" : "")} role="dialog" aria-modal="true" aria-label="Menu">
       <div className="hamburger-backdrop" role="dialog" aria-modal="true" aria-label="Menu" onClick={() => setShowHamburger(false)} />
       <div className="hamburger-panel" ref={hamburgerRef}>
-        <div
+        <button
+          type="button"
           className="hamburger-close"
           onClick={() => { if (hamburgerScreen) setHamburgerScreen(null as any); else setShowHamburger(false); }}
-          role="button"
           aria-label={hamburgerScreen ? "Back to menu" : "Close menu"}
-          tabIndex={0}
-          onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { if (hamburgerScreen) setHamburgerScreen(null as any); else setShowHamburger(false); } }}
         >
           {hamburgerScreen ? <FiArrowLeft size={18} /> : <FiX size={18} />}
-        </div>
+        </button>
         {!hamburgerScreen && (
           <button
             className="hamburger-bell"
@@ -722,17 +720,16 @@ export const MenuModal = memo(function MenuModal({
                 showScreen(item.key as any);
               };
               return (
-                <div
+                <button
+                  type="button"
                   key={item.key}
                   className="hamburger-item"
-                  role="button"
-                  tabIndex={0}
                   onClick={activate}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); activate(); } }}
+                  style={{ textAlign: "left", width: "100%" }}
                 >
                   <div className="hamburger-item-icon" style={{ background: item.grad }}>{item.icon}</div>
                   <div><div className="hamburger-item-label">{item.label}</div><div className="hamburger-item-desc">{item.desc}</div></div>
-                </div>
+                </button>
               );
             })}
             <div style={{ marginTop: 16, padding: 16, borderRadius: 16, background: "linear-gradient(135deg, rgba(212,165,255,0.10) 0%, rgba(255,105,180,0.10) 100%)", border: "1px solid rgba(212,165,255,0.18)" }}>

@@ -287,6 +287,73 @@ describe("GET discover-ranked", () => {
     expect(hidden.showAge).toBe(false);
     expect(hidden.birthdate).toBeUndefined();
   });
+
+  // Known open issue (DELIVERY_STATUS.md): a profile the viewer already
+  // liked/matched kept resurfacing in Discover indefinitely — this endpoint
+  // never consulted muse_matches at all. Locks in the fix: a muse_matches
+  // row with user_id = the viewer excludes that target from future results,
+  // regardless of whether the match is mutual yet.
+  it("excludes a profile the viewer already liked/matched (muse_matches row)", async () => {
+    (globalThis as any).__authUser = { id: "auth-1" };
+    installSb({
+      muse_profiles: (calls) => {
+        const sel = selectArg(calls);
+        if (sel === "id") return { data: { id: "me" } };
+        if (sel.includes("life_path") && sel.includes("age_verified_at")) {
+          return { data: { id: "me", type: "Photographer", styles: [], looking: [], age_verified: false, age_verified_at: null } };
+        }
+        if (sel.includes("boost_expires_at")) {
+          return { data: [
+            { id: "already-liked", avatar: "a", type: "Model" },
+            { id: "not-yet-seen", avatar: "a", type: "Model" },
+          ] };
+        }
+        return { data: null };
+      },
+      muse_blocks: () => ({ data: [] }),
+      muse_matches: () => ({ data: [{ target_id: "already-liked" }] }),
+    });
+    const body = await (await GET(req("discover-ranked", "tok"))).json();
+    const ids = body.profiles.map((p: any) => p.id);
+    expect(ids).not.toContain("already-liked");
+    expect(ids).toContain("not-yet-seen");
+  });
+
+  // Found during a visual audit: the card's "verified" checkmark and "online"
+  // dot both read profile.verified/profile.online, but this handler's own
+  // .select() never fetched the verified or last_seen_at columns — so
+  // neither signal could ever be true for a real profile, only for the
+  // static demo deck (which is why it went unnoticed). Locks in that both
+  // columns now pass through, and that showOnline derives the same way
+  // showAge already does (the owner's own preference, not a client guess).
+  it("passes through verified + last_seen_at, and derives showOnline from the owner's preference", async () => {
+    (globalThis as any).__authUser = { id: "auth-1" };
+    const recentSeen = new Date(Date.now() - 60000).toISOString();
+    installSb({
+      muse_profiles: (calls) => {
+        const sel = selectArg(calls);
+        if (sel === "id") return { data: { id: "me" } };
+        if (sel.includes("life_path") && sel.includes("age_verified_at")) {
+          return { data: { id: "me", type: "Photographer", styles: [], looking: [], age_verified: false, age_verified_at: null } };
+        }
+        if (sel.includes("boost_expires_at")) {
+          return { data: [
+            { id: "verified-visible", avatar: "a", type: "Model", verified: true, last_seen_at: recentSeen, preferences: {} },
+            { id: "online-hidden", avatar: "a", type: "Model", verified: false, last_seen_at: recentSeen, preferences: { showOnline: false } },
+          ] };
+        }
+        return { data: null };
+      },
+      muse_blocks: () => ({ data: [] }),
+    });
+    const body = await (await GET(req("discover-ranked", "tok"))).json();
+    const visible = body.profiles.find((p: any) => p.id === "verified-visible");
+    const hidden = body.profiles.find((p: any) => p.id === "online-hidden");
+    expect(visible.verified).toBe(true);
+    expect(visible.last_seen_at).toBe(recentSeen);
+    expect(visible.showOnline).toBe(true);
+    expect(hidden.showOnline).toBe(false);
+  });
 });
 
 describe("GET matches — blocking", () => {
@@ -306,6 +373,104 @@ describe("GET matches — blocking", () => {
     });
     const body = await (await GET(req("matches", "tok"))).json();
     expect(body.matches.map((m: any) => m.id)).toEqual(["m2"]);
+  });
+});
+
+// Blocking was enforced for discover-ranked/profiles/matches (above) but
+// feed/briefs/forum never consulted muse_blocks at all — a blocked author's
+// posts kept showing to the person who blocked them. Locks in the fix.
+describe("GET feed/briefs/forum — blocking", () => {
+  it("feed: excludes a post authored by someone the viewer blocked", async () => {
+    (globalThis as any).__authUser = { id: "auth-1" };
+    installSb({
+      muse_profiles: (calls) => profLookup(calls) ?? { data: null },
+      muse_feed_posts: () => ({ data: [
+        { id: "p1", author_id: { id: "blocked", name: "B" } },
+        { id: "p2", author_id: { id: "ok", name: "O" } },
+      ] }),
+      muse_blocks: () => ({ data: [{ user_id: "me", target_id: "blocked" }] }),
+    });
+    const body = await (await GET(req("feed", "tok"))).json();
+    expect(body.posts.map((p: any) => p.id)).toEqual(["p2"]);
+  });
+
+  it("feed: does not filter at all for an unauthenticated request", async () => {
+    installSb({
+      muse_feed_posts: () => ({ data: [{ id: "p1", author_id: { id: "anyone" } }] }),
+    });
+    const body = await (await GET(req("feed"))).json();
+    expect(body.posts.map((p: any) => p.id)).toEqual(["p1"]);
+  });
+
+  it("briefs: excludes a brief authored by someone who blocked the viewer", async () => {
+    (globalThis as any).__authUser = { id: "auth-1" };
+    installSb({
+      muse_profiles: (calls) => profLookup(calls) ?? { data: null },
+      muse_briefs: () => ({ data: [
+        { id: "b1", author_id: { id: "blocker" }, muse_brief_applications: [{ count: 0 }] },
+        { id: "b2", author_id: { id: "ok" }, muse_brief_applications: [{ count: 0 }] },
+      ] }),
+      muse_blocks: () => ({ data: [{ user_id: "blocker", target_id: "me" }] }),
+    });
+    const body = await (await GET(req("briefs", "tok"))).json();
+    expect(body.briefs.map((b: any) => b.id)).toEqual(["b2"]);
+  });
+
+  it("forum: excludes a post authored by someone the viewer blocked", async () => {
+    (globalThis as any).__authUser = { id: "auth-1" };
+    installSb({
+      muse_profiles: (calls) => profLookup(calls) ?? { data: null },
+      muse_forum_posts: () => ({ data: [
+        { id: "f1", author_id: { id: "blocked" } },
+        { id: "f2", author_id: { id: "ok" } },
+      ] }),
+      muse_blocks: () => ({ data: [{ user_id: "me", target_id: "blocked" }] }),
+    });
+    const body = await (await GET(req("forum", "tok"))).json();
+    expect(body.posts.map((p: any) => p.id)).toEqual(["f2"]);
+  });
+
+  it("sessions: excludes a session hosted by someone the viewer blocked", async () => {
+    (globalThis as any).__authUser = { id: "auth-1" };
+    installSb({
+      muse_profiles: (calls) => profLookup(calls) ?? { data: null },
+      muse_sessions: () => ({ data: [
+        { id: "s1", host_id: "blocked" },
+        { id: "s2", host_id: "ok" },
+      ] }),
+      muse_blocks: () => ({ data: [{ user_id: "me", target_id: "blocked" }] }),
+      muse_bookings: () => ({ data: [] }),
+    });
+    const body = await (await GET(req("sessions", "tok"))).json();
+    expect(body.sessions.map((s: any) => s.id)).toEqual(["s2"]);
+  });
+
+  it("moments: excludes a moment authored by someone the viewer blocked", async () => {
+    (globalThis as any).__authUser = { id: "auth-1" };
+    installSb({
+      muse_profiles: (calls) => profLookup(calls) ?? { data: null },
+      muse_moments: () => ({ data: [
+        { id: "m1", author_id: { id: "blocked", name: "B" } },
+        { id: "m2", author_id: { id: "ok", name: "O" } },
+      ] }),
+      muse_blocks: () => ({ data: [{ user_id: "me", target_id: "blocked" }] }),
+    });
+    const body = await (await GET(req("moments", "tok"))).json();
+    expect(body.moments.map((m: any) => m.id)).toEqual(["m2"]);
+  });
+
+  it("events: excludes an event organized by someone the viewer blocked", async () => {
+    (globalThis as any).__authUser = { id: "auth-1" };
+    installSb({
+      muse_profiles: (calls) => profLookup(calls) ?? { data: null },
+      muse_events: () => ({ data: [
+        { id: "e1", created_by: "blocked" },
+        { id: "e2", created_by: "ok" },
+      ] }),
+      muse_blocks: () => ({ data: [{ user_id: "me", target_id: "blocked" }] }),
+    });
+    const body = await (await GET(req("events", "tok"))).json();
+    expect(body.events.map((e: any) => e.id)).toEqual(["e2"]);
   });
 });
 
@@ -420,6 +585,22 @@ describe("GET sessions — host trust enrichment", () => {
     expect(s1.hostVerified).toBe(true);
     expect(s1.hostCompletedSessions).toBe(2);
     expect(s2.hostCompletedSessions).toBe(0);
+  });
+  // muse_sessions has no `name` column (name belongs to the host, title to the
+  // session) — SessionsScreen's card headline/book-toast/aria-label/modal
+  // title all read `s.name` expecting the host's name. Without joining it in
+  // here, every real session silently fell back to its own title via
+  // normalizeSession()'s `s.name ?? s.title` instead of showing the host.
+  it("attaches the host's own name, not the session's title", async () => {
+    installSb({
+      muse_sessions: () => ({ data: [{ id: "s1", host_id: "h1", title: "Golden Hour Portrait Session" }] }),
+      muse_profiles: () => ({ data: [{ id: "h1", name: "Jordan Lee", verified: true }] }),
+      muse_bookings: () => ({ data: [] }),
+    });
+    const body = await (await GET(req("sessions"))).json();
+    const s1 = body.sessions.find((s: any) => s.id === "s1");
+    expect(s1.name).toBe("Jordan Lee");
+    expect(s1.title).toBe("Golden Hour Portrait Session");
   });
   it("skips enrichment when there are no sessions", async () => {
     installSb({ muse_sessions: () => ({ data: [] }) });

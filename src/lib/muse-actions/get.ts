@@ -125,18 +125,30 @@ export async function GET(req: NextRequest) {
       if (!viewer) return NextResponse.json({ error: "Not found" }, { status: 404 });
       const viewerVerified = isAgeVerificationCurrent(viewer as any);
       const { data } = await sb.from("muse_profiles")
-        .select("id, name, type, avatar, bio, loc, styles, looking, nsfw, suspended, zodiac, chinese, mbti, life_path, boost_expires_at, preferences, birthdate")
+        .select("id, name, type, avatar, bio, loc, styles, looking, nsfw, suspended, zodiac, chinese, mbti, life_path, boost_expires_at, preferences, birthdate, verified, last_seen_at")
         .limit(400);
       let blockedIds = new Set<string>();
       {
         const { data: blocks } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
         blockedIds = new Set((blocks || []).map((b: any) => (String(b.user_id) === String(profileId) ? String(b.target_id) : String(b.user_id))));
       }
+      // A profile the viewer already liked/matched (a muse_matches row with
+      // user_id = profileId, mutual or not) kept resurfacing in the swipe deck
+      // indefinitely — this endpoint never consulted muse_matches at all, so
+      // "already acted on" had no effect on what Discover serves next. Only
+      // the viewer's own outgoing rows count: the other person's own like of
+      // the viewer doesn't mean the viewer has seen/decided on them yet.
+      let alreadyMatchedIds = new Set<string>();
+      {
+        const { data: ownMatches } = await sb.from("muse_matches").select("target_id").eq("user_id", profileId);
+        alreadyMatchedIds = new Set((ownMatches || []).map((m: any) => String(m.target_id)));
+      }
       const side = CREATIVE_SIDE[viewer.type as string] || null;
       const scored = (data || [])
         .filter((p: any) => {
           if (String(p.id) === String(profileId)) return false;
           if (blockedIds.has(String(p.id))) return false;
+          if (alreadyMatchedIds.has(String(p.id))) return false;
           if (p.suspended) return false;
           if (p.nsfw && !viewerVerified) return false;
           const hasAvatar = typeof p.avatar === "string" && p.avatar.trim().length > 0;
@@ -146,9 +158,14 @@ export async function GET(req: NextRequest) {
         .map((p: any) => {
           const base = calcMatchScore(viewer as any, p);
           const boosted = isBoostActive(p.boost_expires_at);
-          // Derived age only, gated by the owner's own "Show age" preference;
-          // the raw birthdate + preferences blob never leave the server.
-          return { ...p, age: publicAge(p), showAge: p.preferences?.showAge !== false, birthdate: undefined, preferences: undefined, matchScore: base, boosted, sideMatches: !!side && !!CREATIVE_SIDE[p.type] && CREATIVE_SIDE[p.type] !== side };
+          // Derived age/online-visibility only, gated by the owner's own
+          // "Show age"/"Show online status" preferences; the raw birthdate +
+          // preferences blob never leave the server. verified/last_seen_at
+          // pass through unchanged via the spread (added to the select above
+          // — this card previously never showed the verified checkmark or
+          // online dot for any real profile, since neither column was ever
+          // fetched here, unlike the matches/feed/profiles handlers).
+          return { ...p, age: publicAge(p), showAge: p.preferences?.showAge !== false, showOnline: p.preferences?.showOnline !== false, birthdate: undefined, preferences: undefined, matchScore: base, boosted, sideMatches: !!side && !!CREATIVE_SIDE[p.type] && CREATIVE_SIDE[p.type] !== side };
         });
       // Boosted + complementary-side first, then by match score; capped for payload.
       scored.sort((a: any, b: any) => {
@@ -219,7 +236,19 @@ export async function GET(req: NextRequest) {
       // each post's author, same presence signal already used for matches
       // (see useDiscoveryData.ts's `online` computation).
       const { data } = await sb.from("muse_feed_posts").select("*, author_id(id, name, avatar, last_seen_at, verified)").order("created_at", { ascending: false }).limit(50);
-      return NextResponse.json({ posts: data || [] });
+      // Blocking was enforced for discover-ranked/profiles/matches and for
+      // cleaning up an existing match (see userBlock in forum.ts), but this
+      // listing — and briefs/forum right below it — never consulted
+      // muse_blocks at all: a blocked author's posts kept showing to the
+      // person who blocked them (and vice versa) in Feed, Collab and the
+      // Network forum. Same blockedIds pattern as discover-ranked/profiles.
+      let posts = data || [];
+      if (profileId) {
+        const { data: blocks } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
+        const blockedIds = new Set((blocks || []).map((b: any) => (String(b.user_id) === String(profileId) ? String(b.target_id) : String(b.user_id))));
+        posts = posts.filter((p: any) => !blockedIds.has(String(p.author_id?.id)));
+      }
+      return NextResponse.json({ posts });
     }
 
     if (type === "briefs") {
@@ -228,17 +257,40 @@ export async function GET(req: NextRequest) {
       // separate round-trip — CollabScreen.tsx surfaces this only to the
       // brief's own author, not to other viewers.
       const { data } = await sb.from("muse_briefs").select("*, author_id(id, name, avatar), muse_brief_applications(count)").order("created_at", { ascending: false }).limit(50);
-      return NextResponse.json({ briefs: data || [] });
+      // Same gap as "feed" above — blocking never reached this listing.
+      let briefs = data || [];
+      if (profileId) {
+        const { data: blocks } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
+        const blockedIds = new Set((blocks || []).map((b: any) => (String(b.user_id) === String(profileId) ? String(b.target_id) : String(b.user_id))));
+        briefs = briefs.filter((b: any) => !blockedIds.has(String(b.author_id?.id)));
+      }
+      return NextResponse.json({ briefs });
     }
 
     if (type === "forum") {
       const { data } = await sb.from("muse_forum_posts").select("*, author_id(id, name, avatar)").order("created_at", { ascending: false }).limit(50);
-      return NextResponse.json({ posts: data || [] });
+      // Same gap as "feed" above — blocking never reached this listing.
+      let posts = data || [];
+      if (profileId) {
+        const { data: blocks } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
+        const blockedIds = new Set((blocks || []).map((b: any) => (String(b.user_id) === String(profileId) ? String(b.target_id) : String(b.user_id))));
+        posts = posts.filter((p: any) => !blockedIds.has(String(p.author_id?.id)));
+      }
+      return NextResponse.json({ posts });
     }
 
     if (type === "events") {
       const { data } = await sb.from("muse_events").select("*").limit(50);
-      return NextResponse.json({ events: data || [] });
+      // Same gap as feed/briefs/forum/sessions/moments above — a blocked
+      // organizer's (created_by, per communities.ts's eventCreate) events
+      // kept showing on CommunityScreen's Events tab.
+      let events = data || [];
+      if (profileId) {
+        const { data: blocks } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
+        const blockedIds = new Set((blocks || []).map((b: any) => (String(b.user_id) === String(profileId) ? String(b.target_id) : String(b.user_id))));
+        events = events.filter((e: any) => !blockedIds.has(String(e.created_by)));
+      }
+      return NextResponse.json({ events });
     }
 
     if (type === "rsvps") {
@@ -310,16 +362,32 @@ export async function GET(req: NextRequest) {
 
     if (type === "sessions") {
       const { data } = await sb.from("muse_sessions").select("*").order("date", { ascending: true }).limit(20);
-      const rows = data || [];
+      // Same "blocking never reached this listing" gap as feed/briefs/forum
+      // above — a blocked host's bookable sessions kept showing on Browse.
+      let rows = data || [];
+      if (profileId) {
+        const { data: blocks } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
+        const blockedIds = new Set((blocks || []).map((b: any) => (String(b.user_id) === String(profileId) ? String(b.target_id) : String(b.user_id))));
+        rows = rows.filter((s: any) => !blockedIds.has(String(s.host_id)));
+      }
       // Trust signals for the browse cards: whether the host is identity-verified
       // and how many sessions they've actually completed as a host — both real
       // counts, not derived from the session's own (self-reported) `rating`.
       const hostIds = [...new Set(rows.map((s: any) => s.host_id).filter(Boolean))];
       let verifiedByHost = new Map<string, boolean>();
+      // muse_sessions has no `name` column — it's the SESSION's title, not the
+      // HOST's name. SessionsScreen's card headline, book-toast, aria-label and
+      // modal title all read `s.name` expecting the host's name (matching the
+      // demo-data convention where `name`=host, `title`=session), so without
+      // this every real session silently showed its own title a second time
+      // where the host's name belonged — normalizeSession()'s `s.name ?? s.title`
+      // fallback masked it instead of surfacing a blank/undefined.
+      let nameByHost = new Map<string, string>();
       const completedByHost = new Map<string, number>();
       if (hostIds.length) {
-        const { data: hosts } = await sb.from("muse_profiles").select("id, verified").in("id", hostIds);
+        const { data: hosts } = await sb.from("muse_profiles").select("id, name, verified").in("id", hostIds);
         verifiedByHost = new Map((hosts || []).map((h: any) => [h.id, !!h.verified]));
+        nameByHost = new Map((hosts || []).map((h: any) => [h.id, h.name]));
         const { data: completed } = await sb.from("muse_bookings").select("host_id").in("host_id", hostIds).eq("status", "completed");
         for (const b of completed || []) {
           const hid = String((b as any).host_id);
@@ -329,6 +397,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({
         sessions: rows.map((s: any) => ({
           ...s,
+          name: nameByHost.get(s.host_id) || s.name,
           hostVerified: !!verifiedByHost.get(s.host_id),
           hostCompletedSessions: completedByHost.get(s.host_id) || 0,
         })),
@@ -515,11 +584,19 @@ export async function GET(req: NextRequest) {
 
     if (type === "moments") {
       const { data } = await sb.from("muse_moments")
-        .select("id, text, img, type, likes, comments, created_at, author_id(name, avatar)")
+        .select("id, text, img, type, likes, comments, created_at, author_id(id, name, avatar)")
         .gt("expires_at", new Date().toISOString())
         .order("created_at", { ascending: false })
         .limit(50);
-      return NextResponse.json({ moments: data || [] });
+      // Same gap as feed/briefs/forum/sessions above — a blocked author's BTS
+      // moments kept showing. author_id now also selects id (needed to filter).
+      let moments = data || [];
+      if (profileId) {
+        const { data: blocks } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
+        const blockedIds = new Set((blocks || []).map((b: any) => (String(b.user_id) === String(profileId) ? String(b.target_id) : String(b.user_id))));
+        moments = moments.filter((m: any) => !blockedIds.has(String(m.author_id?.id)));
+      }
+      return NextResponse.json({ moments });
     }
 
     if (type === "bookings") {

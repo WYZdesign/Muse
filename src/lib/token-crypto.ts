@@ -1,5 +1,10 @@
 import crypto from "crypto";
 
+// AES-256-GCM encryption for OAuth tokens stored at rest (social-connect
+// refresh/access tokens, etc.). Falls back to storing plaintext when no key
+// material is configured (local/dev only — every production env should have
+// one of the OAUTH_TOKEN_KEY/OAUTH_STATE_SECRET/STRIPE_SECRET_KEY envs set),
+// and decryptToken() stays backward-compatible with pre-encryption rows.
 const ALGORITHM = "aes-256-gcm";
 const KEY_RAW = process.env.OAUTH_TOKEN_KEY || process.env.OAUTH_STATE_SECRET || process.env.STRIPE_SECRET_KEY || "";
 

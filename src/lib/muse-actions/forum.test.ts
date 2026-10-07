@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { createSb } from "@/test-support/sb";
 
 vi.mock("@/lib/rate-limit", () => ({ checkRate: async () => true, checkRateUser: async () => true, clientIp: () => "10.0.0.1" }));
 vi.mock("@/lib/request-safety", () => ({ sanitizeText: (s: string, n: number) => String(s).slice(0, n) }));
@@ -151,5 +152,59 @@ describe("forum admin gate + vote dedup", () => {
     );
     const r = await forumDispatch(ctx);
     expect((r as Response).status).toBe(409);
+  });
+});
+
+// Regression coverage: get-replies/get-thread never consulted muse_blocks at
+// all (not even the "write-only" pattern of other listings — these simply
+// never queried it), so a blocked user's replies kept showing in a thread to
+// the person who blocked them, and vice versa. Same bug family already fixed
+// for feed/briefs/forum posts/sessions/moments/events (get.ts) and search
+// (misc.ts); this closes the gap in forum replies specifically.
+describe("forum replies — blocking", () => {
+  const postId = "11111111-1111-4111-8111-111111111111";
+  // r2 is a CHILD of r1 (not a sibling) so get-thread's root-then-descendants
+  // walk actually includes it in the fetched thread — a top-level sibling
+  // with no parent/child relationship to the requested reply would never be
+  // in-thread regardless of blocking, which wouldn't exercise the filter.
+  const replyRows = [
+    { id: "r1", post_id: postId, user_id: "me1", user_name: "Ada", user_avatar: "", text: "mine", created_at: "2026-01-01", parent_reply_id: null, depth: 0 },
+    { id: "r2", post_id: postId, user_id: "blocked1", user_name: "Blocked Person", user_avatar: "", text: "should be hidden", created_at: "2026-01-02", parent_reply_id: "r1", depth: 1 },
+    { id: "r3", post_id: postId, user_id: "other1", user_name: "Other Person", user_avatar: "", text: "visible", created_at: "2026-01-03", parent_reply_id: null, depth: 0 },
+  ];
+
+  function sbWithBlocks() {
+    return createSb((table, calls) => {
+      if (table === "muse_blocks") return { data: [{ user_id: "me1", target_id: "blocked1" }], error: null };
+      if (table === "muse_forum_replies") {
+        // get-thread does two kinds of fetch on this table: a by-id lookup
+        // (maybeSingle, for the requested reply and each ancestor walked) and
+        // a by-post_id list fetch (all replies in the post). Distinguish by
+        // which `eq()` filter was applied so each returns the right shape.
+        const idCall = calls.find((c) => c.method === "eq" && c.args[0] === "id");
+        if (idCall) return { data: replyRows.find((r) => r.id === idCall.args[1]) || null, error: null };
+        return { data: replyRows, error: null };
+      }
+      return { data: null, error: null };
+    });
+  }
+
+  it("get-replies excludes a reply from a user the viewer blocked", async () => {
+    const sb = sbWithBlocks();
+    const ctx = { sb, profile: { id: "me1", name: "Ada" }, rest: { postId }, ip: "10.0.0.1", rawType: "get-replies", req: {} as any } as any;
+    const r = await forumDispatch(ctx);
+    const body = await (r as Response).json();
+    expect(body.success).toBe(true);
+    expect(body.replies.map((x: any) => x.id)).toEqual(["r1", "r3"]);
+  });
+
+  it("get-thread excludes a reply from a user the viewer blocked, even though it's in the fetched thread", async () => {
+    const sb = sbWithBlocks();
+    const ctx = { sb, profile: { id: "me1", name: "Ada" }, rest: { replyId: "r1" }, ip: "10.0.0.1", rawType: "get-thread", req: {} as any } as any;
+    const r = await forumDispatch(ctx);
+    const body = await (r as Response).json();
+    expect(body.success).toBe(true);
+    expect(body.replies.map((x: any) => x.id)).toContain("r1");
+    expect(body.replies.map((x: any) => x.id)).not.toContain("r2");
   });
 });

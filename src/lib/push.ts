@@ -1,5 +1,9 @@
 import webPush from "web-push";
 
+// Web Push (VAPID) wiring for browser push notifications — generates/holds
+// the VAPID keypair and sends subscription payloads. No-ops quietly when
+// VAPID keys aren't configured (local/dev) rather than throwing, since push
+// is an enhancement, not a hard dependency of the app working.
 const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || "";
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "";
 const VAPID_SUBJECT = process.env.VAPID_SUBJECT || "mailto:legal@wyzdesign.com";

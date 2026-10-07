@@ -11,7 +11,7 @@ import { checkRate, checkRateUser } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/request-safety";
 import { screenText, moderateText } from "@/lib/aiModeration";
 import { sendEmail, notify } from "@/lib/email";
-import { UUID_RE, applyStrikeAndEscalate, validateInput, NextResponse, safeServerError, isAdminEmail, type ActionContext } from "./shared";
+import { UUID_RE, applyStrikeAndEscalate, validateInput, NextResponse, safeServerError, isAdminEmail, getBlockedIds, type ActionContext } from "./shared";
 
 export const forumDispatch = async ({ sb, profile, rest, ip, rawType }: ActionContext) => {
   if (!await checkRate(ip, "forum", 5)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
@@ -26,7 +26,13 @@ export const forumDispatch = async ({ sb, profile, rest, ip, rawType }: ActionCo
       .order("created_at", { ascending: true })
       .limit(100);
     if (replErr) return safeServerError(replErr, "db op");
-    const mapped = (replies || []).map((r: any) => ({
+    // Same "blocking was write-only" gap already fixed for feed/briefs/forum
+    // posts/sessions/moments/events (get.ts) and search (misc.ts) — replies
+    // never consulted muse_blocks either, so a blocked user's replies still
+    // showed up in a thread to the person who blocked them (and vice versa).
+    const blockedIds = await getBlockedIds(sb, profile.id);
+    const visible = (replies || []).filter((r: any) => !blockedIds.has(String(r.user_id)));
+    const mapped = visible.map((r: any) => ({
       id: r.id,
       author: r.user_name || "User",
       avatar: r.user_avatar || "",
@@ -80,7 +86,8 @@ export const forumDispatch = async ({ sb, profile, rest, ip, rawType }: ActionCo
       }
     };
     buildThreadSet(root.id, allReplies || []);
-    const threadReplies = (allReplies || []).filter((r: any) => threadIds.has(r.id));
+    const blockedIds = await getBlockedIds(sb, profile.id);
+    const threadReplies = (allReplies || []).filter((r: any) => threadIds.has(r.id) && !blockedIds.has(String(r.user_id)));
     const mapped = threadReplies.map((r: any) => ({
       id: r.id,
       author: r.user_name || "User",

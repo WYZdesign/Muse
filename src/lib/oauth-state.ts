@@ -1,5 +1,10 @@
 import crypto from "crypto";
 
+// HMAC-signed, time-boxed `state` payloads for OAuth redirect flows (social
+// connect, etc.) — prevents a forged/replayed state param from being
+// accepted, and verifyState()'s maxAgeMs bounds how long a state value stays
+// valid. Fails hard at import time if OAUTH_STATE_SECRET is unset, since an
+// unsigned/unverifiable state defeats the whole point.
 const SECRET = process.env.OAUTH_STATE_SECRET;
 if (!SECRET) { throw new Error("FATAL: OAUTH_STATE_SECRET must be set — refusing to start without a dedicated signing key"); }
 const _SECRET: string = SECRET;

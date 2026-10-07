@@ -104,9 +104,9 @@ export default function ReferralPanel({ onClose }: Props) {
         {/* Share link */}
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 6 }}>Or share this link</div>
-          <div role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); copyLink(); } }} onClick={copyLink} style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)", fontSize: 12, cursor: "pointer", wordBreak: "break-all" }}>
+          <button type="button" onClick={copyLink} style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)", fontSize: 12, wordBreak: "break-all", width: "100%", textAlign: "left" }}>
             {data?.referralUrl || "Loading..."}
-          </div>
+          </button>
         </div>
 
         {/* Stats */}

@@ -51,4 +51,29 @@ describe("useChatEffects", () => {
     renderHook(() => useChatEffects(args({ chatTarget: null }) as never));
     expect(subscribeToConversation).not.toHaveBeenCalled();
   });
+
+  // Regression: a live-received voice/video note previously rendered as a
+  // blank bubble because onMessage only forwarded (senderId, text, img) and
+  // dropped kind/mediaUrl/mediaType/durationMs/transcript — those only
+  // showed up correctly after a reload re-ran fetchConversationHistory,
+  // which already mapped them. subscribeToConversation now passes a 4th
+  // "extras" arg; this locks in that useChatEffects merges it into the
+  // message it appends.
+  it("merges voice/video-note extras from a live message into the appended message", () => {
+    const setChatTarget = vi.fn();
+    const setMatches = vi.fn();
+    renderHook(() => useChatEffects(args({ setChatTarget, setMatches }) as never));
+    const onMessage = vi.mocked(subscribeToConversation).mock.calls[0][0].onMessage as (
+      senderId: string, text: string, img?: string, extras?: Record<string, unknown>
+    ) => void;
+    onMessage("them-id", "", undefined, { kind: "voice", mediaUrl: "https://x/clip.webm", mediaType: "audio/webm", durationMs: 4200, transcript: "hey" });
+
+    const updater = setChatTarget.mock.calls[0][0] as (prev: Match) => Match;
+    const next = updater(MATCH);
+    const appended = next.messages[next.messages.length - 1] as unknown as Record<string, unknown>;
+    expect(appended.kind).toBe("voice");
+    expect(appended.mediaUrl).toBe("https://x/clip.webm");
+    expect(appended.durationMs).toBe(4200);
+    expect(appended.transcript).toBe("hey");
+  });
 });

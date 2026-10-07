@@ -197,7 +197,11 @@ export const messageRequestBlock = async ({ sb, profile, rest }: ActionContext) 
 };
 
 export const messageRequestsGet = async ({ sb, profile }: ActionContext) => {
-  const { data: requests } = await sb.from("muse_message_requests").select("*, request_from:profiles!muse_message_requests_request_from_fkey(id,name,avatar,verified)").eq("request_to", profile.id).order("created_at", { ascending: false });
+  // Only "pending" belongs in the inbox. Without this filter, a request the
+  // user already accepted/declined — or one they used to block the sender —
+  // stays in this list forever (the "Inbox" badge count and list never
+  // shrink, and a blocked user's request keeps showing up indefinitely).
+  const { data: requests } = await sb.from("muse_message_requests").select("*, request_from:profiles!muse_message_requests_request_from_fkey(id,name,avatar,verified)").eq("request_to", profile.id).eq("status", "pending").order("created_at", { ascending: false });
   return NextResponse.json({ success: true, requests: requests || [] });
 };
 
