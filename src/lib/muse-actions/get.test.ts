@@ -318,6 +318,42 @@ describe("GET discover-ranked", () => {
     expect(ids).not.toContain("already-liked");
     expect(ids).toContain("not-yet-seen");
   });
+
+  // Found during a visual audit: the card's "verified" checkmark and "online"
+  // dot both read profile.verified/profile.online, but this handler's own
+  // .select() never fetched the verified or last_seen_at columns — so
+  // neither signal could ever be true for a real profile, only for the
+  // static demo deck (which is why it went unnoticed). Locks in that both
+  // columns now pass through, and that showOnline derives the same way
+  // showAge already does (the owner's own preference, not a client guess).
+  it("passes through verified + last_seen_at, and derives showOnline from the owner's preference", async () => {
+    (globalThis as any).__authUser = { id: "auth-1" };
+    const recentSeen = new Date(Date.now() - 60000).toISOString();
+    installSb({
+      muse_profiles: (calls) => {
+        const sel = selectArg(calls);
+        if (sel === "id") return { data: { id: "me" } };
+        if (sel.includes("life_path") && sel.includes("age_verified_at")) {
+          return { data: { id: "me", type: "Photographer", styles: [], looking: [], age_verified: false, age_verified_at: null } };
+        }
+        if (sel.includes("boost_expires_at")) {
+          return { data: [
+            { id: "verified-visible", avatar: "a", type: "Model", verified: true, last_seen_at: recentSeen, preferences: {} },
+            { id: "online-hidden", avatar: "a", type: "Model", verified: false, last_seen_at: recentSeen, preferences: { showOnline: false } },
+          ] };
+        }
+        return { data: null };
+      },
+      muse_blocks: () => ({ data: [] }),
+    });
+    const body = await (await GET(req("discover-ranked", "tok"))).json();
+    const visible = body.profiles.find((p: any) => p.id === "verified-visible");
+    const hidden = body.profiles.find((p: any) => p.id === "online-hidden");
+    expect(visible.verified).toBe(true);
+    expect(visible.last_seen_at).toBe(recentSeen);
+    expect(visible.showOnline).toBe(true);
+    expect(hidden.showOnline).toBe(false);
+  });
 });
 
 describe("GET matches — blocking", () => {

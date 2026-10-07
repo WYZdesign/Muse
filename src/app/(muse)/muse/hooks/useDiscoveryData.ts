@@ -14,7 +14,7 @@ export type UseDiscoveryDataArgs = {
 
 type RawRow = Record<string, unknown>;
 type RankedProfile = ReturnType<typeof normalizeProfile> & {
-  matchScore: number; boosted: boolean; sideMatches: boolean; verified: boolean; boost_expires_at: string | null;
+  matchScore: number; boosted: boolean; sideMatches: boolean; verified: boolean; boost_expires_at: string | null; online: boolean; showOnline: boolean;
 };
 
 export function useDiscoveryData({ apiFetch, authFetch, profileId }: UseDiscoveryDataArgs) {
@@ -42,6 +42,11 @@ export function useDiscoveryData({ apiFetch, authFetch, profileId }: UseDiscover
           sideMatches: !!p.sideMatches,
           verified: !!p.verified,
           boost_expires_at: (p.boost_expires_at as string | null) || null,
+          // Same 5-minute online threshold already used for the matches list
+          // below. The card's own render also checks showOnline (the owner's
+          // "show online status" preference) before drawing the dot.
+          online: !!p.last_seen_at && (Date.now() - new Date(p.last_seen_at as string).getTime()) < 5 * 60 * 1000,
+          showOnline: p.showOnline !== false,
         }));
         setLiveProfiles(enriched);
       })

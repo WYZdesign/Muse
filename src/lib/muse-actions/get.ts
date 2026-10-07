@@ -125,7 +125,7 @@ export async function GET(req: NextRequest) {
       if (!viewer) return NextResponse.json({ error: "Not found" }, { status: 404 });
       const viewerVerified = isAgeVerificationCurrent(viewer as any);
       const { data } = await sb.from("muse_profiles")
-        .select("id, name, type, avatar, bio, loc, styles, looking, nsfw, suspended, zodiac, chinese, mbti, life_path, boost_expires_at, preferences, birthdate")
+        .select("id, name, type, avatar, bio, loc, styles, looking, nsfw, suspended, zodiac, chinese, mbti, life_path, boost_expires_at, preferences, birthdate, verified, last_seen_at")
         .limit(400);
       let blockedIds = new Set<string>();
       {
@@ -158,9 +158,14 @@ export async function GET(req: NextRequest) {
         .map((p: any) => {
           const base = calcMatchScore(viewer as any, p);
           const boosted = isBoostActive(p.boost_expires_at);
-          // Derived age only, gated by the owner's own "Show age" preference;
-          // the raw birthdate + preferences blob never leave the server.
-          return { ...p, age: publicAge(p), showAge: p.preferences?.showAge !== false, birthdate: undefined, preferences: undefined, matchScore: base, boosted, sideMatches: !!side && !!CREATIVE_SIDE[p.type] && CREATIVE_SIDE[p.type] !== side };
+          // Derived age/online-visibility only, gated by the owner's own
+          // "Show age"/"Show online status" preferences; the raw birthdate +
+          // preferences blob never leave the server. verified/last_seen_at
+          // pass through unchanged via the spread (added to the select above
+          // — this card previously never showed the verified checkmark or
+          // online dot for any real profile, since neither column was ever
+          // fetched here, unlike the matches/feed/profiles handlers).
+          return { ...p, age: publicAge(p), showAge: p.preferences?.showAge !== false, showOnline: p.preferences?.showOnline !== false, birthdate: undefined, preferences: undefined, matchScore: base, boosted, sideMatches: !!side && !!CREATIVE_SIDE[p.type] && CREATIVE_SIDE[p.type] !== side };
         });
       // Boosted + complementary-side first, then by match score; capped for payload.
       scored.sort((a: any, b: any) => {
