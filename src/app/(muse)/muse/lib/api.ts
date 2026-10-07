@@ -37,16 +37,42 @@ const DEFAULT_FETCH_TIMEOUT_MS = 15000;
 // caller-supplied AbortSignal, and no request body are deduped.
 const _inflightGets = new Map<string, Promise<Response>>();
 
+// ── Short-TTL, mutation-invalidated GET cache (Roadmap 1.2 extension) ────────
+// Opt-in per call via `cacheTtlMs` (default 0 = dedupe only). Only successful
+// GETs are cached, and the whole cache is cleared on ANY non-GET request, so a
+// write is never followed by a stale read. Callers must not opt in for auth or
+// realtime reads.
+type _CacheEntry = { expiresAt: number; status: number; headers: [string, string][]; body: ArrayBuffer };
+const _getCache = new Map<string, _CacheEntry>();
+
+function invalidateGetCache() { if (_getCache.size) _getCache.clear(); }
+
 function isDedupable(method: string, rest: RequestInit): boolean {
   return method === "GET" && !rest.signal && rest.body == null;
 }
 
-async function deduped(key: string, run: () => Promise<Response>): Promise<Response> {
+async function deduped(key: string, run: () => Promise<Response>, ttlMs = 0): Promise<Response> {
+  if (ttlMs > 0) {
+    const hit = _getCache.get(key);
+    if (hit && hit.expiresAt > Date.now()) {
+      return new Response(hit.body.slice(0), { status: hit.status, headers: hit.headers });
+    }
+  }
   let p = _inflightGets.get(key);
   if (!p) {
-    p = run();
+    p = (async () => {
+      const res = await run();
+      if (ttlMs > 0 && res.ok) {
+        try {
+          const body = await res.clone().arrayBuffer();
+          _getCache.set(key, { expiresAt: Date.now() + ttlMs, status: res.status, headers: Array.from(res.headers.entries()), body });
+        } catch { /* non-cloneable stub (tests) */ }
+      }
+      return res;
+    })();
     _inflightGets.set(key, p);
-    // Drop the entry once settled (success or failure) so the next call is live.
+    // Drop the in-flight entry once settled (success or failure) so the next
+    // call is live (or served from the TTL cache when opted in).
     void p.catch(() => {}).finally(() => { if (_inflightGets.get(key) === p) _inflightGets.delete(key); });
   }
   const res = await p;
@@ -65,19 +91,20 @@ async function deduped(key: string, run: () => Promise<Response>): Promise<Respo
  * in the first place. This is the plain version: fetch + timeout, nothing
  * else.
  */
-export async function fetchWithTimeout(url: string, options: RequestInit & { timeoutMs?: number } = {}): Promise<Response> {
-  const { timeoutMs = DEFAULT_FETCH_TIMEOUT_MS, ...rest } = options;
+export async function fetchWithTimeout(url: string, options: RequestInit & { timeoutMs?: number; cacheTtlMs?: number } = {}): Promise<Response> {
+  const { timeoutMs = DEFAULT_FETCH_TIMEOUT_MS, cacheTtlMs = 0, ...rest } = options;
   const doFetch = async () => {
     const { options: opts, cancel } = withTimeout(rest, timeoutMs);
     try { return await fetch(url, opts); } finally { cancel(); }
   };
   const method = (rest.method || "GET").toUpperCase();
-  if (isDedupable(method, rest)) return deduped(`pub:${url}`, doFetch);
+  if (method !== "GET") { invalidateGetCache(); return doFetch(); }
+  if (isDedupable(method, rest)) return deduped(`pub:${url}`, doFetch, cacheTtlMs);
   return doFetch();
 }
 
 // Simple alias for compatibility with existing code
-export async function apiFetch(url: string, options: RequestInit & { timeoutMs?: number } = {}): Promise<Response> {
+export async function apiFetch(url: string, options: RequestInit & { timeoutMs?: number; cacheTtlMs?: number } = {}): Promise<Response> {
   return fetchWithTimeout(url, options);
 }
 
@@ -129,12 +156,13 @@ async function refreshAccessToken(): Promise<string> {
   try { return await _refreshPromise; } finally { _refreshPromise = null; }
 }
 
-export async function authFetch(url: string, options: RequestInit & { timeoutMs?: number } = {}): Promise<Response> {
-  const { timeoutMs = DEFAULT_FETCH_TIMEOUT_MS, ...rest } = options;
+export async function authFetch(url: string, options: RequestInit & { timeoutMs?: number; cacheTtlMs?: number } = {}): Promise<Response> {
+  const { timeoutMs = DEFAULT_FETCH_TIMEOUT_MS, cacheTtlMs = 0, ...rest } = options;
   const token = getAccessToken();
   const method = (rest.method || "GET").toUpperCase();
   const run = () => doAuthFetch(url, rest, timeoutMs, token);
-  if (isDedupable(method, rest)) return deduped(`auth:${url}:${token}`, run);
+  if (method !== "GET") { invalidateGetCache(); return run(); }
+  if (isDedupable(method, rest)) return deduped(`auth:${url}:${token}`, run, cacheTtlMs);
   return run();
 }
 
