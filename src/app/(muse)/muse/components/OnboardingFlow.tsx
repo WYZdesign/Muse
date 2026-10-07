@@ -434,6 +434,7 @@ export function OnboardingFlow({ obStep, setObStep, obData, setObData, obConnect
                       setCurrentUser((prev) =>({...prev,name:obData.name||prev.name,type:obData.type||prev.type,avatar:obProfilePic||prev.avatar}));
                       const geo = await getGeolocation();
                       if(authUser?.id){
+                        let profileSaved = false;
                         try{
                           const r = await authFetch("/api/muse/auth",{method:"POST",body:JSON.stringify({action:"update-profile",
                             name:obData.name,loc:obData.loc,bio:obData.bio,audience:obData.audience||"creative",type:obData.type,
@@ -446,8 +447,17 @@ export function OnboardingFlow({ obStep, setObStep, obData, setObData, obConnect
                             ...(obData.customStylePending ? { custom_style_pending: true } : {}),
                             ...(geo ? { lat: geo.lat, long: geo.long, city: geo.city } : {})
                           })});
-                          if (!r.ok) showToast("Profile saved locally — sync will retry");
-                        }catch{ showToast("Profile saved locally — sync will retry"); }
+                          profileSaved = r.ok;
+                        }catch{ profileSaved = false; }
+                        if(!profileSaved){
+                          // Audit fix (2026-10-07): the "Welcome!" toast + screen
+                          // transition used to fire even when this save (and the
+                          // referral/album calls) failed, so a new user on a flaky
+                          // connection silently lost their profile with no retry.
+                          // Block the transition and let them try again.
+                          showToast("Couldn't save your profile — check your connection and try again");
+                          return;
+                        }
                         // Apply referral code if entered
                         if (obData.referralCode) {
                           try {

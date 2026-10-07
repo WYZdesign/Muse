@@ -8,6 +8,7 @@ import { useFocusTrap } from "../hooks/useFocusTrap";
 import { FiArrowLeft, FiShare2, FiMapPin, FiBriefcase, FiStar, FiFlag, FiMessageCircle, FiChevronDown, FiChevronUp, FiUserPlus, FiSearch, FiTarget, FiZap, FiArrowUpRight, FiDollarSign, FiBookmark } from "react-icons/fi";
 import type { Screen, Match, Professional } from "../components/types";
 import { PROFESSIONALS, FORUM_POSTS } from "../components/types";
+import { toProfessionalRow } from "../components/professionalSearch";
 import HScroll from "../components/HScroll";
 import { buildProfessionalBadges } from "../components/badgeColors";
 import { BadgeInfoModal, STYLE_FULL, type BadgeInfo } from "../components/badgeInfo";
@@ -253,7 +254,13 @@ export const NetworkScreen = memo(function NetworkScreen({
       try {
         const res = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "search", query: value, type: "users", limit: 50 }) });
         const data = await res.json();
-        if (data.success) setProServerResults(data.results.users || []);
+        if (data.success) {
+          // Audit fix (2026-10-07): search returns muse_profiles rows (avatar,
+          // styles, no exp/openings/rate), but this directory is built for the
+          // muse_professionals shape. Map fields (broken photos + "undefined"
+          // stat tiles otherwise).
+          setProServerResults(((data.results.users || []) as any[]).map(toProfessionalRow));
+        }
       } catch { setProServerResults([]); }
     } else {
       setProServerResults([]);
@@ -791,32 +798,36 @@ export const NetworkScreen = memo(function NetworkScreen({
                   <FiMapPin size={13} /> {p.loc}
                 </div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  <span
-                    style={{
-                      fontSize: 11,
-                      padding: "4px 12px",
-                      borderRadius: 99,
-                      background: "rgba(255,215,0,0.22)",
-                      border: "1px solid rgba(255,215,0,0.4)",
-                      color: "var(--gold)",
-                      fontWeight: 700,
-                    }}
-                  >
-                    {p.exp}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: 11,
-                      padding: "4px 12px",
-                      borderRadius: 99,
-                      background: "rgba(135,206,235,0.2)",
-                      border: "1px solid rgba(135,206,235,0.35)",
-                      color: "#b7e4f7",
-                      fontWeight: 700,
-                    }}
-                  >
-                    {p.openings} openings
-                  </span>
+                  {p.exp && (
+                    <span
+                      style={{
+                        fontSize: 11,
+                        padding: "4px 12px",
+                        borderRadius: 99,
+                        background: "rgba(255,215,0,0.22)",
+                        border: "1px solid rgba(255,215,0,0.4)",
+                        color: "var(--gold)",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {p.exp}
+                    </span>
+                  )}
+                  {p.openings > 0 && (
+                    <span
+                      style={{
+                        fontSize: 11,
+                        padding: "4px 12px",
+                        borderRadius: 99,
+                        background: "rgba(135,206,235,0.2)",
+                        border: "1px solid rgba(135,206,235,0.35)",
+                        color: "#b7e4f7",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {p.openings} openings
+                    </span>
+                  )}
                   {p.rate && (
                     <span
                       style={{
