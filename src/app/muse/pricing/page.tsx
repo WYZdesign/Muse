@@ -10,21 +10,23 @@ export const metadata: Metadata = {
 };
 
 export default function PricingPage() {
+  // Audit fix (2026-10-07): the previous copy claimed Pro unlocked "Advanced
+  // search filters", "Portfolio analytics", a "5/week" free connection cap, and
+  // "Priority in search results" — none of which are gated in code (analytics
+  // and search filters are ungated; connect's rate limit is a flat per-IP cap
+  // with no tier branch). This lists only what Pro actually gates today.
   const freeFeatures = [
-    "Create a profile",
-    "Browse creatives",
-    "Limited connection requests (5/week)",
-    "Community feed access",
-    "Safety features",
+    "Create your profile and portfolio",
+    "Browse and discover creatives",
+    "Join communities and the feed",
+    "Message the people you match with",
+    "Safety tools: reporting, blocking, check-ins",
   ];
   const proFeatures = [
-    "Unlimited connection requests",
-    "Advanced search filters",
-    "Portfolio analytics",
-    "Priority in search results",
-    "Direct messaging",
-    "Project collaboration tools",
+    "See everyone who is interested in you",
+    "Control who sees your age, distance, online status, and match %",
     "Early access to new features",
+    "Founding member perks",
   ];
 
   return (
