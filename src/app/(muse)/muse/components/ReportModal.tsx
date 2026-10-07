@@ -1,5 +1,6 @@
 import type { Ref } from "react";
 import { FiArrowLeft, FiX } from "react-icons/fi";
+import { trackError } from "@/lib/errorTracker";
 
 type ReportTarget = {
   id: number | string;
@@ -34,8 +35,11 @@ export function ReportModal({ target, dialogRef, apiFetch, onClose, onReported }
           body: JSON.stringify({ action: "report", target_id: target.id, target_type: target.type, reason }),
         });
         reported = response.ok;
-      } catch {
-        console.debug("[muse] report request failed");
+      } catch (err) {
+        // A failed report is a silent trust & safety gap, not a cosmetic
+        // glitch — the submitter sees "Failed to report" below, but without
+        // this the team has no way to know reports are failing in prod.
+        trackError("report_submit_failed", { targetType: target.type, err: String(err) });
       }
       onReported(reported ? `Reported: ${reason}` : "Failed to report");
     }

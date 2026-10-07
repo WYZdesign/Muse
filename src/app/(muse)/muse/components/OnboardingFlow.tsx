@@ -3,6 +3,7 @@
 import { AESTHETICS, ZODIAC, CHINESE, CE, ZE, MBTI, LIFE_PATHS, lookingForOptions, BEHIND_CAMERA, IN_FRONT_CAMERA, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Screen } from "../components/types";
 import Image from "next/image";
 import { getGeolocation } from "@/app/muse-realtime";
+import { trackError } from "@/lib/errorTracker";
 import { OnboardingBirthdateField } from "./OnboardingBirthdateField";
 import type { OnboardingData } from "../hooks/useAuthOnboardingState";
 import type { CurrentUser, AuthUser, TestScreen, AuthFetchFn, ShowToastFn } from "../page-models";
@@ -463,10 +464,14 @@ export function OnboardingFlow({ obStep, setObStep, obData, setObData, obConnect
                             const ad = await ar.json();
                             if (ad?.success && ad?.album?.id) {
                               for (const item of realPortfolioPhotos) {
-                                try { await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "add-album-photo", albumId: ad.album.id, img_url: item.img }) }); } catch { console.debug("[muse] portfolio photo could not be added to album"); }
+                                // Onboarding has no retry/toast for a per-photo failure here —
+                                // without this, a photo a new user uploaded during onboarding
+                                // can silently never show up in their Portfolio, with no signal
+                                // to the user OR the team that it happened.
+                                try { await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ action: "add-album-photo", albumId: ad.album.id, img_url: item.img }) }); } catch (err) { trackError("onboarding_album_photo_add_failed", { err: String(err) }); }
                               }
                             }
-                          } catch { console.debug("[muse] album photo import failed"); }
+                          } catch (err) { trackError("onboarding_album_create_failed", { err: String(err) }); }
                         }
                       }
                       setScreen("discover");showToast("Welcome to Muses!")
