@@ -2171,7 +2171,7 @@ img{background-color:var(--card-bg)}
 .card-hero-bio{font-size:13px;color:rgba(255,255,255,0.85);line-height:1.4;text-shadow:0 1px 4px rgba(0,0,0,0.5)}
 .card-hero-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
 .card-hero-tag{font-size:10px;padding:3px 8px;border-radius:99px;background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.85)}
-.card-photo-dots{position:absolute;top:12px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:6;pointer-events:auto;transition:opacity .3s ease;padding:8px 0}
+.card-photo-dots{position:absolute;top:12px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:6;pointer-events:auto;transition:opacity .3s ease;padding:10px 0}
 .card-photo-dots.hidden{opacity:0}
 .card-photo-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.4);transition:all .25s}
 .card-photo-dot.active{width:18px;border-radius:999px;background:var(--gold)}

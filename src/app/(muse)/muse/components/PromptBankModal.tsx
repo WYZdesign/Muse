@@ -133,7 +133,7 @@ export default function PromptBankModal({ prompts, responses, onSaveResponse, on
             {/* Dots */}
             <div style={{ display: "flex", gap: 4, justifyContent: "center", marginTop: 16, flexWrap: "wrap" }}>
               {filtered.map((_, i) => (
-                <button key={i} type="button" aria-label={`Question ${i + 1}`} onClick={() => setCurrentIdx(i)} style={{ width: 8, height: 8, borderRadius: 4, background: i === currentIdx ? "var(--gold)" : responseMap.has(filtered[i].id) ? "var(--mint)" : "var(--border-med)", cursor: "pointer", transition: "all 0.2s", border: 0, padding: 0 }} />
+                <button key={i} type="button" aria-label={`Question ${i + 1}`} onClick={() => setCurrentIdx(i)} style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: 0, padding: 0, cursor: "pointer" }}><span style={{ width: 8, height: 8, borderRadius: 4, background: i === currentIdx ? "var(--gold)" : responseMap.has(filtered[i].id) ? "var(--mint)" : "var(--border-med)", transition: "all 0.2s" }} /></button>
               ))}
             </div>
           </div>

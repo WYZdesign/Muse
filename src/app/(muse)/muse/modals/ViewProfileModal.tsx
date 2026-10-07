@@ -53,7 +53,7 @@ export function ViewProfileModal({
               {photos.length > 1 && (
                 <div style={{position:"absolute",bottom:70,left:0,right:0,display:"flex",justifyContent:"center",gap:6,zIndex:4}}>
                   {photos.map((_:string,i:number)=>(
-                    <button key={i} type="button" aria-label={`Photo ${i + 1}`} onClick={(e)=>{e.stopPropagation();setViewProfilePhotoIdx(i);}} style={{width:7,height:7,borderRadius:"50%",background:i===viewProfilePhotoIdx?"#FFD700":"rgba(255,255,255,0.4)",cursor:"pointer",transition:"all .2s",border:0,padding:0}} />
+                    <button key={i} type="button" aria-label={`Photo ${i + 1}`} onClick={(e)=>{e.stopPropagation();setViewProfilePhotoIdx(i);}} style={{width:24,height:24,display:"flex",alignItems:"center",justifyContent:"center",background:"transparent",border:0,padding:0,cursor:"pointer"}}><span style={{width:7,height:7,borderRadius:"50%",background:i===viewProfilePhotoIdx?"#FFD700":"rgba(255,255,255,0.4)",transition:"all .2s"}} /></button>
                   ))}
                 </div>
               )}
