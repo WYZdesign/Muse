@@ -288,7 +288,7 @@ export const CollabScreen = memo(function CollabScreen({
                       disclosed by the global demo-mode indicator. */}
                   <div className="brief-meta" style={{ flexDirection: "column", alignItems: "center", gap: 2 }}>
                     <span className="brief-meta-item"><strong>{brief.budget}</strong></span>
-                    <span className="brief-meta-item">⏱ Timeline: {brief.deadline}</span>
+                    {brief.deadline && <span className="brief-meta-item">⏱ Timeline: {brief.deadline}</span>}
                     {!demo && isOwnBrief(brief) && brief.cat !== "concept" && (
                       <span className="brief-meta-item" style={{ color: "var(--gold)" }}>
                         👥 {brief.applicantCount || 0} applied

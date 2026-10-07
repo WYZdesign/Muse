@@ -21,7 +21,8 @@ ALTER TABLE public.muse_communities
 
 ALTER TABLE public.muse_briefs
   ADD COLUMN IF NOT EXISTS status text DEFAULT 'open',
-  ADD COLUMN IF NOT EXISTS type text;
+  ADD COLUMN IF NOT EXISTS type text,
+  ADD COLUMN IF NOT EXISTS deadline text;
 
 ALTER TABLE public.muse_sessions
   ADD COLUMN IF NOT EXISTS time text;
