@@ -542,7 +542,7 @@ export const ProfileScreen = memo(function ProfileScreen({
               if (filtered.length > 0) return filtered.slice(0, 9).map((a: any) => {
                 const openLightbox = () => openAlbumLightbox(a.id, a.cover_url);
                 return (
-                <div key={a.id} style={{ aspectRatio: "3/4", borderRadius: 12, overflow: "hidden", background: "var(--card-bg)", position: "relative", cursor: "pointer" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openLightbox(); } }} onClick={openLightbox}>
+                <button key={a.id} type="button" aria-label={`Open ${a.title}`} onClick={openLightbox} style={{ aspectRatio: "3/4", borderRadius: 12, overflow: "hidden", background: "var(--card-bg)", position: "relative", cursor: "pointer", display: "block", width: "100%", border: 0, padding: 0 }}>
                   {a.cover_url ? (
                     <Image loading="lazy" src={a.cover_url} alt={a.title} fill sizes="(max-width: 600px) 33vw, 200px" style={{ objectFit: "cover" }} onError={handleImgError} />
                   ) : (
@@ -551,7 +551,7 @@ export const ProfileScreen = memo(function ProfileScreen({
                   <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "8px", background: "linear-gradient(to top,rgba(10,6,18,0.9),transparent)" }}>
                     <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.title}</span>
                   </div>
-                </div>
+                </button>
                 );
               });
               return [1, 2, 3, 4, 5, 6].map(i => (
@@ -566,9 +566,9 @@ export const ProfileScreen = memo(function ProfileScreen({
           <div className="section-text" style={{ marginBottom: 10 }}>Your latest connections</div>
           <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8, scrollbarWidth: "none", paddingTop: 8 }}>
             {matches.length > 0 ? matches.slice(0, 5).map(m => (
-              <div key={m.id} style={{ flexShrink: 0, position: "relative", width: 60, height: 60, borderRadius: "50%", overflow: "hidden", background: "#1a0a2e", border: "2px solid rgba(255,215,0,0.2)" }} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setChatTarget(m); showScreen("chat"); } }} onClick={() => { setChatTarget(m); showScreen("chat"); }}>
+              <button key={m.id} type="button" aria-label={`Chat with ${m.name}`} onClick={() => { setChatTarget(m); showScreen("chat"); }} style={{ flexShrink: 0, position: "relative", width: 60, height: 60, borderRadius: "50%", overflow: "hidden", background: "#1a0a2e", border: "2px solid rgba(255,215,0,0.2)", padding: 0, cursor: "pointer" }}>
                 <Image loading="lazy" src={m.img} alt={m.name} fill sizes="60px" style={{ objectFit: "cover" }} onError={handleImgError} />
-              </div>
+              </button>
             )) : (
               <div style={{ flexShrink: 0, width: 60, height: 60, borderRadius: "50%", background: "rgba(255,255,255,0.03)", border: "2px dashed rgba(255,255,255,0.1)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 10, textAlign: "center", gap: 2 }}>
                 <span>No matches yet</span>

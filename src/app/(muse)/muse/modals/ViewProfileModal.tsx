@@ -53,20 +53,20 @@ export function ViewProfileModal({
               {photos.length > 1 && (
                 <div style={{position:"absolute",bottom:70,left:0,right:0,display:"flex",justifyContent:"center",gap:6,zIndex:4}}>
                   {photos.map((_:string,i:number)=>(
-                    <div key={i} onClick={(e)=>{e.stopPropagation();setViewProfilePhotoIdx(i);}} role="button" tabIndex={0} onKeyDown={(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();e.stopPropagation();setViewProfilePhotoIdx(i);}}} style={{width:7,height:7,borderRadius:"50%",background:i===viewProfilePhotoIdx?"#FFD700":"rgba(255,255,255,0.4)",cursor:"pointer",transition:"all .2s"}} />
+                    <button key={i} type="button" aria-label={`Photo ${i + 1}`} onClick={(e)=>{e.stopPropagation();setViewProfilePhotoIdx(i);}} style={{width:7,height:7,borderRadius:"50%",background:i===viewProfilePhotoIdx?"#FFD700":"rgba(255,255,255,0.4)",cursor:"pointer",transition:"all .2s",border:0,padding:0}} />
                   ))}
                 </div>
               )}
               {photos.length > 1 && <>
-                <div role="button" tabIndex={0} onKeyDown={(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();e.stopPropagation();setViewProfilePhotoIdx(p=>p>0?p-1:photos.length-1);}}} onClick={(e)=>{e.stopPropagation();setViewProfilePhotoIdx(p=>p>0?p-1:photos.length-1);}} style={{position:"absolute",left:0,top:0,bottom:0,width:"35%",zIndex:3,cursor:"pointer"}} />
-                <div role="button" tabIndex={0} onKeyDown={(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();e.stopPropagation();setViewProfilePhotoIdx(p=>p<photos.length-1?p+1:0);}}} onClick={(e)=>{e.stopPropagation();setViewProfilePhotoIdx(p=>p<photos.length-1?p+1:0);}} style={{position:"absolute",right:0,top:0,bottom:0,width:"35%",zIndex:3,cursor:"pointer"}} />
+                <button type="button" aria-label="Previous photo" onClick={(e)=>{e.stopPropagation();setViewProfilePhotoIdx(p=>p>0?p-1:photos.length-1);}} style={{position:"absolute",left:0,top:0,bottom:0,width:"35%",zIndex:3,cursor:"pointer",border:0,background:"transparent",padding:0}} />
+                <button type="button" aria-label="Next photo" onClick={(e)=>{e.stopPropagation();setViewProfilePhotoIdx(p=>p<photos.length-1?p+1:0);}} style={{position:"absolute",right:0,top:0,bottom:0,width:"35%",zIndex:3,cursor:"pointer",border:0,background:"transparent",padding:0}} />
               </>}
             </>;
           })()}
           <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"20px",background:"linear-gradient(to top,rgba(10,6,18,0.95),transparent)"}}>
             <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
               <div style={{fontSize:24,fontWeight:800,fontFamily:"'Playfair Display',serif",fontStyle:"italic"}}>{viewProfile.name}</div>
-              {viewProfile.verified && <span role="button" tabIndex={0} onClick={(e)=>{e.stopPropagation();setBadgeInfo({name:"Verified",desc:"Identity verified by Musa by WYZ — we confirmed this member's government ID and professional credentials.",icon:"✓",color:"#FFD700"});}} onKeyDown={(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();e.stopPropagation();setBadgeInfo({name:"Verified",desc:"Identity verified by Musa by WYZ — we confirmed this member's government ID and professional credentials.",icon:"✓",color:"#FFD700"});}}} style={{cursor:"pointer",fontSize:16,color:"#FFD700"}} title="Identity verified">✓</span>}
+              {viewProfile.verified && <button type="button" title="Identity verified" aria-label="Verified profile" onClick={(e)=>{e.stopPropagation();setBadgeInfo({name:"Verified",desc:"Identity verified by Musa by WYZ — we confirmed this member's government ID and professional credentials.",icon:"✓",color:"#FFD700"});}} style={{cursor:"pointer",fontSize:16,color:"#FFD700",border:0,background:"transparent",padding:0}}>✓</button>}
             </div>
             <div style={{fontSize:14,color:"var(--gold)",fontWeight:600}}>{viewProfile.type}</div>
             {viewProfile.tier && <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{viewProfile.tier}</div>}

@@ -338,14 +338,14 @@ export function OnboardingFlow({ obStep, setObStep, obData, setObData, obConnect
                     <div className="step-title">Your Photo</div>
                     <div className="step-sub">Add a profile picture so people can see the real you</div>
                     <input ref={photoInputRef} type="file" accept="image/*" aria-label="Upload profile photo" style={{display:"none"}} onChange={async (e)=>{const f=e.target.files?.[0];if(f){showToast("Uploading...");const url=await uploadImage(f,"avatars");if(url){setObProfilePic(url);showToast("Photo added!")}}}} />
-                    <div className="ob-upload-zone" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); photoInputRef.current?.click(); } }} onClick={() => photoInputRef.current?.click()}>
+                    <button type="button" className="ob-upload-zone" aria-label="Add profile photo" onClick={() => photoInputRef.current?.click()}>
                       {obProfilePic ? <Image loading="lazy" src={obProfilePic} alt="Profile" fill sizes="130px" style={{ objectFit: "cover", borderRadius: "50%" }} /> : (
                         <>
                           <div className="ob-upload-icon">📸</div>
                           <div className="ob-upload-text">Tap to add photo</div>
                         </>
                       )}
-                    </div>
+                    </button>
                     <button className="btn btn-gold" onClick={()=>setObStep(15)}>Next</button>
                     <button className="ob-skip" onClick={()=>setObStep(15)}>Skip for now</button>
                     <button className="back-link" onClick={()=>setObStep(5)}>Back</button>
@@ -376,12 +376,12 @@ export function OnboardingFlow({ obStep, setObStep, obData, setObData, obConnect
                     }} />
 <div className="ob-portfolio-grid">
                       {[0,1,2,3,4,5].map((i) => (
-                        <div key={i} className="ob-portfolio-slot" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setObPortfolioSlot(i); portfolioInputRef.current?.click(); } }} onClick={() => {
+                        <button key={i} type="button" className="ob-portfolio-slot" aria-label={`Add portfolio photo ${i + 1}`} onClick={() => {
                            setObPortfolioSlot(i);
                            portfolioInputRef.current?.click();
                          }}>
                            {obPortfolioItems[i] ? <Image loading="lazy" src={obPortfolioItems[i].img} alt="Work" fill sizes="(max-width: 600px) 33vw, 200px" style={{ objectFit: "cover", borderRadius: 10 }} /> : <div className="ob-portfolio-plus">+</div>}
-                         </div>
+                         </button>
                        ))}
                      </div>
                     <button className="btn btn-gold" onClick={()=>setObStep(16)}>Next</button>

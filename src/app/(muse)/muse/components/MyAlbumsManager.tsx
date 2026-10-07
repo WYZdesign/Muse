@@ -283,13 +283,13 @@ export default function MyAlbumsManager({
       )}
       <div className="portfolio-grid">
         {albums.map(a => (
-          <div key={a.id} className="portfolio-item" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openAlbum(a); } }} onClick={() => openAlbum(a)} style={{ cursor: "pointer" }}>
+          <button key={a.id} type="button" className="portfolio-item" aria-label={`Open ${a.title}`} onClick={() => openAlbum(a)} style={{ cursor: "pointer", border: 0, padding: 0, background: "none", font: "inherit", color: "inherit", textAlign: "inherit" }}>
             {a.cover_url ? <Image src={a.cover_url} alt={a.title} fill sizes="(max-width: 600px) 50vw, 300px" /> : <div style={{ width: "100%", height: "100%", background: "var(--surface)" }} />}
             <div className="portfolio-item-overlay">
               <div className="portfolio-item-title">{a.title}</div>
               <div className="portfolio-item-likes" style={{ display: "flex", alignItems: "center", gap: 4 }}>{ACCESS_META[a.access_level].icon} {a.photo_count} photos</div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
       <button className="album-upload-btn" style={{ marginTop: 14 }} onClick={() => setShowCreate(true)}>

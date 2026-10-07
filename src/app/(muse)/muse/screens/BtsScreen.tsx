@@ -389,12 +389,11 @@ export const BtsScreen = memo(function BtsScreen({
           >
             {stories.slice(0, 10).map((s, i) => (
               <div key={s.id} className="bts-story-item" style={{ position: "relative", flexShrink: 0 }}>
-              <div
-                role="button"
-                tabIndex={0}
+              <button
+                type="button"
                 title="Hold to report"
+                aria-label={`View ${s.author || "story"}'s behind-the-scenes story`}
                 onClick={() => { if (longPressFiredRef.current) { longPressFiredRef.current = false; return; } setShowStory(i); }}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowStory(i); } }}
                 onPointerDown={() => startHold(s)}
                 onPointerUp={cancelHold}
                 onPointerLeave={cancelHold}
@@ -405,6 +404,11 @@ export const BtsScreen = memo(function BtsScreen({
                   alignItems: "center",
                   gap: 6,
                   cursor: "pointer",
+                  border: 0,
+                  background: "transparent",
+                  padding: 0,
+                  font: "inherit",
+                  color: "inherit",
                 }}
               >
                 <div
@@ -446,7 +450,7 @@ export const BtsScreen = memo(function BtsScreen({
                 >
                   {s.author?.split(" ")[0] || "..."}
                 </span>
-                </div>
+                </button>
                 {/* Report is a SIBLING of the card's role="button" node, not a
                     descendant — a focusable button nested inside another
                     interactive control is an axe `nested-interactive` violation. */}

@@ -27,8 +27,8 @@ export function StoryViewer({ showStory, setShowStory, stories }: Props) {
           </div>
         </div>
       )}
-      <div style={{position:"absolute",left:0,top:0,bottom:0,width:"30%",zIndex:2}} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation();setShowStory(prev=>prev!==null&&prev>0?prev-1:prev); } }} onClick={(e)=>{e.stopPropagation();setShowStory(prev=>prev!==null&&prev>0?prev-1:prev)}} />
-      <div style={{position:"absolute",right:0,top:0,bottom:0,width:"30%",zIndex:2}} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation();setShowStory(prev=>prev!==null&&prev<stories.length-1?prev+1:null); } }} onClick={(e)=>{e.stopPropagation();setShowStory(prev=>prev!==null&&prev<stories.length-1?prev+1:null)}} />
+              <button type="button" aria-label="Previous story" style={{position:"absolute",left:0,top:0,bottom:0,width:"30%",zIndex:2,border:0,background:"transparent",padding:0,cursor:"pointer"}} onClick={(e)=>{e.stopPropagation();setShowStory(prev=>prev!==null&&prev>0?prev-1:prev)}} />
+              <button type="button" aria-label="Next story" style={{position:"absolute",right:0,top:0,bottom:0,width:"30%",zIndex:2,border:0,background:"transparent",padding:0,cursor:"pointer"}} onClick={(e)=>{e.stopPropagation();setShowStory(prev=>prev!==null&&prev<stories.length-1?prev+1:null)}} />
       <div style={{position:"absolute",bottom:24,color:"rgba(255,255,255,0.5)",fontSize:12,zIndex:3,pointerEvents:"none"}}>Tap sides to navigate · tap ✕ to close</div>
     </div>
   );

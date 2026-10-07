@@ -281,8 +281,8 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
               {/* Left/right tap zones */}
               {photos.length > 1 && (
                 <>
-                  <div role="button" tabIndex={0} aria-label="Previous photo" onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPhotoIdx(p => p > 0 ? p - 1 : photos.length - 1); } }} onClick={() => setPhotoIdx(p => p > 0 ? p - 1 : photos.length - 1)} style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "35%", zIndex: 3, cursor: "pointer" }} />
-                  <div role="button" tabIndex={0} aria-label="Next photo" onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPhotoIdx(p => p < photos.length - 1 ? p + 1 : 0); } }} onClick={() => setPhotoIdx(p => p < photos.length - 1 ? p + 1 : 0)} style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "35%", zIndex: 3, cursor: "pointer" }} />
+                  <button type="button" aria-label="Previous photo" onClick={() => setPhotoIdx(p => p > 0 ? p - 1 : photos.length - 1)} style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "35%", zIndex: 3, cursor: "pointer", border: 0, background: "transparent", padding: 0 }} />
+                  <button type="button" aria-label="Next photo" onClick={() => setPhotoIdx(p => p < photos.length - 1 ? p + 1 : 0)} style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "35%", zIndex: 3, cursor: "pointer", border: 0, background: "transparent", padding: 0 }} />
                 </>
               )}
             </>
@@ -467,12 +467,12 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
             <div style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.05 }}>Gallery</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 4, borderRadius: 12, overflow: "hidden" }}>
               {allPhotos.map((p: string, i: number) => (
-                <div key={i} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openLightbox(i); } }} onClick={() => openLightbox(i)} style={{ position: "relative", aspectRatio: "1", cursor: "pointer", overflow: "hidden" }}>
+                <button key={i} type="button" aria-label={`Open photo ${i + 1}`} onClick={() => openLightbox(i)} style={{ position: "relative", aspectRatio: "1", cursor: "pointer", overflow: "hidden", display: "block", width: "100%", border: 0, padding: 0, background: "transparent" }}>
                   <Image loading="lazy" src={p} alt={`${displayName}'s photo ${i + 1}`} fill sizes="(max-width: 600px) 33vw, 150px" style={{ objectFit: "cover" }} onError={handleImgError} />
                   {i === photos.length && user.btsPhotos && user.btsPhotos.length > 0 && i === photos.length && (
                     <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "var(--gold)" }}>BTS</div>
                   )}
-                </div>
+                </button>
               ))}
             </div>
           </div>

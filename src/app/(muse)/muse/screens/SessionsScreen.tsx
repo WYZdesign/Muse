@@ -422,11 +422,11 @@ export const SessionsScreen = memo(function SessionsScreen({
                     button row below — those buttons keep their own actions
                     (toggle/book/view profile/save) rather than also opening the
                     modal underneath the tap. */}
-                <div style={{ position: "relative", width: "25%", alignSelf: "stretch", minHeight: 120, flexShrink: 0, cursor: "pointer" }} onClick={() => setDetailSession(s)} role="button" tabIndex={0} aria-label={`View details for ${s.name}`} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDetailSession(s); } }}>
+                <button type="button" aria-label={`View details for ${s.name}`} onClick={() => setDetailSession(s)} style={{ position: "relative", width: "25%", alignSelf: "stretch", minHeight: 120, flexShrink: 0, cursor: "pointer", border: 0, background: "transparent", padding: 0 }}>
                   {s.img && (
                     <Image src={s.img} alt={s.name} fill sizes="25vw" style={{ objectFit: "cover" }} onError={handleImgError} />
                   )}
-                </div>
+                </button>
                 <div className="conn-content" style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                   <div className="conn-name" style={{ fontSize: 15, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", cursor: "pointer" }} onClick={() => setDetailSession(s)}>
                     {s.name}
