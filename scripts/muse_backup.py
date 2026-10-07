@@ -10,6 +10,10 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 # ── Config ──
+# NOTE: DATABASE_URL must be a SESSION/DIRECT connection (Supabase port 5432),
+# not the transaction pooler (6543). pg_dump needs a real session; against the
+# transaction pooler it fails (and, before the pg_dump() fix below, that failure
+# was masked into a false success).
 DB_URL = os.environ.get("DATABASE_URL", "")
 R2_ENDPOINT = os.environ.get("R2_ENDPOINT", "")  # e.g. https://<account_id>.r2.cloudflarestorage.com
 R2_ACCESS_KEY = os.environ.get("R2_ACCESS_KEY", "")
@@ -34,35 +38,41 @@ def check_deps():
         sys.exit(1)
 
 def pg_dump():
-    """Run pg_dump and return the path to the compressed dump file."""
+    """Run pg_dump and return the path to the compressed dump file.
+
+    Streams pg_dump stdout through Python gzip so the return code checked is
+    pg_dump's own. The previous version ran `pg_dump ... | gzip > file` under
+    shell=True, where the exit code is gzip's (0) even when pg_dump fails —
+    so a failed dump was reported as a success and uploaded as an empty file.
+    """
     LOCAL_DIR.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     dump_path = LOCAL_DIR / f"muse_backup_{timestamp}.sql.gz"
-    
-    log(f"Starting pg_dump → {dump_path.name}")
-    
-    # Use pg_dump with custom format for compression
-    cmd = [
-        "pg_dump",
-        "--no-owner",
-        "--no-privileges",
-        "--clean",
-        "--if-exists",
-        "-f", str(dump_path),
-        DB_URL,
-    ]
-    
-    # pg_dump with gzip via pipe
-    import subprocess
-    proc = subprocess.run(
-        f'pg_dump --no-owner --no-privileges --clean --if-exists "{DB_URL}" | gzip > "{dump_path}"',
-        shell=True, capture_output=True, text=True, timeout=3600
+
+    log(f"Starting pg_dump -> {dump_path.name}")
+
+    proc = subprocess.Popen(
+        ["pg_dump", "--no-owner", "--no-privileges", "--clean", "--if-exists", DB_URL],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
     )
-    
-    if proc.returncode != 0:
-        log(f"pg_dump failed: {proc.stderr[:500]}")
+    raw_bytes = 0
+    with open(dump_path, "wb") as raw:
+        with gzip.GzipFile(fileobj=raw, mode="wb") as gz:
+            for chunk in iter(lambda: proc.stdout.read(65536), b""):
+                raw_bytes += len(chunk)
+                gz.write(chunk)
+    stderr = proc.stderr.read().decode(errors="replace")
+    rc = proc.wait()
+
+    if rc != 0:
+        log(f"pg_dump failed (exit {rc}): {stderr[:500]}")
+        dump_path.unlink(missing_ok=True)
         sys.exit(1)
-    
+    if raw_bytes == 0:
+        log("pg_dump produced no data — aborting")
+        dump_path.unlink(missing_ok=True)
+        sys.exit(1)
+
     size_mb = dump_path.stat().st_size / (1024 * 1024)
     log(f"Dump complete: {dump_path.name} ({size_mb:.1f} MB)")
     return dump_path
@@ -123,13 +133,13 @@ def verify_dump(file_path):
         with gzip.open(file_path, "rb") as f:
             header = f.read(100)
             if not header:
-                log("WARNING: Dump file appears empty")
+                log("ERROR: Dump file is empty")
                 return False
-            if b"PostgreSQL" not in header and b"CREATE" not in header:
+            if b"PostgreSQL" not in header and b"CREATE" not in header and b"SET" not in header:
                 log(f"WARNING: Dump header doesn't look like SQL: {header[:80]}")
     except Exception as e:
-        log(f"WARNING: Could not verify dump: {e}")
-        return True  # continue anyway
+        log(f"ERROR: Could not verify dump (corrupt gzip?): {e}")
+        return False
     return True
 
 def main():
@@ -145,6 +155,22 @@ def main():
     
     if not DB_URL:
         log("ERROR: DATABASE_URL not set")
+        sys.exit(1)
+
+    # pg_dump cannot run through the transaction pooler (port 6543) — it needs a
+    # real session, i.e. the session pooler or direct connection on 5432.
+    if ":6543" in DB_URL:
+        log("ERROR: DATABASE_URL is the transaction pooler (:6543). pg_dump needs "
+            "the session/direct connection on :5432 (same host, same password).")
+        sys.exit(1)
+
+    # pg_dump must be >= the server major version (Supabase is Postgres 17), or
+    # it aborts with 'server version mismatch'. Fail loud instead of silently.
+    try:
+        ver = subprocess.run(["pg_dump", "--version"], capture_output=True, text=True).stdout
+        log(f"pg_dump: {ver.strip()}")
+    except FileNotFoundError:
+        log("ERROR: pg_dump not found on PATH")
         sys.exit(1)
     
     check_deps()
