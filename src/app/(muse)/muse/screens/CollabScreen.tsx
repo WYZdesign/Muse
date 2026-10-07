@@ -48,6 +48,11 @@ export interface CollabScreenProps {
   setShowReport?: (v: boolean) => void;
   setReportTarget?: (t: any) => void;
   demo?: boolean;
+  /** Same shared onError fallback every other avatar <Image> in the app uses
+   *  (sets a data-fallback flag + swaps src once). Optional for backward
+   *  compatibility with any existing callers, but a brief-author avatar with
+   *  no avatar set would otherwise render a broken image with no fallback. */
+  handleImgError?: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
 }
 
 export const CollabScreen = memo(function CollabScreen({
@@ -84,6 +89,7 @@ export const CollabScreen = memo(function CollabScreen({
   setShowReport = () => {},
   setReportTarget = () => {},
   demo = false,
+  handleImgError,
 }: CollabScreenProps) {
   // Long brief descriptions used to always render in full, which could bloat
   // a card well past its neighbors in a scrolling list (LinkedIn's inline
@@ -274,7 +280,7 @@ export const CollabScreen = memo(function CollabScreen({
                 )}
               </div>
               <div className="brief-header" style={{ flexWrap: "wrap", gap: 6 }}>
-                <Image loading="lazy" src={brief.authorImg} alt={brief.author} width={86} height={86} className={"brief-avatar brief-variant-" + (bi % 5)} />
+                <Image loading="lazy" src={brief.authorImg} alt={brief.author} width={86} height={86} className={"brief-avatar brief-variant-" + (bi % 5)} onError={handleImgError} />
                 <div className="brief-info" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
                   <div className="brief-author"><strong>{brief.author}</strong></div>
                   {/* "DEMO PREVIEW" chip removed: it appeared on every brief and

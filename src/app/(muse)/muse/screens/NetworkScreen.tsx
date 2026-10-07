@@ -9,7 +9,7 @@ import { FiArrowLeft, FiShare2, FiMapPin, FiBriefcase, FiStar, FiFlag, FiMessage
 import type { Screen, Match, Professional } from "../components/types";
 import { PROFESSIONALS, FORUM_POSTS } from "../components/types";
 import HScroll from "../components/HScroll";
-import { BADGE_COLORS } from "../components/badgeColors";
+import { buildProfessionalBadges } from "../components/badgeColors";
 import { BadgeInfoModal, STYLE_FULL, type BadgeInfo } from "../components/badgeInfo";
 import { viewerSide } from "@/lib/role";
 import { MUSE_CLOSED_BETA_HIDE_SOCIAL } from "@/lib/config";
@@ -845,18 +845,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                 {/* BADGES ROW */}
                 <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                   {(() => {
-                    const badges: { icon: string; label: string; c: string; bg: string; bd: string }[] = [];
-                    const yrs = parseInt(p.exp, 10) || 0;
-                    if (yrs >= 10) badges.push({ icon: "🏅", label: "Pro", ...BADGE_COLORS.gold });
-                    else if (yrs >= 5) badges.push({ icon: "⭐", label: "Experienced", ...BADGE_COLORS.lavender });
-                    else badges.push({ icon: "🌱", label: "Rising", ...BADGE_COLORS.blue });
-                    if (p.openings >= 5) badges.push({ icon: "🔥", label: "Hiring", ...BADGE_COLORS.red });
-                    if (p.skills?.includes("Fashion") || p.skills?.includes("Editorial")) badges.push({ icon: "👗", label: "Fashion", ...BADGE_COLORS.lavender });
-                    if (p.skills?.includes("Commercial") || p.skills?.includes("Branding")) badges.push({ icon: "💼", label: "Commercial", ...BADGE_COLORS.gold });
-                    if (p.skills?.includes("Music Video") || p.skills?.includes("Film")) badges.push({ icon: "🎬", label: "Film", ...BADGE_COLORS.red });
-                    if (p.skills?.includes("Fine Art") || p.skills?.includes("Body Art")) badges.push({ icon: "🎨", label: "Fine Art", ...BADGE_COLORS.lavender });
-                    if (p.skills?.includes("Experimental")) badges.push({ icon: "🧪", label: "Experimental", ...BADGE_COLORS.blue });
-                    if (p.skills?.includes("Photography") || p.skills?.includes("Editorial")) badges.push({ icon: "📸", label: "Photo", ...BADGE_COLORS.blue });
+                    const badges = buildProfessionalBadges(p);
                     return badges.slice(0, 5).map((b) => (
                       <span key={b.label} style={{ fontSize: 10, padding: "3px 9px", borderRadius: 99, background: b.bg, border: `1px solid ${b.bd}`, color: b.c, fontWeight: 700, display: "flex", alignItems: "center", gap: 3 }}>
                         {b.icon} {b.label}
@@ -1616,21 +1605,9 @@ export const NetworkScreen = memo(function NetworkScreen({
                 </div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   {(() => {
-                    const badges: { icon: string; label: string; color: string; bg: string; border: string }[] = [];
-                    const yrs = parseInt(proDetail.exp, 10) || 0;
-                    if (yrs >= 10) badges.push({ icon: "🏅", label: "Pro", color: "#FFD700", bg: "rgba(255,215,0,0.15)", border: "rgba(255,215,0,0.3)" });
-                    else if (yrs >= 5) badges.push({ icon: "⭐", label: "Experienced", color: "#FFBF00", bg: "rgba(255,191,0,0.12)", border: "rgba(255,191,0,0.25)" });
-                    else badges.push({ icon: "🌱", label: "Rising", color: "#A5D6A7", bg: "rgba(165,214,167,0.12)", border: "rgba(165,214,167,0.25)" });
-                    if (proDetail.openings >= 5) badges.push({ icon: "🔥", label: "Hiring", color: "#FF6B6B", bg: "rgba(255,107,107,0.12)", border: "rgba(255,107,107,0.25)" });
-                    if (proDetail.skills?.includes("Fashion") || proDetail.skills?.includes("Editorial")) badges.push({ icon: "👗", label: "Fashion", color: "#F48FB1", bg: "rgba(244,143,177,0.12)", border: "rgba(244,143,177,0.25)" });
-                    if (proDetail.skills?.includes("Commercial") || proDetail.skills?.includes("Branding")) badges.push({ icon: "💼", label: "Commercial", color: "#FFCC80", bg: "rgba(255,204,128,0.12)", border: "rgba(255,204,128,0.25)" });
-                    if (proDetail.skills?.includes("Music Video") || proDetail.skills?.includes("Film")) badges.push({ icon: "🎬", label: "Film", color: "#EF9A9A", bg: "rgba(239,154,154,0.12)", border: "rgba(239,154,154,0.25)" });
-                    if (proDetail.skills?.includes("Fine Art") || proDetail.skills?.includes("Body Art")) badges.push({ icon: "🎨", label: "Fine Art", color: "#CE93D8", bg: "rgba(206,147,216,0.12)", border: "rgba(206,147,216,0.25)" });
-                    if (proDetail.skills?.includes("Experimental")) badges.push({ icon: "🧪", label: "Experimental", color: "#80DEEA", bg: "rgba(128,222,234,0.12)", border: "rgba(128,222,234,0.25)" });
-                    if (proDetail.skills?.includes("Photography") || proDetail.skills?.includes("Editorial")) badges.push({ icon: "📸", label: "Photo", color: "#90CAF9", bg: "rgba(144,202,249,0.12)", border: "rgba(144,202,249,0.25)" });
-                    if (connectedIds.has(proDetail.id)) badges.push({ icon: "🤝", label: "Connected", color: "#81C784", bg: "rgba(129,199,132,0.12)", border: "rgba(129,199,132,0.25)" });
+                    const badges = buildProfessionalBadges(proDetail, { connected: connectedIds.has(proDetail.id) });
                     return badges.map((b) => (
-                      <button type="button" key={b.label} onClick={() => setBadgeInfo({ name: b.label, desc: STYLE_FULL[b.label] || `A signal about this pro: ${b.label}.`, icon: b.icon, color: b.color })} style={{ minHeight: 44, fontSize: 11, padding: "4px 11px", borderRadius: 99, background: b.bg, border: `1px solid ${b.border}`, color: b.color, fontWeight: 700, display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
+                      <button type="button" key={b.label} onClick={() => setBadgeInfo({ name: b.label, desc: STYLE_FULL[b.label] || `A signal about this pro: ${b.label}.`, icon: b.icon, color: b.c })} style={{ minHeight: 44, fontSize: 11, padding: "4px 11px", borderRadius: 99, background: b.bg, border: `1px solid ${b.bd}`, color: b.c, fontWeight: 700, display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
                         {b.icon} {b.label}
                       </button>
                     ));
