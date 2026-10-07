@@ -4,15 +4,9 @@
 // deterministic (seeded off index, not Math.random()) to avoid SSR/client
 // hydration mismatches.
 import { useEffect, useRef, useMemo } from "react";
+import { hexToRgba } from "@/lib/color";
 
 const PC = ["#FFD700","#FF6B6B","#D4A5FF","#98FB98","#FFDAB9","#87CEEB","#FF8A80","#FFD1A4","#FFB5C2","#FFE4B5","#FF9A56","#E6E6FA"];
-
-function hexToRgba(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
 
 export default function BackgroundScene({ flash, paused = false }: { flash: string | null; paused?: boolean }) {
   const cometRef = useRef<HTMLCanvasElement>(null);

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useMemo } from "react";
 import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
+import { hexToRgba } from "@/lib/color";
 
 const PC = ["#FFD700","#FF6B6B","#D4A5FF","#98FB98","#FFDAB9","#87CEEB","#FF8A80","#FFD1A4","#FFB5C2","#FFE4B5","#FF9A56","#E6E6FA"];
 
@@ -10,13 +11,6 @@ type Comet = {
   tailLen: number; opacity: number; life: number; maxLife: number;
   sparks: CometSpark[]; active: boolean; size: number; freq: number; amp: number;
 };
-
-function hexToRgba(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
 
 // `flash` remains part of the public prop contract (page.tsx passes
 // `screenFlash`, landing passes `null`) but is not consumed by this scene;

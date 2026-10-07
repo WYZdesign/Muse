@@ -211,7 +211,7 @@ export default function MyAlbumsManager({
             <div style={{ fontSize: 12, color: "var(--muted)" }}>{selected.photo_count} photos · {selected.view_count} views · {selected.like_count} likes</div>
           </div>
           <button className="hdr-btn" onClick={likeAlbum} aria-label="Like album" style={{ color: liked ? "var(--gold)" : undefined }}><FiStar size={16} /></button>
-          <button className="hdr-btn" onClick={() => deleteAlbum(selected.id)}><FiTrash2 size={16} /></button>
+                <button className="hdr-btn" aria-label="Delete album" onClick={() => deleteAlbum(selected.id)}><FiTrash2 size={16} /></button>
         </div>
 
         <div className="album-access-row">

@@ -342,7 +342,7 @@ export const CommunityScreen = memo(function CommunityScreen({
                   </div>
                 )}
               </div>
-              <button onClick={() => setDetailItem(null)} style={{ background: "var(--card-bg)", border: "none", borderRadius: "50%", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text2)", flexShrink: 0 }}><FiX size={16} /></button>
+              <button aria-label="Close" onClick={() => setDetailItem(null)} style={{ background: "var(--card-bg)", border: "none", borderRadius: "50%", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text2)", flexShrink: 0 }}><FiX size={16} /></button>
             </div>
             <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px 100px" }}>
               {/* Same img:'' seed-data gap as the card views — gradient-initial fallback */}
