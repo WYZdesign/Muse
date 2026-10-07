@@ -1,3 +1,4 @@
+/** POST /api/muse/match — semantic match scoring for Discover. */
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { isIndustryType } from "@/lib/role";

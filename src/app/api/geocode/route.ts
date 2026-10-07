@@ -1,3 +1,4 @@
+/** POST /api/geocode — server-side geocoding proxy (rate-limited). */
 import { NextRequest, NextResponse } from "next/server";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { isDemoMode } from "@/lib/demo-mode";

@@ -1,3 +1,4 @@
+/** POST /api/muse/mfa — TOTP enroll, verify, disable. */
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getUserScopedClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";

@@ -1,3 +1,4 @@
+/** POST /api/muse/embeddings — cache a profile vector + cosine search. */
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";

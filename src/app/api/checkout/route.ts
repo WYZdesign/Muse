@@ -1,3 +1,4 @@
+/** POST /api/checkout — Stripe Checkout session for Pro and boosts. */
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { checkRate, clientIp } from "@/lib/rate-limit";

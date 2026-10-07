@@ -1,3 +1,4 @@
+/** POST /api/muse — the action monolith: auth, validateRest, then dispatch. */
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { safeServerError } from "@/lib/http";

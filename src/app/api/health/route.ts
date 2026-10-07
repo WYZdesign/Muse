@@ -1,3 +1,4 @@
+/** GET /api/health — edge liveness probe. */
 import { NextResponse } from "next/server";
 
 export const runtime = "edge";

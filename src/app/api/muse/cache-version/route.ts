@@ -1,3 +1,4 @@
+/** GET /api/muse/cache-version — build id for client stale-code checks. */
 import { NextResponse } from "next/server";
 
 export const runtime = "edge";

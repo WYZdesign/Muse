@@ -1,3 +1,4 @@
+/** POST /api/muse/call — LiveKit room tokens + egress for voice/video calls. */
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { AccessToken, RoomServiceClient, EgressClient, EncodedFileOutput, EncodedFileType, S3Upload } from "livekit-server-sdk";

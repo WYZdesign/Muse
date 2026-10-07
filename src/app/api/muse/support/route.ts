@@ -1,3 +1,4 @@
+/** POST /api/muse/support — AI support chat over the docs. */
 import { NextRequest, NextResponse } from "next/server";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { askMuseAI, retrieveContext } from "@/lib/aiDocs";

@@ -1,3 +1,4 @@
+/** GET/POST /api/muse/social — connect socials (OAuth start/status). */
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { signState } from "@/lib/oauth-state";

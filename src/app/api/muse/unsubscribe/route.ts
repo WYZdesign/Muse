@@ -1,3 +1,4 @@
+/** GET /api/muse/unsubscribe — one-click email unsubscribe. */
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";

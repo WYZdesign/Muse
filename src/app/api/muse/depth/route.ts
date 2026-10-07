@@ -1,3 +1,4 @@
+/** POST /api/muse/depth — depth map for the Discover parallax. */
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";

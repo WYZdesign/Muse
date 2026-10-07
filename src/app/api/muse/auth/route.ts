@@ -1,3 +1,4 @@
+/** POST /api/muse/auth — signup, login, session, profile update. */
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import crypto from "crypto";
