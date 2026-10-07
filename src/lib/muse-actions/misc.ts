@@ -224,11 +224,11 @@ export const searchAll = async ({ sb, profile, rest, ip }: ActionContext) => {
 
   if (type === "all" || type === "briefs") {
     const { data: briefs } = await sb.from("muse_briefs")
-      .select("id, title, description, type, budget, status, creator_id(id, name, avatar)")
+      .select("id, title, description, type, budget, status, author_id(id, name, avatar)")
       .or(`title.ilike.${pattern},description.ilike.${pattern},type.ilike.${pattern}`)
       .eq("status", "open")
       .limit(limit);
-    results.briefs = (briefs || []).filter((b: any) => !searchBlockedIds.has(String(b.creator_id?.id)));
+    results.briefs = (briefs || []).filter((b: any) => !searchBlockedIds.has(String(b.author_id?.id)));
   }
 
   if (type === "all" || type === "communities") {

@@ -226,8 +226,8 @@ describe("searchAll", () => {
     install({
       muse_profiles: () => ({ data: [{ id: "blocked" }, { id: "ok" }] }),
       muse_briefs: () => ({ data: [
-        { id: "b1", creator_id: { id: "blocked", name: "B" } },
-        { id: "b2", creator_id: { id: "ok", name: "O" } },
+        { id: "b1", author_id: { id: "blocked", name: "B" } },
+        { id: "b2", author_id: { id: "ok", name: "O" } },
       ] }),
       muse_forum_posts: () => ({ data: [
         { id: "f1", author_id: { id: "blocked", name: "B" } },
