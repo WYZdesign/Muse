@@ -206,7 +206,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
       const deduped: string[] = base.filter((p: string, i: number, a: string[]) => p && a.indexOf(p) === i);
       const portraitPics = deduped.filter((p: string) => !!PORTRAIT_IMG[p]);
       const landscapePics = deduped.filter((p: string) => !PORTRAIT_IMG[p]);
-      const photos: string[] = [...portraitPics, ...landscapePics].slice(0, 6);
+      const photos: string[] = [...portraitPics, ...landscapePics].slice(0, 4);
       if (photos.length < 4) {
         const used = new Set(photos);
         const extra = deduped.filter((p: string) => !used.has(p));
