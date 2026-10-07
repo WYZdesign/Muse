@@ -586,6 +586,22 @@ describe("GET sessions — host trust enrichment", () => {
     expect(s1.hostCompletedSessions).toBe(2);
     expect(s2.hostCompletedSessions).toBe(0);
   });
+  // muse_sessions has no `name` column (name belongs to the host, title to the
+  // session) — SessionsScreen's card headline/book-toast/aria-label/modal
+  // title all read `s.name` expecting the host's name. Without joining it in
+  // here, every real session silently fell back to its own title via
+  // normalizeSession()'s `s.name ?? s.title` instead of showing the host.
+  it("attaches the host's own name, not the session's title", async () => {
+    installSb({
+      muse_sessions: () => ({ data: [{ id: "s1", host_id: "h1", title: "Golden Hour Portrait Session" }] }),
+      muse_profiles: () => ({ data: [{ id: "h1", name: "Jordan Lee", verified: true }] }),
+      muse_bookings: () => ({ data: [] }),
+    });
+    const body = await (await GET(req("sessions"))).json();
+    const s1 = body.sessions.find((s: any) => s.id === "s1");
+    expect(s1.name).toBe("Jordan Lee");
+    expect(s1.title).toBe("Golden Hour Portrait Session");
+  });
   it("skips enrichment when there are no sessions", async () => {
     installSb({ muse_sessions: () => ({ data: [] }) });
     const body = await (await GET(req("sessions"))).json();

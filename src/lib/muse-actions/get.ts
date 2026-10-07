@@ -375,10 +375,19 @@ export async function GET(req: NextRequest) {
       // counts, not derived from the session's own (self-reported) `rating`.
       const hostIds = [...new Set(rows.map((s: any) => s.host_id).filter(Boolean))];
       let verifiedByHost = new Map<string, boolean>();
+      // muse_sessions has no `name` column — it's the SESSION's title, not the
+      // HOST's name. SessionsScreen's card headline, book-toast, aria-label and
+      // modal title all read `s.name` expecting the host's name (matching the
+      // demo-data convention where `name`=host, `title`=session), so without
+      // this every real session silently showed its own title a second time
+      // where the host's name belonged — normalizeSession()'s `s.name ?? s.title`
+      // fallback masked it instead of surfacing a blank/undefined.
+      let nameByHost = new Map<string, string>();
       const completedByHost = new Map<string, number>();
       if (hostIds.length) {
-        const { data: hosts } = await sb.from("muse_profiles").select("id, verified").in("id", hostIds);
+        const { data: hosts } = await sb.from("muse_profiles").select("id, name, verified").in("id", hostIds);
         verifiedByHost = new Map((hosts || []).map((h: any) => [h.id, !!h.verified]));
+        nameByHost = new Map((hosts || []).map((h: any) => [h.id, h.name]));
         const { data: completed } = await sb.from("muse_bookings").select("host_id").in("host_id", hostIds).eq("status", "completed");
         for (const b of completed || []) {
           const hid = String((b as any).host_id);
@@ -388,6 +397,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({
         sessions: rows.map((s: any) => ({
           ...s,
+          name: nameByHost.get(s.host_id) || s.name,
           hostVerified: !!verifiedByHost.get(s.host_id),
           hostCompletedSessions: completedByHost.get(s.host_id) || 0,
         })),

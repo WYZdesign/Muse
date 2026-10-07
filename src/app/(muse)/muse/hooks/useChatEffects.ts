@@ -42,8 +42,13 @@ export function useChatEffects({
     const sub = subscribeToConversation({
       myId,
       theirId,
-      onMessage: (senderId, text, img) => {
-        const msg = { from: "them" as const, text, img, time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) };
+      onMessage: (senderId, text, img, extras) => {
+        // extras carries kind/mediaUrl/mediaType/durationMs/transcript through
+        // from the live INSERT row — without this a voice/video note received
+        // while the chat is open rendered as a blank bubble with no player
+        // (it only looked right after a reload re-ran the history fetch,
+        // which already mapped these fields).
+        const msg = { from: "them" as const, text, img, ...extras, time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) };
         setChatTarget(prev => prev ? { ...prev, messages: [...prev.messages, msg] } : prev);
         setMatches(prev => prev.map(m => String(m.id) === theirId ? { ...m, messages: [...m.messages, msg] } : m));
         setTimeout(() => messagesEndRef.current?.scrollIntoView({behavior:"smooth"}), 50);
