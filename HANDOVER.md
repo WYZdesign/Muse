@@ -7,6 +7,20 @@ but a round being described below does NOT mean it's live. Verify with
 `git log --oneline -1 origin/main` against `DELIVERY_STATUS.md`'s "Confirmed
 merged" line before trusting anything here.
 
+## FOR WYZMIND — same branch, 2 more commits: 2 more real bugs + audit restructure (2026-10-07, later, Claude)
+
+Torreé asked me to confide in the other agents' handovers/ideas rather than work in isolation, so I read Codex's parallel `MUSES_VISUAL_BACKEND_5000_POINT_AUDIT_2026-10-07.md` and their `AGENT_CONFERENCE_HANDOFF_2026-10-07.md` before continuing. Worth you reading the conference handoff too — it routes 4 real decisions explicitly to Torreé (demo-mode-only waitlist phase? what flips it live? who owns support/moderation/incident/refunds? what's the success metric for the first 25 invites?), not to any of us agents.
+
+Ran fresh subagent cross-reference research on areas neither audit had covered (Sessions, Network/search, Chat, Notifications, Entitlements, Onboarding, Referral/quest, public pages) and found 2 more real, scoped bugs in the same family as the original Discover fix — fixed both (`dddf658`): Sessions' host name was never joined into the browse listing (card headline/toast/aria-label all showed the session's own title a second time instead of the host), and a live-received voice/video note dropped its media fields in the realtime relay (blank bubble until reload). Both have regression tests, full gate re-verified.
+
+Also found 3 more real findings that are NOT fixed because each needs a product/design decision, not a blind patch: the Network search box returns the wrong table's shape (broken photos + literal "undefined" stat tiles — flagging for whoever decides the search-vs-professionals-table design), onboarding's success toast fires regardless of whether anything actually saved, and — the one I'd act on fastest — the public pricing page oversells: it claims Portfolio Analytics and search filters are Pro-exclusive when they're free for everyone in the current code, and claims a 5/week free-tier connection cap that isn't enforced anywhere. That last one has real exposure once you're promoting a paid tier.
+
+Restructured `MUSES_VISUAL_5000_POINT_AUDIT_2026-10-07.md` to match Codex's 50-category density (Torreé's explicit call after I asked) rather than my original 25-domain version — explicitly credits Codex's live-browser evidence where my own methodology can't verify something (no reliable screenshot capture this session). New score 3,306/5,000, which lines up with both my prior 3,370 and Codex's independent 3,240 — three different methods landing in the same ~65% range.
+
+**Also, unrelated and NOT acted on:** Torreé raised renaming "Muse" → "Musa" (Meta trademarked "Muse" for their own AI). Flagged in `_STATE/handovers/2026-10-07-claude-to-all-musa-rename-decision.md` — nothing touched, it needs a coordinated DB+routes+branding pass once a new trademark/domain is secured, not a piecemeal start.
+
+Branch now 17 commits ahead of `origin/main`@`63f9d71`. Gate: `tsc` 0, touched-file `eslint` 0 errors, `vitest` 161/1253, `next build` clean. Bundle redelivered.
+
 ## FOR WYZMIND — same branch, 1 more commit: S-3 console.debug sweep (2026-10-07, Claude)
 
 Picked up `CLAUDE_TASKS.md`'s S-3: swept all ~60 `console.debug` catch-blocks in the app for ones that are actually meaningful failures rather than genuinely-ignorable best-effort cleanup. Found 3: `ReportModal.tsx`'s failed-report catch (a safety report failing silently in prod — real trust & safety blind spot, not cosmetic) and two onboarding-portfolio-import catches in `OnboardingFlow.tsx` (a new user's uploaded photo can silently never reach their album, no toast, no telemetry). All three now call `trackError()` instead. Deliberately did NOT touch the rest — they're an established, reviewed pattern for truly ignorable operations (storage writes, event dispatch, observer teardown), not debugging leftovers to blanket-clear.
