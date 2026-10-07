@@ -29,4 +29,19 @@ describe("validateRest", () => {
   it("passes unknown actions through the universal guards only", () => {
     expect(validateRest("some-unmapped-action", { anything: true }).ok).toBe(true);
   });
+
+  it("enforces bounds on the extended mutating-action schemas", () => {
+    expect(validateRest("create-community", { name: "x".repeat(200) }).ok).toBe(false);
+    expect(validateRest("create-community", { name: "LA Shooters", is_private: true }).ok).toBe(true);
+    expect(validateRest("set-community-role", { role: "owner" }).ok).toBe(false);
+    expect(validateRest("set-community-role", { role: "moderator" }).ok).toBe(true);
+    expect(validateRest("boost", { quantity: 0 }).ok).toBe(false);
+    expect(validateRest("boost", { quantity: 3, duration: "24h" }).ok).toBe(true);
+    expect(validateRest("create-session", { title: "x".repeat(300) }).ok).toBe(false);
+    expect(validateRest("forum", { vote: "sideways" }).ok).toBe(false);
+    expect(validateRest("forum", { vote: "up" }).ok).toBe(true);
+    expect(validateRest("join-community", { communityId: "abc", future: 1 }).ok).toBe(true);
+    expect(validateRest("profile", { life_path: 999 }).ok).toBe(false);
+    expect(validateRest("profile", { life_path: 7, name: "Ada" }).ok).toBe(true);
+  });
 });

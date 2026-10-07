@@ -50,6 +50,66 @@ export const MUSE_REST_SCHEMAS: Record<string, z.ZodTypeAny> = {
   "saved-search-save": z.object({ name: z.string().max(120).optional() }).passthrough(),
   "save-preferences": z.object({ preferences: z.record(z.string(), z.unknown()).optional() }).passthrough(),
   "submit-idea": z.object({ title: z.string().max(200).optional(), body: z.string().max(5000).optional() }).passthrough(),
+  // ── profile + matching ──
+  "profile": z.object({
+    name: z.string().max(120).optional(), loc: z.string().max(200).optional(), bio: z.string().max(2000).optional(),
+    type: z.string().max(120).optional(), audience: z.string().max(40).optional(),
+    looking: z.array(z.string().max(60)).max(30).optional(), styles: z.array(z.string().max(60)).max(30).optional(),
+    zodiac: z.string().max(40).optional(), chinese: z.string().max(40).optional(), mbti: z.string().max(8).optional(),
+    life_path: z.number().int().min(1).max(99).optional(), birthdate: z.string().max(20).optional(),
+    avatar: z.string().max(2048).optional(), lat: z.number().optional(), long: z.number().optional(),
+    city: z.string().max(120).optional(),
+    custom_type_pending: z.boolean().optional(), custom_style_pending: z.boolean().optional(),
+  }).passthrough(),
+  "profile-delete": z.object({}).passthrough(),
+  "match": z.object({ targetId: idLike.optional() }).passthrough(),
+  "connect": z.object({ targetId: idLike.optional(), profileId: idLike.optional(), targetProfileId: idLike.optional(), note: z.string().max(500).optional() }).passthrough(),
+  // ── messaging ──
+  "message-request-accept": z.object({ requestId: idLike.optional(), id: idLike.optional() }).passthrough(),
+  "message-request-decline": z.object({ requestId: idLike.optional(), id: idLike.optional() }).passthrough(),
+  "message-request-block": z.object({ requestId: idLike.optional(), id: idLike.optional() }).passthrough(),
+  "mark-read": z.object({ id: idLike.optional(), all: z.boolean().optional() }).passthrough(),
+  // ── feed + moments ──
+  "like-feed-post": z.object({ postId: idLike.optional() }).passthrough(),
+  "like-moment": z.object({ momentId: idLike.optional() }).passthrough(),
+  "toggle-photo-like": z.object({ photoUrl: z.string().max(2048).optional() }).passthrough(),
+  // ── briefs ──
+  "brief": z.object({
+    title: z.string().max(200).optional(), description: z.string().max(5000).optional(), budget: z.string().max(120).optional(),
+    category: z.string().max(60).optional(), tags: z.array(z.string().max(40)).max(20).optional(),
+    urgent: z.boolean().optional(), nsfw: z.boolean().optional(), paid: z.boolean().optional(),
+    rate: z.string().max(120).optional(), deadline: z.string().max(60).optional(),
+  }).passthrough(),
+  // ── forum ──
+  "forum": z.object({
+    type: z.string().max(40).optional(), postId: idLike.optional(), replyId: idLike.optional(),
+    title: z.string().max(200).optional(), body: z.string().max(8000).optional(), category: z.string().max(60).optional(),
+    parentReplyId: idLike.optional(), vote: z.enum(["up", "down"]).optional(),
+  }).passthrough(),
+  "forum-post-pin": z.object({ id: idLike.optional(), postId: idLike.optional(), pinned: z.boolean().optional() }).passthrough(),
+  "forum-post-lock": z.object({ id: idLike.optional(), postId: idLike.optional(), locked: z.boolean().optional() }).passthrough(),
+  // ── communities + events ──
+  "join-community": z.object({ communityId: idLike.optional() }).passthrough(),
+  "leave-community": z.object({ communityId: idLike.optional() }).passthrough(),
+  "create-community": z.object({ name: z.string().max(120).optional(), description: z.string().max(2000).optional(), category: z.string().max(60).optional(), is_private: z.boolean().optional(), rules: z.unknown().optional() }).passthrough(),
+  "create-event": z.object({ title: z.string().max(200).optional(), description: z.string().max(4000).optional(), date: z.string().max(60).optional(), location: z.string().max(200).optional(), category: z.string().max(60).optional(), img: z.string().max(2048).optional(), communityId: idLike.optional() }).passthrough(),
+  "cancel-rsvp": z.object({ eventId: idLike.optional() }).passthrough(),
+  "update-community-rules": z.object({ communityId: idLike.optional(), rules: z.unknown().optional() }).passthrough(),
+  "kick-community-member": z.object({ communityId: idLike.optional(), userId: idLike.optional() }).passthrough(),
+  "ban-community-member": z.object({ communityId: idLike.optional(), userId: idLike.optional(), reason: z.string().max(500).optional() }).passthrough(),
+  "unban-community-member": z.object({ communityId: idLike.optional(), userId: idLike.optional() }).passthrough(),
+  "mute-community-member": z.object({ communityId: idLike.optional(), userId: idLike.optional(), durationHours: z.number().nonnegative().max(8760).optional() }).passthrough(),
+  "unmute-community-member": z.object({ communityId: idLike.optional(), userId: idLike.optional() }).passthrough(),
+  "set-community-role": z.object({ communityId: idLike.optional(), userId: idLike.optional(), role: z.enum(["member", "moderator", "admin"]).optional() }).passthrough(),
+  "approve-community-join-request": z.object({ requestId: idLike.optional(), communityId: idLike.optional(), userId: idLike.optional() }).passthrough(),
+  "deny-community-join-request": z.object({ requestId: idLike.optional(), communityId: idLike.optional(), userId: idLike.optional() }).passthrough(),
+  // ── sessions ──
+  "create-session": z.object({ title: z.string().max(200).optional(), description: z.string().max(4000).optional(), type: z.string().max(60).optional(), rate: z.string().max(120).optional(), duration: z.string().max(60).optional(), skills: z.array(z.string().max(40)).max(20).optional(), date: z.string().max(60).optional(), location: z.string().max(200).optional(), img: z.string().max(2048).optional() }).passthrough(),
+  // ── boosts + sync + saved searches ──
+  "boost": z.object({ action: z.string().max(40).optional(), duration: z.string().max(20).optional(), quantity: z.number().int().min(1).max(100).optional() }).passthrough(),
+  "boost-purchase-complete": z.object({ purchaseId: idLike.optional() }).passthrough(),
+  "sync": z.object({ matches: z.array(z.unknown()).max(500).optional(), stats: z.record(z.string(), z.number()).optional() }).passthrough(),
+  "saved-search-delete": z.object({ id: idLike.optional() }).passthrough(),
 };
 
 export type RestValidation = { ok: true; data: Record<string, unknown> } | { ok: false; error: string };
