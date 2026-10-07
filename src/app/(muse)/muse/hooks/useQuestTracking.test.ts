@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { renderHook, waitFor, cleanup } from "@testing-library/react";
-import { useQuestTracking } from "./useQuestTracking";
+import { useQuestTracking, deriveWeekFromStreak } from "./useQuestTracking";
 
 afterEach(() => cleanup());
 
@@ -42,5 +42,34 @@ describe("useQuestTracking", () => {
     renderHook(() => useQuestTracking(a as never));
     expect(a.trackQuest).not.toHaveBeenCalled();
     expect(a.apiFetch).not.toHaveBeenCalled();
+  });
+
+  // Bug fix (2026-10-07): the weekly pips used to be derived from a
+  // separate, purely-local `muse_login_days` localStorage array that could
+  // silently disagree with the server-synced streak number (e.g. after
+  // clearing site data, or on a different device). They're now derived
+  // directly from the same `streak` value the server already returns.
+  it("derives the weekly pips from the server streak instead of local storage", async () => {
+    const { a } = args({ apiFetch: vi.fn(async () => json({ quests: [], streak: 3 })) });
+    renderHook(() => useQuestTracking(a as never));
+    await waitFor(() => expect(a.setWeeklyLogins).toHaveBeenCalledWith([false, false, false, false, true, true, true]));
+  });
+});
+
+describe("deriveWeekFromStreak", () => {
+  it("marks no days hit for a zero streak", () => {
+    expect(deriveWeekFromStreak(0)).toEqual([false, false, false, false, false, false, false]);
+  });
+
+  it("marks only the most recent days hit for a streak under a week", () => {
+    expect(deriveWeekFromStreak(3)).toEqual([false, false, false, false, true, true, true]);
+  });
+
+  it("marks all 7 days hit once the streak reaches a full week", () => {
+    expect(deriveWeekFromStreak(7)).toEqual([true, true, true, true, true, true, true]);
+  });
+
+  it("clamps a streak longer than a week to all 7 days hit", () => {
+    expect(deriveWeekFromStreak(42)).toEqual([true, true, true, true, true, true, true]);
   });
 });

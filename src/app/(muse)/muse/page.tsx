@@ -640,8 +640,6 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
 
   usePageTour({ screen, bootstrapped, authUser, maybeShowPageTour });
 
-  // Weekly-login pips recompute (moved into useQuestTracking above).
-
   // Auth action handlers (login/signup submit, OAuth, logout) — see
   // useAuthActions. Called here so `doLogout` is already declared for
   // useSessionRefresh below (same ordering constraint Phase E noted).

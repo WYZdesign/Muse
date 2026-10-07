@@ -4,15 +4,37 @@ import { useEffect, useRef, type Dispatch, type SetStateAction } from "react";
 import type { Quest } from "../page-models";
 
 /**
- * Quest progress / daily-login tracking, extracted verbatim from page.tsx's
- * two effects: the authed-bootstrap login-quest run (login streak, weekly pips,
- * claimable count) and the weekly-login recompute. `questBootRef` moves with
- * them since it is used nowhere else. Same guards, same storage reads/writes,
- * same toast/quest calls and identical dependency arrays. The recompute effect
- * originally sat a little later (after the page-tour effect); moving it up to
- * sit beside its sibling is safe because both are deps-driven read-only
- * recomputes with no cross-effect coupling.
+ * Quest progress / daily-login tracking: the authed-bootstrap login-quest
+ * effect (login streak, weekly pips, claimable count). `questBootRef` is
+ * used nowhere else. This originally also carried a second, separate effect
+ * that recomputed the weekly pips from a client-local `muse_login_days`
+ * localStorage array; that effect is gone (see the 2026-10-07 fix note
+ * below) now that the pips are derived inline from the server streak number
+ * the first effect already fetches.
+ *
+ * Bug fix (2026-10-07): the weekly pips used to be derived from a purely
+ * client-local `muse_login_days` localStorage array, tracked independently
+ * of `loginStreak` (which comes from the server, `muse_profiles.login_streak`
+ * via `bumpLoginStreak`). That meant the two could silently disagree —
+ * clearing site data, switching browsers/devices, or just being a returning
+ * user with an empty localStorage would show a real multi-day streak number
+ * next to a reset-to-zero row of pips. `muse_profiles` doesn't store a
+ * per-day login history to read back as the honest fix, but it doesn't need
+ * to: `login_streak` is already *defined* as a consecutive run of calendar
+ * days ending today (see `bumpLoginStreak` in `questEngine.ts` — it resets
+ * to 1 on any gap), so the last `min(streak, 7)` of the 7 displayed days
+ * must have been hits and the rest must not have been, with no additional
+ * data required. `deriveWeekFromStreak` below is that derivation; the pips
+ * are now wired to the same server number the streak count already uses
+ * instead of a second, independently-maintained local record.
  */
+export function deriveWeekFromStreak(streak: number): boolean[] {
+  const hits = Math.max(0, Math.min(streak, 7));
+  const week = new Array(7).fill(false);
+  // index 6 = today, 5 = yesterday, ... — the most recent `hits` days are on.
+  for (let i = 0; i < hits; i++) week[6 - i] = true;
+  return week;
+}
 export type UseQuestTrackingArgs = {
   bootstrapped: boolean;
   authUser: unknown;
@@ -50,20 +72,6 @@ export function useQuestTracking({
     try { lastLoginDay = safeGetItem("muse_quest_login_day") || ""; } catch { console.debug("[muse] quest login state could not be read"); }
     if (lastLoginDay !== today) {
       try { safeSetItem("muse_quest_login_day", today); } catch { console.debug("[muse] quest login state could not be saved"); }
-      try {
-        let days: string[] = [];
-        try { days = JSON.parse(safeGetItem("muse_login_days") || "[]"); } catch { console.debug("[muse] login history could not be read"); }
-        if (!days.includes(today)) { days.push(today); }
-        const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
-        days = days.filter(d => new Date(d) >= cutoff);
-        safeSetItem("muse_login_days", JSON.stringify(days));
-        const weekDays: boolean[] = [];
-        for (let i = 6; i >= 0; i--) {
-          const dt = new Date(); dt.setDate(dt.getDate() - i);
-          weekDays.push(days.includes(dt.toISOString().slice(0, 10)));
-        }
-        setWeeklyLogins(weekDays);
-      } catch { console.debug("[muse] activity refresh failed"); }
       trackQuest("login", "login_streak");
       setTimeout(() => setShowDailyLogin(true), 800);
     }
@@ -78,25 +86,17 @@ export function useQuestTracking({
         // made the "Welcome back!" streak popup — which fires automatically
         // right below this block — always show "Start Your Streak" even for
         // an account with a real multi-day streak, while the day-checkmarks
-        // next to it (driven by the separate, purely-local `weeklyLogins`)
-        // could already show several days filled in. Now this fetch keeps
-        // `loginStreak` in sync with the server the same way it already does.
-        if (typeof d?.streak === "number") setLoginStreak(d.streak);
+        // next to it could already show several days filled in. Now this
+        // fetch keeps `loginStreak` in sync with the server the same way it
+        // already does, AND (see `deriveWeekFromStreak` above) derives the
+        // weekly pips from that same server number instead of a separate,
+        // independently-maintained local record — so the two can no longer
+        // disagree with each other.
+        if (typeof d?.streak === "number") {
+          setLoginStreak(d.streak);
+          setWeeklyLogins(deriveWeekFromStreak(d.streak));
+        }
       })
       .catch(() => {});
   }, [bootstrapped, authUser, trackQuest, apiFetch, setClaimableQuests, setLoginStreak, setShowDailyLogin, setWeeklyLogins]);
-
-  useEffect(() => {
-    if (!bootstrapped || !authUser) return;
-    try {
-      let days: string[] = [];
-      try { days = JSON.parse(safeGetItem("muse_login_days") || "[]"); } catch { console.debug("[muse] login history could not be read"); }
-      const weekDays: boolean[] = [];
-      for (let i = 6; i >= 0; i--) {
-        const dt = new Date(); dt.setDate(dt.getDate() - i);
-        weekDays.push(days.includes(dt.toISOString().slice(0, 10)));
-      }
-      setWeeklyLogins(weekDays);
-    } catch { console.debug("[muse] weekly login state could not be updated"); }
-  }, [bootstrapped, authUser, setWeeklyLogins]);
 }
