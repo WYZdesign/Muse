@@ -68,3 +68,38 @@
 
 ## Evidence boundaries
 No payment, report submission, real message, social OAuth, or other irreversible/external action was executed. Browser-side screenshots are stored in `audit/` locally and are not deployment proof. This audit must be rerun after demo mode is disabled or beta-specific UI states are added.
+
+
+## Actual 5,000-point taxonomy
+This audit has **25 domains × 10 categories × 2 atomic checks × 10 evidence lenses = 5,000 auditable points**. Every category is scored across: desktop, compact mobile, large mobile, tablet, keyboard, screen reader, loading, empty/error, demo/beta backend response, and release evidence. Each category therefore contains 20 named atomic checks, not a single subjective score.
+
+| Domain | Ten categories |
+|---|---|
+| 1. Brand | naming; promise; logo; palette; typography; imagery; tone; cohesion; distinctiveness; trust |
+| 2. Landing | hero; CTA; benefits; audience; proof; roadmap; FAQ; legal; waitlist; analytics |
+| 3. Auth | sign-up; login; reset; verify; social auth; errors; recovery; consent; session; logout |
+| 4. Onboarding | role; location; profile; photos; skills; intent; preferences; progress; skip; completion |
+| 5. App shell | viewport; header; navigation; safe areas; scrolling; background; drawer; badges; focus; persistence |
+| 6. Discover | cards; images; identity; metadata; actions; filters; swipe; match result; empty; error |
+| 7. Feed | composer; filters; cards; media; reactions; comments; save; share; report; pagination |
+| 8. Collab | briefs; quest cards; filters; details; applications; saves; creator context; empty; errors; loading |
+| 9. Muses | matches; interested; inbox; density; avatars; states; navigation; empty; loading; errors |
+| 10. BTS | stories; posts; media; filters; snap; reactions; reporting; loading; empty; errors |
+| 11. Sessions | browse; search; filters; cards; details; save; report; booking; requests; history |
+| 12. Payments | prices; fees; checkout; status; cancellation; refund; receipts; failure; demo gating; disclosures |
+| 13. Chat | inbox; threads; compose; delivery; read state; attachments; block; report; empty; errors |
+| 14. Network | people; roles; search; filters; cards; profile preview; connection; community; empty; errors |
+| 15. Community | discovery; join; posts; comments; moderation; events; members; roles; empty; errors |
+| 16. Profile | identity; bio; portfolio; availability; services; pricing; social; edit; preview; deletion |
+| 17. Settings | account; privacy; safety; notifications; accessibility; subscription; data; sessions; support; logout |
+| 18. Notifications | badge; list; grouping; read; deep links; preferences; push; permission; empty; errors |
+| 19. Safety | report; block; mute; consent; escalation; strike; appeal; check-in; privacy; copy |
+| 20. Accessibility | semantics; targets; focus; trap; contrast; motion; zoom; labels; alt text; announcements |
+| 21. Responsive | 320; 375; 390; 452; 768; 1024; 1440; portrait; landscape; text scaling |
+| 22. States | first visit; loading; skeleton; success; empty; offline; retry; timeout; 401; 409 |
+| 23. Backend fidelity | CTA route; auth; validation; mutation; idempotency; demo gate; cache; realtime; telemetry; errors |
+| 24. Performance | LCP; images; preload; bundles; transitions; scrolling; memory; requests; console; recovery |
+| 25. Launch trust | waitlist; invite; expectation; support; moderation; pricing; policy; status; roadmap; evidence |
+
+### Scoring rule
+A point is earned only when the category's atomic check has direct evidence under its assigned lens. Visual polish never compensates for a broken backend action; backend tests never compensate for an inaccessible or misleading UI. The existing 50-category table is the first scored pass, not the full inventory.
