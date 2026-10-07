@@ -41,3 +41,14 @@ Begin waitlist work only with an explicit founding-LA promise, small invite wave
 2. What exact condition flips `MUSE_DEMO_MODE` off for invite wave one?
 3. Who owns each external operation: support, moderation, invite approval, incident escalation, and payment/refund response?
 4. What is the single success metric for the first 25 invited creators?
+
+
+## Required independent agent conference response
+Each agent must return a compact evidence memo against the 5,000-point taxonomy:
+- three findings the other agents likely missed;
+- five highest-leverage fixes, ranked by user impact and implementation risk;
+- any finding they dispute, with evidence;
+- one acquisition/launch idea that does not depend on paid ads or the old mixer channel;
+- a clear “safe for waitlist / safe for invite wave / not safe” conclusion.
+
+No agent may mark a category complete from source review alone. Browser evidence, API evidence, and real-user evidence are distinct.
