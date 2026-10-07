@@ -7,6 +7,12 @@ but a round being described below does NOT mean it's live. Verify with
 `git log --oneline -1 origin/main` against `DELIVERY_STATUS.md`'s "Confirmed
 merged" line before trusting anything here.
 
+## FOR WYZMIND — same branch, 1 more commit: S-3 console.debug sweep (2026-10-07, Claude)
+
+Picked up `CLAUDE_TASKS.md`'s S-3: swept all ~60 `console.debug` catch-blocks in the app for ones that are actually meaningful failures rather than genuinely-ignorable best-effort cleanup. Found 3: `ReportModal.tsx`'s failed-report catch (a safety report failing silently in prod — real trust & safety blind spot, not cosmetic) and two onboarding-portfolio-import catches in `OnboardingFlow.tsx` (a new user's uploaded photo can silently never reach their album, no toast, no telemetry). All three now call `trackError()` instead. Deliberately did NOT touch the rest — they're an established, reviewed pattern for truly ignorable operations (storage writes, event dispatch, observer teardown), not debugging leftovers to blanket-clear.
+
+Also: `origin/main` moved while this was in flight (`c8eff22` → `63f9d71`, Torreé's own `.gitignore` commit, no source changes, confirmed conflict-free via `git merge-tree`). `DELIVERY_STATUS.md`'s header is reconciled to the new tip. Branch now 14 commits ahead. Gate re-run clean: `tsc` 0, touched-file `eslint` 0 errors, `vitest` 161/1249, `next build` clean. Bundle redelivered with this commit.
+
 ## FOR WYZMIND — same branch, 2 more commits: picked up 2 of the audit's own P0 items (2026-10-07, Claude)
 
 Didn't just hand off the audit's open-findings list — picked off its two cheapest, safest P0 items right away. `NetworkScreen.tsx` had the same pro-badge derivation logic (Pro/Experienced/Rising + skill badges) duplicated between the card list and the detail modal, and the modal was independently hardcoding its own hex colors instead of sharing `BADGE_COLORS` — same "Pro" badge, two different golds depending on which view you were looking at. Pulled it into one `buildProfessionalBadges()` helper in `badgeColors.ts` (`2d3783c`). Also closed the one avatar-fallback gap the audit found: `CollabScreen.tsx`'s brief-author avatar had no `onError` handler, unlike every other avatar in the app — added `handleImgError` as an optional prop and wired it through from `page.tsx`, same pattern every sibling screen uses.

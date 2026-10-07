@@ -27,7 +27,17 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `c8eff22`
+## Confirmed merged, last verified at: `63f9d71`
+
+### Reconciliation — 2026-10-07 (Claude): `c8eff22` → `63f9d71`, 1 trivial commit
+
+`git fetch origin` picked up one new commit on `origin/main`, pushed directly
+by Torreé: `63f9d71` — `.gitignore` additions for agent/tooling scratch
+(`.playwright-mcp/`, `audit/`, local `supabase/`). No source changes, no
+conflict risk (`git merge-tree` against this branch confirms a clean,
+conflict-free merge). Branch `claude/restore-pending-fixes` is unaffected;
+rebasing is unnecessary for a change this disjoint, but noted here so this
+file's header stays truthful per its own rule above.
 
 ### Context reconciliation — 2026-10-06 (Claude)
 
@@ -446,7 +456,13 @@ Re-verified the FULL gate at the 8-commit point (`fc0a4e1`): `npx tsc --noEmit` 
 - **`2d3783c` — badge-logic dedup + CollabScreen avatar fallback**: `NetworkScreen.tsx`'s pro-card badge derivation (Pro/Experienced/Rising + skill badges) was duplicated near-verbatim between the card list and the detail modal, with the modal independently hardcoding its own hex colors instead of sharing `BADGE_COLORS` — same "Pro" badge, two different gold values depending on which view you were in. Extracted `buildProfessionalBadges()` into `badgeColors.ts`; both call sites now share it, so the modal's badge colors now match the card's exactly (a small, deliberate visual change, not a no-op — not screenshot-verified this round, flagged in the audit doc). Also added the missing `onError={handleImgError}` to `CollabScreen.tsx`'s brief-author avatar (added `handleImgError` as an optional `CollabScreenProps` field, threaded through from `page.tsx` the same way every sibling screen already receives it) — closes the one avatar-fallback gap the audit found.
 - **`7397f80` — doc update**: marked both items done in `MUSES_VISUAL_5000_POINT_AUDIT_2026-10-07.md`'s P0 list and domain 8/10 writeups, with the commit hash and what changed.
 
-Re-verified the FULL gate again at this point (current HEAD, `7397f80`): `npx tsc --noEmit` clean · `npx eslint` (touched files) 0 errors · `npx vitest run` **161 files / 1249 tests PASS** (no existing coverage over these specific render paths, consistent with before) · `npx next build` clean. Branch is 10 commits ahead of `origin/main`@`c8eff22`, still unpushed (no push access). Bundle redelivered with these 2 additional commits; see the handover note for the merge command (unchanged from above, just re-run against the new bundle).
+Re-verified the FULL gate again at this point (current HEAD, `7397f80`): `npx tsc --noEmit` clean · `npx eslint` (touched files) 0 errors · `npx vitest run` **161 files / 1249 tests PASS** (no existing coverage over these specific render paths, consistent with before) · `npx next build` clean. Branch was 10 commits ahead of `origin/main`@`c8eff22` at this point.
+
+#### 1 more commit — S-3 from `CLAUDE_TASKS.md` (2026-10-07)
+
+- **`15979f3` — sweep `console.debug` for silently-swallowed MEANINGFUL failures, surface via `trackError`**: of the ~60 `console.debug` catch-blocks across the app, the overwhelming majority are a deliberate, already-reviewed pattern for genuinely-ignorable best-effort cleanup (storage writes, event-dispatch, observer teardown) and were left alone — blanket-replacing all of them was explicitly NOT the ask. Three were real gaps: `ReportModal.tsx`'s failed-report catch (a trust & safety report failing silently in prod, invisible to the team even though the reporter sees a "Failed to report" toast) and two sites in `OnboardingFlow.tsx` (a new user's onboarding portfolio photo can silently never reach their album on a `create-album`/`add-album-photo` failure — no toast, no telemetry, just quiet data loss in the first five minutes of a new account). All three now call `trackError()`.
+
+Re-verified the FULL gate at this point (current HEAD, `15979f3`): `npx tsc --noEmit` clean · `npx eslint` (touched files) 0 errors · `npx vitest run` **161 files / 1249 tests PASS** · `npx next build` clean. Branch is now 14 commits ahead of `origin/main`@`63f9d71` (rebased context onto the new tip per the reconciliation note above — no actual rebase needed, `git merge-tree` confirms a clean, conflict-free merge), still unpushed (no push access). Bundle redelivered with this additional commit; see the handover note for the merge command (unchanged from above, just re-run against the new bundle).
 
 ## Known open issues (not blocked on delivery, just unsolved)
 
