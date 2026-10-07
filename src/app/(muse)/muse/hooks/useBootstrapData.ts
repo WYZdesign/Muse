@@ -8,6 +8,7 @@ import type { useCommunityData } from "./useCommunityData";
 import type { useSessionData } from "./useSessionData";
 import type { useBriefsData } from "./useBriefsData";
 import { viewerSide } from "@/lib/role";
+import { trackError } from "@/lib/errorTracker";
 import { initialsAvatarUrl } from "../lib/initials-avatar";
 import {
   normalizeCommunity,
@@ -158,7 +159,7 @@ export function useBootstrapData({
       if (communities?.communities?.length) setLiveCommunities(communities.communities.map(normalizeCommunity));
       if (sessions?.sessions?.length) setLiveSessions(sessions.sessions.map(normalizeSession));
       if (professionals?.professionals?.length) setLiveProfessionals(professionals.professionals as Professional[]);
-    } catch { console.debug("[muse] initial recommendation refresh failed"); }
+      } catch { trackError("muse_recommendation_refresh_failed"); }
     setBootstrapped(true);
     setDiscoverLoading(false);
   }, [apiFetch, authUserProfileId, feedPostsLen, forumPostsLen, liveBriefsLen, liveCommunitiesLen, liveEventsLen, liveForumLen, liveSessionsLen, setDiscoverLoading, setFeedPosts, setForumPosts, setLiveBriefs, setLiveCommunities, setLiveEvents, setLiveFeed, setLiveForum, setLiveProfiles, setLiveSessions]);

@@ -6,6 +6,7 @@ import type { Quest, ViewProfile } from "../page-models";
 import type { OnboardingData } from "./useAuthOnboardingState";
 import { analytics } from "../lib/analytics";
 import { tourSeenKey, type TourScreenId } from "../components/pageTourContent";
+import { trackError } from "@/lib/errorTracker";
 
 export type MuseToastInput = string | { msg: string; onTap?: () => void; type?: "info" | "success" | "error" };
 
@@ -143,7 +144,7 @@ export function useMuseActions({
         setTopQuests(top);
       }
       if (typeof d?.streak === "number") setLoginStreak(d.streak);
-    } catch { console.debug("[muse] quest refresh failed"); }
+    } catch { trackError("muse_quest_refresh_failed"); }
   }, [apiFetch, setClaimableQuests, setLoginStreak, setNearQuests, setTopQuests]);
 
   // Quest tracking — call after successful actions. Batches multiple keys into
@@ -162,7 +163,7 @@ export function useMuseActions({
         if (leveled) showToast("🎉 Level up! Keep completing quests for rewards");
       }
       if (completed) setClaimableQuests(n => n + 1);
-    } catch { console.debug("[muse] safety preference refresh failed"); }
+    } catch { trackError("muse_safety_preference_refresh_failed"); }
   }, [apiFetch, setClaimableQuests, showToast]);
 
   // Per-page tutorials: each major screen gets its own small lightbox the

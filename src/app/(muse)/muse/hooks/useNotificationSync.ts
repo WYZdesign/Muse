@@ -3,6 +3,7 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { uid } from "../lib/uid";
 import type { Notification, ProfileViewer } from "../page-models";
+import { trackError } from "@/lib/errorTracker";
 
 export type ActivityFeedItem = {
   id: number;
@@ -51,7 +52,7 @@ export function useNotificationSync({
         if (cancelled) return;
         const d = await r.json();
         if (d && typeof d.count === "number") setServerNotifCount(d.count);
-      } catch { console.debug("[muse] client preference refresh failed"); }
+      } catch { trackError("muse_client_preference_refresh_failed"); }
     };
     poll();
     const iv = setInterval(poll, 20000);
@@ -90,7 +91,7 @@ export function useNotificationSync({
             return [...newItems, ...prev];
           });
         }
-      } catch { console.debug("[muse] notification count refresh failed"); }
+      } catch { trackError("muse_notification_count_refresh_failed"); }
     };
     pull();
     const iv = setInterval(pull, 60000);

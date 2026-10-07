@@ -4,6 +4,7 @@ import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { GeoResult } from "@/app/muse-realtime";
 import type { OnboardingData } from "./useAuthOnboardingState";
+import { trackError } from "@/lib/errorTracker";
 
 /**
  * One-shot bootstrap/hydration, extracted verbatim from page.tsx's mount
@@ -92,7 +93,7 @@ export function useBootstrapHydration({
         }
         sessionStorage.setItem("muse_build", bid);
       }
-    } catch { console.debug("[muse] startup data refresh failed"); }
+      } catch { trackError("muse_startup_data_refresh_failed"); }
 
     try { sessionStorage.setItem("muse_loaded", "1"); } catch { console.debug("[muse] load marker could not be persisted"); }
     loadState();

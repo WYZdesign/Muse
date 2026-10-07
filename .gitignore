@@ -56,3 +56,7 @@ _LOGS_dev_*.txt
 .playwright-mcp/
 audit/
 supabase/
+
+# win32-only Playwright visual-regression baselines (kept local; not portable to
+# linux CI). The tracked visual-matrix baselines are the ones the repo commits.
+tests/e2e/visual-regression.spec.ts-snapshots/

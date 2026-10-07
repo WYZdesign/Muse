@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { createSafeObserver } from "../lib/safe-observer";
+import { trackError } from "@/lib/errorTracker";
 
 /**
  * Ambient visual/DOM effects, extracted verbatim from page.tsx: the global
@@ -128,7 +129,7 @@ export function useVisualEffects({ screen }: UseVisualEffectsArgs) {
       if (!active) return;
       active.scrollTop = 0;
       active.querySelectorAll<HTMLElement>('[style*="overflow"],.match-list,.messages,.profile-scroll,.portfolio-scroll,.settings-scroll,.briefs-scroll,.conn-scroll,.sub-scroll,.modal-body,.card-info-scroll').forEach(el => { el.scrollTop = 0; });
-    } catch { console.debug("[muse] streak refresh failed"); }
+    } catch { trackError("muse_streak_refresh_failed"); }
   }, [screen]);
 
   // Also always show waves on the swipe card (Discover) as a gradient accent.
