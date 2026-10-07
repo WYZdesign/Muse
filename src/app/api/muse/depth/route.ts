@@ -4,7 +4,7 @@ import { checkRate, clientIp } from "@/lib/rate-limit";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
 // ═══════════════════════════════════════════════════════════════
-// Muse depth-map generation — server-side proxy to a hosted
+// Musa depth-map generation — server-side proxy to a hosted
 // monocular-depth-estimation model (Replicate), used to power true
 // "Apple Spatial Scenes"-style layered parallax on photos, instead
 // of the flat single-plane tilt in useDeviceTilt.ts's

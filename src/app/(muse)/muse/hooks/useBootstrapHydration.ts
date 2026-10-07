@@ -138,7 +138,7 @@ export function useBootstrapHydration({
     // Handle post-checkout return: refresh tier from server
     const params = new URLSearchParams(window.location.search);
     const upgraded = params.get("upgraded");
-    if (upgraded) showToast("Welcome to Muses " + (upgraded.charAt(0).toUpperCase() + upgraded.slice(1)) + "! ✨");
+    if (upgraded) showToast("Welcome to Musa " + (upgraded.charAt(0).toUpperCase() + upgraded.slice(1)) + "! ✨");
 
     // Handle Stripe Connect onboarding return
     const connected = params.get("connected");

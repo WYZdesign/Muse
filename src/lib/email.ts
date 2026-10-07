@@ -1,5 +1,5 @@
 /**
- * Muse email module — single source of truth for all outbound email.
+ * Musa email module — single source of truth for all outbound email.
  *
  * Provider: Resend (https://resend.com) via raw REST API — no SDK dependency.
  * Sender: info@wyzdesign.com (owner's current sending address).
@@ -17,7 +17,7 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { getMuseUrl, getTermsUrl, getPrivacyUrl, getLandingUrl } from "@/lib/urls";
 
-const FROM = "Muses by WYZ <info@wyzdesign.com>";
+const FROM = "Musa by WYZ <info@wyzdesign.com>";
 const RESEND_URL = "https://api.resend.com/emails";
 
 /** Signed unsubscribe token — HMAC(email) so links can't be forged for others. */
@@ -135,7 +135,7 @@ const SHELL = (inner: string, email?: string, preheader?: string) => `
     <meta name="x-apple-disable-message-reformatting" />
     <meta name="color-scheme" content="dark light" />
     <meta name="supported-color-schemes" content="dark light" />
-    <title>Muses by WYZ</title>
+    <title>Musa by WYZ</title>
   </head>
   <body style="margin:0;padding:0;background-color:#0a0612;">
     ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#0a0612;font-size:1px;line-height:1px;">${escapeHtml(preheader)}</div>` : ""}
@@ -145,7 +145,7 @@ const SHELL = (inner: string, email?: string, preheader?: string) => `
           <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="width:560px;max-width:100%;">
             <tr>
               <td align="center" style="padding:32px 20px 8px;font-size:28px;font-weight:800;letter-spacing:1px;color:#ffd700;">
-                Muses by WYZ<span style="color:#d4a5ff;">&#10022;</span>
+                Musa by WYZ<span style="color:#d4a5ff;">&#10022;</span>
               </td>
             </tr>
             <tr>
@@ -155,7 +155,7 @@ const SHELL = (inner: string, email?: string, preheader?: string) => `
             </tr>
             <tr>
               <td style="padding:20px;border-top:1px solid #241b36;text-align:center;font-size:12px;color:#8b8299;line-height:1.7;">
-                You're receiving this because you're on the Muses by WYZ list.<br/>
+                You're receiving this because you're on the Musa by WYZ list.<br/>
                 Built by WYZ Design &middot; <a href="${getTermsUrl()}" style="color:#ffd700;text-decoration:none;">Terms</a> &middot; <a href="${getPrivacyUrl()}" style="color:#ffd700;text-decoration:none;">Privacy</a>${email ? ` &middot; <a href="${unsubscribeUrl(email)}" style="color:#ffd700;text-decoration:none;">Unsubscribe</a>` : ""}
               </td>
             </tr>
@@ -178,16 +178,16 @@ export function waitlistWelcome(email: string, source?: string): EmailMessage {
       </p>
 
       <div style="margin:0 0 22px;">
-        <h2 style="font-size:15px;color:#ffd700;margin:0 0 8px;">What Muses by WYZ is</h2>
+        <h2 style="font-size:15px;color:#ffd700;margin:0 0 8px;">What Musa by WYZ is</h2>
         <p style="font-size:14px;color:#b8b3c4;line-height:1.7;margin:0;">
-          Muses by WYZ is a creative professional network. Photographers, models, filmmakers, musicians, designers — people who make things — use it to find each other, collaborate, and book real work. Think of it as the place your portfolio meets the people who want to hire it.
+          Musa by WYZ is a creative professional network. Photographers, models, filmmakers, musicians, designers — people who make things — use it to find each other, collaborate, and book real work. Think of it as the place your portfolio meets the people who want to hire it.
         </p>
       </div>
 
       <div style="margin:0 0 22px;">
         <h2 style="font-size:15px;color:#ffd700;margin:0 0 8px;">How it works</h2>
         <p style="font-size:14px;color:#b8b3c4;line-height:1.7;margin:0;">
-          You build a profile, pick what kind of work you're into, and Muses by WYZ matches you with the right people. Browse their work, message them, and book sessions — all in one place. No cold DMs, no endless scrolling through people who don't fit.
+          You build a profile, pick what kind of work you're into, and Musa by WYZ matches you with the right people. Browse their work, message them, and book sessions — all in one place. No cold DMs, no endless scrolling through people who don't fit.
         </p>
       </div>
 
@@ -217,17 +217,17 @@ export function waitlistWelcome(email: string, source?: string): EmailMessage {
         <div style="font-size:12px;color:#8b8299;margin-top:10px;">Signed up with ${escapeHtml(email)}</div>
       </div>
     </div>
-  `, email, "Your spot is reserved — here's what Muses by WYZ is and what happens next.");
+  `, email, "Your spot is reserved — here's what Musa by WYZ is and what happens next.");
   return {
     to: email,
-    subject: "You're on the Muses by WYZ waitlist ✦",
+    subject: "You're on the Musa by WYZ waitlist ✦",
     html,
     text: [
-      "Thanks for joining Muses by WYZ — your spot is reserved.",
+      "Thanks for joining Musa by WYZ — your spot is reserved.",
       "",
-      "What Muses by WYZ is: a creative professional network where photographers, models, filmmakers, musicians, and designers find each other, collaborate, and book real work.",
+      "What Musa by WYZ is: a creative professional network where photographers, models, filmmakers, musicians, and designers find each other, collaborate, and book real work.",
       "",
-      "How it works: build a profile, pick what work you're into, and Muses by WYZ matches you with the right people. Browse their work, message them, and book sessions — all in one place.",
+      "How it works: build a profile, pick what work you're into, and Musa by WYZ matches you with the right people. Browse their work, message them, and book sessions — all in one place.",
       "",
       "When your spot opens you'll create an account and set up your profile — name, what you do, a few photos, and the collaborations you're after. It takes a few minutes.",
       "",
@@ -246,18 +246,18 @@ export function waitlistWelcome(email: string, source?: string): EmailMessage {
 export function betaAccess(email: string): EmailMessage {
   const html = SHELL(`
     <div style="background:#241f0a;border:1px solid #6b5a1c;border-radius:16px;padding:32px 28px;text-align:center;">
-      <h1 style="font-size:22px;color:#ffd700;margin:0 0 12px;">Your Muses by WYZ access is ready</h1>
+      <h1 style="font-size:22px;color:#ffd700;margin:0 0 12px;">Your Musa by WYZ access is ready</h1>
       <p style="font-size:15px;color:#ccc7d6;line-height:1.7;margin:0 0 20px;">
         It's time to find your muse.<br/>Head to the app and set up your profile to start matching.
       </p>
-      ${ctaButton("Enter Muses", getMuseUrl(), 4)}
+      ${ctaButton("Enter Musa", getMuseUrl(), 4)}
     </div>
-  `, email, "Your Muses by WYZ access is ready — set up your profile and start matching.");
+  `, email, "Your Musa by WYZ access is ready — set up your profile and start matching.");
   return {
     to: email,
-    subject: "Your Muses by WYZ access is ready ✦",
+    subject: "Your Musa by WYZ access is ready ✦",
     html,
-    text: "Your Muses by WYZ access is ready. Head to " + getMuseUrl() + " to set up your profile.",
+    text: "Your Musa by WYZ access is ready. Head to " + getMuseUrl() + " to set up your profile.",
   };
 }
 
@@ -271,7 +271,7 @@ export function signupWelcome(email: string, name?: string): EmailMessage {
   const who = name && name.trim() ? name.trim() : "there";
   const html = SHELL(`
     <div style="background:#1f1a08;border:1px solid #5c4e18;border-radius:16px;padding:32px 28px;text-align:center;">
-      <h1 style="font-size:22px;color:#ffd700;margin:0 0 12px;">Welcome to Muses, ${escapeHtml(who)} ✦</h1>
+      <h1 style="font-size:22px;color:#ffd700;margin:0 0 12px;">Welcome to Musa, ${escapeHtml(who)} ✦</h1>
       <p style="font-size:15px;color:#ccc7d6;line-height:1.7;margin:0 0 20px;">
         Your account is live. Here's what to do next:
       </p>
@@ -287,10 +287,10 @@ export function signupWelcome(email: string, name?: string): EmailMessage {
   `, email, "Your account is live — here are the 5 steps to finish your profile.");
   return {
     to: email,
-    subject: "Welcome to Muses ✦",
+    subject: "Welcome to Musa ✦",
     html,
     text: [
-      "Welcome to Muses! Your account is live.",
+      "Welcome to Musa! Your account is live.",
       "",
       "Here's what to do next:",
       "1. Add your name, location, and a short bio",

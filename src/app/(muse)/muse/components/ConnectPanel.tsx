@@ -121,7 +121,7 @@ export default function ConnectPanel({ onClose }: Props) {
             <div style={{ padding: 16, background: "rgba(78,205,196,0.08)", borderRadius: 12, marginBottom: 16, borderLeft: "3px solid #4ecdc4" }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "#4ecdc4", marginBottom: 4 }}>✓ Connected to Stripe</div>
               <div style={{ fontSize: 12, color: "var(--text2)" }}>
-                You can receive payments for bookings. Muse takes a 7% host commission on each booking.
+                You can receive payments for bookings. Musa takes a 7% host commission on each booking.
               </div>
             </div>
 
@@ -142,8 +142,8 @@ export default function ConnectPanel({ onClose }: Props) {
 
             <div style={{ padding: 12, background: "rgba(255,215,0,0.06)", borderRadius: 10, fontSize: 12, color: "var(--text2)", lineHeight: 1.6 }}>
               <strong style={{ color: "var(--gold)" }}>How it works:</strong><br/>
-              • Clients pay you through Muse bookings<br/>
-              • Muse takes a 7% host commission (clients also pay an 8% service fee)<br/>
+              • Clients pay you through Musa bookings<br/>
+              • Musa takes a 7% host commission (clients also pay an 8% service fee)<br/>
               • You receive 93% via Stripe payouts<br/>
               • Funds arrive in 2-7 business days
             </div>

@@ -1,6 +1,6 @@
 "use client";
 
-// Top-level React error boundary for the Muse app shell. Catches render
+// Top-level React error boundary for the Musa app shell. Catches render
 // errors that would otherwise unmount the whole app to a blank screen, shows
 // a recovery UI instead, and best-effort reports the error server-side so it
 // isn't only visible in the one browser it happened in.
@@ -19,7 +19,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error("[Muse ErrorBoundary]", error, info.componentStack);
+    console.error("[Musa ErrorBoundary]", error, info.componentStack);
     try {
       fetch("/api/muse", {
         method: "POST",

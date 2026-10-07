@@ -197,7 +197,7 @@ export const reportCreate = async ({ sb, profile, rest, ip }: ActionContext) => 
   const { error } = await sb.from("muse_reports").insert({ reporter_id: profile.id, target_id, target_type: target_type || "user", reason, details: details || "", ai_classification: aiClassification });
   if (error) return safeServerError(error, "db op");
   await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "report", details: { target_id, reason } });
-  if (profile.email) sendEmail(notify(profile.email, "We received your report", "Report received", "Thanks for looking out for the community. Our safety team is reviewing your report.", "Muse Safety", "https://muse.wyzdesign.com/muse/safety")).catch(() => {});
+  if (profile.email) sendEmail(notify(profile.email, "We received your report", "Report received", "Thanks for looking out for the community. Our safety team is reviewing your report.", "Musa Safety", "https://muse.wyzdesign.com/muse/safety")).catch(() => {});
   if (target_type === "user" || target_type === "match") {
     try {
       const { count: distinctReporters } = await sb.from("muse_reports")
@@ -234,7 +234,7 @@ export const userBlock = async ({ sb, profile, rest }: ActionContext) => {
   // Blocking only ever filtered future discover-ranked results — an existing
   // match with that person was left completely untouched, so blocking someone
   // you'd already matched with did nothing about it: they kept showing in
-  // Muses > Matches and could still message you. Mirror matchDelete's cleanup
+  // Musa > Matches and could still message you. Mirror matchDelete's cleanup
   // here so Block always means "make this person go away," not just "stop
   // showing them to me going forward." Both directions, same as unmatch.
   await sb.from("muse_matches").delete().eq("user_id", profile.id).eq("target_id", target_id);

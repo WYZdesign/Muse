@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// Muse money helpers — authoritative rate parsing.
+// Musa money helpers — authoritative rate parsing.
 //
 // `muse_sessions.rate` is a free-text field (e.g. "$200", "150",
 // "$9.99/hr"). Payment amounts must NEVER be derived client-side;

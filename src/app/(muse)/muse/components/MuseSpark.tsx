@@ -1,6 +1,6 @@
 "use client";
 
-// Unique Muse "Spark" like-button icon. A four-pointed shimmer star with a
+// Unique Musa "Spark" like-button icon. A four-pointed shimmer star with a
 // subtle inner sparkle, distinct from a generic ✦ or ✨. Rendered as pure SVG
 // so it scales crisply at any size and inherits `currentColor` (so it picks up
 // each page's accent via color). Used wherever a "like" affordance appears.

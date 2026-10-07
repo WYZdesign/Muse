@@ -76,7 +76,7 @@ a{color:inherit;text-decoration:none}
 /* Shooting comets - random directions, tail trails BEHIND head */
 .comet-field{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none;display:block}
 
-/* Nebula fog clouds - colorful, floating, Muse palette */
+/* Nebula fog clouds - colorful, floating, Musa palette */
 .nebula-fog{position:absolute;border-radius:50%;filter:blur(calc(30px * var(--scene-opacity, 1)));mix-blend-mode:screen;animation:nebulaDrift ease-in-out infinite;pointer-events:none;opacity:1}
 .nf-1{width:400px;height:300px;top:5%;left:10%;background:radial-gradient(ellipse,color-mix(in srgb,var(--coral) 18%,transparent),color-mix(in srgb,var(--coral) 6%,transparent) 50%,transparent 70%);animation-duration:28s}
 .nf-2{width:350px;height:250px;top:15%;right:15%;background:radial-gradient(ellipse,color-mix(in srgb,var(--lavender) 16%,transparent),color-mix(in srgb,var(--lavender) 5%,transparent) 50%,transparent 70%);animation-duration:32s;animation-delay:4s}
@@ -242,7 +242,7 @@ a{color:inherit;text-decoration:none}
    text + an animated background) paints on a backing layer sized to that box —
    so descenders on any title containing a "g"/"y"/"p"/"q"/"j" (e.g. "Settings")
    got flat-clipped at the box edge even though overflow was computed as
-   visible. Titles without descenders (Discover, Muse Pro, Your Profile) never
+   visible. Titles without descenders (Discover, Musa Pro, Your Profile) never
    showed it. A slightly taller line-height gives descenders room while the
    flex/grid parents that hold this title all center it, so nothing shifts. */
 .logo-link{font-size:37.5px;font-weight:900;font-family:'Playfair Display',serif;font-style:italic;background:var(--title-gradient,linear-gradient(90deg,#FF4500,#FFD700,#FFAA00,#FF4500,#FF8C00,#FF4500));background-size:300% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite;text-decoration:none;cursor:pointer;line-height:1.3;padding:0 0.18em;display:inline-block;white-space:nowrap;align-self:center}
@@ -315,7 +315,7 @@ a{color:inherit;text-decoration:none}
 .side-label{font-size:14px;font-weight:800;color:var(--gold);margin-bottom:4px;letter-spacing:0.02em}
 .side-sub{font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5}
 .hamburger-title{font-size:32px;font-weight:800;font-family:'Playfair Display',serif;font-style:italic;background:linear-gradient(135deg,var(--gold),var(--lavender));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:20px;letter-spacing:-0.3px}
-/* Muse Pro embedded banner — bedazzled, shiny, still clickable */
+/* Musa Pro embedded banner — bedazzled, shiny, still clickable */
 .muse-pro-banner{position:relative;margin:10px 0 6px;padding:16px;border-radius:18px;cursor:pointer;overflow:hidden;background:linear-gradient(135deg,rgba(255,215,0,0.14) 0%,rgba(255,160,0,0.10) 40%,rgba(212,165,255,0.12) 100%);border:1px solid rgba(255,215,0,0.35);box-shadow:0 0 9px rgba(255,215,0,0.14), inset 0 0 10px rgba(255,215,0,0.06);transition:box-shadow .3s, transform .3s}
 .muse-pro-banner:hover{box-shadow:0 0 10px rgba(255,215,0,0.2), inset 0 0 12px rgba(255,215,0,0.1);transform:translateY(-1px)}
 /* One-shot sweep, triggered from MenuModal.tsx on a randomized timer (see
@@ -421,7 +421,7 @@ textarea.inp{resize:none}
 .discover-hdr-actions{transition:flex .26s ease}
 .discover-hdr-actions.search-open{flex:1;min-width:0}
 /* PWA height parity (2026-09-23): Discover used to wrap title + actions into
-   TWO rows at ≤390px (108px hdr) while every other main screen (Feed, Muses,
+   TWO rows at ≤390px (108px hdr) while every other main screen (Feed, Musa,
    Collab, BTS…) stays one row (~68px + safe-area). On iOS home-screen PWA with
    a notch that compounded with env(safe-area-inset-top) and read as the whole
    page pushed down vs the other tabs. Same height as .hdr everywhere: one row,
@@ -454,7 +454,7 @@ textarea.inp{resize:none}
    that Discover was the only screen confirmed overlapping via visual
    sweep. A follow-up live sweep (round 18) found the same
    position:fixed verification banner also covers Feed's bottom post,
-   Muses' bottom match card, Collab's bottom brief, BTS's bottom post —
+   Musa' bottom match card, Collab's bottom brief, BTS's bottom post —
    and, worst of all, Chat's message input + send button are completely
    hidden underneath it, not just visually clipped (users couldn't see
    what they typed or reach Send). Not scoped to one screen, so this
@@ -471,7 +471,7 @@ textarea.inp{resize:none}
    margin only asks the flex:1 content sibling above it to stop 88px
    earlier, opening a gap that the floating banner occupies without
    touching nav OR the content. Verified live (browser-injected, before
-   committing) on Discover/chips, Muses/Chat input+send, and Feed.
+   committing) on Discover/chips, Musa/Chat input+send, and Feed.
    Superseded below: the banner is now a pure absolutely-positioned
    overlay (position:absolute, attached to the top edge of .nav via
    --nav-h) that never reserves layout space, so no sibling ever needs
@@ -587,7 +587,7 @@ img{background-color:var(--card-bg)}
 .match-name{font-size:18px;font-weight:700;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
 .match-type{font-size:12px;background:linear-gradient(90deg,var(--gold),var(--amber));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:600}
 .match-msg{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px;background:transparent}
-/* D2 (2026-09-23) — Muses list cards clip dense metadata at 375px. Tighten
+/* D2 (2026-09-23) — Musa list cards clip dense metadata at 375px. Tighten
    paddings/gaps and clamp secondary rows so name/role/location/score/unread
    stay fully visible without the card overflowing the viewport. */
 @media(max-width:390px){
@@ -942,7 +942,7 @@ img{background-color:var(--card-bg)}
   100%     { box-shadow: 0 0 0 0 rgba(255,215,0,0.0), 0 4px 18px rgba(233,69,96,0.25); }
 }
 .brief-avatar{border-width:4.9px;animation:avatarEccentric 7s linear infinite,brief-avatar-glow 4s ease-in-out infinite}
-/* Per-card gradient variants on Collab (like Muses') — each brief card gets a
+/* Per-card gradient variants on Collab (like Musa') — each brief card gets a
    different hue rotation of the theme palette so the deck reads varied. */
 .brief-variant-0{background-image:linear-gradient(var(--card-bg),var(--card-bg)),linear-gradient(var(--grad-angle,135deg),var(--gold),var(--amber),var(--pink),var(--lavender))}
 .brief-variant-1{background-image:linear-gradient(var(--card-bg),var(--card-bg)),linear-gradient(var(--grad-angle,135deg),var(--coral),var(--gold),var(--peach),var(--sunset))}
@@ -2762,7 +2762,7 @@ img{background-color:var(--card-bg)}
 }
 
 /* ─── MUSES BY WYZ brand lockup ───
-   "Muses" keeps the existing Playfair/gradient treatment; "BY WYZ" is smaller,
+   "Musa" keeps the existing Playfair/gradient treatment; "BY WYZ" is smaller,
    uppercase, letter-spaced and visually secondary. Applied to the auth hero
    (page.tsx) and available anywhere .hero-text is used. The base size is scaled
    down from the old 67px single-word logo so the two-part lockup still fits a

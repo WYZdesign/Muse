@@ -27,7 +27,7 @@ export type ActiveCall = {
 } | null;
 
 /**
- * Muse calls — LiveKit rooms + ringing over a shared Supabase broadcast channel.
+ * Musa calls — LiveKit rooms + ringing over a shared Supabase broadcast channel.
  *
  * All clients subscribe to one channel (`muse-calls`) and filter on the payload's
  * `to` field, which avoids per-user channel setup and works the moment a user is

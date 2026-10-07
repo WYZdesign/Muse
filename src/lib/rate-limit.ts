@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// Muse rate limiting — durable, serverless-safe.
+// Musa rate limiting — durable, serverless-safe.
 //
 // The original implementation was an in-memory Map, which resets on
 // every Vercel cold start and is per-instance — no real protection

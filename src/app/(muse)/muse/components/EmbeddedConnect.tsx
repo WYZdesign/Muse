@@ -9,7 +9,7 @@ import LoadingOverlay from "./LoadingOverlay";
 const PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
 
 /**
- * Muse-themed appearance for the embedded Stripe Connect components. Matches the
+ * Musa-themed appearance for the embedded Stripe Connect components. Matches the
  * app's dark/gold tokens (bg #0a0612, card #141020, gold #ffd700, purple #d4a5ff)
  * so onboarding looks native instead of a hosted Stripe page.
  */

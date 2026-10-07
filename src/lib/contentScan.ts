@@ -28,7 +28,7 @@ async function getRekognition() {
 
 const MODERATION_CATEGORIES: Record<string, { block: boolean; report: boolean }> = {
   "Explicit Nudity": { block: true, report: true },
-  // Boudoir / tasteful / artistic nudity is legitimate on Muse (age-gated, not
+  // Boudoir / tasteful / artistic nudity is legitimate on Musa (age-gated, not
   // blocked) — "Suggestive" is allowed through and flagged for the age-gate blur.
   "Suggestive": { block: false, report: false },
   "Violence": { block: true, report: true },
@@ -398,7 +398,7 @@ export async function submitToCyberTipline(report: {
       reportType: "Child Sexual Abuse Material",
       incidentDateTime: report.reported_at,
       reportingParty: {
-        espName: "Muses by WYZ (WYZ Design)",
+        espName: "Musa by WYZ (WYZ Design)",
         espContact: "legal@wyzdesign.com",
       },
       contentDetails: {

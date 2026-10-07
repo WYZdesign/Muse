@@ -67,7 +67,7 @@ export default function Lightbox({ photos, idx, onClose, onNavigate, onError }: 
   const handleShare = async () => {
     const url = photos[idx];
     if (navigator.share) {
-      try { await navigator.share({ url, title: "Photo from Muse" }); } catch { /* user dismissed */ }
+      try { await navigator.share({ url, title: "Photo from Musa" }); } catch { /* user dismissed */ }
     } else {
       try { await navigator.clipboard.writeText(url); } catch { /* clipboard unavailable */ }
     }

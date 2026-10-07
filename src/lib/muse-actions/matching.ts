@@ -79,7 +79,7 @@ export const matchCreate = async ({ sb, profile, rest, ip }: ActionContext) => {
   await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "match", details: { target_id, anchor_type: anchorType, anchor_value: anchorValue || undefined, matched } });
   const body = likeNotificationBody(String(profile.name || "Someone"), anchorType, anchorValue, note);
   await sb.from("muse_notifications").insert({ user_id: target_id, from_id: profile.id, type: "match", body, read: false });
-  await emailProfile(sb, target_id, "Someone liked you ✦", "New like on Muse", body, "See who it is", "https://muse.wyzdesign.com/muse", "match");
+  await emailProfile(sb, target_id, "Someone liked you ✦", "New like on Musa", body, "See who it is", "https://muse.wyzdesign.com/muse", "match");
   await bumpQuest(sb, profile.id, "match");
   return NextResponse.json({ success: true, matched });
 };

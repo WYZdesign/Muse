@@ -193,7 +193,7 @@ export async function GET(req: NextRequest) {
       // Same gap the comment above "profiles"/"discover-ranked" describes:
       // blocking someone stops them appearing in future Discover results but
       // never hid an EXISTING match — a blocked person you'd already matched
-      // with kept showing up right here in Muses > Matches. userBlock now
+      // with kept showing up right here in Musa > Matches. userBlock now
       // also deletes the underlying muse_matches rows going forward, but that
       // only helps for blocks that happen after this fix ships; filter here
       // too so it's correct immediately, including for any block action that

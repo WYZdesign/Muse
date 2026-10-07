@@ -85,7 +85,7 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
               justifySelf: "center",
               display: "block",
             }}
-          >Muses Pro</div>
+          >Musa Pro</div>
           <div style={{ width: 42 }} />
         </div>
         <div className="sub-scroll">
@@ -114,7 +114,7 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
                 if (r.ok) {
                   setPromoApplied(true);
                   setUserTier?.("muse_pro");
-                  showToast("Muses Beta applied — $0/month");
+                  showToast("Musa Beta applied — $0/month");
                 } else if (r.status === 404) {
                   showToast("Invalid promo code");
                 } else {
@@ -132,7 +132,7 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
               <div style={{ fontSize: 14, fontWeight: 700, color: currentUser.foundingTier === "founding" ? "var(--gold)" : "var(--lavender)" }}>{currentUser.foundingTier === "founding" ? "🏆 Founding Member, Lifetime Pro" : "⭐ Early Member, Free Pro"}</div>
               <div style={{ fontSize: 12, color: "var(--text2)", marginTop: 4 }}>
                 {currentUser.foundingTier === "founding"
-                  ? "You're locked in for life. Thanks for believing in Muse."
+                  ? "You're locked in for life. Thanks for believing in Musa."
                   : currentUser.proExpiresAt ? `Free Pro until ${new Date(currentUser.proExpiresAt).toLocaleDateString()}. Then $9.99/mo or earn it via referrals.` : "Free Pro as an early believer."}
               </div>
               <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 6 }}>Browse plans below anytime — you won't be charged.</div>
@@ -152,7 +152,7 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
                 </div>
                 <ul className="tier-features">{tier.features.map(f => <li key={f}>{f}</li>)}</ul>
                 <button
-                  className={"tier-btn" + (tier.name === "Muses Pro" ? " tier-btn-primary" : " tier-btn-outline")}
+                  className={"tier-btn" + (tier.name === "Musa Pro" ? " tier-btn-primary" : " tier-btn-outline")}
                   onClick={async () => {
                     if (isCurrent) return;
                     if (tier.name === "Free") { showToast("You're on the Free plan"); return; }

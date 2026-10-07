@@ -117,7 +117,7 @@ describe("role-aware text helpers", () => {
   });
 
   it("roleBadgeText is plain text per role", () => {
-    expect(roleBadgeText("muse")).toBe("Muse");
+    expect(roleBadgeText("muse")).toBe("Musa");
     expect(roleBadgeText("creative")).toBe("Creative");
   });
 
@@ -142,7 +142,7 @@ describe("role-aware text helpers", () => {
 
   it("emptyStateText returns role copy and a safe default for unknown context", () => {
     expect(emptyStateText("muse", "matches").title).toBe("No Talent Yet");
-    expect(emptyStateText("creative", "matches").title).toBe("No Muses Yet");
+    expect(emptyStateText("creative", "matches").title).toBe("No Musa Yet");
     expect(emptyStateText("creative", "unknown")).toEqual({ title: "Nothing Here", subtitle: "Check back later" });
   });
 });

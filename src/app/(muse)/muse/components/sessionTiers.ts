@@ -1,6 +1,6 @@
 // Tier badges (audit finding taskrabbit-p2-2 — Torreé asked for a small
 // ladder of tiers rather than one flat badge). Auto-computed entirely from
-// data Muse already tracks (completed sessions + average rating) — no admin
+// data Musa already tracks (completed sessions + average rating) — no admin
 // curation, nothing that can go stale, no new schema. Deliberately no badge
 // below "Rising Muses": a visible low tier reads as a demerit for creatives
 // still building a track record, which would work against onboarding new

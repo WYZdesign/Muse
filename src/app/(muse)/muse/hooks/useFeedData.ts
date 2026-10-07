@@ -38,7 +38,7 @@ export function useFeedData({ authFetch, profileId, initialStories }: UseFeedDat
         if (cancelled || !Array.isArray(d.moments)) return;
         const mapped = d.moments.map((m: any) => ({
           id: m.id,
-          author: m.author_id?.name || "Muse",
+          author: m.author_id?.name || "Musa",
           avatar: m.author_id?.avatar || "",
           text: m.text || "",
           img: m.img || "",

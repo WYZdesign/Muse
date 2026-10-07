@@ -127,9 +127,9 @@ export async function GET(req: NextRequest) {
 
         sendEmail(notify(
           safetyProfile.trusted_friend_email,
-          `Safety check-in missed by ${userProfile?.name || "a Muses user"}`,
-          "Muses by WYZ Safety Escalation",
-          `${userProfile?.name || "A Muses user"} missed a scheduled safety check-in. ` +
+          `Safety check-in missed by ${userProfile?.name || "a Musa user"}`,
+          "Musa by WYZ Safety Escalation",
+          `${userProfile?.name || "A Musa user"} missed a scheduled safety check-in. ` +
           `Their emergency contact is ${safetyProfile.emergency_contact_name || "not set"} ` +
           `(${safetyProfile.emergency_contact_phone || "no phone"}). ` +
           `Please check on them.`

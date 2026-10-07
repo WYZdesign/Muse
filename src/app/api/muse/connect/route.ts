@@ -11,11 +11,11 @@ import { ConnectSchema, parseWith } from "@/lib/validate";
 export const runtime = "nodejs";
 
 /**
- * Muse Stripe Connect API — marketplace payments with a 15% blended platform
+ * Musa Stripe Connect API — marketplace payments with a 15% blended platform
  * take, split so neither side eats the whole fee (Session 55 pricing):
  *   - MUSE_HOST_COMMISSION_RATE (7%) is deducted from the host's payout.
  *   - MUSE_BUYER_SERVICE_FEE_RATE (8%) is added on top of the session's rate
- *     and charged to the booker as a separate, itemized "Muses service fee"
+ *     and charged to the booker as a separate, itemized "Musa service fee"
  *     line — visible, not buried in the base price.
  * Both amounts land in `application_fee_amount` (what stays with the
  * platform); the host is transferred amount - hostCommission via Stripe
@@ -232,7 +232,7 @@ export async function POST(req: NextRequest) {
         capture_method: "manual",
         application_fee_amount: platformTake,
         transfer_data: { destination: payee.stripe_connect_id },
-        description: description || `Muses by WYZ booking payment to ${payee.name}`,
+        description: description || `Musa by WYZ booking payment to ${payee.name}`,
         metadata: {
           muse_payer_id: profile.id,
           muse_payee_id: payeeId,
@@ -337,11 +337,11 @@ export async function POST(req: NextRequest) {
         mode: "payment",
         line_items: [
           {
-            price_data: { currency: "usd", unit_amount: amount, product_data: { name: description || sessionRec.title || `Muse booking with ${payee.name}` } },
+            price_data: { currency: "usd", unit_amount: amount, product_data: { name: description || sessionRec.title || `Musa booking with ${payee.name}` } },
             quantity: 1,
           },
           {
-            price_data: { currency: "usd", unit_amount: buyerFee, product_data: { name: "Muses service fee" } },
+            price_data: { currency: "usd", unit_amount: buyerFee, product_data: { name: "Musa service fee" } },
             quantity: 1,
           },
         ],
@@ -391,7 +391,7 @@ export async function POST(req: NextRequest) {
             price_data: {
               currency: "usd",
               unit_amount: amount,
-              product_data: { name: `Muses boost ×${qty}${duration ? ` (${duration})` : ""}` },
+              product_data: { name: `Musa boost ×${qty}${duration ? ` (${duration})` : ""}` },
             },
             quantity: 1,
           },

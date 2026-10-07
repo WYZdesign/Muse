@@ -6,7 +6,7 @@ import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon } from "./traitIcons";
 import { ZODIAC_FULL, MBTI_FULL, LIFE_PATH_FULL, BadgeInfoModal, type BadgeInfo } from "./badgeInfo";
 import { viewerSide, viewerSideOf, getMuseRole, type MuseRole } from "@/lib/role";
 
-const roleBadgeText = (role: string) => role === "muse" ? "Muse" : role === "industry" ? "Industry" : "Creative";
+const roleBadgeText = (role: string) => role === "muse" ? "Musa" : role === "industry" ? "Industry" : "Creative";
 
 export interface MatchCardProps {
   m: any;
@@ -55,7 +55,7 @@ const MatchCard = memo(function MatchCard({ m, view, isNew, actions }: MatchCard
   } = actions;
 
   // Audit fix (Torreé batch Part B item 1): the zodiac/MBTI/life-path badges
-  // on Muses cards (both list and grid view) were plain, dead <span>s — the
+  // on Musa cards (both list and grid view) were plain, dead <span>s — the
   // same trait badges are already tap-to-detail on Discover's swipe cards.
   // Reusing that exact shared pattern here.
   const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
@@ -181,7 +181,7 @@ const MatchCard = memo(function MatchCard({ m, view, isNew, actions }: MatchCard
       <div className="match-info" style={isList ? { marginLeft: 14, textAlign: "left" } : undefined}>
         <div className="match-name" style={{ display: "flex", alignItems: "center", gap: 5, ...(isList ? { fontSize: 15, lineHeight: 1.2 } : {}) }}>
           {m.name}
-          {m.verified && <button type="button" className="card-verified-mark" style={{ fontSize: 13 }} title="Identity verified" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Verified", desc: "Identity verified by Muses by WYZ — we confirmed this member's government ID and professional credentials.", icon: "✓", color: "#FFD700" }); }}>✓</button>}
+          {m.verified && <button type="button" className="card-verified-mark" style={{ fontSize: 13 }} title="Identity verified" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Verified", desc: "Identity verified by Musa by WYZ — we confirmed this member's government ID and professional credentials.", icon: "✓", color: "#FFD700" }); }}>✓</button>}
           {/* Role badge */}
           <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 99, background: isMuse ? "rgba(255,215,0,0.12)" : "rgba(138,43,226,0.12)", border: `1px solid ${isMuse ? "rgba(255,215,0,0.25)" : "rgba(138,43,226,0.25)"}`, color: isMuse ? "var(--gold)" : "#b388ff", whiteSpace: "nowrap" }}>
             {roleBadgeText(matchRole)}

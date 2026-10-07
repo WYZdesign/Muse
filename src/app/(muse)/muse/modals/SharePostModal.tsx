@@ -27,17 +27,17 @@ export function SharePostModal({ shareTarget, setShareTarget, shareTargetTrap, s
             { name: "More", icon: "•••", color: "#fff", bg: "#374151" },
           ].map(s => {
             const url = getPostShareUrl(shareTarget.id);
-            const text = encodeURIComponent((shareTarget.text || "Check this out on Muses by WYZ!").slice(0, 200));
+            const text = encodeURIComponent((shareTarget.text || "Check this out on Musa by WYZ!").slice(0, 200));
             const href = s.name === "X" ? `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${text}`
               : s.name === "Facebook" ? `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`
               : s.name === "LinkedIn" ? `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`
               : s.name === "WhatsApp" ? `https://wa.me/?text=${text}%20${encodeURIComponent(url)}`
-              : s.name === "Email" ? `mailto:?subject=${encodeURIComponent("Check this out on Muses by WYZ")}&body=${text}%20${encodeURIComponent(url)}`
+              : s.name === "Email" ? `mailto:?subject=${encodeURIComponent("Check this out on Musa by WYZ")}&body=${text}%20${encodeURIComponent(url)}`
               : null;
             return (
               <button key={s.name} onClick={() => {
                 if (s.name === "Copy") { navigator.clipboard?.writeText(url); showToast("Link copied!"); setShareTarget(null); }
-                else if (s.name === "More") { if (navigator.share) { navigator.share({ title: "Muses by WYZ", text: shareTarget.text || "Check this out on Muses by WYZ!", url }).catch(() => {}); } else { navigator.clipboard?.writeText(url); showToast("Link copied!"); } setShareTarget(null); }
+                else if (s.name === "More") { if (navigator.share) { navigator.share({ title: "Musa by WYZ", text: shareTarget.text || "Check this out on Musa by WYZ!", url }).catch(() => {}); } else { navigator.clipboard?.writeText(url); showToast("Link copied!"); } setShareTarget(null); }
                 else if (href) { window.open(href, "_blank", "noopener"); setShareTarget(null); }
               }} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "14px 6px", cursor: "pointer", transition: "all .2s" }}>
                 <div style={{ width: 44, height: 44, borderRadius: "50%", background: s.bg, color: s.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 800 }}>{s.icon}</div>

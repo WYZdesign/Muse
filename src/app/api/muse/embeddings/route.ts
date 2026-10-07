@@ -6,7 +6,7 @@ import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 import { parseWith, EmbeddingsSchema } from "@/lib/validate";
 
 /**
- * Muse Embeddings API — OpenRouter + Supabase (replaces Ollama + Qdrant).
+ * Musa Embeddings API — OpenRouter + Supabase (replaces Ollama + Qdrant).
  * Actions: embed, search, batch-embed, info.
  * Vectors are cached on muse_profiles.embedding; search is free (JS cosine).
  */

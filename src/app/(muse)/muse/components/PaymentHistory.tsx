@@ -105,7 +105,7 @@ export default function PaymentHistory({ userId, onClose }: Props) {
           </div>
           <div style={{ padding: 12, background: "rgba(255,107,107,0.08)", borderRadius: 10, textAlign: "center" }}>
             <div style={{ fontSize: 16, fontWeight: 800, color: "#ff6b6b" }}>{fmt(totalCommission)}</div>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>Muse Fee</div>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>Musa Fee</div>
           </div>
           <div style={{ padding: 12, background: "rgba(255,215,0,0.08)", borderRadius: 10, textAlign: "center" }}>
             <div style={{ fontSize: 16, fontWeight: 800, color: "#ffd700" }}>{fmt(totalSent)}</div>
@@ -156,7 +156,7 @@ export default function PaymentHistory({ userId, onClose }: Props) {
                           % of what the payer sent — computed per-row rather than a hardcoded
                           "(5%)" label, since the split-fee model doesn't reduce to one constant
                           percentage of amount_cents. */}
-                      Muse fee: {fmt(p.commission_cents)} ({p.amount_cents ? Math.round((p.commission_cents / p.amount_cents) * 100) : 0}%)
+                      Musa fee: {fmt(p.commission_cents)} ({p.amount_cents ? Math.round((p.commission_cents / p.amount_cents) * 100) : 0}%)
                     </div>
                   )}
                 </div>

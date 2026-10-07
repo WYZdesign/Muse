@@ -41,7 +41,7 @@ export function AuthScreen({ authMode, setAuthMode, authEmail, setAuthEmail, for
                 <div className="sparkle" style={{top:"15%",right:"10%",fontSize:18}}>✧</div>
                 <div className="sparkle" style={{bottom:"35%",left:"12%",fontSize:20}}>✦</div>
                 <div className="sparkle" style={{bottom:"12%",right:"6%",fontSize:16}}>✧</div>
-                <div className="hero-text muse-brand-lockup" style={{marginBottom:14}}>Muses <span>by WYZ</span></div>
+                <div className="hero-text muse-brand-lockup" style={{marginBottom:14}}>Musa <span>by WYZ</span></div>
                 <div className="hero-sub">Where creatives find <em>real connections</em></div>
                 <div style={{width:"100%",maxWidth:320,margin:"0 auto"}}>
                   <div className="auth-tabs" role="tablist" aria-label="Authentication mode">

@@ -112,7 +112,7 @@ export async function applyStrikeAndEscalate(
         : `Your account has been suspended after ${activeCount} community guideline violations.`,
       read: false,
     });
-    await emailProfile(sb, userId, "Your Muse account was suspended", "Account suspended", isHighSeverity
+    await emailProfile(sb, userId, "Your Musa account was suspended", "Account suspended", isHighSeverity
       ? "Your account has been suspended for a severe policy violation."
       : `Your account has been suspended after ${activeCount} community guideline violations.`, "Review guidelines", "https://muse.wyzdesign.com/muse/guidelines");
     return { inserted: true, activeCount, suspended: true };

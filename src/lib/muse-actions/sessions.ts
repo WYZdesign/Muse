@@ -327,13 +327,13 @@ export const safetyDetailsShare = async ({ sb, profile, rest }: ActionContext) =
     }
   }
 
-  const safetyBody = `A safety disclosure has been shared by ${profile.name}.\n\nRecipient: ${recipientName || "Not specified"}\nMethod: ${shareMethod || "email"}\n${recipientEmail ? `Email: ${recipientEmail}` : ""}${recipientPhone ? `Phone: ${recipientPhone}` : ""}\n\n${sessionInfo}\n\nThis is an automated safety notification from Muse.`;
+  const safetyBody = `A safety disclosure has been shared by ${profile.name}.\n\nRecipient: ${recipientName || "Not specified"}\nMethod: ${shareMethod || "email"}\n${recipientEmail ? `Email: ${recipientEmail}` : ""}${recipientPhone ? `Phone: ${recipientPhone}` : ""}\n\n${sessionInfo}\n\nThis is an automated safety notification from Musa.`;
 
   if (recipientEmail) {
     sendEmail(notify(
       recipientEmail,
       `Safety disclosure from ${profile.name}`,
-      "Muses by WYZ Safety Notification",
+      "Musa by WYZ Safety Notification",
       safetyBody
     )).catch((e: unknown) => console.error("[share-safety] email dispatch failed:", e));
   }

@@ -293,7 +293,7 @@ export const NetworkScreen = memo(function NetworkScreen({
   }
 
   function handleShare(p: any) {
-    const text = `Check out ${p.name} \u2014 ${p.type} on Muse`;
+    const text = `Check out ${p.name} \u2014 ${p.type} on Musa`;
     if (navigator.share) {
       navigator.share({ title: p.name, text }).catch(() => {});
     } else {
@@ -302,7 +302,7 @@ export const NetworkScreen = memo(function NetworkScreen({
   }
 
   function handlePostShare(post: any) {
-    const text = `${post.title} \u2014 by ${post.author} on Muse Forum`;
+    const text = `${post.title} \u2014 by ${post.author} on Musa Forum`;
     if (navigator.share) {
       navigator.share({ title: post.title, text }).catch(() => {});
     } else {

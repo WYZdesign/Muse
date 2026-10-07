@@ -236,7 +236,7 @@ export function MuseModals(props: MuseModalsStackProps) {
             }
             const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "create-disclosure", ...form, responderId: disclosureTarget.id, bookingId: disclosureBookingId }) });
             const d = await r.json();
-            if (d.blocked) { setShowDisclosureModal(false); showToast("Request blocked — violates Muses by WYZ terms"); return; }
+            if (d.blocked) { setShowDisclosureModal(false); showToast("Request blocked — violates Musa by WYZ terms"); return; }
             if (d.success) { setShowDisclosureModal(false); showToast("Disclosure sent for review"); }
           }}
           onCancel={() => { setShowDisclosureModal(false); setDisclosureTarget(null); }}
@@ -274,7 +274,7 @@ export function MuseModals(props: MuseModalsStackProps) {
               setPendingDisclosureCreate(null);
               const r = await authFetch("/api/muse", { method: "POST", body: JSON.stringify({ type: "create-disclosure", ...form, responderId: disclosureTarget?.id, bookingId: disclosureBookingId }) });
               const d = await r.json();
-              if (d.blocked) { showToast("Request blocked — violates Muses by WYZ terms"); return; }
+              if (d.blocked) { showToast("Request blocked — violates Musa by WYZ terms"); return; }
               if (d.success) { showToast("Disclosure sent for review"); }
             }
           }}

@@ -595,7 +595,7 @@ export const SettingsScreen = memo(function SettingsScreen({
 
   const faqItems = [
     { q: "How does matching work?", a: "Swipe right on creators you'd like to connect with. If they swipe right back, it's a connection! You can then message each other." },
-    { q: "What are Quests?", a: "Quests are small challenges that reward you for using Muse — like swiping on profiles, posting, or messaging someone. They refresh daily, weekly and monthly. Finishing one earns XP plus a reward such as free likes or a profile boost. Open Quests (Menu → Quests, or Settings → Rewards → Quests) to see your progress and claim anything that’s ready." },
+    { q: "What are Quests?", a: "Quests are small challenges that reward you for using Musa — like swiping on profiles, posting, or messaging someone. They refresh daily, weekly and monthly. Finishing one earns XP plus a reward such as free likes or a profile boost. Open Quests (Menu → Quests, or Settings → Rewards → Quests) to see your progress and claim anything that’s ready." },
     { q: "How do I upgrade to Premium?", a: "Go to Settings → Payments & Subscription → Subscription to see plan options." },
     { q: "How do I report someone?", a: "Tap the ⚑ Report button on any feed or forum post, the ••• menu on a match, or Report inside a chat conversation. Choose a reason and we'll review it — track your reports in Menu → Your Activity → Reports." },
     { q: "How do I delete my account?", a: "Go to Settings → Legal → Delete Account. Access is removed immediately and your account data is permanently deleted after 30 days, except records required for legal, safety, fraud, dispute, or recordkeeping obligations; see the Privacy Policy for details." },
@@ -787,11 +787,11 @@ export const SettingsScreen = memo(function SettingsScreen({
             {privacyItems.map(renderRow)}
             <ToggleRow
               label="Show Distance"
-              desc="Muses Pro"
+              desc="Musa Pro"
               checked={!!showDistance}
               onToggle={() => {
                 if (!isPaidTier(userTier)) {
-                  setUpsell?.({ feature: "Show Distance", reason: "Let people see how close you are. Upgrade to Muses Pro to control whether your distance is shown on your profile.", icon: "📍" });
+                  setUpsell?.({ feature: "Show Distance", reason: "Let people see how close you are. Upgrade to Musa Pro to control whether your distance is shown on your profile.", icon: "📍" });
                   return;
                 }
                 const next = !showDistance;
@@ -815,11 +815,11 @@ export const SettingsScreen = memo(function SettingsScreen({
             />
             <ToggleRow
               label="Age"
-              desc="Muses Pro"
+              desc="Musa Pro"
               checked={showAge !== false}
               onToggle={() => {
                 if (!isPaidTier(userTier)) {
-                  setUpsell?.({ feature: "Hide Age", reason: "Keep your age private. Upgrade to Muses Pro to control whether your age is shown on your profile.", icon: "🎂" });
+                  setUpsell?.({ feature: "Hide Age", reason: "Keep your age private. Upgrade to Musa Pro to control whether your age is shown on your profile.", icon: "🎂" });
                   return;
                 }
                 const next = !(showAge !== false);
@@ -859,11 +859,11 @@ export const SettingsScreen = memo(function SettingsScreen({
                 likes) instead of a new gating mechanism. */}
             <ToggleRow
               label="Online Status"
-              desc="Muses Pro"
+              desc="Musa Pro"
               checked={!!showOnline}
               onToggle={() => {
                 if (!isPaidTier(userTier)) {
-                  setUpsell?.({ feature: "Hide Online Status", reason: "Control who sees when you're active. Upgrade to Muses Pro to hide your online status from other members.", icon: "🟢" });
+                  setUpsell?.({ feature: "Hide Online Status", reason: "Control who sees when you're active. Upgrade to Musa Pro to hide your online status from other members.", icon: "🟢" });
                   return;
                 }
                 const next = !showOnline;
@@ -873,11 +873,11 @@ export const SettingsScreen = memo(function SettingsScreen({
             />
             <ToggleRow
               label="Match % Visible to Others"
-              desc="Muses Pro"
+              desc="Musa Pro"
               checked={showMatchPercent !== false}
               onToggle={() => {
                 if (!isPaidTier(userTier)) {
-                  setUpsell?.({ feature: "Hide Match %", reason: "Keep your match-percentage private. Upgrade to Muses Pro to control whether others see how well you match with them.", icon: "✨" });
+                  setUpsell?.({ feature: "Hide Match %", reason: "Keep your match-percentage private. Upgrade to Musa Pro to control whether others see how well you match with them.", icon: "✨" });
                   return;
                 }
                 const next = !(showMatchPercent !== false);
@@ -969,7 +969,7 @@ export const SettingsScreen = memo(function SettingsScreen({
                 </div>
               )}
               <button className="btn" style={{ width: "100%", background: "var(--card-bg)", border: "1px solid var(--border-subtle)", color: "var(--text)", fontSize: 13 }} onClick={async () => { if (!authFetch) { showToast("Can't export right now"); return; } try { const res = await authFetch("/api/muse?type=export"); if (!res.ok) { showToast("Export failed"); return; } const j = await res.json(); const blob = new Blob([JSON.stringify(j, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "muse-my-data.json"; a.click(); URL.revokeObjectURL(url); showToast("Data exported"); } catch { showToast("Export failed"); } }}><FiDownload size={14} style={{ marginRight: 6 }} />Export My Data</button>
-              <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => { try { window.location.href = "mailto:" + SUPPORT_EMAIL + "?subject=" + encodeURIComponent("Muse Support Request") + "&body=" + encodeURIComponent("Describe your issue here:\n\n"); } catch { showToast?.("Email us at " + SUPPORT_EMAIL); } }}><FiHelpCircle size={14} style={{ marginRight: 6 }} />Email Support</button>
+              <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => { try { window.location.href = "mailto:" + SUPPORT_EMAIL + "?subject=" + encodeURIComponent("Musa Support Request") + "&body=" + encodeURIComponent("Describe your issue here:\n\n"); } catch { showToast?.("Email us at " + SUPPORT_EMAIL); } }}><FiHelpCircle size={14} style={{ marginRight: 6 }} />Email Support</button>
             </div>
           </div>
 
@@ -1497,7 +1497,7 @@ export const SettingsScreen = memo(function SettingsScreen({
           <div id="portfolio-visibility-label" style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", margin: "4px 0 8px" }}>Who can see your portfolio</div>
           <div aria-labelledby="portfolio-visibility-label">
           {[
-            { k: "everyone", l: "Muse members", d: "Any signed-in Muse member can view your work" },
+            { k: "everyone", l: "Musa members", d: "Any signed-in Musa member can view your work" },
             { k: "matches", l: "Matches only", d: "Only people you've matched with" },
             { k: "private", l: "Private", d: "Visible only to you" },
           ].map(o => (

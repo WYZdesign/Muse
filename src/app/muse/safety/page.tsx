@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { getSafetyUrl } from "@/lib/urls";
 
 export const metadata: Metadata = {
-  title: "Safety Center — Muse",
-  description: "Muse's safety features: disclosure forms, 24-hour check-ins, trusted contacts, verified profiles, and block/report tools.",
+  title: "Safety Center — Musa",
+  description: "Musa's safety features: disclosure forms, 24-hour check-ins, trusted contacts, verified profiles, and block/report tools.",
   alternates: { canonical: getSafetyUrl() },
-  openGraph: { title: "Safety Center — Muses by WYZ", description: "Muses by WYZ safety features: disclosure forms, 24-hour check-ins, trusted contacts, verified profiles, and block/report tools.", url: getSafetyUrl(), siteName: "Muses by WYZ", type: "website" },
-  twitter: { card: "summary", title: "Safety Center — Muse", description: "Muse's safety features: disclosure forms, 24-hour check-ins, trusted contacts, verified profiles, and block/report tools." },
+  openGraph: { title: "Safety Center — Musa by WYZ", description: "Musa by WYZ safety features: disclosure forms, 24-hour check-ins, trusted contacts, verified profiles, and block/report tools.", url: getSafetyUrl(), siteName: "Musa by WYZ", type: "website" },
+  twitter: { card: "summary", title: "Safety Center — Musa", description: "Musa's safety features: disclosure forms, 24-hour check-ins, trusted contacts, verified profiles, and block/report tools." },
 };
 
 export default function SafetyPage() {
@@ -33,7 +33,7 @@ export default function SafetyPage() {
           ))}
         </div>
       </div>
-      <a href="/muse/landing" style={{ display: "inline-block", marginTop: 48, color: "#ffd700", fontSize: 14, textDecoration: "none" }}>&larr; Back to Muses by WYZ</a>
+      <a href="/muse/landing" style={{ display: "inline-block", marginTop: 48, color: "#ffd700", fontSize: 14, textDecoration: "none" }}>&larr; Back to Musa by WYZ</a>
     </div>
   );
 }

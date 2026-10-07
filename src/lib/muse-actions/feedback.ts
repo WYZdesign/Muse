@@ -25,23 +25,23 @@ export async function feedbackGetNotifications({ sb, profile, rest }: ActionCont
   const { data, error } = await query;
   if (error) return safeServerError(error, "notifications fetch");
   // System notifications have no from_id (quest rewards, welcome, admin, etc).
-  // Previously every one of those fell back to `name: "Muses by WYZ", avatar: ""`, so the
+  // Previously every one of those fell back to `name: "Musa by WYZ", avatar: ""`, so the
   // Activity tabs (every sub-tab but Unread) rendered a generic "M" avatar for
   // everything. Map the notification `type` to a meaningful sender label + a
   // themed avatar letter so these read as real, distinct items.
   const SYSTEM_META: Record<string, { label: string; letter: string }> = {
-    quest: { label: "Muses Quest", letter: "Q" },
-    quest_complete: { label: "Muses Quest", letter: "Q" },
-    reward: { label: "Muses Rewards", letter: "R" },
-    streak: { label: "Muses Streak", letter: "🔥" },
-    suspension: { label: "Muses Safety", letter: "S" },
-    strike: { label: "Muses Safety", letter: "S" },
-    account: { label: "Muse", letter: "M" },
-    boost: { label: "Muse Boost", letter: "⚡" },
-    pro: { label: "Muses Pro", letter: "P" },
+    quest: { label: "Musa Quest", letter: "Q" },
+    quest_complete: { label: "Musa Quest", letter: "Q" },
+    reward: { label: "Musa Rewards", letter: "R" },
+    streak: { label: "Musa Streak", letter: "🔥" },
+    suspension: { label: "Musa Safety", letter: "S" },
+    strike: { label: "Musa Safety", letter: "S" },
+    account: { label: "Musa", letter: "M" },
+    boost: { label: "Musa Boost", letter: "⚡" },
+    pro: { label: "Musa Pro", letter: "P" },
   };
   const notifications = (data || []).map((n: any) => {
-    const meta = SYSTEM_META[n.type as string] || { label: "Muse", letter: "M" };
+    const meta = SYSTEM_META[n.type as string] || { label: "Musa", letter: "M" };
     return {
       ...n,
       from: n.from_id?.name || meta.label,
@@ -91,7 +91,7 @@ export async function feedbackReportBug({ sb, profile, rest }: ActionContext) {
   });
   if (error) return safeServerError(error, "log bug report");
   const ADMIN_EMAIL = "info@wyzdesign.com";
-  const subject = `[Muses Bug] ${safeCategory}`;
+  const subject = `[Musa Bug] ${safeCategory}`;
   const html = `<div style="font-family:sans-serif;max-width:600px;margin:0 auto">
     <h2 style="color:#FF69B4">Bug Report</h2>
     <p><strong>From:</strong> ${profile.name || "Unknown"} (${profile.id})</p>
@@ -101,7 +101,7 @@ export async function feedbackReportBug({ sb, profile, rest }: ActionContext) {
     ${safeExpected ? `<p><strong>Expected:</strong> ${safeExpected}</p>` : ""}
     ${safeActual ? `<p><strong>Actual:</strong> ${safeActual}</p>` : ""}
     <hr style="border:none;border-top:1px solid #eee;margin:20px 0">
-    <p style="color:#999;font-size:12px">Muse Bug Report System</p>
+    <p style="color:#999;font-size:12px">Musa Bug Report System</p>
   </div>`;
   sendEmail({ to: ADMIN_EMAIL, subject, html }).catch(() => {});
   return NextResponse.json({ success: true });
@@ -121,7 +121,7 @@ export async function feedbackSubmitIdea({ sb, profile, rest }: ActionContext) {
   });
   if (error) return safeServerError(error, "log idea submission");
   const ADMIN_EMAIL = "info@wyzdesign.com";
-  const subject = `[Muses Idea] ${safeTitle}`;
+  const subject = `[Musa Idea] ${safeTitle}`;
   const html = `<div style="font-family:sans-serif;max-width:600px;margin:0 auto">
     <h2 style="color:#FFD700">Feature Idea</h2>
     <p><strong>From:</strong> ${profile.name || "Unknown"} (${profile.id})</p>
@@ -129,7 +129,7 @@ export async function feedbackSubmitIdea({ sb, profile, rest }: ActionContext) {
     <p><strong>Title:</strong> ${safeTitle}</p>
     <p><strong>Description:</strong></p><p>${safeDesc.replace(/\n/g, "<br>")}</p>
     <hr style="border:none;border-top:1px solid #eee;margin:20px 0">
-    <p style="color:#999;font-size:12px">Muse Feature Idea System</p>
+    <p style="color:#999;font-size:12px">Musa Feature Idea System</p>
   </div>`;
   sendEmail({ to: ADMIN_EMAIL, subject, html }).catch(() => {});
   return NextResponse.json({ success: true });

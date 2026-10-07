@@ -135,17 +135,17 @@ export const PAGE_TOURS: Record<TourScreenId, PageTourDef> = {
     orbitCount: 3,
     sparkCount: 14,
     ringStyle: "solid",
-    ariaLabel: "Muses tutorial",
+    ariaLabel: "Musa tutorial",
     slides: [
       {
-        eyebrow: "Muses",
+        eyebrow: "Musa",
         title: "Your matches, all here",
         body: "Every mutual connection lands on this screen. Switch between list and grid to browse however you like.",
         highlight: "List · Grid · All matches",
         steps: ["New matches appear at the top", "Toggle list or grid view", "Tap a match to see their profile"],
       },
       {
-        eyebrow: "Muses",
+        eyebrow: "Musa",
         title: "Chat, manage, or move on",
         body: "Jump straight into a conversation, or swipe on a card to unmatch or report if something's not right.",
         highlight: "Chat · Report · Unmatch",

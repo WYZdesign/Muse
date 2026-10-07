@@ -140,7 +140,7 @@ export function useBootstrapData({
           id: 100000 + i,
           // Real DB id — synthetic display ids break server-side lookups
           // (reports pointed at posts no moderator could ever resolve).
-          rid: p.id, author: p.author_id?.name || "Muse", avatar: p.author_id?.avatar || "",
+          rid: p.id, author: p.author_id?.name || "Musa", avatar: p.author_id?.avatar || "",
           type: p.img ? "photo" : "text", text: p.text || "", likes: p.likes || 0, comments: p.comments || 0,
           shares: p.shares || 0, time: p.created_at ? new Date(p.created_at).toLocaleString() : "Just now",
           img: p.img || "", liked: false, saved: false

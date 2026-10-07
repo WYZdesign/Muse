@@ -7,7 +7,7 @@ import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 import { parseWith, EmbedSchema } from "@/lib/validate";
 
 /**
- * Muse Embedding Pipeline — OpenRouter + Supabase (replaces Ollama + Qdrant).
+ * Musa Embedding Pipeline — OpenRouter + Supabase (replaces Ollama + Qdrant).
  * Embeddings are stored on muse_profiles.embedding (JSONB) so matching is a
  * free read + JS cosine. Actions:
  *   embed-profile  — embed a single profile and cache it
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ embedded, failed, total: profiles.length, errors });
     }
 
-    // ── seed-kb (admin) — one-time embed of the Muse knowledge base ──
+    // ── seed-kb (admin) — one-time embed of the Musa knowledge base ──
     if (action === "seed-kb") {
       const admins = (process.env.ADMIN_EMAILS || "").split(",").map((e) => e.trim().toLowerCase());
       if (!admins.includes((profile.email || "").toLowerCase())) {

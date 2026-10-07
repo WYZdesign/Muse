@@ -18,7 +18,7 @@ const DEMO_NOTIFICATIONS = [
   { id: "n2", from: "Andre Silva", text: "sent you a message", type: "message", read: false, created_at: new Date(Date.now() - 47 * 60000).toISOString() },
   { id: "n3", from: "Priya Nair", text: "it's a match — you both swiped right", type: "match", read: false, created_at: new Date(Date.now() - 3 * 3600000).toISOString() },
   { id: "n4", from: "Jordan Blake", text: "booked your Golden Hour Portrait session", type: "booking", read: true, created_at: new Date(Date.now() - 9 * 3600000).toISOString() },
-  { id: "n5", from: "Muses by WYZ", text: "your profile is now verified ✓", type: "system", read: true, created_at: new Date(Date.now() - 26 * 3600000).toISOString() },
+  { id: "n5", from: "Musa by WYZ", text: "your profile is now verified ✓", type: "system", read: true, created_at: new Date(Date.now() - 26 * 3600000).toISOString() },
   { id: "n6", from: "Lena Ortiz", text: "started following you", type: "follow", read: true, created_at: new Date(Date.now() - 2 * 86400000).toISOString() },
   { id: "n7", from: "Dev Patel", text: "commented: “This lighting is unreal 🔥”", type: "comment", read: true, created_at: new Date(Date.now() - 3 * 86400000).toISOString() },
 ];
@@ -186,7 +186,7 @@ function SwipeableNotification({ a, activeDragId, setActiveDragId, onRemove, dis
         <button
           type="button"
           className="notif-dismiss-btn"
-          aria-label={`Dismiss notification from ${a.from || "Muses by WYZ"}`}
+          aria-label={`Dismiss notification from ${a.from || "Musa by WYZ"}`}
           onClick={(e) => { e.stopPropagation(); onRemove(idStr); }}
           style={{ flexShrink: 0, alignSelf: "center", width: 44, height: 44, borderRadius: 8, border: "1px solid var(--border-subtle)", background: "rgba(255,255,255,0.04)", color: "var(--muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
         >
@@ -617,7 +617,7 @@ export const MenuModal = memo(function MenuModal({
   const [closing, setClosing] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Muses Pro banner sheen: used to be a plain CSS `infinite` loop sweeping
+  // Musa Pro banner sheen: used to be a plain CSS `infinite` loop sweeping
   // every 2.8s on a fixed metronome. Torreé asked for it ~30% less frequent
   // and irregular rather than a steady beat, so this drives it with a
   // randomized timer instead — each sweep is a one-shot animation
@@ -761,12 +761,12 @@ export const MenuModal = memo(function MenuModal({
                 <button style={{ fontSize: 11, color: "#D4A5FF", fontWeight: 600, cursor: "pointer", background: "none", border: "none", padding: 0 }} onClick={() => { setShowHamburger(false); setShowQuests?.(true); }}>View all →</button>
               </div>
             </div>
-            <button className="muse-pro-banner" onClick={() => { setShowHamburger(false); showScreen("subscription"); }} tabIndex={0} aria-label="Muses Pro">
+            <button className="muse-pro-banner" onClick={() => { setShowHamburger(false); showScreen("subscription"); }} tabIndex={0} aria-label="Musa Pro">
               <div className={"muse-pro-banner-shine" + (proShineOn ? " shine-play" : "")} onAnimationEnd={() => setProShineOn(false)} />
               <div className="muse-pro-banner-content">
                 <div className="muse-pro-banner-icon"><FiStar size={16} /></div>
                 <div className="muse-pro-banner-text">
-                  <div className="muse-pro-banner-title">Muses Pro</div>
+                  <div className="muse-pro-banner-title">Musa Pro</div>
                   <div className="muse-pro-banner-sub">Unlimited likes · superlikes · boosts</div>
                 </div>
                 <div className="muse-pro-banner-cta">✦</div>

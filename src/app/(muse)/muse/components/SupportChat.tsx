@@ -31,10 +31,10 @@ const QUICK_TOPICS = [
   "How do I verify my identity?",
   "How do bookings work?",
   "How do I stay safe?",
-  "What is Muses Pro?",
+  "What is Musa Pro?",
 ];
 
-const GREETING = "Hey, I'm Muse, your creative wingmate. Whether you're figuring out bookings, wondering how verification works, or just want tips on putting your best work forward, I've got you. What can I help you with?";
+const GREETING = "Hey, I'm Musa, your creative wingmate. Whether you're figuring out bookings, wondering how verification works, or just want tips on putting your best work forward, I've got you. What can I help you with?";
 
 export default function SupportChat({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [messages, setMessages] = useState<ChatMsg[]>([]);
@@ -89,12 +89,12 @@ export default function SupportChat({ open, onClose }: { open: boolean; onClose:
   if (!open) return null;
 
   return (
-    <div ref={panelRef} style={PANEL} role="dialog" aria-modal="true" aria-label="Muse Assistant">
+    <div ref={panelRef} style={PANEL} role="dialog" aria-modal="true" aria-label="Musa Assistant">
       <div style={{ padding: "16px 18px", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg, #ffd700, #ff8c00)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, color: "#0a0612", fontSize: 16 }}>M</div>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 15, color: "#f5f0ff" }}>Muse Assistant</div>
+            <div style={{ fontWeight: 800, fontSize: 15, color: "#f5f0ff" }}>Musa Assistant</div>
             <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>Online · here to help</div>
           </div>
         </div>
@@ -150,7 +150,7 @@ export default function SupportChat({ open, onClose }: { open: boolean; onClose:
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
           placeholder="Ask me anything..."
-          aria-label="Ask Muse Assistant a question"
+          aria-label="Ask Musa Assistant a question"
           style={{ flex: 1, padding: "11px 14px", borderRadius: 14, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#f5f0ff", fontSize: 13.5, outline: "none" }}
         />
         <button onClick={() => send()} disabled={loading || !input.trim()} aria-label="Send message" style={{ padding: "11px 18px", borderRadius: 14, background: "linear-gradient(135deg, #ffd700, #ff8c00)", border: "none", color: "#0a0612", fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: loading || !input.trim() ? 0.5 : 1 }}>

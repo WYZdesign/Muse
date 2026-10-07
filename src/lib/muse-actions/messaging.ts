@@ -107,7 +107,7 @@ export const messageSend = async ({ sb, profile, rest }: ActionContext) => {
       const introPreview = cleanText
         ? `${profile.name} sent a message request.`
         : `${profile.name} sent a ${mediaUrl ? (kind === "voice" ? "voice" : "video") : "media"} intro.`;
-      await emailProfile(sb, String(toId), "New message request on Muse ✦", "You have a new message request", introPreview, "Check Requests", "https://muse.wyzdesign.com/m");
+      await emailProfile(sb, String(toId), "New message request on Musa ✦", "You have a new message request", introPreview, "Check Requests", "https://muse.wyzdesign.com/m");
       pushToProfile(String(toId), "New Message Request", `${profile.name} wants to chat — tap to view`, "/muse/matches").catch(() => {});
     }
     return NextResponse.json({ success: true, pending: true, message: "Request sent — they'll see it in their Message Requests inbox" });
@@ -133,7 +133,7 @@ export const messageSend = async ({ sb, profile, rest }: ActionContext) => {
   if (UUID_RE.test(String(toId))) {
     await sb.from("muse_notifications").insert({ user_id: String(toId), from_id: profile.id, type: "message", body: `${profile.name} sent you a message`, read: false });
   }
-  await emailProfile(sb, String(toId), "New message on Muses ✦", "You have a new message", `${profile.name} sent you a message.`, "Read it", "https://muse.wyzdesign.com/muse", "message");
+  await emailProfile(sb, String(toId), "New message on Musa ✦", "You have a new message", `${profile.name} sent you a message.`, "Read it", "https://muse.wyzdesign.com/muse", "message");
   const preview = cleanText.slice(0, 80)
     || (kind === "voice" ? "sent a voice note" : kind === "video" ? "sent a video note" : "sent an image");
   pushToProfile(String(toId), "New Message", `${profile.name}: ${preview}`, "/muse/matches").catch(() => {});

@@ -7,7 +7,7 @@ import { publicAge } from "@/lib/muse-age";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
 /**
- * Muse Recommendations API — AI-powered matching.
+ * Musa Recommendations API — AI-powered matching.
  * Cost model: reads STORED embeddings (no per-request embedding) and computes
  * cosine similarity in JS (free). A profile is embedded once (lazily, on first
  * match request) and cached in muse_profiles.embedding.

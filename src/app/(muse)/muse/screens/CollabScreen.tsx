@@ -141,7 +141,7 @@ export const CollabScreen = memo(function CollabScreen({
   };
 
   // Collab had no tilt/parallax at all — every other primary screen (Discover's
-  // swipe card, Network's pro cards, Muses' grid) gets this ambient motion, so
+  // swipe card, Network's pro cards, Musa' grid) gets this ambient motion, so
   // the page read as flat/dead next to the rest of the app. Brief cards don't
   // have a big hero photo (just a small round avatar), so this applies the
   // lighter container-level float used on Feed/BTS/Community rather than the
@@ -441,7 +441,7 @@ export const CollabScreen = memo(function CollabScreen({
                <button type="button" onClick={() => setSafetyInfoOpen(false)} aria-label="Close safety guidelines" title="Close" style={{ width: 44, height: 44, margin: "-10px -10px 0 0", background: "transparent", border: "none", borderRadius: 10, color: "var(--muted)", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}><FiX size={19} /></button>
             </div>
             <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.6 }}>
-              <p style={{ marginBottom: 10 }}>Your safety comes first on Muse. Before any session:</p>
+              <p style={{ marginBottom: 10 }}>Your safety comes first on Musa. Before any session:</p>
               <ul style={{ paddingLeft: 18, marginBottom: 12 }}>
                 <li>Meet in a public place for a first session.</li>
                 <li>Verify the other person's identity and details before attending.</li>

@@ -4,7 +4,7 @@
 // The owner's choice is stored in `muse_profiles.preferences.portfolioVisibility`
 // (jsonb). The client's Settings → Portfolio Settings screen writes exactly these
 // three values — see SettingsScreen.tsx's radio options:
-//   "everyone"  — any signed-in Muse member may view the portfolio
+//   "everyone"  — any signed-in Musa member may view the portfolio
 //   "matches"   — only a user the owner has mutually matched with
 //   "private"   — only the owner
 // Absent / unknown falls back to "everyone" (the client default), so users who

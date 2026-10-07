@@ -1,5 +1,5 @@
-// Muses ↔ Creatives duality — role detection, capabilities, and feature flags.
-// Muses = industry-facing (hires, books, directs, produces).
+// Musa ↔ Creatives duality — role detection, capabilities, and feature flags.
+// Musa = industry-facing (hires, books, directs, produces).
 // Creatives = talent-facing (gets hired, performs, creates).
 
 // ── Type Sets ────────────────────────────────────────────────────────────────
@@ -58,7 +58,7 @@ export function isCreativeType(type?: string | null): boolean {
   return CREATIVE_TYPES.has(String(type || "").trim());
 }
 
-/** Returns the Muse role for a profile, preferring explicit audience field. */
+/** Returns the Musa role for a profile, preferring explicit audience field. */
 export function getMuseRole(profile?: { audience?: string | null; type?: string | null } | null): MuseRole {
   const a = String(profile?.audience || "").trim().toLowerCase();
   if (a === "muse") return "muse";
@@ -128,14 +128,14 @@ export function roleSpecific<T>(role: MuseRole, museValue: T, creativeValue: T):
 }
 
 /** Badge text for a role.
- * Audit fix: this used to embed its own glyph ("✦ Muse" / "★ Creative"), but
+ * Audit fix: this used to embed its own glyph ("✦ Musa" / "★ Creative"), but
  * every call site except MatchCard's already renders a proper icon
  * (FiBriefcase/FiZap) immediately before this text — in a narrow pill that
  * read as two mismatched icons stacked above the word instead of one icon
  * beside it. Plain text now; the existing icon at each call site is the
  * single icon. */
 export function roleBadgeText(role: MuseRole): string {
-  return role === "muse" ? "Muse" : "Creative";
+  return role === "muse" ? "Musa" : "Creative";
 }
 
 /** Profile section labels differ by role. */
@@ -174,7 +174,7 @@ export function navTabLabel(role: MuseRole, tab: string): string {
       discover: "Discover",
       connections: "Feed",
       briefs: "Collab",
-      matches: "Muses",
+      matches: "Musa",
       bts: "BTS",
     },
   };
@@ -209,7 +209,7 @@ export function emptyStateText(role: MuseRole, context: string): { title: string
       network: { title: "Network Empty", subtitle: "Connect with creatives and industry professionals" },
     },
     creative: {
-      matches: { title: "No Muses Yet", subtitle: "Keep swiping to find your matches" },
+      matches: { title: "No Musa Yet", subtitle: "Keep swiping to find your matches" },
       briefs: { title: "No Collabs Yet", subtitle: "Apply to briefs to start collaborating" },
       network: { title: "Network Empty", subtitle: "Connect with other creatives and industry pros" },
     },

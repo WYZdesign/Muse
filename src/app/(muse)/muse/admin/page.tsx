@@ -58,7 +58,7 @@ const FRIENDLY: Record<string, string> = {
   quest_complete: "Completed a quest",
   referral: "Invited a friend",
   checkout: "Started checkout",
-  subscribe: "Subscribed to Muses Pro",
+  subscribe: "Subscribed to Musa Pro",
   onboarding: "Finished onboarding",
   onboarding_complete: "Finished onboarding",
   qr_scan: "Scanned a QR code",
@@ -154,20 +154,20 @@ export default function AdminDashboard() {
             ADMIN PANEL
           </h1>
           <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginTop: 10, marginBottom: 0, textAlign: "center", lineHeight: 1.6 }}>
-            Everything about Muse at a glance — who joined, what they&apos;re doing, how much money moved, and what needs your attention.
+            Everything about Musa at a glance — who joined, what they&apos;re doing, how much money moved, and what needs your attention.
           </p>
         </div>
 
         <div style={{ display: "flex", gap: 8, marginBottom: 28, justifyContent: "center", flexWrap: "nowrap", overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "thin" }}>
           <a href="/muse/admin/moderation" style={navBtn("rgba(255,215,0,0.15)", "rgba(255,215,0,0.3)", "#ffd700")}>🛡️ Moderation</a>
-          <a href="/muse" style={navBtn("rgba(255,255,255,0.06)", "rgba(255,255,255,0.1)", "rgba(255,255,255,0.7)")}>🏠 Back to Muses by WYZ</a>
+          <a href="/muse" style={navBtn("rgba(255,255,255,0.06)", "rgba(255,255,255,0.1)", "rgba(255,255,255,0.7)")}>🏠 Back to Musa by WYZ</a>
         </div>
 
         {status === "loading" && <p style={{ color: "rgba(255,255,255,0.6)", textAlign: "center" }}>Loading…</p>}
         {status === "unauthenticated" && (
           <div style={box}>
             <p>You need to be signed in as an admin to view this page.</p>
-            <a href="/muse" style={{ color: "#ffd700" }}>Go to Muse and sign in →</a>
+            <a href="/muse" style={{ color: "#ffd700" }}>Go to Musa and sign in →</a>
           </div>
         )}
         {status === "forbidden" && (
@@ -187,7 +187,7 @@ export default function AdminDashboard() {
             <div style={groupTitle}>The big picture</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16, marginBottom: 28 }}>
               <div style={box}>
-                <div style={label}>People on Muse</div>
+                <div style={label}>People on Musa</div>
                 <div style={bigNum}>{data.totals.users}</div>
                 <div style={hint}>Total accounts that exist</div>
               </div>
@@ -248,12 +248,12 @@ export default function AdminDashboard() {
                   <div style={{ ...box, borderLeft: "3px solid #4ecdc4" }}>
                     <div style={label}>Money In</div>
                     <div style={{ ...bigNum, color: "#4ecdc4" }}>${(data.payments.totalVolume / 100).toFixed(0)}</div>
-                    <div style={hint}>Total charged through Muse</div>
+                    <div style={hint}>Total charged through Musa</div>
                   </div>
                   <div style={{ ...box, borderLeft: "3px solid #FFD700" }}>
-                    <div style={label}>Muse&apos;s Cut</div>
+                    <div style={label}>Musa&apos;s Cut</div>
                     <div style={{ ...bigNum, color: "#FFD700" }}>${(data.payments.totalCommission / 100).toFixed(0)}</div>
-                    <div style={hint}>Commission Muse earned</div>
+                    <div style={hint}>Commission Musa earned</div>
                   </div>
                   <div style={{ ...box, borderLeft: "3px solid #E1BEE7" }}>
                     <div style={label}>Payout-Ready Creators</div>

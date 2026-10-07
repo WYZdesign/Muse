@@ -1,5 +1,5 @@
 /**
- * Lightweight error tracker for Muse app.
+ * Lightweight error tracker for Musa app.
  * Logs to console in dev; ready for Sentry/DataDog integration.
  */
 

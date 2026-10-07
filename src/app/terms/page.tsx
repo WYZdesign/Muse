@@ -1,26 +1,26 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — Muses by WYZ",
-  description: "Read Muse's Terms of Service for the creative professional networking platform.",
+  title: "Terms of Service — Musa by WYZ",
+  description: "Read Musa's Terms of Service for the creative professional networking platform.",
 };
 
 export default function TermsPage() {
   return (
     <main style={{ minHeight: "100vh", background: "#0a0612", color: "#f5f0ff", padding: "60px 20px 100px" }}>
       <div style={{ maxWidth: 800, margin: "0 auto", fontFamily: "system-ui, sans-serif" }}>
-        <a href="/muse" style={{ color: "#FFD700", fontSize: 14, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 24 }}>&larr; Back to Muses by WYZ</a>
+        <a href="/muse" style={{ color: "#FFD700", fontSize: 14, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 24 }}>&larr; Back to Musa by WYZ</a>
         <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, fontWeight: 800, color: "#FFD700", margin: "12px 0 6px" }}>Terms of Service</h1>
-        <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginBottom: 32 }}>Effective August 13, 2026 &middot; Muse by WYZ Design</p>
+        <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginBottom: 32 }}>Effective August 13, 2026 &middot; Musa by WYZ Design</p>
 
         <section style={{ marginBottom: 28 }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: "#FFD700", marginBottom: 8 }}>1. Acceptance of Terms</h2>
-          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)" }}>By creating an account, accessing, or using Muse (&quot;Platform&quot;), you agree to be bound by these Terms of Service (&quot;Terms&quot;). If you do not agree, do not use the Platform.</p>
+          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)" }}>By creating an account, accessing, or using Musa (&quot;Platform&quot;), you agree to be bound by these Terms of Service (&quot;Terms&quot;). If you do not agree, do not use the Platform.</p>
         </section>
 
         <section style={{ marginBottom: 28 }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: "#FFD700", marginBottom: 8 }}>2. Description of Service</h2>
-          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)" }}>Muses by WYZ is a creative professional networking platform connecting photographers, models, filmmakers, musicians, designers, artists, and other creative professionals for collaboration, booking, and professional growth. Muse is <strong>not</strong> a dating platform. All interactions are expected to remain professional.</p>
+          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)" }}>Musa by WYZ is a creative professional networking platform connecting photographers, models, filmmakers, musicians, designers, artists, and other creative professionals for collaboration, booking, and professional growth. Musa is <strong>not</strong> a dating platform. All interactions are expected to remain professional.</p>
         </section>
 
         <section style={{ marginBottom: 28 }}>
@@ -35,7 +35,7 @@ export default function TermsPage() {
 
         <section style={{ marginBottom: 28 }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: "#FFD700", marginBottom: 8 }}>5. Content You Post</h2>
-          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)" }}>You retain ownership of all content you post. By posting, you grant Muse a worldwide, non-exclusive, royalty-free license to display, distribute, and modify your content solely to operate and improve the Platform. You are solely responsible for your content.</p>
+          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)" }}>You retain ownership of all content you post. By posting, you grant Musa a worldwide, non-exclusive, royalty-free license to display, distribute, and modify your content solely to operate and improve the Platform. You are solely responsible for your content.</p>
         </section>
 
         <section style={{ marginBottom: 28 }}>
@@ -57,22 +57,22 @@ export default function TermsPage() {
 
         <section style={{ marginBottom: 28 }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: "#FFD700", marginBottom: 8 }}>8. Age &amp; Identity Verification</h2>
-          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)" }}>Stripe Identity (government ID + live selfie) is required before any paid booking. In certain U.S. states — including Texas (HB 1181), Louisiana (Act 440), Arkansas, and Utah — additional age verification is required for access to adult content. Muse enforces this automatically via IP geolocation + Stripe Identity.</p>
+          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)" }}>Stripe Identity (government ID + live selfie) is required before any paid booking. In certain U.S. states — including Texas (HB 1181), Louisiana (Act 440), Arkansas, and Utah — additional age verification is required for access to adult content. Musa enforces this automatically via IP geolocation + Stripe Identity.</p>
         </section>
 
         <section style={{ marginBottom: 28 }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: "#FFD700", marginBottom: 8 }}>9. Payments &amp; Bookings</h2>
-          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)" }}>All paid bookings are processed via Stripe Connect. Muse charges a combined 15% platform fee on each completed booking, split as a 7% host service fee and an 8% buyer service fee (both shown transparently before checkout). Refund disputes are between the provider and the client; Muse will mediate if needed. Tipping is non-refundable.</p>
+          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)" }}>All paid bookings are processed via Stripe Connect. Musa charges a combined 15% platform fee on each completed booking, split as a 7% host service fee and an 8% buyer service fee (both shown transparently before checkout). Refund disputes are between the provider and the client; Musa will mediate if needed. Tipping is non-refundable.</p>
         </section>
 
         <section style={{ marginBottom: 28 }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: "#FFD700", marginBottom: 8 }}>10. DMCA &amp; Copyright</h2>
-          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)" }}>We respect intellectual property. If your work appears on Muse without authorization, submit a DMCA takedown notice to <a href="mailto:dmca@wyzdesign.com" style={{ color: "#FFD700" }}>dmca@wyzdesign.com</a>. Repeat infringers will have their accounts permanently banned. See our <a href="/dmca" style={{ color: "#FFD700" }}>DMCA page</a> for the full procedure.</p>
+          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)" }}>We respect intellectual property. If your work appears on Musa without authorization, submit a DMCA takedown notice to <a href="mailto:dmca@wyzdesign.com" style={{ color: "#FFD700" }}>dmca@wyzdesign.com</a>. Repeat infringers will have their accounts permanently banned. See our <a href="/dmca" style={{ color: "#FFD700" }}>DMCA page</a> for the full procedure.</p>
         </section>
 
         <section style={{ marginBottom: 28 }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: "#FFD700", marginBottom: 8 }}>11. Content Moderation &amp; Safety</h2>
-          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)" }}>Muse uses automated content scanning (AWS Rekognition) on every image upload. Flagged content is reviewed and, where legally required, reported to NCMEC CyberTipline. We also employ human review for escalated cases. Muse reserves the right to remove any content at our discretion.</p>
+          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)" }}>Musa uses automated content scanning (AWS Rekognition) on every image upload. Flagged content is reviewed and, where legally required, reported to NCMEC CyberTipline. We also employ human review for escalated cases. Musa reserves the right to remove any content at our discretion.</p>
         </section>
 
         <section style={{ marginBottom: 28 }}>
@@ -82,7 +82,7 @@ export default function TermsPage() {
 
         <section style={{ marginBottom: 28 }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: "#FFD700", marginBottom: 8 }}>13. Intellectual Property</h2>
-          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)" }}>The Muses by WYZ name, logo, and visual design are the exclusive property of WYZ Design LLC. Your creative work remains yours — Muse does not claim ownership.</p>
+          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)" }}>The Musa by WYZ name, logo, and visual design are the exclusive property of WYZ Design LLC. Your creative work remains yours — Musa does not claim ownership.</p>
         </section>
 
         <section style={{ marginBottom: 28 }}>

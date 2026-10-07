@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "DMCA Takedown Policy — Muses by WYZ",
-  description: "Report copyright infringement on the Muses by WYZ platform.",
+  title: "DMCA Takedown Policy — Musa by WYZ",
+  description: "Report copyright infringement on the Musa by WYZ platform.",
   // Its own canonical: without this the page inherits the app layout's
   // `canonical: null` and can be indexed under the wrong URL.
   alternates: { canonical: "/dmca" },
@@ -12,17 +12,17 @@ export default function DMCAPage() {
   return (
     <main style={{ minHeight: "100vh", background: "#0a0612", color: "#f5f0ff", padding: "60px 20px 100px" }}>
       <div style={{ maxWidth: 800, margin: "0 auto", fontFamily: "system-ui, sans-serif" }}>
-        <a href="/muse" style={{ color: "#FFD700", fontSize: 14, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 24 }}>&larr; Back to Muses by WYZ</a>
+        <a href="/muse" style={{ color: "#FFD700", fontSize: 14, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 24 }}>&larr; Back to Musa by WYZ</a>
         <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, fontWeight: 800, color: "#FFD700", margin: "12px 0 6px" }}>DMCA Takedown Policy</h1>
-        <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginBottom: 32 }}>Effective August 13, 2026 &middot; Muse by WYZ Design</p>
+        <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginBottom: 32 }}>Effective August 13, 2026 &middot; Musa by WYZ Design</p>
 
         <section style={{ marginBottom: 28 }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: "#FFD700", marginBottom: 8 }}>Filing a DMCA Takedown Notice</h2>
-          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)" }}>If your copyrighted work appears on Muse without your permission, send a written notice to our Designated Agent containing:</p>
+          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)" }}>If your copyrighted work appears on Musa without your permission, send a written notice to our Designated Agent containing:</p>
           <ol style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)", paddingLeft: 24, marginTop: 8 }}>
             <li>Your signature (physical or electronic)</li>
             <li>Identification of the copyrighted work</li>
-            <li>Identification of the infringing material and its location on Muse</li>
+            <li>Identification of the infringing material and its location on Musa</li>
             <li>Your contact information</li>
             <li>A statement of good-faith belief that the use is unauthorized</li>
             <li>A statement under penalty of perjury that the info is accurate</li>
@@ -47,7 +47,7 @@ export default function DMCAPage() {
 
         <section style={{ marginBottom: 28 }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: "#FFD700", marginBottom: 8 }}>Repeat Infringers</h2>
-          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)" }}>Muses by WYZ terminates accounts of repeat infringers. Two valid DMCA takedowns within any 12-month period result in permanent account termination.</p>
+          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)" }}>Musa by WYZ terminates accounts of repeat infringers. Two valid DMCA takedowns within any 12-month period result in permanent account termination.</p>
         </section>
       </div>
     </main>

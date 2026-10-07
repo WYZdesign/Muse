@@ -20,9 +20,9 @@ async function fetchProfile(id: string) {
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const p = (await fetchProfile(id)) as any;
-  if (!p) return { title: "Profile not found — Muse" };
-  const title = `${p.name} — ${p.type || "Creative"} on Muse`;
-  const description = p.bio || `${p.name} is a ${p.type || "creative"} on Muse${p.loc ? `, based in ${p.loc}` : ""}. Discover and collaborate.`;
+  if (!p) return { title: "Profile not found — Musa" };
+  const title = `${p.name} — ${p.type || "Creative"} on Musa`;
+  const description = p.bio || `${p.name} is a ${p.type || "creative"} on Musa${p.loc ? `, based in ${p.loc}` : ""}. Discover and collaborate.`;
   return {
     title,
     description,
@@ -39,7 +39,7 @@ export default async function ProfileDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div style={{minHeight:"100vh",background:"linear-gradient(160deg,#0a0612,#1a0a2e)",color:"#fff",fontFamily:"'Inter',system-ui,sans-serif",padding:24,maxWidth:640,margin:"0 auto"}}>
-      <Link href="/muse" style={{color:"#FFD700",textDecoration:"none",fontSize:14}}>← Back to Muses by WYZ</Link>
+      <Link href="/muse" style={{color:"#FFD700",textDecoration:"none",fontSize:14}}>← Back to Musa by WYZ</Link>
       <div style={{display:"flex",gap:18,alignItems:"center",marginTop:20}}>
         {p.avatar ? <Image src={p.avatar} alt={p.name} width={96} height={96} style={{width:96,height:96,borderRadius:24,objectFit:"cover",border:"2px solid rgba(255,215,0,0.3)"}} /> : null}
         <div>
@@ -62,7 +62,7 @@ export default async function ProfileDetailPage({ params }: { params: Promise<{ 
           {p.mbti ? <div>🧠 {p.mbti}</div> : null}
         </div>
       ) : null}
-      <a href="/muse" style={{display:"inline-block",marginTop:28,padding:"14px 28px",borderRadius:16,background:"linear-gradient(120deg,#FFD700,#FFBF00,#FFD700)",backgroundSize:"300% 300%",color:"#0a0612",fontWeight:800,textDecoration:"none"}}>Open Muse App</a>
+      <a href="/muse" style={{display:"inline-block",marginTop:28,padding:"14px 28px",borderRadius:16,background:"linear-gradient(120deg,#FFD700,#FFBF00,#FFD700)",backgroundSize:"300% 300%",color:"#0a0612",fontWeight:800,textDecoration:"none"}}>Open Musa App</a>
     </div>
   );
 }

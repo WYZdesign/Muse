@@ -40,7 +40,7 @@ const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
 // mirror the `get-quests` payload: id, icon, title, tier, completed, claimed,
 // progress, target, description.
 const DEMO_QUESTS = [
-  { id: "d1", icon: "🔥", title: "Log in today", tier: "daily", completed: true, claimed: true, progress: 1, target: 1, description: "Open Muses by WYZ to keep your streak alive." },
+  { id: "d1", icon: "🔥", title: "Log in today", tier: "daily", completed: true, claimed: true, progress: 1, target: 1, description: "Open Musa by WYZ to keep your streak alive." },
   { id: "d2", icon: "⚡", title: "Like 3 creatives", tier: "daily", completed: true, claimed: false, progress: 3, target: 3, description: "Support three profiles on Discover." },
   { id: "d3", icon: "💬", title: "Reply to a comment", tier: "daily", completed: false, claimed: false, progress: 1, target: 2, description: "Keep the conversation going on your posts." },
   { id: "w1", icon: "📸", title: "Post to your feed", tier: "weekly", completed: true, claimed: false, progress: 1, target: 1, description: "Share a new piece of work with the community." },
@@ -61,13 +61,13 @@ function deriveQuestDescription(q: any): string {
   const desc = typeof q?.description === "string" ? q.description.trim() : "";
   if (desc) return desc;
   const t = String(q?.title || "").toLowerCase();
-  if (t.includes("login") || t.includes("log in") || t.includes("check in")) return "Log in to Muse today";
+  if (t.includes("login") || t.includes("log in") || t.includes("check in")) return "Log in to Musa today";
   if (t.includes("like")) return "Like a post to show support";
   if (t.includes("comment") || t.includes("reply")) return "Leave a comment on a post";
   if (t.includes("post") || t.includes("share") || t.includes("upload")) return "Share something with the community";
   if (t.includes("follow") || t.includes("connect") || t.includes("friend")) return "Connect with other creatives";
   if (t.includes("swipe") || t.includes("browse") || t.includes("discover")) return "Swipe through profiles on Discover";
-  if (t.includes("profile")) return "Update your Muse profile";
+  if (t.includes("profile")) return "Update your Musa profile";
   if (t.includes("message") || t.includes("chat") || t.includes("dm")) return "Send a message to a match";
   if (t.includes("book") || t.includes("session")) return "Book a session with a pro";
   if (t.includes("streak")) return "Keep your daily login streak going";

@@ -199,7 +199,7 @@ export const ProfileScreen = memo(function ProfileScreen({
   const [isMuseProfile] = useState(true);
   const [showSelfDiscovery, setShowSelfDiscovery] = useState(false);
   const userRole = currentUser.type || "muse";
-  const roleBadgeText = (role: string) => role === "muse" ? "Muse" : role === "industry" ? "Industry" : "Creative";
+  const roleBadgeText = (role: string) => role === "muse" ? "Musa" : role === "industry" ? "Industry" : "Creative";
   useEffect(() => {
     let cancelled = false;
     apiFetch("/api/muse?type=albums&profile_id=me")
@@ -258,7 +258,7 @@ export const ProfileScreen = memo(function ProfileScreen({
               {isMuseProfile ? <FiBriefcase size={9} /> : <FiZap size={9} />}
               {roleBadgeText(userRole)}
             </span>
-            <div className="profile-type">{obData.type || (isMuseProfile ? "Muse" : "Creative")}</div>
+            <div className="profile-type">{obData.type || (isMuseProfile ? "Musa" : "Creative")}</div>
           </div>
           <div className="profile-loc">{obData.loc || "Set your location"}</div>
           <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center", marginTop: 6, fontSize: 12, color: "var(--muted)" }}>
@@ -282,7 +282,7 @@ export const ProfileScreen = memo(function ProfileScreen({
         </div>
         <div className="stats-row">
           {isMuseProfile ? (
-            // Muse stats: briefs, team, hired, response rate
+            // Musa stats: briefs, team, hired, response rate
             <>
               <div className="stat"><div className="stat-num">{matches.length}</div><div className="stat-label">Briefs</div></div>
               <div className="stat"><div className="stat-num">{matchStreak}</div><div className="stat-label">Team</div></div>
@@ -292,7 +292,7 @@ export const ProfileScreen = memo(function ProfileScreen({
           ) : (
             // Creative stats: matches, streak, likes, superlikes, passes
             <>
-              <div className="stat"><div className="stat-num">{matches.length}</div><div className="stat-label">Muses</div></div>
+              <div className="stat"><div className="stat-num">{matches.length}</div><div className="stat-label">Musa</div></div>
               <div className="stat"><div className="stat-num">{matchStreak}</div><div className="stat-label">Streak</div></div>
               <div className="stat"><div className="stat-num">{currentUser.stats?.likes ?? 0}</div><div className="stat-label">Likes</div></div>
               <div className="stat"><div className="stat-num">{currentUser.stats?.superLikes ?? 0}</div><div className="stat-label">Superlikes</div></div>
@@ -315,7 +315,7 @@ export const ProfileScreen = memo(function ProfileScreen({
         </div>
         <div className="section">
           <div className="section-title">Creative Type</div>
-          <div className="tag-row">{obData.type ? <button className="tag-pill" onClick={() => setBadgeInfo({ name: obData.type, desc: "Your creative role/type on Muse — what you do and how others find you.", icon: "🎯", color: "#FFD700" })} style={{ cursor: "pointer" }}>{obData.type}</button> : <button className="tag-pill" onClick={() => setBadgeInfo({ name: "Set your type", desc: "Add your creative type to help people understand what you do and find you.", icon: "✏️", color: "#FFD700" })} style={{ cursor: "pointer" }}>Set your type</button>}</div>
+          <div className="tag-row">{obData.type ? <button className="tag-pill" onClick={() => setBadgeInfo({ name: obData.type, desc: "Your creative role/type on Musa — what you do and how others find you.", icon: "🎯", color: "#FFD700" })} style={{ cursor: "pointer" }}>{obData.type}</button> : <button className="tag-pill" onClick={() => setBadgeInfo({ name: "Set your type", desc: "Add your creative type to help people understand what you do and find you.", icon: "✏️", color: "#FFD700" })} style={{ cursor: "pointer" }}>Set your type</button>}</div>
         </div>
         <div className="section">
           <div className="section-title">Looking For</div>
@@ -358,7 +358,7 @@ export const ProfileScreen = memo(function ProfileScreen({
           <div className="section-title">Subscription</div>
           {currentUser.foundingTier && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-              <button type="button" onClick={() => setBadgeInfo({ name: currentUser.foundingTier === "founding" ? "Founding Member" : "Early Member", desc: currentUser.foundingTier === "founding" ? "You backed Muse from the very start, unlocking the earliest perks and recognition." : "You joined Muses during its early growth, with a special early-adopter badge.", icon: currentUser.foundingTier === "founding" ? "🏆" : "⭐", color: currentUser.foundingTier === "founding" ? "var(--gold)" : "var(--lavender)" })} style={{ display: "inline-flex", alignItems: "center", gap: 4, minHeight: 44, fontSize: 12, fontWeight: 700, padding: "6px 12px", borderRadius: 99, background: currentUser.foundingTier === "founding" ? "rgba(255,215,0,0.12)" : "rgba(212,165,255,0.12)", border: `1px solid ${currentUser.foundingTier === "founding" ? "rgba(255,215,0,0.35)" : "rgba(212,165,255,0.35)"}`, color: currentUser.foundingTier === "founding" ? "var(--gold)" : "var(--lavender)", cursor: "pointer" }}>
+              <button type="button" onClick={() => setBadgeInfo({ name: currentUser.foundingTier === "founding" ? "Founding Member" : "Early Member", desc: currentUser.foundingTier === "founding" ? "You backed Musa from the very start, unlocking the earliest perks and recognition." : "You joined Musa during its early growth, with a special early-adopter badge.", icon: currentUser.foundingTier === "founding" ? "🏆" : "⭐", color: currentUser.foundingTier === "founding" ? "var(--gold)" : "var(--lavender)" })} style={{ display: "inline-flex", alignItems: "center", gap: 4, minHeight: 44, fontSize: 12, fontWeight: 700, padding: "6px 12px", borderRadius: 99, background: currentUser.foundingTier === "founding" ? "rgba(255,215,0,0.12)" : "rgba(212,165,255,0.12)", border: `1px solid ${currentUser.foundingTier === "founding" ? "rgba(255,215,0,0.35)" : "rgba(212,165,255,0.35)"}`, color: currentUser.foundingTier === "founding" ? "var(--gold)" : "var(--lavender)", cursor: "pointer" }}>
                 {currentUser.foundingTier === "founding" ? "🏆 FOUNDING MEMBER" : "⭐ EARLY MEMBER"}
               </button>
               {/* Audit fix (2026-09-08): this whole Subscription block used a
@@ -372,7 +372,7 @@ export const ProfileScreen = memo(function ProfileScreen({
               )}
             </div>
           )}
-          <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 10 }}>Plan: <span style={{ color: "var(--gold)", fontWeight: 600 }}>{currentUser.tier === "muse_studio" ? "Muses Studio" : isPaidTier(userTier) || isPaidTier(currentUser.tier) ? "Muses Pro" : "Free"}</span></div>
+          <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 10 }}>Plan: <span style={{ color: "var(--gold)", fontWeight: 600 }}>{currentUser.tier === "muse_studio" ? "Musa Studio" : isPaidTier(userTier) || isPaidTier(currentUser.tier) ? "Musa Pro" : "Free"}</span></div>
           {isPaidTier(currentUser.tier) && !currentUser.foundingTier ? (
             <button className="btn btn-outline" style={{ fontSize: 14, padding: "14px 0" }} onClick={() => setScreen("subscription")}>Manage Plan</button>
           ) : isPaidTier(currentUser.tier) && currentUser.foundingTier ? (
@@ -385,7 +385,7 @@ export const ProfileScreen = memo(function ProfileScreen({
           <div className="section-title">Badges</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {[...checkProfileBadges(currentUser.stats, currentUser.createdAt)].length === 0 && <span style={{ fontSize: 13, color: "var(--muted)" }}>Complete bookings and matches to earn badges</span>}
-            {checkProfileBadges(currentUser.stats, currentUser.createdAt).map(b => <button type="button" key={b.name} onClick={() => setBadgeInfo({ name: b.name, desc: b.desc || "A badge earned for activity on Muse.", icon: b.icon, color: b.color })} style={{ display: "inline-flex", alignItems: "center", gap: 4, minHeight: 44, fontSize: 12, fontWeight: 600, padding: "6px 12px", borderRadius: 99, background: `${b.color}20`, border: `1px solid ${b.color}40`, color: b.color, cursor: "pointer" }}>{b.icon} {b.name}</button>)}
+            {checkProfileBadges(currentUser.stats, currentUser.createdAt).map(b => <button type="button" key={b.name} onClick={() => setBadgeInfo({ name: b.name, desc: b.desc || "A badge earned for activity on Musa.", icon: b.icon, color: b.color })} style={{ display: "inline-flex", alignItems: "center", gap: 4, minHeight: 44, fontSize: 12, fontWeight: 600, padding: "6px 12px", borderRadius: 99, background: `${b.color}20`, border: `1px solid ${b.color}40`, color: b.color, cursor: "pointer" }}>{b.icon} {b.name}</button>)}
           </div>
         </div>
         <div className="section">
@@ -562,7 +562,7 @@ export const ProfileScreen = memo(function ProfileScreen({
           <button className="btn btn-outline" style={{ width: "100%", marginTop: 12, fontSize: 13, padding: "10px 0" }} onClick={() => setScreen("portfolio")}>Manage Albums</button>
         </div>
         <div className="section">
-          <div className="section-title">Recent Muses</div>
+          <div className="section-title">Recent Musa</div>
           <div className="section-text" style={{ marginBottom: 10 }}>Your latest connections</div>
           <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8, scrollbarWidth: "none", paddingTop: 8 }}>
             {matches.length > 0 ? matches.slice(0, 5).map(m => (

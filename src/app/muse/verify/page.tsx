@@ -16,7 +16,7 @@ export default function VerifyReturnPage() {
       try {
         const token = await getAccessToken();
         if (!token) {
-          if (active) { setStatus("pending"); setMessage("You need to log in to confirm verification. Head back to Muses."); }
+          if (active) { setStatus("pending"); setMessage("You need to log in to confirm verification. Head back to Musa."); }
           return;
         }
         const res = await authFetch("/api/muse/verification", {
@@ -26,7 +26,7 @@ export default function VerifyReturnPage() {
         });
         const d = await res.json();
         if (d.status === "verified") {
-          if (active) { setStatus("verified"); setMessage("You're verified! Redirecting back to Muse…"); }
+          if (active) { setStatus("verified"); setMessage("You're verified! Redirecting back to Musa…"); }
           setTimeout(() => { if (active) window.location.href = "/muse"; }, 1500);
         } else if (attempts < 6) {
           if (active) { setStatus("checking"); setMessage("Still checking…"); }
@@ -39,7 +39,7 @@ export default function VerifyReturnPage() {
           setStatus("checking"); setMessage("Still checking…");
           setTimeout(check, 3000);
         } else if (active) {
-          setStatus("error"); setMessage("Could not reach the verification service. Try again from the Muse app.");
+          setStatus("error"); setMessage("Could not reach the verification service. Try again from the Musa app.");
         }
       }
     };
@@ -55,7 +55,7 @@ export default function VerifyReturnPage() {
           {status === "verified" ? "✅" : status === "pending" ? "⏳" : status === "error" ? "⚠️" : "🪪"}
         </div>
         <h1 style={{ fontSize: 20, fontWeight: 800, marginBottom: 10 }}>
-          {status === "verified" ? "Verification Complete" : "Muses by WYZ Verification"}
+          {status === "verified" ? "Verification Complete" : "Musa by WYZ Verification"}
         </h1>
         <p style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", lineHeight: 1.6 }}>{message}</p>
         {status !== "verified" && (
@@ -63,7 +63,7 @@ export default function VerifyReturnPage() {
             onClick={() => { window.location.href = "/muse"; }}
             style={{ marginTop: 24, padding: "12px 28px", borderRadius: 12, background: "rgba(255,255,255,0.1)", border: "none", color: "#f5f0ff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}
           >
-            Back to Muses by WYZ
+            Back to Musa by WYZ
           </button>
         )}
       </div>

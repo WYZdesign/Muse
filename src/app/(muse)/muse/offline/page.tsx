@@ -43,7 +43,7 @@ export default function OfflinePage() {
       <div style={{ fontSize: 56, marginBottom: 16 }}>📡</div>
       <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>You&apos;re offline</h1>
       <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", maxWidth: 340, marginBottom: 24 }}>
-        Muse needs an internet connection to show content. Check your connection and try again.
+        Musa needs an internet connection to show content. Check your connection and try again.
       </p>
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
         <button

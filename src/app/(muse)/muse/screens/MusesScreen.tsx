@@ -212,7 +212,7 @@ export const MusesScreen = memo(function MusesScreen({
 
   // Main grid view had no tilt/parallax at all — every other primary screen
   // (Discover's swipe card, Network's pro cards) gets this treatment, but
-  // Muses' grid cards (.match-card-grid, full-bleed photo like Discover's
+  // Musa' grid cards (.match-card-grid, full-bleed photo like Discover's
   // hero) were skipped, so this page read as "dead" next to the rest of the
   // app. Same spatial-scene engine Discover uses, applied to the grid cards.
   useEffect(() => {
@@ -253,7 +253,7 @@ export const MusesScreen = memo(function MusesScreen({
             animation: "lavaFlow 7s ease-in-out infinite,logoShimmer 4s ease-in-out infinite"
           }}
         >
-          Muses
+          Musa
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {!showLikesYou && (
@@ -397,7 +397,7 @@ export const MusesScreen = memo(function MusesScreen({
         // behaved identically here).
         <div className="match-list" style={matchesView === "grid" ? { flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "repeat(2,1fr)", gridAutoFlow: "row", gridAutoRows: "max-content", columnGap: 14, rowGap: 14, alignContent: "flex-start", overflowY: "auto", padding: "14px 14px 112px", boxSizing: "border-box" } : { flex: 1, display: "flex", flexDirection: "column", alignItems: "stretch", justifyContent: "flex-start", overflowY: "auto", padding: "0 16px 80px", gap: 10 }}>
           {matches.length === 0 && (
-            <EmptyState icon="✦" title="No Muses yet" sub="Swipe right on creatives in Discover to ignite new collaborations.">
+            <EmptyState icon="✦" title="No Musa yet" sub="Swipe right on creatives in Discover to ignite new collaborations.">
               <button className="btn btn-gold" style={{ padding: "10px 24px", fontSize: 13, fontWeight: 700, borderRadius: 12 }} onClick={() => showScreen("discover")}>Start Discovering</button>
             </EmptyState>
           )}

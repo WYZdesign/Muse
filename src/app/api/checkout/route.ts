@@ -18,13 +18,13 @@ const PRICE_MAP: Record<string, string> = {
 
 // Dev/test-mode fallback pricing (only used when STRIPE_SECRET_KEY isn't a live key) —
 // must match PRICE_MAP's keys so a test-mode checkout of any plan creates the right product/price
-// instead of always defaulting to the original $9.99/mo Muses Pro price regardless of which plan was requested.
+// instead of always defaulting to the original $9.99/mo Musa Pro price regardless of which plan was requested.
 const DEV_FALLBACK_PRICING: Record<string, { name: string; amount: number; interval: "month" | "year" }> = {
-  muse_pro: { name: "Muses Pro", amount: 999, interval: "month" },
-  muse_pro_annual: { name: "Muses Pro Annual", amount: 7999, interval: "year" },
-  muse_studio: { name: "Muses Studio", amount: 2999, interval: "month" },
-  muse: { name: "Muses Pro", amount: 999, interval: "month" },
-  sovereign: { name: "Muses Pro", amount: 999, interval: "month" },
+  muse_pro: { name: "Musa Pro", amount: 999, interval: "month" },
+  muse_pro_annual: { name: "Musa Pro Annual", amount: 7999, interval: "year" },
+  muse_studio: { name: "Musa Studio", amount: 2999, interval: "month" },
+  muse: { name: "Musa Pro", amount: 999, interval: "month" },
+  sovereign: { name: "Musa Pro", amount: 999, interval: "month" },
 };
 
 export async function POST(req: NextRequest) {
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
             id: `beta_${plan}_100off`,
             percent_off: 100,
             duration: "forever",
-            name: "Muses Beta — 100% off",
+            name: "Musa Beta — 100% off",
           });
           discountCouponId = coupon.id;
         } catch { /* restricted key — proceed without discount */ }
@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
       }
       // Test/dev only: create a product + recurring price on the fly, using
 // the fallback config for the ACTUAL plan requested — this used to be
-// hardcoded to always mint "Muses Pro" at $9.99/month regardless of
+// hardcoded to always mint "Musa Pro" at $9.99/month regardless of
 // which plan the client asked for, so testing muse_pro_annual or
 // muse_studio in dev silently checked out the wrong product/price.
       const fallback = DEV_FALLBACK_PRICING[plan] || DEV_FALLBACK_PRICING.muse_pro;

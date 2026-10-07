@@ -38,7 +38,7 @@ describe("GET /api/qr — validation & SSRF", () => {
   });
 
   it("allows otpauth:// (2FA) since it is only encoded, never fetched", async () => {
-    const res = await get("?url=" + encodeURIComponent("otpauth://totp/Muses?secret=ABC"));
+    const res = await get("?url=" + encodeURIComponent("otpauth://totp/Musa?secret=ABC"));
     expect(res.status).toBe(200);
   });
 });

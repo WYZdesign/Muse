@@ -123,7 +123,7 @@ export function normalizeFeedPost(p: any, profileId?: string | null) {
   return {
     ...p,
     id: p.id,
-    author: p.author ?? author.name ?? "Muse",
+    author: p.author ?? author.name ?? "Musa",
     avatar: p.avatar ?? author.avatar ?? "",
     authorVerified: p.authorVerified ?? !!author.verified,
     rid: p.rid ?? author.id,

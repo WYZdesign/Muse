@@ -98,7 +98,7 @@ describe("embedText", () => {
     const [url, opts] = spy.mock.calls[0] as any[];
     expect(url).toContain("/embeddings");
     expect(opts.headers.Authorization).toBe("Bearer k");
-    expect(opts.headers["X-Title"]).toBe("Muse");
+    expect(opts.headers["X-Title"]).toBe("Musa");
     expect(JSON.parse(opts.body)).toEqual({ model: "m", input: "hello world" });
   });
 

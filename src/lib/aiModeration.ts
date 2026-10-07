@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// Muse AI moderation — LLM-assisted text/content screening.
+// Musa AI moderation — LLM-assisted text/content screening.
 //
 // Cost design: a FREE heuristic pre-filter runs first (keyword/pattern
 // checks). The paid/free LLM only fires when heuristics can't decide.
@@ -56,7 +56,7 @@ export function screenText(text: string): { block: boolean; categories: string[]
 /** LLM-backed classification for text that passed heuristics but needs review. */
 async function llmScreen(text: string): Promise<{ safe: boolean; categories: string[]; severity: string; reason: string } | null> {
   if (!aiEnabled()) return null;
-  const prompt = `Classify the following user-generated content for a professional creative network (Muse). Respond with ONLY a JSON object, no other text, in the shape {"safe": boolean, "categories": string[], "severity": "none"|"low"|"high"|"critical", "reason": string}.
+  const prompt = `Classify the following user-generated content for a professional creative network (Musa). Respond with ONLY a JSON object, no other text, in the shape {"safe": boolean, "categories": string[], "severity": "none"|"low"|"high"|"critical", "reason": string}.
 
 Categories to detect: spam, harassment, hate_speech, sexual_solicitation, minor_risk, off_platform_payment, scam, self_harm, doxxing, violence, drugs.
 

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Full-screen loading overlay — gold spinner + message, Muse dark styling.
+ * Full-screen loading overlay — gold spinner + message, Musa dark styling.
  * Used while Stripe's embedded components initialize and before external
  * redirects, so the UI never just "sits still" with no feedback.
  */

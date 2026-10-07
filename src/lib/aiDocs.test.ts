@@ -92,7 +92,7 @@ describe("MUSE_KNOWLEDGE_BASE", () => {
 describe("museSystemPrompt", () => {
   it("identifies the platform and support channel", () => {
     const p = museSystemPrompt();
-    expect(p).toContain("Muse");
+    expect(p).toContain("Musa");
     expect(p).toContain("muse.wyzdesign.com");
     expect(p).toContain("info@wyzdesign.com");
   });
@@ -152,7 +152,7 @@ describe("retrieveContext", () => {
   it("returns the about + support defaults when nothing matches", async () => {
     aiDocsState.docs = null;
     const r = await retrieveContext("zzzznomatchzzzz");
-    expect(r.sources).toContain("What is Muse");
+    expect(r.sources).toContain("What is Musa");
     expect(r.sources).toContain("Support and help");
   });
 

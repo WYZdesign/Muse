@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { getPressUrl } from "@/lib/urls";
 
 export const metadata: Metadata = {
-  title: "Press — Muses by WYZ",
-  description: "Press and media inquiries for Muse. Brand assets and contact information.",
+  title: "Press — Musa by WYZ",
+  description: "Press and media inquiries for Musa. Brand assets and contact information.",
   alternates: { canonical: getPressUrl() },
-  openGraph: { title: "Press — Muses by WYZ", description: "Press and media inquiries for Muses by WYZ. Brand assets and contact information.", url: getPressUrl(), siteName: "Muses by WYZ", type: "website" },
-  twitter: { card: "summary", title: "Press — Muses by WYZ", description: "Press and media inquiries for Muse. Brand assets and contact information." },
+  openGraph: { title: "Press — Musa by WYZ", description: "Press and media inquiries for Musa by WYZ. Brand assets and contact information.", url: getPressUrl(), siteName: "Musa by WYZ", type: "website" },
+  twitter: { card: "summary", title: "Press — Musa by WYZ", description: "Press and media inquiries for Musa. Brand assets and contact information." },
 };
 
 export default function PressPage() {
@@ -20,11 +20,11 @@ export default function PressPage() {
           Brand assets available on request.
         </p>
         <p>
-          Muse is built by WYZ Design, a creative technology studio focused on building safer, smarter
+          Musa is built by WYZ Design, a creative technology studio focused on building safer, smarter
           tools for the creative industry.
         </p>
       </div>
-      <a href="/muse/landing" style={{ display: "inline-block", marginTop: 48, color: "#ffd700", fontSize: 14, textDecoration: "none" }}>&larr; Back to Muses by WYZ</a>
+      <a href="/muse/landing" style={{ display: "inline-block", marginTop: 48, color: "#ffd700", fontSize: 14, textDecoration: "none" }}>&larr; Back to Musa by WYZ</a>
     </div>
   );
 }

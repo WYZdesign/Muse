@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// Muse AI client — OpenRouter-backed (free + paid models).
+// Musa AI client — OpenRouter-backed (free + paid models).
 // Replaces the old localhost Ollama/Qdrant dependency so the AI
 // features actually work in serverless (Vercel) production.
 //
@@ -45,7 +45,7 @@ export async function embedText(text: string): Promise<number[] | null> {
         Authorization: `Bearer ${API_KEY}`,
         "Content-Type": "application/json",
         "HTTP-Referer": MUSE_URL,
-        "X-Title": "Muse",
+        "X-Title": "Musa",
       },
       body: JSON.stringify({ model: EMBED_MODEL, input: cleaned }),
     });
@@ -76,7 +76,7 @@ export async function chatComplete(
         Authorization: `Bearer ${API_KEY}`,
         "Content-Type": "application/json",
         "HTTP-Referer": MUSE_URL,
-        "X-Title": "Muse",
+        "X-Title": "Musa",
       },
       body: JSON.stringify({
         model: CHAT_MODEL,

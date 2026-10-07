@@ -42,7 +42,7 @@ export function checkProfileBadges(
   createdAt: number,
 ): ProfileBadge[] {
   const b: ProfileBadge[] = [];
-  if (createdAt && Date.now() - createdAt > 31536000000) b.push({ name: "Full Moon", icon: "🌕", color: "#C0C0FF", desc: "1 year on Muses" });
+  if (createdAt && Date.now() - createdAt > 31536000000) b.push({ name: "Full Moon", icon: "🌕", color: "#C0C0FF", desc: "1 year on Musa" });
   if ((stats.bookingsCompleted ?? 0) >= 50) b.push({ name: "Golden Hour", icon: "☀️", color: "#FFD700", desc: "50+ shoots completed" });
   else if ((stats.bookingsCompleted ?? 0) >= 10) b.push({ name: "Collab King", icon: "👑", color: "#FFD700", desc: "10+ bookings completed" });
   if ((stats.matchesReceived ?? 0) >= 100) b.push({ name: "Rising Star", icon: "⭐", color: "#FFBF00", desc: "100+ matches" });

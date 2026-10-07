@@ -276,7 +276,7 @@ const SAFETY = [
 ];
 
 const TIERS = [
-  { cls: "founding", badge: "Founding", name: "First 150", perks: ["Lifetime Muses Pro", "Founders Page Spotlight", "Direct Feedback Channel", "Early Access to Everything", "Exclusive Founding Badge"] },
+  { cls: "founding", badge: "Founding", name: "First 150", perks: ["Lifetime Musa Pro", "Founders Page Spotlight", "Direct Feedback Channel", "Early Access to Everything", "Exclusive Founding Badge"] },
   { cls: "early", badge: "Early Member", name: "Up to 1,000", perks: ["6 Months Free Pro", "Early Access", "Early Member Badge", "Priority Support"] },
   { cls: "standard", badge: "Standard", name: "Everyone Else", perks: ["Free Tier Forever", "Pro at $9.99/mo", "Earn Pro via Referrals"] },
 ];
@@ -284,10 +284,10 @@ const TIERS = [
 
 
 const FAQS = [
-  { q: "When does Muses by WYZ launch?", a: "We're onboarding the first 150 founding members now, then rolling out to the full waitlist. Founding members get in first." },
+  { q: "When does Musa by WYZ launch?", a: "We're onboarding the first 150 founding members now, then rolling out to the full waitlist. Founding members get in first." },
   { q: "How does verification work?", a: "We use phone + face verification (Stripe Identity) before any paid booking. No self-reported ages, real verification only." },
-  { q: "What does it cost?", a: "Free tier forever. Muses Pro is $9.99/mo. Founding members get lifetime Pro free, and you can earn Pro by referring friends." },
-  { q: "How is Muses by WYZ different from Instagram or a job board?", a: "It's not a feed and it's not a job board. It's where you discover creatives near you, collab safely, and get booked, all with safety built into every step." },
+  { q: "What does it cost?", a: "Free tier forever. Musa Pro is $9.99/mo. Founding members get lifetime Pro free, and you can earn Pro by referring friends." },
+  { q: "How is Musa by WYZ different from Instagram or a job board?", a: "It's not a feed and it's not a job board. It's where you discover creatives near you, collab safely, and get booked, all with safety built into every step." },
   { q: "Is it safe?", a: "Disclosure forms, 24hr check-ins, trusted contacts, instant block, and two-track enforcement. Safety isn't a feature, it's the foundation." },
 ];
 
@@ -396,7 +396,7 @@ export default function MuseLandingPage() {
       const res = await fetch("/api/muse/waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...formData, source: selectedSource }) });
       const data = await res.json();
       if (res.ok) {
-        setSubmitResult({ success: true, message: "You're on the list! We'll notify you when Muses by WYZ launches." });
+        setSubmitResult({ success: true, message: "You're on the list! We'll notify you when Musa by WYZ launches." });
         setFormData({ email: "", phone: "" });
       } else setSubmitResult({ success: false, message: data.error || "Something went wrong" });
     } catch { setSubmitResult({ success: false, message: "Network error. Please try again." }); }
@@ -418,7 +418,7 @@ export default function MuseLandingPage() {
       <div className="muse-content">
       {/* Nav */}
       <nav className={`muse-nav ${navScrolled ? "scrolled" : ""}`}>
-        <div className="muse-nav-logo"><Image src="/muse-app-icon.png" alt="Muses by WYZ" className="muse-nav-icon" width={30} height={30} priority /></div>
+        <div className="muse-nav-logo"><Image src="/muse-app-icon.png" alt="Musa by WYZ" className="muse-nav-icon" width={30} height={30} priority /></div>
         <div className="muse-nav-links">
           <a href="#features">Features</a>
           <a href="#how">How It Works</a>
@@ -453,7 +453,7 @@ export default function MuseLandingPage() {
             <span className="line" data-depth="-0.4"><SplitText text="Where Creatives" delay={0.15} /></span>
             <span className="line" data-depth="-0.4"><SplitText text="Find Their" delay={0.38} /></span>
             <span className="line" data-depth="-0.4">
-              <span className="gradient muse-animated-gradient" style={{ display: "inline-block", padding: "0 0.1em" }}>Muses<span style={{ display: "block", fontFamily: "Inter, system-ui, sans-serif", fontStyle: "normal", fontSize: ".26em", fontWeight: 800, letterSpacing: ".3em", textTransform: "uppercase", marginTop: ".02em", textIndent: ".3em" }}>by WYZ</span></span>
+              <span className="gradient muse-animated-gradient" style={{ display: "inline-block", padding: "0 0.1em" }}>Musa<span style={{ display: "block", fontFamily: "Inter, system-ui, sans-serif", fontStyle: "normal", fontSize: ".26em", fontWeight: 800, letterSpacing: ".3em", textTransform: "uppercase", marginTop: ".02em", textIndent: ".3em" }}>by WYZ</span></span>
             </span>
           </h1>
           <p className="muse-hero-sub" data-depth="-0.3">Connect with photographers, models, filmmakers, and more. Work together on real projects. Get booked, safely.</p>
@@ -476,7 +476,7 @@ export default function MuseLandingPage() {
               <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Founding members get lifetime Pro free.</span>
               <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
                 <button onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/muse/landing`); }} style={{ fontSize: 11, padding: "6px 14px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.25)", color: "#ffd700", cursor: "pointer" }}>Copy Link</button>
-                <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent("Just joined the Muses by WYZ waitlist ✦ Creative professional network for photographers, models, and filmmakers")}&url=${encodeURIComponent(`${window.location.origin}/muse/landing`)}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, padding: "6px 14px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.25)", color: "#ffd700", textDecoration: "none" }}>Share on X</a>
+                <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent("Just joined the Musa by WYZ waitlist ✦ Creative professional network for photographers, models, and filmmakers")}&url=${encodeURIComponent(`${window.location.origin}/muse/landing`)}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, padding: "6px 14px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.25)", color: "#ffd700", textDecoration: "none" }}>Share on X</a>
               </div>
             </div>
           )}
@@ -581,7 +581,7 @@ export default function MuseLandingPage() {
       <section className="muse-section">
         <div className="muse-container">
           <Reveal className="muse-section-head">
-            <span className="muse-kicker">Why Muse</span>
+            <span className="muse-kicker">Why Musa</span>
             <h2 className="muse-section-title">Built for <span className="accent">Working Creatives</span></h2>
           </Reveal>
           <div className="muse-testimonials-grid">
@@ -597,7 +597,7 @@ export default function MuseLandingPage() {
               </Reveal>
             ))}
           </div>
-          <p style={{ textAlign: "center", marginTop: 18, fontSize: "0.8rem", color: "var(--muted)" }}>Muse is in early access — real member stories will live here as the community grows.</p>
+          <p style={{ textAlign: "center", marginTop: 18, fontSize: "0.8rem", color: "var(--muted)" }}>Musa is in early access — real member stories will live here as the community grows.</p>
         </div>
       </section>
 
@@ -609,7 +609,7 @@ export default function MuseLandingPage() {
           <Reveal className="muse-section-head">
             <span className="muse-kicker">Founding Program</span>
             <h2 className="muse-section-title">Founding Members <span className="accent">Get More</span></h2>
-            <p className="muse-section-sub">The first 150 creatives shape what Muse becomes.</p>
+            <p className="muse-section-sub">The first 150 creatives shape what Musa becomes.</p>
           </Reveal>
           <div className="muse-tiers">
             {TIERS.map((t, i) => (
@@ -625,7 +625,7 @@ export default function MuseLandingPage() {
             ))}
           </div>
           <Reveal delay={0.2}>
-            <div className="muse-referral-blurb"><FiGift size={24} /> Refer 3 friends and get Muses Pro free for a year, even before launch.</div>
+            <div className="muse-referral-blurb"><FiGift size={24} /> Refer 3 friends and get Musa Pro free for a year, even before launch.</div>
           </Reveal>
         </div>
       </section>
@@ -637,7 +637,7 @@ export default function MuseLandingPage() {
         <div className="muse-container">
           <Reveal>
             <div className="muse-cta-card">
-              <h2>Ready to Find Your <span className="accent" style={{ color: "var(--gold)", fontStyle: "italic" }}>Muse?</span></h2>
+              <h2>Ready to Find Your <span className="accent" style={{ color: "var(--gold)", fontStyle: "italic" }}>Musa?</span></h2>
               <p>Join {signupCount.toLocaleString()}+ creatives on the waitlist. Founding member spots available.</p>
               <form onSubmit={handleSubmit} className="muse-form">
                 <div className="muse-form-row">
@@ -696,14 +696,14 @@ export default function MuseLandingPage() {
         <div className="muse-container">
           <div className="muse-footer-grid">
             <div>
-              <div className="muse-footer-logo">Muses <span className="accent">by WYZ ✦</span></div>
+              <div className="muse-footer-logo">Musa <span className="accent">by WYZ ✦</span></div>
               <p>Where creatives converge.</p>
             </div>
             <nav><h4>Product</h4><ul><li><a href="#features">Features</a></li><li><a href="#safety">Safety</a></li><li><a href="/muse/pricing">Pricing</a></li><li><a href="/muse/faq">FAQ</a></li></ul></nav>
             <nav><h4>Company</h4><ul><li><a href="/muse/about">About</a></li><li><a href="/muse/blog">Blog</a></li><li><a href="/muse/careers">Careers</a></li><li><a href="/muse/press">Press</a></li></ul></nav>
             <nav><h4>Legal</h4><ul><li><a href="/muse/terms">Terms</a></li><li><a href="/muse/privacy">Privacy</a></li><li><a href="/muse/guidelines">Guidelines</a></li><li><a href="/muse/safety">Safety Center</a></li></ul></nav>
           </div>
-          <div className="muse-footer-bottom"><p>© {new Date().getFullYear()} Muse. Built by WYZ Design.</p></div>
+          <div className="muse-footer-bottom"><p>© {new Date().getFullYear()} Musa. Built by WYZ Design.</p></div>
         </div>
       </footer>
       {/* Footer ocean waves — matches splash screen */}
@@ -797,9 +797,9 @@ export default function MuseLandingPage() {
           </div>
           <div className="muse-enter-content">
             <div className="muse-enter-icon-wrap">
-              <Image src="/muse-app-icon.png" alt="Muses by WYZ app" className="muse-enter-icon" width={174} height={174} />
+              <Image src="/muse-app-icon.png" alt="Musa by WYZ app" className="muse-enter-icon" width={174} height={174} />
             </div>
-            <div className="muse-enter-logo">Muses <span>by WYZ</span></div>
+            <div className="muse-enter-logo">Musa <span>by WYZ</span></div>
             <div className="muse-enter-sub">Creative Professional Network</div>
             <div className="muse-enter-prompt">Tap to Enter <span style={{fontSize:'1.5em',lineHeight:1}}>✦</span></div>
           </div>

@@ -247,7 +247,7 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
                   <span style={{ fontSize: 26, fontWeight: 800, fontFamily: "'Playfair Display',serif", fontStyle: "italic", color: "#fff" }}>{displayName}</span>
                   {user.age && (user as any).showAge !== false && <span style={{ fontSize: 22, fontWeight: 600, color: "rgba(255,255,255,0.6)" }}>{user.age}</span>}
-                  {(user.isVerified || user.verified) && <button type="button" aria-label="About identity verification" title="Identity verified" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Identity Verified", desc: "Identity verified by Muses by WYZ — we confirmed this member's government ID and professional credentials.", icon: "✓", color: "#22c55e" }); }} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, margin: -11, padding: 0, borderRadius: "50%", background: "rgba(34,197,94,0.2)", border: "1.5px solid rgba(34,197,94,0.5)", fontSize: 12, fontWeight: 800, color: "#22c55e", pointerEvents: "auto", cursor: "pointer" }}>✓</button>}
+                  {(user.isVerified || user.verified) && <button type="button" aria-label="About identity verification" title="Identity verified" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Identity Verified", desc: "Identity verified by Musa by WYZ — we confirmed this member's government ID and professional credentials.", icon: "✓", color: "#22c55e" }); }} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, margin: -11, padding: 0, borderRadius: "50%", background: "rgba(34,197,94,0.2)", border: "1.5px solid rgba(34,197,94,0.5)", fontSize: 12, fontWeight: 800, color: "#22c55e", pointerEvents: "auto", cursor: "pointer" }}>✓</button>}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "var(--gold)", fontWeight: 600, marginBottom: 6 }}>
                   {/* Role badge */}
@@ -353,7 +353,7 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
         {/* Stats Bar — role-aware */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 2, marginBottom: 20, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, overflow: "hidden" }}>
           {isMuseProfile ? (
-            // Muse stats: briefs, team, hiring rate, response
+            // Musa stats: briefs, team, hiring rate, response
             [
               { label: "Briefs", value: typeof user.collabs === "number" ? user.collabs : "—" },
               { label: "Team", value: (user as any).teamSize || "—" },
@@ -387,7 +387,7 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
             <div style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.05 }}>Badges</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {user.isVerified && (
-                <button type="button" onClick={() => setBadgeInfo({ name: "Identity Verified", desc: "Identity verified by Muses by WYZ — we confirmed this member's government ID and professional credentials.", icon: "🛡", color: "#22c55e" })} style={{ display: "inline-flex", alignItems: "center", gap: 4, minHeight: 44, fontSize: 12, fontWeight: 600, padding: "6px 12px", borderRadius: 99, background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.3)", color: "#22c55e", cursor: "pointer" }}>
+                <button type="button" onClick={() => setBadgeInfo({ name: "Identity Verified", desc: "Identity verified by Musa by WYZ — we confirmed this member's government ID and professional credentials.", icon: "🛡", color: "#22c55e" })} style={{ display: "inline-flex", alignItems: "center", gap: 4, minHeight: 44, fontSize: 12, fontWeight: 600, padding: "6px 12px", borderRadius: 99, background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.3)", color: "#22c55e", cursor: "pointer" }}>
                   <FiShield size={12} /> Identity Verified
                 </button>
               )}
@@ -397,7 +397,7 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
                 </button>
               )}
               {(user.badges || []).map((b: string) => (
-                <button type="button" key={b} onClick={() => setBadgeInfo({ name: b, desc: `A recognition badge earned by ${displayName} on Muse.`, icon: "🏅", color: "var(--gold)" })} style={{ display: "inline-flex", alignItems: "center", gap: 4, minHeight: 44, fontSize: 12, fontWeight: 600, padding: "6px 12px", borderRadius: 99, background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)", cursor: "pointer" }}>
+                <button type="button" key={b} onClick={() => setBadgeInfo({ name: b, desc: `A recognition badge earned by ${displayName} on Musa.`, icon: "🏅", color: "var(--gold)" })} style={{ display: "inline-flex", alignItems: "center", gap: 4, minHeight: 44, fontSize: 12, fontWeight: 600, padding: "6px 12px", borderRadius: 99, background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)", cursor: "pointer" }}>
                   {b}
                 </button>
               ))}

@@ -17,7 +17,7 @@ import Lightbox from "../components/Lightbox";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 // Tag description maps + the tap-to-detail popover, shared across every
 // screen that shows these badges (extracted from here — Discover was the
-// original home of this pattern — into badgeInfo.tsx so Muses/Profile can
+// original home of this pattern — into badgeInfo.tsx so Musa/Profile can
 // reuse the exact same maps and modal instead of drifting copies).
 import { ZODIAC_FULL, MBTI_FULL, CHINESE_FULL, LIFE_PATH_FULL, STYLE_FULL, CONN_FULL, BadgeInfoModal } from "../components/badgeInfo";
 

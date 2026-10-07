@@ -97,7 +97,7 @@ export function useDiscoveryData({ apiFetch, authFetch, profileId }: UseDiscover
   // ═══ DEMO: "Interested in you" seed ═══
   useEffect(() => {
     // `likedBy` is only populated by the live matches endpoint, so in demo mode
-    // the Muses "Interested in you" grid always showed "No interest yet".
+    // the Musa "Interested in you" grid always showed "No interest yet".
     // Owner requirement: demo must look published, so seed it from the deck.
     if (process.env.NEXT_PUBLIC_DEMO_MODE === "false") return;
     setLikedBy(PROFILES.slice(6, 14) as unknown as Profile[]);

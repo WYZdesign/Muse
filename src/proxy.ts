@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// ═══ Muse Edge Proxy ═══
+// ═══ Musa Edge Proxy ═══
 // Runs before every request. Handles:
 // 1. Origin/CORS gating for POST/PUT/DELETE API requests
 // 2. Rate limiting sensitive API endpoints (in-memory, per-instance)

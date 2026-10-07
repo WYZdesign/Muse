@@ -58,7 +58,7 @@ export function OnboardingFlow({ obStep, setObStep, obData, setObData, obConnect
                     <div className="sparkle" style={{top:"20%",right:"10%",fontSize:18}}>✧</div>
                     <div className="sparkle" style={{bottom:"30%",left:"15%",fontSize:20}}>✦</div>
                     <div className="sparkle" style={{bottom:"15%",right:"6%",fontSize:16}}>✧</div>
-                    <div className="hero-text" style={{textAlign:"center"}}>Find your Muse</div>
+                    <div className="hero-text" style={{textAlign:"center"}}>Find your Musa</div>
                     <div className="hero-sub">Where creatives find <em>real connections</em> for professional collaboration</div>
                     <button className="btn btn-gold" onClick={()=>setObStep(1)}>Get Started</button>
                   </div>
@@ -474,8 +474,8 @@ export function OnboardingFlow({ obStep, setObStep, obData, setObData, obConnect
                           } catch (err) { trackError("onboarding_album_create_failed", { err: String(err) }); }
                         }
                       }
-                      setScreen("discover");showToast("Welcome to Muses!")
-                    }}>Enter Muses →</button>
+                      setScreen("discover");showToast("Welcome to Musa!")
+                    }}>Enter Musa →</button>
                     <button className="back-link" onClick={()=>setObStep(16)}>Back</button>
                   </div>
                 )}

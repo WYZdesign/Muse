@@ -23,8 +23,8 @@ const FACTORS: { label: string; points: number; max: number; blurb: string }[] =
   { label: "Chinese zodiac match", points: 6, max: 6, blurb: "Same animal year." },
   { label: "MBTI compatibility", points: 5, max: 5, blurb: "Same or a classically complementary type." },
   { label: "Life path number match", points: 5, max: 5, blurb: "Numerology life-path match." },
-  { label: "Verified identity", points: 3, max: 3, blurb: "They've completed Muse's ID verification." },
-  { label: "Active collaborator", points: 2, max: 2, blurb: "They've completed 50+ collabs on Muse." },
+  { label: "Verified identity", points: 3, max: 3, blurb: "They've completed Musa's ID verification." },
+  { label: "Active collaborator", points: 2, max: 2, blurb: "They've completed 50+ collabs on Musa." },
 ];
 
 export function MatchGuideScreen({ screen, showScreen, goBack }: MatchGuideScreenProps) {

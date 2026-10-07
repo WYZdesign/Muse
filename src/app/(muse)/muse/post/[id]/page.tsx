@@ -20,10 +20,10 @@ async function fetchPost(id: string) {
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const post = await fetchPost(id);
-  if (!post) return { title: "Post not found — Muse" };
+  if (!post) return { title: "Post not found — Musa" };
   const author = (post as any).author_id as { name?: string } | null;
-  const authorName = author?.name || "Muse Creative";
-  const title = `${authorName} on Muse`;
+  const authorName = author?.name || "Musa Creative";
+  const title = `${authorName} on Musa`;
   const description = (post.text || "").slice(0, 160);
   return {
     title,
@@ -40,13 +40,13 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
   if (!post) notFound();
 
   const author = (post as any).author_id as { name?: string; avatar?: string } | null;
-  const authorName = author?.name || "Muse Creative";
+  const authorName = author?.name || "Musa Creative";
   const authorAvatar = author?.avatar || "";
   const time = post.created_at ? new Date(post.created_at).toLocaleDateString() : "recently";
 
   return (
     <div style={{minHeight:"100vh",background:"linear-gradient(160deg,#0a0612,#1a0a2e)",color:"#fff",fontFamily:"'Inter',system-ui,sans-serif",padding:24,maxWidth:640,margin:"0 auto"}}>
-      <Link href="/muse" style={{color:"#FFD700",textDecoration:"none",fontSize:14}}>← Back to Muses by WYZ</Link>
+      <Link href="/muse" style={{color:"#FFD700",textDecoration:"none",fontSize:14}}>← Back to Musa by WYZ</Link>
       {authorAvatar ? (
         <div style={{display:"flex",gap:12,alignItems:"center",marginTop:20}}>
           <Image src={authorAvatar} alt={authorName} width={48} height={48} style={{width:48,height:48,borderRadius:14,objectFit:"cover"}} />
@@ -58,7 +58,7 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
       ) : null}
       <p style={{marginTop:16,lineHeight:1.6,color:"#ddd"}}>{post.text}</p>
       {post.img ? <Image src={post.img} alt="Photo" width={640} height={640} style={{width:"100%",height:"auto",borderRadius:18,marginTop:12}} /> : null}
-      <a href="/muse" style={{display:"inline-block",marginTop:28,padding:"14px 28px",borderRadius:16,background:"linear-gradient(120deg,#FFD700,#FFBF00,#FFD700)",backgroundSize:"300% 300%",color:"#0a0612",fontWeight:800,textDecoration:"none"}}>Open Muse App</a>
+      <a href="/muse" style={{display:"inline-block",marginTop:28,padding:"14px 28px",borderRadius:16,background:"linear-gradient(120deg,#FFD700,#FFBF00,#FFD700)",backgroundSize:"300% 300%",color:"#0a0612",fontWeight:800,textDecoration:"none"}}>Open Musa App</a>
     </div>
   );
 }

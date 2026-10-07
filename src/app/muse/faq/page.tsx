@@ -2,12 +2,12 @@
 import { useState } from "react";
 
 const faqs = [
-  { q: "When does Muses by WYZ launch?", a: "Muse is currently in development. We're targeting a beta launch in 2026. Sign up on the landing page to get early access." },
+  { q: "When does Musa by WYZ launch?", a: "Musa is currently in development. We're targeting a beta launch in 2026. Sign up on the landing page to get early access." },
   { q: "How does verification work?", a: "We use Stripe Identity for age verification and government ID checks. Creators must verify before engaging in paid work or collaborations." },
-  { q: "Is Muses by WYZ free?", a: "Yes — the free tier includes profile creation, browsing, limited connections, community feed, and all safety features. Muses Pro ($9.99/mo) unlocks advanced tools." },
-  { q: "How is Muses by WYZ different from Instagram?", a: "Muse is a professional network for creatives, not a social media feed. It's built around real collaboration — finding crew, booking talent, and verified trust signals — not likes and algorithms." },
+  { q: "Is Musa by WYZ free?", a: "Yes — the free tier includes profile creation, browsing, limited connections, community feed, and all safety features. Musa Pro ($9.99/mo) unlocks advanced tools." },
+  { q: "How is Musa by WYZ different from Instagram?", a: "Musa is a professional network for creatives, not a social media feed. It's built around real collaboration — finding crew, booking talent, and verified trust signals — not likes and algorithms." },
   { q: "Is my data safe?", a: "Yes. We never sell your data. All personal information is encrypted, and safety features like disclosure forms and 24hr check-ins are built into the platform by default." },
-  { q: "Who is Muse for?", a: "Photographers, models, filmmakers, musicians, designers, and any creative professional looking for real, verified collaboration opportunities." },
+  { q: "Who is Musa for?", a: "Photographers, models, filmmakers, musicians, designers, and any creative professional looking for real, verified collaboration opportunities." },
 ];
 
 export default function FAQPage() {
@@ -47,7 +47,7 @@ export default function FAQPage() {
           </div>
         ))}
       </div>
-      <a href="/muse/landing" style={{ display: "inline-block", marginTop: 48, color: "#ffd700", fontSize: 14, textDecoration: "none" }}>&larr; Back to Muses by WYZ</a>
+      <a href="/muse/landing" style={{ display: "inline-block", marginTop: 48, color: "#ffd700", fontSize: 14, textDecoration: "none" }}>&larr; Back to Musa by WYZ</a>
     </div>
   );
 }

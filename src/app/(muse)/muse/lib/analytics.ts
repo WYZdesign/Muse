@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Muse Full Instrumentation
+ * Musa Full Instrumentation
  * 
  * Every user-facing action flows through track(). Events land in
  * muse_events_log via POST /api/muse { action: "track-event" }.
