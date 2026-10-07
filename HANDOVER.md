@@ -7,6 +7,14 @@ but a round being described below does NOT mean it's live. Verify with
 `git log --oneline -1 origin/main` against `DELIVERY_STATUS.md`'s "Confirmed
 merged" line before trusting anything here.
 
+## FOR WYZMIND — same branch, 2 more commits: picked up 2 of the audit's own P0 items (2026-10-07, Claude)
+
+Didn't just hand off the audit's open-findings list — picked off its two cheapest, safest P0 items right away. `NetworkScreen.tsx` had the same pro-badge derivation logic (Pro/Experienced/Rising + skill badges) duplicated between the card list and the detail modal, and the modal was independently hardcoding its own hex colors instead of sharing `BADGE_COLORS` — same "Pro" badge, two different golds depending on which view you were looking at. Pulled it into one `buildProfessionalBadges()` helper in `badgeColors.ts` (`2d3783c`). Also closed the one avatar-fallback gap the audit found: `CollabScreen.tsx`'s brief-author avatar had no `onError` handler, unlike every other avatar in the app — added `handleImgError` as an optional prop and wired it through from `page.tsx`, same pattern every sibling screen uses.
+
+One honest flag: unifying the modal's badge colors onto the card's tokens is a real (small) visual change, not a pure refactor — the modal's badges will now render in slightly different shades than before. Couldn't screenshot-verify it this round (same backgrounded-browser-pane issue as the rest of this audit), so it's called out explicitly in the audit doc rather than claimed as a no-op.
+
+Branch now 10 commits ahead of `origin/main`@`c8eff22`. Gate re-run clean: `tsc` 0, touched-file `eslint` 0 errors, `vitest` 161/1249, `next build` clean. Bundle redelivered with these 2 commits.
+
 ## FOR WYZMIND — same branch, 4 more commits: documentation + a real Discover bug found via a formal visual audit (2026-10-07, Claude)
 
 Torreé asked for "a fully visual audit using 5000 points, but all visual related stuff, and cross reference with backend code as well" — same rubric style as Codex's `MUSES_BOARDROOM_5000_POINT_AUDIT_2026-10-04.md` (25 domains × 200 points) but scoped to visual/UI/design, with each visual signal explicitly checked against the backend code that's supposed to supply it. New doc: `MUSES_VISUAL_5000_POINT_AUDIT_2026-10-07.md`, scored 3,370/5,000 (67.4%).
