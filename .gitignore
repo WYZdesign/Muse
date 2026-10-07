@@ -51,3 +51,8 @@ _screenshots/
 test-screenshots/
 node_modules_broken_bak/
 _LOGS_dev_*.txt
+
+# Agent / tooling scratch (not source)
+.playwright-mcp/
+audit/
+supabase/
