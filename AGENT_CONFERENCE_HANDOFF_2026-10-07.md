@@ -52,3 +52,30 @@ Each agent must return a compact evidence memo against the 5,000-point taxonomy:
 - a clear “safe for waitlist / safe for invite wave / not safe” conclusion.
 
 No agent may mark a category complete from source review alone. Browser evidence, API evidence, and real-user evidence are distinct.
+
+
+## Musa by WYZ naming-transition workstream
+**Decision status: candidate only; do not bulk-rename yet.**
+
+### Required before public use
+1. Conduct clearance through USPTO and a qualified trademark professional for relevant software, social-networking, marketplace, events, and creative-services classes.
+2. Check domains, app-store names, social handles, common-law use, and international conflict exposure.
+3. Choose the exact mark: `Musa`, `Musa by WYZ`, or another distinct WYZ-led mark.
+4. Record the mark owner, first-use evidence, logo files, and filing strategy.
+
+### Inventory before code change
+- web domain and redirects;
+- product title, metadata, SEO, Open Graph, email sender/copy, support URLs;
+- logos, favicon, screenshots, store listings, push text, legal documents;
+- Supabase/Auth email templates, Stripe customer text, analytics event names;
+- social accounts, waitlist copy, PR kit, creator outreach, and referral language.
+
+### Agent allocation
+- **Founder/legal owner:** clearance, decision, filing and public announcement.
+- **Wyzmind/release owner:** approved global rename and redirect/deployment plan.
+- **Claude Code:** source search and mechanical rename only after a chosen mark is committed.
+- **Codex:** transition checklist, evidence ledger, external-config and database naming review.
+- **All agents:** do not describe Musa as registered, available, or legally safe without documented clearance.
+
+### Public transition principle
+“Same community, clearer name” only after the new mark is approved. Preserve existing links and explain the transition in one clear note; never silently strand existing users or campaign links.
