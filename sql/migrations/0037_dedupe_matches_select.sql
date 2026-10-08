@@ -1,0 +1,14 @@
+-- 0037: finish the muse_matches SELECT dedupe started in 0036.
+--
+-- 0036 re-pointed muse_matches_select to the union predicate (auth.uid() is
+-- either party) and dropped "Users can see their matches", but left the
+-- narrower "Users see own matches" (auth.uid() is user_id only) in place, which
+-- still collided. The union winner already subsumes it, so this drop removes a
+-- duplicate without changing what any role can see.
+--
+-- Verified: after apply, (table, command, role in anon/authenticated/public)
+-- carries exactly one permissive policy everywhere, and the SELECT id set each
+-- role sees is unchanged from the post-0036 state.
+--
+-- No BEGIN/COMMIT: the runner executes this file as one implicit transaction.
+DROP POLICY IF EXISTS "Users see own matches" ON public.muse_matches;
