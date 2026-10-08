@@ -4,6 +4,9 @@ export type Match = Partial<Profile> & {
   id: number; name: string; img: string; type: string;
   bio?: string; location?: string; distanceMi?: number; booked?: boolean;
   intent?: string;
+  showMatchPercent?: boolean;
+  skills?: string[];
+  audience?: string;
   messages: { from: string; text: string; time: string; img?: string }[];
 };
 export type Screen = "auth"|"onboard"|"discover"|"connections"|"matches"|"chat"|"profile"|"briefs"|"portfolio"|"settings"|"subscription"|"community"|"sessions"|"bts"|"forum"|"network"|"codex"|"analytics"|"studios"|"matchGuide";

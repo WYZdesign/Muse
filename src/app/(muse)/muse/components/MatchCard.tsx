@@ -5,25 +5,27 @@ import Image from "next/image";
 import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon } from "./traitIcons";
 import { ZODIAC_FULL, MBTI_FULL, LIFE_PATH_FULL, BadgeInfoModal, type BadgeInfo } from "./badgeInfo";
 import { viewerSide, viewerSideOf, getMuseRole, type MuseRole } from "@/lib/role";
+import type { Match, Screen } from "./types";
+import type { ViewProfile } from "../page-models";
 
 const roleBadgeText = (role: string) => role === "muse" ? "Musa" : role === "industry" ? "Industry" : "Creative";
 
 export interface MatchCardProps {
-  m: any;
+  m: Match;
   view: "list" | "grid";
   isNew?: boolean;
   actions: {
     setExpandedMatchId: (v: string | null) => void;
-    setChatTarget: (v: any) => void;
-    showScreen: (s: any) => void;
-    setReportTarget: (v: any) => void;
+    setChatTarget: (v: Match) => void;
+    showScreen: (s: Screen) => void;
+    setReportTarget: (v: { id: string | number; type?: string; name?: string } | null) => void;
     setShowReport: (v: boolean) => void;
     setUnmatchTarget: (v: { id: string; name: string }) => void;
     setBlockTarget: (v: { id: string; name: string } | null) => void;
-    handleImgError: (e: any) => void;
+    handleImgError: (e: React.SyntheticEvent<HTMLImageElement>) => void;
     getIcebreaker: (type: string, seed?: string) => string;
-    setViewProfile?: (p: any) => void;
-    setPublicProfileUser?: (p: any) => void;
+    setViewProfile?: (p: ViewProfile) => void;
+    setPublicProfileUser?: (p: ViewProfile) => void;
   };
 }
 
@@ -167,8 +169,8 @@ const MatchCard = memo(function MatchCard({ m, view, isNew, actions }: MatchCard
             .matchScore for live-scored candidates, .score for the static
             demo deck, hidden below 15% and behind showMatchPercent. */}
         {!isList && (() => {
-          const ms = Number((m as any).matchScore ?? (m as any).score ?? 0);
-          const showMatchPercent = (m as any).showMatchPercent !== false;
+    const ms = Number(m.matchScore ?? m.score ?? 0);
+    const showMatchPercent = m.showMatchPercent !== false;
           return ms >= 15 && showMatchPercent ? (
             <div
               className="card-match-topleft"
@@ -196,8 +198,8 @@ const MatchCard = memo(function MatchCard({ m, view, isNew, actions }: MatchCard
               for the overlay pill grid view uses, so it's shown inline here
               instead. Same fallback/threshold/visibility rules. */}
           {isList && (() => {
-            const ms = Number((m as any).matchScore ?? (m as any).score ?? 0);
-            const showMatchPercent = (m as any).showMatchPercent !== false;
+            const ms = Number(m.matchScore ?? m.score ?? 0);
+            const showMatchPercent = m.showMatchPercent !== false;
             return ms >= 15 && showMatchPercent ? (
               <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 800, color: "var(--gold)" }} aria-label={`${ms}% match`}>{ms}% match</span>
             ) : null;
@@ -223,8 +225,8 @@ const MatchCard = memo(function MatchCard({ m, view, isNew, actions }: MatchCard
           // of traits don't sprawl to multiple wrapped rows or overhang.
           (() => {
             const items: React.ReactNode[] = [];
-            if (m.zodiac) items.push(<button key="z" className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `${m.zodiac} — ${ZODIAC_FULL[m.zodiac]?.tag || ""}`, desc: ZODIAC_FULL[m.zodiac]?.desc || "", icon: ZODIAC_GLYPH[m.zodiac] || "✦", color: "#D4A5FF" }); }} style={{ cursor: "pointer" }}>{ZODIAC_GLYPH[m.zodiac] || "✦"} {m.zodiac}</button>);
-            if (m.mbti) items.push(<button key="m" className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `${m.mbti} — ${MBTI_FULL[m.mbti]?.tag || ""}`, desc: MBTI_FULL[m.mbti]?.desc || "", icon: <MbtiIcon code={m.mbti} size={20} />, color: "#FFD700" }); }} style={{ display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}><MbtiIcon code={m.mbti} size={11} /> {m.mbti}</button>);
+            if (m.zodiac) items.push(<button key="z" className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `${m.zodiac} — ${ZODIAC_FULL[m.zodiac!]?.tag || ""}`, desc: ZODIAC_FULL[m.zodiac!]?.desc || "", icon: ZODIAC_GLYPH[m.zodiac!] || "✦", color: "#D4A5FF" }); }} style={{ cursor: "pointer" }}>{ZODIAC_GLYPH[m.zodiac!] || "✦"} {m.zodiac}</button>);
+            if (m.mbti) items.push(<button key="m" className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `${m.mbti} — ${MBTI_FULL[m.mbti!]?.tag || ""}`, desc: MBTI_FULL[m.mbti!]?.desc || "", icon: <MbtiIcon code={m.mbti!} size={20} />, color: "#FFD700" }); }} style={{ display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}><MbtiIcon code={m.mbti!} size={11} /> {m.mbti}</button>);
             if (m.lifePath) items.push(<button key="lp" className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `Life Path ${m.lifePath}`, desc: LIFE_PATH_FULL[String(m.lifePath)] || "", icon: <LifePathIcon n={Number(m.lifePath)} size={20} />, color: "#98FB98" }); }} style={{ display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}><LifePathIcon n={Number(m.lifePath)} size={11} /> LP {m.lifePath}</button>);
             (m.skills || []).forEach((s: string) => items.push(<span key={"s-" + s} className="match-badge">{s}</span>));
             (m.looking || []).forEach((l: string) => items.push(<span key={"l-" + l} className="match-badge" style={{ background: "rgba(255,105,180,0.12)", color: "#FF69B4", border: "1px solid rgba(255,105,180,0.2)" }}>looking for {l}</span>));
@@ -239,8 +241,8 @@ const MatchCard = memo(function MatchCard({ m, view, isNew, actions }: MatchCard
         )}
         {!isList && (
           <div className="match-badges">
-            {m.zodiac && <button className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `${m.zodiac} — ${ZODIAC_FULL[m.zodiac]?.tag || ""}`, desc: ZODIAC_FULL[m.zodiac]?.desc || "", icon: ZODIAC_GLYPH[m.zodiac] || "✦", color: "#D4A5FF" }); }} style={{ cursor: "pointer" }}>{ZODIAC_GLYPH[m.zodiac] || "✦"} {m.zodiac}</button>}
-            {m.mbti && <button className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `${m.mbti} — ${MBTI_FULL[m.mbti]?.tag || ""}`, desc: MBTI_FULL[m.mbti]?.desc || "", icon: <MbtiIcon code={m.mbti} size={20} />, color: "#FFD700" }); }} style={{ display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}><MbtiIcon code={m.mbti} size={11} /> {m.mbti}</button>}
+            {m.zodiac && <button className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `${m.zodiac} — ${ZODIAC_FULL[m.zodiac!]?.tag || ""}`, desc: ZODIAC_FULL[m.zodiac!]?.desc || "", icon: ZODIAC_GLYPH[m.zodiac!] || "✦", color: "#D4A5FF" }); }} style={{ cursor: "pointer" }}>{ZODIAC_GLYPH[m.zodiac!] || "✦"} {m.zodiac}</button>}
+            {m.mbti && <button className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `${m.mbti} — ${MBTI_FULL[m.mbti!]?.tag || ""}`, desc: MBTI_FULL[m.mbti!]?.desc || "", icon: <MbtiIcon code={m.mbti!} size={20} />, color: "#FFD700" }); }} style={{ display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}><MbtiIcon code={m.mbti!} size={11} /> {m.mbti}</button>}
             {m.lifePath && <button className="match-badge" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: `Life Path ${m.lifePath}`, desc: LIFE_PATH_FULL[String(m.lifePath)] || "", icon: <LifePathIcon n={Number(m.lifePath)} size={20} />, color: "#98FB98" }); }} style={{ display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }}><LifePathIcon n={Number(m.lifePath)} size={11} /> LP {m.lifePath}</button>}
             {(m.skills || []).slice(0, 2).map((s: string) => <span key={s} className="match-badge">{s}</span>)}
           </div>
