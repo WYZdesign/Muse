@@ -616,15 +616,25 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: npm audit (production — hard gate)
-        # Runtime deps only. Current: 0 vulnerabilities (verified local 2026-09-24).
-        run: npm audit --omit=dev --audit-level=high
+      - name: Dependency audit self-test
+        # Proves the gate still FAILS on a new advisory before its pass is
+        # trusted. If this step is removed, a broken gate could silently pass
+        # every dependency forever.
+        run: node scripts/audit-gate.mjs --selftest
 
-      - name: npm audit (full tree — hard gate)
-        # Dev + prod. Green since the unused legacy `lighthouse-ci@1.13.1`
-        # wrapper (9 dev-only vulns: cookie/raven/lodash.set/got/update-notifier)
-        # was removed from package.json on 2026-09-25. Do not drop the level.
-        run: npm audit --audit-level=high
+      - name: Dependency audit - production tree (hard gate)
+        # Fails on any HIGH or CRITICAL advisory that is not a specific,
+        # hand-reviewed GHSA id listed in scripts/audit-gate.mjs. Right now the
+        # only allowlisted cluster is `next` (blocked on next@16.4.0, which
+        # breaks Vercel's install with "Invalid Version:"). A new advisory
+        # anywhere, including inside an allowlisted package, still fails - ids
+        # are matched exactly, never by package name.
+        run: node scripts/audit-gate.mjs --omit-dev
+
+      - name: Dependency audit - full tree (hard gate)
+        # Prod + dev. Same gate; adds dev-only entries (braces) which cannot be
+        # fixed without --force dragging in next@16.4.0.
+        run: node scripts/audit-gate.mjs
 
       - name: Run OpenSSF Scorecard
         uses: ossf/scorecard-action@v2.4.4
