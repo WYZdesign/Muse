@@ -22,23 +22,19 @@ import { spawnSync } from "node:child_process";
  * the moment its advisory stops being reported (the run prints "no longer
  * reported" for anything stale).
  *
- * Reviewed 2026-10-08. Owner-blocked: the next cluster is only fixed by
- * next@16.4.0, which breaks Vercel with "Invalid Version:" (attempted in
- * 16e3d818, reverted in b87f9b5b). Remove these when the upgrade session lands.
+ * Reviewed 2026-10-08. The production tree is clean; the one entry left is a
+ * dev-only advisory with no patched version published.
  */
 const ALLOWLIST = new Map([
-  // ---- next (16.3.6) -------------------------------------------------------
-  ["GHSA-CJQ9-62Q9-8JV4", "next: SSRF in Image Optimization (high); blocked on next@16.4.0, mitigated by the strict images.remotePatterns allowlist"],
-  ["GHSA-MCJ8-R9MP-W47P", "next: SSG/ISR cache poisoning leading to cross-user substitution"],
-  ["GHSA-3W37-WQ28-93X7", "next: pending use-cache fill can leak Draft Mode content"],
-  ["GHSA-4JQV-MC3X-M676", "next: cache poisoning of SSG/ISR pages (self-hosted)"],
-  ["GHSA-F87G-XV8R-7P7X", "next: metadata image route info disclosure via dynamicParams bypass"],
-  ["GHSA-39W2-RJM5-CHCV", "next: dev-server MCP endpoint info disclosure (dev only)"],
   // ---- braces (dev-only) ---------------------------------------------------
-  // Transitive build tooling (fast-glob / micromatch). Not in the production
-  // tree: `--omit=dev` reports only next. No non-breaking fix exists; npm audit
-  // fix only offers --force, which drags in next@16.4.0.
-  ["GHSA-VFJ7-8CJW-P6XM", "braces: stack-exhaustion DoS (high); dev-only transitive, absent from the prod tree"],
+  // CVE-2026-93687: stack-exhaustion DoS in braces <= 3.0.3, and 3.0.3 IS the
+  // newest release, so the advisory has no patched version ("Patched versions:
+  // None"). It cannot reach production code: the only path is
+  // eslint-config-next -> @next/eslint-plugin-next -> fast-glob -> micromatch
+  // -> braces, which is lint tooling. `npm audit fix` offers only `--force`,
+  // which downgrades eslint-config-next to v14 - strictly worse than the
+  // advisory. Re-check when braces ships 3.0.4+.
+  ["GHSA-VFJ7-8CJW-P6XM", "braces: stack-exhaustion DoS (CVE-2026-93687); no patched version exists (<=3.0.3 is latest); dev-only via eslint-config-next"],
 ]);
 
 /** Entries that only ever appear in the dev tree. */
@@ -123,18 +119,18 @@ function selftest() {
     severity,
     via: [{ url: `https://github.com/advisories/${id}`, severity, title: id }],
   });
-  const allowed = "https://github.com/advisories/GHSA-cjq9-62q9-8jv4";
+  const allowed = "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm";
   const cases = [
     {
-      label: "allowlisted next advisory alone -> pass",
-      report: { vulnerabilities: { next: { severity: "high", via: [{ url: allowed, severity: "high" }] } } },
+      label: "allowlisted advisory alone -> pass",
+      report: { vulnerabilities: { braces: { severity: "high", via: [{ url: allowed, severity: "high" }] } } },
       expect: 0,
     },
     {
-      label: "NEW advisory on next -> fail",
+      label: "NEW advisory on an allowlisted package -> fail",
       report: {
         vulnerabilities: {
-          next: {
+          braces: {
             severity: "high",
             via: [{ url: allowed, severity: "high" }, { url: "https://github.com/advisories/GHSA-aaaa-bbbb-cccc", severity: "high" }],
           },

@@ -11,7 +11,7 @@ Honest audit of what's missing between "works" (current) and "platinum" (target)
 | `npm run typecheck` | 0 errors |
 | `npm test` | **1301 tests / 166 files, all passing** |
 | `npm run build` | clean |
-| `npm audit --omit=dev --audit-level=high` | **1 high, `next` only** — reviewed and allowlisted, see "Dependency audit" below |
+| `npm audit --omit=dev --audit-level=high` | **0** high/critical (next 16.3.8 patch cleared the cluster; see "Dependency audit" below) |
 | CI jobs | **green** (the `Security Audit` job now fails only on *unreviewed* high/critical, so `deploy-check` runs again) |
 | Sentry (`wyz-designtm/muse`) | **0 unresolved issues, last 14 days** |
 | Supabase advisors | **99 lints, all informational** (36 `unindexed_foreign_keys`, 63 `unused_index`); 0 security, 0 multi-permissive, 0 initplan |
@@ -20,21 +20,23 @@ Muse is feature-complete and reasonably secure for closed beta. What remains is
 observability polish, performance work, product depth, and ops maturity — not
 broken plumbing.
 
-### Dependency audit (owner-blocked `next`, now gate-able)
+### Dependency audit (resolved 2026-10-08)
 
-`npm audit` reports a `next` cluster (SSRF in image optimization, SSG/ISR cache
-poisoning, and four lower advisories). The only fix is `next@16.4.0`, which
-**breaks Vercel with `Invalid Version:`** — already tried and reverted
-(`revert(deps): next back to 16.3.6`). It needs a dedicated session (upgrade +
-lockfile + `vercel.json` reconciliation), not a drive-by `npm audit fix --force`.
+`npm audit` reported a `next` cluster (SSRF in image optimization, SSG/ISR cache
+poisoning, and four lower advisories). The earlier attempt bumped to
+`next@16.4.0` and broke Vercel (`Invalid Version:`); the advisories' actual fixed
+range is `>=16.3.8`, so the fix was a **patch** to `16.3.8`, not the minor. The
+production tree now audits clean (`0` high/critical).
 
-Instead of leaving CI red forever, the two audit steps were replaced with
-`scripts/audit-gate.mjs`: it allowlists those specific, hand-reviewed **GHSA ids**
-(never a package name), so a *new* advisory anywhere — including inside `next` —
-still fails the job. The gate self-tests its own FAIL path every run. Remove the
-allowlist entries when the next upgrade lands.
+The two bare `npm audit` CI steps are `scripts/audit-gate.mjs`: it allowlists
+specific hand-reviewed **GHSA ids** (never a package name), so a new advisory
+anywhere still fails the job, and it self-tests its own FAIL path every run. One
+dev-only entry remains (`braces`, CVE-2026-93687), which has **no patched
+version published** and cannot reach production code — it arrives only through
+`eslint-config-next` → `@next/eslint-plugin-next` → `fast-glob` → `micromatch`.
 
-Consequence: `deploy-check` runs again (it has `needs: [..., security-audit, ...]`).
+Do not jump to `next@16.4.0` without a dedicated session: it still breaks the
+Vercel install.
 
 ---
 
@@ -112,14 +114,13 @@ Consequence: `deploy-check` runs again (it has `needs: [..., security-audit, ...
 
 ## Suggested execution order (impact / effort)
 
-1. **Next.js upgrade session** — drop the `audit-gate.mjs` allowlist entries and delete the workaround. Everything else is downstream of that.
-2. **Tier 4.2** (uptime monitoring) — cheapest thing that turns "I think it's up" into knowledge.
-3. **Tier 1.1** (split page.tsx) — biggest lever on build/HMR; do it with vision verification.
-4. **Tier 2.1–2.2** — full user-flow E2E + authenticated happy paths, once staging creds are wired (Tier 4.1 remainder).
-5. **Tier 4.4** (load testing) before any public launch.
-6. **Tier 3** — notifications, notification center, discovery v2, Smart Photos.
-7. **Tier 5** — advanced matching, gamification.
-9. **Tier 1.2–1.4** (perf) — caching, image optimization, bundle analysis.
+1. **Tier 4.2** (uptime monitoring) — cheapest thing that turns "I think it's up" into knowledge.
+2. **Tier 1.1** (split page.tsx) — biggest lever on build/HMR; do it with vision verification.
+3. **Tier 2.1–2.2** — full user-flow E2E + authenticated happy paths, once staging creds are wired (Tier 4.1 remainder).
+4. **Tier 4.4** (load testing) before any public launch.
+5. **Tier 3** — notifications, notification center, discovery v2, Smart Photos.
+6. **Tier 5** — advanced matching, gamification.
+7. **Tier 1.2–1.4** (perf) — caching, image optimization, bundle analysis.
 
 ---
 

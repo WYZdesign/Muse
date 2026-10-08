@@ -24,7 +24,7 @@
 **Repo:** `main` last verified at `e4e0bf09`. Production live. Gate every change
 must keep green: `tsc 0` / `vitest 1301 tests (166 files)` / `next build` clean /
 `node scripts/audit-gate.mjs` (prod + full, exits 0). CI is **green**; the audit
-gate allowlists specific reviewed GHSA ids for the blocked `next` cluster only,
+gate allowlists one dev-only advisory (`braces`, no patched version exists) and
 so a new advisory still fails it.
 opencode owns merge+deploy — leave your work on a branch and hand it back (§5).
 
@@ -55,9 +55,10 @@ NetworkScreen (1760) + SettingsScreen (1601). L-1 and M-3 are already satisfied.
   Policies 94 → 81.
 - **Dependency audit gate** — `scripts/audit-gate.mjs` replaced the two bare
   `npm audit` CI steps. It fails on any high/critical advisory that is not a
-  specific reviewed GHSA id (allowlist covers only the blocked `next` cluster +
-  dev-only `braces`). It self-tests its FAIL path every CI run. Remove the
-  allowlist entries when `next` is upgraded.
+  specific reviewed GHSA id. One entry remains: dev-only `braces` with no patched
+  version published. It self-tests its FAIL path every CI run.
+- **`next` security patch** — next + eslint-config-next `16.3.6 → 16.3.8`; the
+  production tree audits clean (0 high/critical) again.
 - **Docs reconciled** — `ROADMAP.md` restated with measured numbers;
   `DELIVERY_STATUS.md` header moved `63f9d71` → `0d99220` (44-commit catch-up).
 
@@ -88,9 +89,12 @@ fresh DB built from the dump would need the chain reconciled).
 3. **L-2 remaining.** One-line purpose headers on the screens/components still
    missing a leading comment (~50 files).
 
-**DO NOT TOUCH:** the `next` dependency. A high advisory needs next@16.4.0 but its
-tree fails Vercel's `npm install` ("Invalid Version"); mitigated by the strict
-`images.remotePatterns` allowlist and tracked for a dedicated upgrade session.
+**`next` is patched, not to be re-bumped casually.** next + eslint-config-next
+went `16.3.6 → 16.3.8`, which cleared the whole advisory cluster (the fixed range
+was `>=16.3.8`). Do **not** jump to `next@16.4.0` — that tree fails Vercel's
+`npm install` ("Invalid Version"), as an earlier attempt found. The remaining
+audit allowlist entry is dev-only `braces` (CVE-2026-93687, no patched version
+published, unreachable from production code).
 
 ## 1. VERIFICATION GATES (must be green before you call a task done)
 
