@@ -1,9 +1,15 @@
 import type { CSSProperties, Dispatch, RefObject, SetStateAction, SyntheticEvent } from "react";
 import type { LikeAnchor, Match, Profile, Screen } from "../components/types";
-import type { ProfileReview, ViewProfile } from "../page-models";
+import type { ProfileReview, ViewProfile, CurrentUser } from "../page-models";
+import type { OnboardingData } from "../hooks/useAuthOnboardingState";
 import type { BadgeInfo } from "../components/badgeInfo";
 import type { PublicProfileUser } from "../screens/PublicProfileScreen";
 import type { TourScreenId } from "../components/pageTourContent";
+import type { IncomingCall, ActiveCall } from "../hooks/useCall";
+import type { CheckinData, SafetyProfile } from "../components/SafetyCheckinModal";
+import type { Prompt, Response as PromptResponse } from "../components/PromptBankModal";
+
+export type Story = { id?: string | number; img: string; avatar: string; author: string; time: string };
 
 export type Setter<T> = Dispatch<SetStateAction<T>>;
 
@@ -29,7 +35,7 @@ export type MuseModalsProps = {
   uploadMedia: (file: File, folder: string, mediaKind: "voice" | "video") => Promise<string | null>;
   showScreen: (s: Screen) => void;
   safeSetItem: (key: string, value: string) => void;
-  currentUser: any;
+  currentUser: CurrentUser;
   authUser: AuthUser;
   matches: Match[];
   setMatches: Setter<Match[]>;
@@ -44,7 +50,7 @@ export type MuseModalsProps = {
   setIntentSelection: Setter<string[]>;
   setUserDefaultIntent: Setter<string>;
   doSwipe: (dir: "left" | "right" | "super", intentOverride?: string) => void;
-  obData: any;
+  obData: OnboardingData;
 
   // Match overlay
   showMatchOverlay: Match | null;
@@ -112,7 +118,7 @@ export type MuseModalsProps = {
   // Stories viewer
   showStory: number | null;
   setShowStory: Setter<number | null>;
-  stories: any[];
+  stories: Story[];
 
   // View profile
   viewProfile: ViewProfile | null;
@@ -196,17 +202,17 @@ export type MuseModalsProps = {
   // Safety check-in
   showSafetyCheckin: boolean;
   setShowSafetyCheckin: Setter<boolean>;
-  safetyCheckins: any[];
-  setSafetyCheckins: Setter<any[]>;
-  safetyProfile: any;
-  setSafetyProfile: Setter<any>;
+  safetyCheckins: CheckinData[];
+  setSafetyCheckins: Setter<CheckinData[]>;
+  safetyProfile: SafetyProfile | null;
+  setSafetyProfile: Setter<SafetyProfile | null>;
 
   // Prompt bank
   showPromptBank: boolean;
   setShowPromptBank: Setter<boolean>;
-  promptBankData: any[];
-  promptResponses: any[];
-  setPromptResponses: Setter<any[]>;
+  promptBankData: Prompt[];
+  promptResponses: PromptResponse[];
+  setPromptResponses: Setter<PromptResponse[]>;
 
   // Panels
   showReferral: boolean;
@@ -229,14 +235,14 @@ export type MuseModalsProps = {
   handleQuestsChange: () => void;
 
   // Calls
-  incomingCall: any;
-  activeCall: any;
+  incomingCall: IncomingCall;
+  activeCall: ActiveCall;
   declineCall: () => void;
   acceptCall: () => void;
   endCall: () => void;
   leaveVoicemail: (url: string, durationMs: number, transcript?: string) => void;
-  callRecording: any;
-  callPeerRecording: any;
+  callRecording: { egressId?: string } | null;
+  callPeerRecording: boolean;
   startCallRecording: () => void;
   stopCallRecording: () => void;
 };

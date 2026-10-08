@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-type CheckinData = {
+export type CheckinData = {
   id: string;
   checkin_type: string;
   status: string;
@@ -13,7 +13,7 @@ type CheckinData = {
   responded_at?: string;
 };
 
-type SafetyProfile = {
+export type SafetyProfile = {
   emergency_contact_name: string;
   emergency_contact_phone: string;
   emergency_contact_relation: string;

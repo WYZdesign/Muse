@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-type Prompt = {
+export type Prompt = {
   id: string;
   category: string;
   prompt_text: string;
@@ -11,7 +11,7 @@ type Prompt = {
   display_order: number;
 };
 
-type Response = {
+export type Response = {
   id: string;
   prompt_id: string;
   response_text: string;
