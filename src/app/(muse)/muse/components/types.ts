@@ -11,6 +11,19 @@ export type Match = Partial<Profile> & {
 };
 export type Screen = "auth"|"onboard"|"discover"|"connections"|"matches"|"chat"|"profile"|"briefs"|"portfolio"|"settings"|"subscription"|"community"|"sessions"|"bts"|"forum"|"network"|"codex"|"analytics"|"studios"|"matchGuide";
 
+/** A shoot-disclosure row as stored (snake_case), shown in the confirm view. */
+export type ShootDisclosure = {
+  id?: string;
+  compensation_amount?: string; compensation_timing?: string; compensation_method?: string;
+  location_type?: string; location_address?: string;
+  content_type_nudity?: boolean; content_type_artistic_nudity?: boolean; content_type_boudoir?: boolean;
+  content_type_portrait?: boolean; content_type_fashion?: boolean; content_type_editorial?: boolean;
+  content_type_commercial?: boolean; content_type_conceptual?: boolean; content_type_other?: boolean; content_type_other_desc?: string;
+  boundary_no_penetration?: boolean; boundary_no_touching?: boolean; boundary_explicit_acts?: boolean; boundary_penetration?: boolean;
+  others_present?: boolean; others_count?: number; others_desc?: string;
+  usage_rights?: string;
+};
+
 export type CommunityGroup = {
   id: string;
   name: string;

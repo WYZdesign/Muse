@@ -1,5 +1,5 @@
 import type { CSSProperties, Dispatch, RefObject, SetStateAction, SyntheticEvent } from "react";
-import type { LikeAnchor, Match, Profile, Screen } from "../components/types";
+import type { LikeAnchor, Match, Profile, Screen, ShootDisclosure } from "../components/types";
 import type { ProfileReview, ViewProfile, CurrentUser } from "../page-models";
 import type { OnboardingData } from "../hooks/useAuthOnboardingState";
 import type { BadgeInfo } from "../components/badgeInfo";
@@ -183,7 +183,7 @@ export type MuseModalsProps = {
   disclosureTarget: TargetRef | null;
   setDisclosureTarget: Setter<TargetRef | null>;
   disclosureBookingId: string | undefined;
-  existingDisclosure: Record<string, unknown> | null;
+  existingDisclosure: ShootDisclosure | null;
   ageVerified: boolean;
   setAgeVerified: Setter<boolean>;
   pendingDisclosureConfirm: string | null;

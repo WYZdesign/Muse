@@ -242,7 +242,7 @@ export function MuseModals(props: MuseModalsStackProps) {
           onCancel={() => { setShowDisclosureModal(false); setDisclosureTarget(null); }}
           onConfirm={existingDisclosure ? async (discId) => {
             // Age gate: paid disclosure confirmation requires verified 18+ identity
-            const disc = existingDisclosure as Record<string, unknown>;
+            const disc = existingDisclosure;
             const compAmount = String(disc.compensation_amount || "");
             const hasPayment = compAmount && compAmount !== "0" && compAmount !== "Free" && compAmount !== "TFP";
             if (hasPayment && !ageVerified) {

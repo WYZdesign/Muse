@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { STRINGS } from "@/lib/strings";
+import type { ShootDisclosure } from "./types";
 
 type DisclosureForm = {
   compensationAmount: string;
@@ -63,7 +64,7 @@ type Props = {
   bookingId?: string;
   onSubmit: (form: DisclosureForm & { responderId: string; bookingId?: string }) => Promise<void>;
   onCancel: () => void;
-  existingDisclosure?: Record<string, unknown> | null;
+  existingDisclosure?: ShootDisclosure | null;
   onConfirm?: (disclosureId: string) => Promise<void>;
 };
 
@@ -161,35 +162,35 @@ export default function DisclosureModal({ responderName, responderId, bookingId,
           <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 16 }}>Both parties must confirm the same terms. Please review carefully.</p>
 
           <div style={{ fontSize: 13, color: "#f5f0ff", lineHeight: 1.8 }}>
-            <div><strong>Compensation:</strong> {(disc as any).compensation_amount || "Not specified"}. {(disc as any).compensation_timing || "Not specified"}</div>
-            <div><strong>Location:</strong> {(disc as any).location_type || "Not specified"} {(disc as any).location_address ? `, ${(disc as any).location_address}` : ""}</div>
+            <div><strong>Compensation:</strong> {(disc).compensation_amount || "Not specified"}. {(disc).compensation_timing || "Not specified"}</div>
+            <div><strong>Location:</strong> {(disc).location_type || "Not specified"} {(disc).location_address ? `, ${(disc).location_address}` : ""}</div>
             <div><strong>Content types:</strong> {[
-              (disc as any).content_type_nudity && "Nudity",
-              (disc as any).content_type_artistic_nudity && "Artistic nude",
-              (disc as any).content_type_boudoir && "Boudoir",
-              (disc as any).content_type_portrait && "Portrait",
-              (disc as any).content_type_fashion && "Fashion",
-              (disc as any).content_type_editorial && "Editorial",
-              (disc as any).content_type_commercial && "Commercial",
-              (disc as any).content_type_conceptual && "Conceptual",
-              (disc as any).content_type_other && ((disc as any).content_type_other_desc || "Other"),
+              (disc).content_type_nudity && "Nudity",
+              (disc).content_type_artistic_nudity && "Artistic nude",
+              (disc).content_type_boudoir && "Boudoir",
+              (disc).content_type_portrait && "Portrait",
+              (disc).content_type_fashion && "Fashion",
+              (disc).content_type_editorial && "Editorial",
+              (disc).content_type_commercial && "Commercial",
+              (disc).content_type_conceptual && "Conceptual",
+              (disc).content_type_other && ((disc).content_type_other_desc || "Other"),
             ].filter(Boolean).join(", ") || "Not specified"}</div>
             <div style={{ marginTop: 8, padding: 10, background: "rgba(255,255,255,0.04)", borderRadius: 8, fontSize: 12 }}>
               <strong>Boundary Checklist:</strong>
               <div style={{ marginTop: 4 }}>
-                {(disc as any).boundary_no_penetration && <span style={{ color: "#4ecdc4" }}>✓ No penetration</span>}
-                {(disc as any).boundary_no_touching && <span style={{ color: "#4ecdc4", marginLeft: 12 }}>✓ No touching between parties</span>}
-                {(disc as any).boundary_explicit_acts && <span style={{ color: "#ff6b6b", marginLeft: 12 }}>⚠ Explicit acts included</span>}
-                {(disc as any).boundary_penetration && <span style={{ color: "#ff6b6b", marginLeft: 12 }}>⚠ Penetration included</span>}
+                {(disc).boundary_no_penetration && <span style={{ color: "#4ecdc4" }}>✓ No penetration</span>}
+                {(disc).boundary_no_touching && <span style={{ color: "#4ecdc4", marginLeft: 12 }}>✓ No touching between parties</span>}
+                {(disc).boundary_explicit_acts && <span style={{ color: "#ff6b6b", marginLeft: 12 }}>⚠ Explicit acts included</span>}
+                {(disc).boundary_penetration && <span style={{ color: "#ff6b6b", marginLeft: 12 }}>⚠ Penetration included</span>}
               </div>
             </div>
-            <div style={{ marginTop: 8 }}><strong>Others present:</strong> {(disc as any).others_present ? `${(disc as any).others_count}. ${(disc as any).others_desc || "See details"}` : "No. Solo shoot"}</div>
-            <div><strong>Usage rights:</strong> {(disc as any).usage_rights || "Not specified"}</div>
+            <div style={{ marginTop: 8 }}><strong>Others present:</strong> {(disc).others_present ? `${(disc).others_count}. ${(disc).others_desc || "See details"}` : "No. Solo shoot"}</div>
+            <div><strong>Usage rights:</strong> {(disc).usage_rights || "Not specified"}</div>
           </div>
 
           <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
             <button onClick={onCancel} style={{ flex: 1, padding: "10px 0", borderRadius: 12, background: "rgba(255,255,255,0.08)", border: "none", color: "#f5f0ff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Decline</button>
-            <button onClick={() => onConfirm((disc as any).id)} disabled={loading} style={{ flex: 1, padding: "10px 0", borderRadius: 12, background: "linear-gradient(135deg, #ffd700, #ff8c00)", border: "none", color: "#0a0612", fontSize: 13, fontWeight: 700, cursor: loading ? "wait" : "pointer" }}>
+            <button onClick={() => onConfirm(disc.id!)} disabled={loading} style={{ flex: 1, padding: "10px 0", borderRadius: 12, background: "linear-gradient(135deg, #ffd700, #ff8c00)", border: "none", color: "#0a0612", fontSize: 13, fontWeight: 700, cursor: loading ? "wait" : "pointer" }}>
               {loading ? "Confirming..." : "I Confirm These Terms"}
             </button>
           </div>

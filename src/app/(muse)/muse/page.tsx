@@ -67,7 +67,7 @@ const PublicProfileScreen = React.lazy(() => import("./screens/PublicProfileScre
 import { CardPreloader } from "@/components/CardPreloader";
 import { MuseModals } from "./modals/MuseModals";
 import { IntentPickerModal } from "./modals/IntentPickerModal";
-import { PROFILES, AESTHETICS, BEHIND_CAMERA, IN_FRONT_CAMERA, lookingForOptions, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, ICEBREAKERS, BRIEFS, calcMatch, matchReasons, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Match, type Screen, type LikeAnchor } from "./components/types";
+import { PROFILES, AESTHETICS, BEHIND_CAMERA, IN_FRONT_CAMERA, lookingForOptions, CITY_GEO, ZODIAC, ZE, CHINESE, CE, MBTI, LIFE_PATHS, ICEBREAKERS, BRIEFS, calcMatch, matchReasons, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Profile, type Match, type Screen, type LikeAnchor, type ShootDisclosure } from "./components/types";
 import { useDiscoveryData } from "./hooks/useDiscoveryData";
 import { useFeedData } from "./hooks/useFeedData";
 import { useCommunityData } from "./hooks/useCommunityData";
@@ -333,7 +333,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
 // ═══ TRUST & SAFETY STATE ═══
   const [disclosureTarget, setDisclosureTarget] = useState<{id:string;name:string} | null>(null);
   const [disclosureBookingId, setDisclosureBookingId] = useState<string | undefined>();
-  const [existingDisclosure, _setExistingDisclosure] = useState<Record<string, unknown> | null>(null);
+  const [existingDisclosure, _setExistingDisclosure] = useState<ShootDisclosure | null>(null);
   const [ageVerified, setAgeVerified] = useState(false);
   const [verificationExpiringSoon, setVerificationExpiringSoon] = useState(false);
   // Dismiss state for the top-of-app verification banner (Torreé feedback,
