@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "analyze": "next build --experimental-analyze",
     "verify": "npm run typecheck && npm run test",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",

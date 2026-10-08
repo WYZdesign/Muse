@@ -56,7 +56,7 @@ Vercel install.
 | 1.1 | **Split `page.tsx`** | **FROZEN at 1219 lines** by `page-size-budget.test.ts`. Splitting it for real (MatchCard + MuseMap already extracted) is the single biggest remaining lever on HMR/build time. Do it with vision verification, never blind. | **High** |
 | 1.2 | **Data-fetching/caching layer** (SWR or React Query) | **OPEN.** Raw `fetch` everywhere; no cache, no revalidation, no optimistic UI. | Medium |
 | 1.3 | **Image optimization** | **OPEN.** Raw Supabase/Unsplash URLs, no `next/image`, no resize. Largest perf cost. | Medium |
-| 1.4 | **Bundle analysis + code splitting** | **OPEN.** No `@next/bundle-analyzer`. | Low |
+| 1.4 | **Bundle analysis** | **DONE** — `npm run analyze` uses Next 16's built-in `next build --experimental-analyze`. It is Turbopack-only, so the webpack `@next/bundle-analyzer` plugin is deliberately NOT used and no dependency was added; reports land in `.next/diagnostics/analyze/`. | — |
 | 1.5 | **Validation layer (zod)** | **DONE** — `src/lib/validate.ts` schemas + REST action schemas across ~50 mutating actions; `/api/muse` runs `validateRest`. | — |
 
 ## Tier 2 — Test coverage (1301 passing: unit + integration + E2E smoke)
