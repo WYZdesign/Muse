@@ -22,10 +22,10 @@
 ## STATUS (2026-10-08) — read this first
 
 **Repo:** `main` = `0d99220`. Production live. Gate every change must keep green:
-`tsc 0` / `vitest 1301 tests (166 files)` / `next build` clean / `npm audit
---omit=dev` = **1 high, `next` only** (see DO NOT TOUCH — CI's `Security Audit`
-job is red for this reason and `deploy-check` is skipped because of it; every
-other CI job passes).
+`tsc 0` / `vitest 1301 tests (166 files)` / `next build` clean / `node
+scripts/audit-gate.mjs` (prod + full, exits 0). CI is **green**; the audit gate
+allowlists specific reviewed GHSA ids for the blocked `next` cluster only, so a
+new advisory still fails it.
 opencode owns merge+deploy — leave your work on a branch and hand it back (§5).
 
 **DONE (by opencode — do not redo):** all XS, M-1 (`role=button` → native
@@ -44,18 +44,27 @@ NetworkScreen (1760) + SettingsScreen (1601). L-1 and M-3 are already satisfied.
   rejection) wired into `api/muse/auth/route.ts`, `reset-password/page.tsx`,
   `SettingsScreen.tsx`. Register/reset/Settings must all use it — never
   re-localize a validator in a client component.
-- **Waitlist referral codes** — migration `0034_waitlist_referral_codes.sql`
-  (applied), `src/lib/waitlist-queue.ts` (code gen + queue-position math),
-  `?ref=` attribution, 409-with-existing-slot on unique violation, shareable
-  invite link in `muse/landing/page.tsx`.
-- **RLS initplan** — migration `0035_wrap_rls_initplans.sql` (applied) re-wrote
-  all 64 `auth_rls_initplan` policies; Supabase advisor 64 → 0, policy set
-  unchanged (94), 9/9 role-impersonation probes identical.
-- **Docs reconciled** — `ROADMAP.md` fully restated with measured numbers;
+- **Waitlist referral codes** — migration `0034` (applied), `src/lib/waitlist-queue.ts`
+  (code gen + queue-position math), `?ref=` attribution, shareable invite link in
+  `muse/landing/page.tsx`. The 409 duplicate response deliberately carries NO
+  position/referralCode/shareUrl — the endpoint is unauthenticated, so returning
+  them leaked a stranger's invite code. Do not put them back.
+- **RLS** — `0035` wrapped all 64 `auth_rls_initplan` policies; `0036` + `0037`
+  collapsed all 25 `multiple_permissive_policies` to one policy per
+  (table, command, role). Advisor: 0 security, 0 initplan, 0 multi-permissive.
+  Policies 94 → 81.
+- **Dependency audit gate** — `scripts/audit-gate.mjs` replaced the two bare
+  `npm audit` CI steps. It fails on any high/critical advisory that is not a
+  specific reviewed GHSA id (allowlist covers only the blocked `next` cluster +
+  dev-only `braces`). It self-tests its FAIL path every CI run. Remove the
+  allowlist entries when `next` is upgraded.
+- **Docs reconciled** — `ROADMAP.md` restated with measured numbers;
   `DELIVERY_STATUS.md` header moved `63f9d71` → `0d99220` (44-commit catch-up).
-- **Still open for Claude:** `multiple_permissive_policies` (25 lints) — legacy
-  and new policy names OR'd on the same role/action; drop the legacy half table
-  by table **with two-user tests**, never in one sweep.
+
+**Still open (low priority):** `unindexed_foreign_keys` (36) and `unused_index`
+(63) advisor lints; the `sql/MUSE_SCHEMA_FULL_*.sql` dumps still predate
+migrations 0001-0037 (the migration chain is the authority for a live DB, but a
+fresh DB built from the dump would need the chain reconciled).
 
 **ASSIGNED TO YOU (Claude):**
 1. **XL-1 rolling `any` purge.** 3 files already done (`components/MatchCard.tsx`
