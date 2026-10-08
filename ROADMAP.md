@@ -63,7 +63,7 @@ Vercel install.
 
 | # | Item | Status | Effort |
 |---|------|--------|--------|
-| 2.1 | **Full user-flow E2E** (onboard → discover → match → book) | **OPEN** — smoke + discover-deck + demo-mode + visual-regression + a11y exist; no end-to-end booking flow. | High |
+| 2.1 | **Full user-flow E2E** (onboard → discover → match → book) | **DONE** — `tests/e2e/user-journey.spec.ts` walks the whole path in one pass (arrive → discover → decide → match → chat → book) in demo mode, so seams between screens are covered, not just each screen alone. Runs in the always-on `e2e-smoke` CI job. | — |
 | 2.2 | **Authenticated happy-path integration tests** (upload/match/push/verification) | **OPEN** — need staging credentials. | Medium |
 | 2.3 | **Component tests** (testing-library) | **OPEN** — screen sizes are frozen by line-count budgets, component behavior is not covered. | Medium |
 | 2.4 | **Coverage enforcement** | **DONE** — thresholds in vitest config (lines 86 / statements 81 / …), enforced in CI via `npm test -- --coverage`. | — |
