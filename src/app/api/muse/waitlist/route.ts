@@ -6,7 +6,6 @@ import { sendEmail, waitlistWelcome } from "@/lib/email";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 import { parseWith, WaitlistSchema } from "@/lib/validate";
 import {
-  lookupByEmail,
   lookupByCode,
   pickReferralCode,
   queuePosition,
@@ -57,18 +56,16 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       if ((error as { code?: string }).code === "23505") {
-        // Return the existing slot instead of a bare error: a re-submit or a
-        // second device should see the same position and share link.
-        const existing = await lookupByEmail(sb, email);
-        const q = existing ? await queuePosition(sb, existing) : null;
-        return NextResponse.json({
-          error: "Email already on waitlist",
-          code: "ALREADY_ON_LIST",
-          position: q?.position ?? null,
-          total: q?.total ?? null,
-          referralCode: existing?.referral_code ?? null,
-          shareUrl: existing?.referral_code ? shareUrl(existing.referral_code) : null,
-        }, { status: 409 });
+        // Deliberately NO slot data in this response. The endpoint is
+        // unauthenticated, so returning the existing row's position, referral
+        // code or share link would let anyone learn a stranger's code (and
+        // confirm the address is on the list) just by submitting that email.
+        // A truthful message plus the code is all the caller gets; recovering
+        // the link is done from the signup email, not by re-submitting here.
+        return NextResponse.json(
+          { error: "Email already on waitlist", code: "ALREADY_ON_LIST" },
+          { status: 409 },
+        );
       }
       console.error("Waitlist insert error:", error);
       return NextResponse.json({ error: "Failed to join waitlist" }, { status: 500 });

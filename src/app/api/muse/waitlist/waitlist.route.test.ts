@@ -183,7 +183,7 @@ describe("waitlist referral loop", () => {
     expect(tables.muse_waitlist.length).toBe(0);
   });
 
-  it("returns the existing slot (position + link) when the email repeats", async () => {
+  it("does not leak the existing slot when the email repeats (unauth disclosure guard)", async () => {
     await POST(mockReq({ email: "again@example.com" }));
     const code = tables.muse_waitlist[0].referral_code;
 
@@ -191,10 +191,14 @@ describe("waitlist referral loop", () => {
     expect(r.status).toBe(409);
     const body = await r.json();
     expect(body.code).toBe("ALREADY_ON_LIST");
-    expect(body.position).toBe(1);
-    expect(body.total).toBe(1);
-    expect(body.referralCode).toBe(code);
-    expect(body.shareUrl).toContain(`?ref=${code}`);
+    // This endpoint is unauthenticated: anyone could post a stranger's address
+    // and, before this guard existed, read back its position and referral code.
+    // The response must carry neither.
+    expect(body).not.toHaveProperty("position");
+    expect(body).not.toHaveProperty("total");
+    expect(body).not.toHaveProperty("referralCode");
+    expect(body).not.toHaveProperty("shareUrl");
+    expect(JSON.stringify(body)).not.toContain(code!);
     expect(tables.muse_waitlist.length).toBe(1);
   });
 

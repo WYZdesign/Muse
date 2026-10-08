@@ -394,7 +394,7 @@ export default function MuseLandingPage() {
       const res = await fetch("/api/muse/waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: heroEmail.trim(), source: selectedSource, ...(refCode ? { ref: refCode } : {}) }) });
       const data = await res.json().catch(() => ({}));
       if (res.ok) { setHeroDone(true); setSignupCount(c => c + 1); applyJoinResult(data); }
-      else if (data?.code === "ALREADY_ON_LIST") { setHeroDone(true); applyJoinResult(data); }
+      else if (data?.code === "ALREADY_ON_LIST") { setHeroDone(true); }
       else { setHeroError(data?.error || "Something went wrong — please try again."); }
     } catch { setHeroError("Something went wrong — please try again."); }
     finally { setHeroSubmitting(false); }
@@ -415,9 +415,9 @@ export default function MuseLandingPage() {
         setSubmitResult({ success: true, message: "You're on the list! We'll notify you when Musa by WYZ launches." });
         setFormData({ email: "", phone: "" });
         applyJoinResult(data);
-      } else if (data?.code === "ALREADY_ON_LIST" && typeof data.position === "number") {
-        setSubmitResult({ success: true, message: `You're already on the list — spot #${data.position}${data.total ? ` of ${data.total}` : ""}.` });
-        applyJoinResult(data);
+      } else if (data?.code === "ALREADY_ON_LIST") {
+        setSubmitResult({ success: true, message: "You're already on the list. We'll email you when it's your turn." });
+        setFormData({ email: "", phone: "" });
       } else setSubmitResult({ success: false, message: data.error || "Something went wrong" });
     } catch { setSubmitResult({ success: false, message: "Network error. Please try again." }); }
     finally { setSubmitting(false); }
