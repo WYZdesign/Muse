@@ -14,7 +14,7 @@ Honest audit of what's missing between "works" (current) and "platinum" (target)
 | `npm audit --omit=dev --audit-level=high` | **0** high/critical (next 16.3.8 patch cleared the cluster; see "Dependency audit" below) |
 | CI jobs | **green** (the `Security Audit` job now fails only on *unreviewed* high/critical, so `deploy-check` runs again) |
 | Sentry (`wyz-designtm/muse`) | **0 unresolved issues, last 14 days** |
-| Supabase advisors | **99 lints, all informational** (36 `unindexed_foreign_keys`, 63 `unused_index`); 0 security, 0 multi-permissive, 0 initplan |
+| Supabase advisors | **98 lints, all informational** (`unused_index` only); 0 security, 0 multi-permissive, 0 initplan, 0 unindexed foreign keys |
 
 Muse is feature-complete and reasonably secure for closed beta. What remains is
 observability polish, performance work, product depth, and ops maturity — not
@@ -108,7 +108,8 @@ Vercel install.
 | `auth_rls_initplan` (per-row `auth.uid()` evaluation) | **DONE 2026-10-08** — migration `0035_wrap_rls_initplans.sql` re-wrote all 64 flagged policies; advisor 64 → 0, policy set unchanged (94), 9/9 impersonation probes identical. | — |
 | `multiple_permissive_policies` (25) | **DONE 2026-10-08** — migrations `0036` + `0037` collapsed every (table, command, role) collision to a single policy carrying the union predicate. Policies 94 → 81, advisor lint 25 → 0. Verified with read-only role probes (anon / owner / non-owner / service_role): no role gained or lost access; the only deltas were `anon` going from a privilege error to an empty result (a deny either way). | — |
 | Waitlist duplicate-response disclosure | **DONE 2026-10-08** — `POST /api/muse/waitlist` no longer returns a stranger's `position`/`referralCode`/`shareUrl` on a 409. The endpoint is unauthenticated, so returning those let anyone read another user's invite code by submitting their email. | — |
-| `unused_index` (63) / `unindexed_foreign_keys` (36) | **OPEN** — drop/measure, then index the FKs the hot paths actually join on. Informational only; the advisor reports zero security findings. | Low |
+| `unindexed_foreign_keys` (36) | **DONE 2026-10-08** — migration `0038` indexed every FK column the advisor flagged; lint 36 → 0. | — |
+| `unused_index` (98) | **OPEN** — mostly "no scans recorded yet" for the 36 indexes added in `0038`; re-measure under real traffic before dropping anything. Informational only; the advisor reports zero security findings. | Low |
 
 ---
 

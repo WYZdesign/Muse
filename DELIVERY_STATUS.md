@@ -27,9 +27,20 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `a961e90a`
+## Confirmed merged, last verified at: `a017543a`
 
-### Reconciliation — 2026-10-08 (Codex, second batch): `2c392a7d` → `a961e90a`, 4 commits
+### Reconciliation — 2026-10-08 (Codex, third batch): `a63b2949` → `a017543a`
+
+- `a017543a fix(deps)` — next + eslint-config-next `16.3.6 → 16.3.8`. The
+  advisories' fixed range is `>=16.3.8`, so this was a patch, not the `16.4.0`
+  minor that broke Vercel's install. Production `npm audit` is back to 0
+  high/critical and every `next` entry was removed from the audit allowlist.
+- Also in this session (outside the repo): migration `0038` indexed 36 foreign
+  keys (advisor `unindexed_foreign_keys` → 0); the V: drive dirty bit was
+  repaired; the corrupt npm cache moved to `W:\npm-cache`; and a local uptime
+  monitor (`WYZMIND_Uptime`) was added.
+
+### Previous reconciliation — 2026-10-08 (Codex, second batch): `2c392a7d` → `a961e90a`, 4 commits
 
 On top of the batch described below, four commits landed; all are merged and
 the Vercel production deploy for `a961e90a` is `READY`.
