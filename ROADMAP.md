@@ -86,11 +86,11 @@ Vercel install.
 
 | # | Item | Status | Effort |
 |---|------|--------|--------|
-| 4.1 | **Staging environment** | **PARTIAL** — staging Supabase project `rwgofoxqycpzsvxfnozt` created, 49-table schema applied, keys in vault. Vercel preview env wiring still pending. | Medium |
-| 4.2 | **Uptime monitoring + status page** (UptimeRobot/BetterStack) | **OPEN** — nothing external knows when Muse is down. | Low |
+| 4.1 | **Staging environment** | **PARTIAL** — Vercel staging is live for **both** projects (`staging` target deployments, READY, serving). Muse previews had been failing on every branch because `OAUTH_STATE_SECRET` was Production-scoped only and `src/lib/oauth-state.ts` fails closed at build; it was added to the Preview scope. **Blocked:** a staging *database* per app needs Supabase Pro (free tier = 2 active projects, both used by prod; the old staging project was deleted). Steps are ready in `_STATE/STAGING_SETUP.md`. | Medium |
+| 4.2 | **Uptime monitoring + status page** (UptimeRobot/BetterStack) | **PARTIAL** — local windowless monitor live (`WYZMIND_Uptime`, 5 min, toasts on state change). External status page still needs an account. | Low |
 | 4.3 | **Backup/restore runbook** | **DONE** — `MUSES_RESTORE_RUNBOOK_2026-10-03.md` + documented restore **drill**, `.github/workflows/backup.yml` repaired (was silently broken). Re-drill quarterly. | — |
-| 4.4 | **Load testing** (k6/Artillery) | **OPEN** — concurrency ceiling unknown. | Medium |
-| 4.5 | **Secrets rotation policy** + access audit | **PARTIAL** — env audit written (`_STATE/MUSE_ENV_AUDIT_2026-10-08.md`), every code-referenced var mapped; rotation cadence not defined. | Low |
+| 4.4 | **Load testing** | **DONE** — dependency-free `scripts/load-test.mjs` (Node 22 `fetch`). Measured against staging: `/api/health` 79 req/s @ 20 concurrent, 0 errors, p50 213ms; `/muse/landing` 66 req/s @ 10, p50 126ms. Serverless, so latency is dominated by network + cold starts. | — |
+| 4.5 | **Secrets rotation policy** + access audit | **DONE** — policy written (`W:\WYZ_Command_Center\_STATE\SECRETS_ROTATION_POLICY.md`) with cadence by secret class, the add-new/deploy/verify/revoke procedure, and a compromise runbook. | — |
 
 ## Tier 5 — S++ differentiators (beyond parity)
 
