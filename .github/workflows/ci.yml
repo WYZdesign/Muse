@@ -756,6 +756,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # HEAD^ is needed below: vercel.json's ignoreCommand compares against
+          # the previous commit to decide whether a build is worth doing, and we
+          # replicate that same comparison to tell "Vercel correctly skipped a
+          # docs-only push" apart from "the build failed".
+          fetch-depth: 2
 
       # wyz_deploy_check.py lives on the integrator host (W:\WYZ_Command_Center),
       # not in this repo — previous `python wyz_deploy_check.py` always failed here.
@@ -807,6 +813,25 @@ jobs:
             fi
             sleep 20
           done
+          # No READY deployment appeared. There are two legitimate outcomes and
+          # the job must not confuse them:
+          #   1. vercel.json's ignoreCommand canceled the build because the
+          #      commit touched no buildable path (docs/tests/sql/.github). Vercel
+          #      then creates NO deployment record at all, so there is genuinely
+          #      nothing to verify and this is a PASS.
+          #   2. A buildable commit that never produced a READY deployment. That
+          #      is a real failure and must stay one.
+          # Both conditions are required for the PASS: nothing buildable changed
+          # AND no deployment record exists for this SHA.
+          if BUILDABLE=$(git diff --name-only HEAD^ HEAD -- . \
+              ':(exclude)tests' ':(exclude)*.md' ':(exclude)_STATE' \
+              ':(exclude).github' ':(exclude)sql'); then
+            if [ -z "$BUILDABLE" ]; then
+              echo "No buildable paths changed in ${SHA} (vercel.json ignoreCommand), so Vercel correctly skipped the deploy. Nothing to verify - PASS."
+              exit 0
+            fi
+            echo "Buildable paths changed: $(echo "$BUILDABLE" | tr '\n' ' ')" >&2
+          fi
           echo "Deploy ${SHA} did not reach READY in time" >&2
           exit 1
 

@@ -27,9 +27,38 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `0d99220`
+## Confirmed merged, last verified at: `a961e90a`
 
-### Reconciliation — 2026-10-08 (Codex): `63f9d71` → `0d99220`, 44 commits
+### Reconciliation — 2026-10-08 (Codex, second batch): `2c392a7d` → `a961e90a`, 4 commits
+
+On top of the batch described below, four commits landed; all are merged and
+the Vercel production deploy for `a961e90a` is `READY`.
+
+- `576a71d0 fix(waitlist)` — the duplicate-signup 409 no longer echoes back the
+  existing row's `position` / `referralCode` / `shareUrl`. This endpoint is
+  unauthenticated, so those let anyone read a stranger's invite code by posting
+  that person's email. The 409 now carries only a message and `ALREADY_ON_LIST`.
+- `706ca6fe fix(ci)` — `scripts/audit-gate.mjs` replaces the two bare `npm audit`
+  steps. CI had been red on every push because the `next` advisories cannot be
+  fixed without `next@16.4.0`, which breaks Vercel (`Invalid Version:`). The gate
+  fails on any high/critical advisory that is not a specific, hand-reviewed GHSA
+  id (never a package name, so a new advisory inside `next` still fails) and
+  self-tests its FAIL path each run. Security Audit is green again, which also
+  un-skips `deploy-check`.
+- `573d7425 fix(rls)` — migrations `0036` + `0037` collapsed all 25
+  `multiple_permissive_policies` collisions to one policy per (table, command,
+  role). Policies 94 → 81; advisor security/initplan/multi-permissive lints all 0.
+- `a961e90a docs` — ROADMAP + CLAUDE_TASKS updated to match.
+
+**Note on docs-only pushes.** `vercel.json`'s `ignoreCommand` cancels the build
+for commits that touch no buildable path, and Vercel then records no deployment
+for that SHA (verified: several docs-only commits have no deployment record).
+`deploy-check` requires a READY deployment of the exact SHA, so without a guard a
+docs-only push could never satisfy it. The job now replicates the same path
+comparison: if nothing buildable changed and no deployment exists, it passes; a
+buildable commit with no READY deploy still fails.
+
+### Previous reconciliation — 2026-10-08 (Codex): `63f9d71` → `0d99220`, 44 commits
 
 `git fetch origin` showed **44 commits** had landed since this file was last
 reconciled — far too many to trust the previous SHA. Theme summary; verify any
