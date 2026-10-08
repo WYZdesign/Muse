@@ -19,6 +19,70 @@
 - **Test before done.** Compile is not proof — run it.
 - Windows host; the Bash tool is PowerShell 7. Port 3000 is Open WebUI — use `-p 31xx` for a dev server.
 
+## STATUS (2026-10-08) — read this first
+
+**Repo:** `main` = `0d99220`. Production live. Gate every change must keep green:
+`tsc 0` / `vitest 1301 tests (166 files)` / `next build` clean / `npm audit
+--omit=dev` = **1 high, `next` only** (see DO NOT TOUCH — CI's `Security Audit`
+job is red for this reason and `deploy-check` is skipped because of it; every
+other CI job passes).
+opencode owns merge+deploy — leave your work on a branch and hand it back (§5).
+
+**DONE (by opencode — do not redo):** all XS, M-1 (`role=button` → native
+`<button>`), M-2 (>=24px dot targets), L-3 (opt-in mutation-invalidated GET
+cache + tests), XL-3 (`MUSE_REST_SCHEMAS` ~50 actions + tests). L-2 partial:
+headers added to all 28 API route handlers (screens/components still need theirs
+— that half is yours). XL-2 guardrail: `screen-size-budget.test.ts` freezes
+NetworkScreen (1760) + SettingsScreen (1601). L-1 and M-3 are already satisfied.
+
+**DONE (2026-10-08 batch, `opencode/env-password-waitlist-batch`) — do not redo:**
+- **Env audit** — all 48 code-referenced-but-unset Vercel vars triaged;
+  `UNSUBSCRIBE_SECRET` generated, set in prod/preview/development, vaulted.
+  Artifact: `W:\WYZ_Command_Center\_STATE\MUSE_ENV_AUDIT_2026-10-08.md`.
+- **Shared password policy** — `src/lib/password-policy.ts` (min 12, 3-of-4
+  classes, space does not count as a symbol, whitespace/placeholder/repeated-char
+  rejection) wired into `api/muse/auth/route.ts`, `reset-password/page.tsx`,
+  `SettingsScreen.tsx`. Register/reset/Settings must all use it — never
+  re-localize a validator in a client component.
+- **Waitlist referral codes** — migration `0034_waitlist_referral_codes.sql`
+  (applied), `src/lib/waitlist-queue.ts` (code gen + queue-position math),
+  `?ref=` attribution, 409-with-existing-slot on unique violation, shareable
+  invite link in `muse/landing/page.tsx`.
+- **RLS initplan** — migration `0035_wrap_rls_initplans.sql` (applied) re-wrote
+  all 64 `auth_rls_initplan` policies; Supabase advisor 64 → 0, policy set
+  unchanged (94), 9/9 role-impersonation probes identical.
+- **Docs reconciled** — `ROADMAP.md` fully restated with measured numbers;
+  `DELIVERY_STATUS.md` header moved `63f9d71` → `0d99220` (44-commit catch-up).
+- **Still open for Claude:** `multiple_permissive_policies` (25 lints) — legacy
+  and new policy names OR'd on the same role/action; drop the legacy half table
+  by table **with two-user tests**, never in one sweep.
+
+**ASSIGNED TO YOU (Claude):**
+1. **XL-1 rolling `any` purge.** 3 files already done (`components/MatchCard.tsx`
+   13→0, `modals/types.ts` 14→0, `components/DisclosureModal.tsx` 24→0); project
+   total is **782**. Next worst-first: `lib/muse-actions/get.ts` (110),
+   `screens/DiscoverScreen.tsx` (94), `screens/MenuModal.tsx` (47),
+   `screens/NetworkScreen.tsx` (40), `screens/FeedScreen.tsx` (40), then the
+   17-28 cluster. One PR per file/cluster.
+   - Pattern that worked: type props/state with the real shared models
+     (`components/types.ts`, `page-models.ts`, `modals/types.ts`, hook exports);
+     add genuinely-missing fields to the shared type (we added `skills`/`audience`/
+     `showMatchPercent` to `Match`); define a shared row type for distinct DB
+     shapes (e.g. `ShootDisclosure`); use `!` only right after an existing
+     truthiness guard TS cannot narrow through an inline closure. Never loosen
+     behavior to satisfy types.
+   - Verify each: `npm run typecheck` + `npm test` + `npm run build`; screenshot
+     on-screen changes with `wyz_web_shoot.py`.
+2. **XL-2 extraction.** Split `NetworkScreen.tsx` + `SettingsScreen.tsx` into
+   `components/`/`hooks/` the way page.tsx was split, and LOWER the budgets in
+   `screen-size-budget.test.ts` as blocks move out (never raise).
+3. **L-2 remaining.** One-line purpose headers on the screens/components still
+   missing a leading comment (~50 files).
+
+**DO NOT TOUCH:** the `next` dependency. A high advisory needs next@16.4.0 but its
+tree fails Vercel's `npm install` ("Invalid Version"); mitigated by the strict
+`images.remotePatterns` allowlist and tracked for a dedicated upgrade session.
+
 ## 1. VERIFICATION GATES (must be green before you call a task done)
 
 ```

@@ -27,9 +27,50 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `63f9d71`
+## Confirmed merged, last verified at: `0d99220`
 
-### Reconciliation — 2026-10-07 (Claude): `c8eff22` → `63f9d71`, 1 trivial commit
+### Reconciliation — 2026-10-08 (Codex): `63f9d71` → `0d99220`, 44 commits
+
+`git fetch origin` showed **44 commits** had landed since this file was last
+reconciled — far too many to trust the previous SHA. Theme summary; verify any
+individual claim with `git log 63f9d71..origin/main --oneline`:
+
+- **Rebrand** — public strings Muse/Muses → **Musa by WYZ** (`8246b93c`).
+- **Backlog sweep (S/M/L/XL)** — a11y migration of `div/span[role=button]` to
+  native `<button>` (`5e6a9296`) + ≥24px dot targets (`b7055215`) + aria-labels
+  on icon-only buttons (`0a5cab39`); file-purpose headers on API routes and
+  `src/lib` (`a21728a1`, `c416ac82`, `e62bda16`); opt-in short-TTL,
+  mutation-invalidated GET cache (`5635d377`); zod field schemas for the
+  remaining mutating actions (`7939ae68`); NetworkScreen/SettingsScreen line
+  ratchet tests (`faf31724`); `any` purge across MatchCard / modals / types /
+  DisclosureModal, 24 → 0 (`bd4d59ac`, `b8908992`, `0d99220`).
+- **P0 visual fixes** — badge dedup + CollabScreen avatar fallback (`2d3783cf`),
+  discover verified-checkmark and online dot never rendering for real profiles
+  (`5abd049e`).
+- **Safety / blocking** — blocking enforced on search results and forum replies
+  (`c48009db`) and on feed / briefs / forum / sessions / moments / events
+  (`500e0e7b`); message-request inbox filtered to pending only (`1b6aad7c`).
+- **Discover / chat / onboarding** — match-card photos capped at 4 (`2c859239`),
+  real search rows + honest onboarding success (`6cd66d0f`), host name never
+  joined into Sessions browse + live voice/video notes dropped by the realtime
+  relay (`dddf6582`), weekly-login pips synced to the server streak
+  (`679f259d`), telemetry surfacing 3 silently-swallowed failures (`15979f32`).
+- **Schema** — `c382dcd3` added columns the app queries but the DB never had;
+  `d34786e0` added `muse_briefs.deadline` and hid the empty Timeline chip.
+- **CI / backup** — pg_dump 17 forced on PATH (`f3fefe24`); backup real failure
+  detection + PG17 client + session-port guard (`c9a940f5`).
+- **Deps** — `16e3d818` bumped `next` to 16.4.0, then `b87f9b5b` **reverted it
+  to 16.3.6** because 16.4.0 breaks Vercel `npm install` with `Invalid Version:`.
+  Consequence: CI's `Security Audit` job is red on the `next` advisory, and
+  because `deploy-check` has `needs: [..., security-audit, ...]` it is **skipped**
+  on every run. All other CI jobs pass. Do not re-bump `next` without a
+  dedicated session — this is the known-blocked item in `ROADMAP.md`.
+
+The next batch (env triage, shared password policy, waitlist referral codes,
+migrations 0034/0035, ROADMAP refresh) is on branch
+`opencode/env-password-waitlist-batch`, based on exactly `0d99220`.
+
+### Previous reconciliation — 2026-10-07 (Claude): `c8eff22` → `63f9d71`, 1 trivial commit
 
 `git fetch origin` picked up one new commit on `origin/main`, pushed directly
 by Torreé: `63f9d71` — `.gitignore` additions for agent/tooling scratch
