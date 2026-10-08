@@ -21,11 +21,11 @@
 
 ## STATUS (2026-10-08) — read this first
 
-**Repo:** `main` = `0d99220`. Production live. Gate every change must keep green:
-`tsc 0` / `vitest 1301 tests (166 files)` / `next build` clean / `node
-scripts/audit-gate.mjs` (prod + full, exits 0). CI is **green**; the audit gate
-allowlists specific reviewed GHSA ids for the blocked `next` cluster only, so a
-new advisory still fails it.
+**Repo:** `main` last verified at `e4e0bf09`. Production live. Gate every change
+must keep green: `tsc 0` / `vitest 1301 tests (166 files)` / `next build` clean /
+`node scripts/audit-gate.mjs` (prod + full, exits 0). CI is **green**; the audit
+gate allowlists specific reviewed GHSA ids for the blocked `next` cluster only,
+so a new advisory still fails it.
 opencode owns merge+deploy — leave your work on a branch and hand it back (§5).
 
 **DONE (by opencode — do not redo):** all XS, M-1 (`role=button` → native
