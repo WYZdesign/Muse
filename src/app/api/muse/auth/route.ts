@@ -9,6 +9,7 @@ import { signupWelcome, sendEmail } from "@/lib/email";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 import { sanitizeBirthdate } from "@/lib/muse-age";
 import { availabilityColumnUpdates, AVAILABILITY_COLUMN_FIELDS } from "@/lib/muse-availability";
+import { validatePassword, MAX_PASSWORD_LENGTH } from "@/lib/password-policy";
 
 const ACCOUNT_DELETION_RETENTION_DAYS = 30;
 
@@ -16,12 +17,9 @@ function deletionPurgeAt(now = new Date()): string {
   return new Date(now.getTime() + ACCOUNT_DELETION_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
 }
 
-function validatePassword(pw: string): string | null {
-  if (pw.length < 6) return "Password must be at least 6 characters";
-  if (!/[A-Z]/.test(pw)) return "Password needs a capital letter";
-  if (!/[!@#$%^&*(),.?":{}|<>]/.test(pw)) return "Password needs a symbol";
-  return null;
-}
+// Baseline lives in @/lib/password-policy so the client forms enforce the
+// exact same rules (min 12 chars, 3 of 4 character classes) — never a
+// second copy of these checks.
 
 // Never leak internal/account rows wholesale to the client. Strip auth_id, email
 // (the client reads email from the Supabase user object, not the profile), and
@@ -72,7 +70,6 @@ export async function POST(req: NextRequest) {
       const { email, password, name } = body;
       if (!email || !password) return NextResponse.json({ error: "Email and password required" }, { status: 400 });
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email))) return NextResponse.json({ error: "Invalid email" }, { status: 400 });
-      if (String(password).length > 200) return NextResponse.json({ error: "Password too long" }, { status: 400 });
       const pwErr = validatePassword(String(password));
       if (pwErr) return NextResponse.json({ error: pwErr }, { status: 400 });
 

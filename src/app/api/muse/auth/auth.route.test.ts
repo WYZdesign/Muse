@@ -45,7 +45,7 @@ describe("auth route (integration)", () => {
   });
 
   it("rejects an invalid email with 400", async () => {
-    const r = await POST(mockReq({ action: "register", email: "not-an-email", password: "Strong!123" }));
+    const r = await POST(mockReq({ action: "register", email: "not-an-email", password: "MusaG0ld!2026x" }));
     expect(r.status).toBe(400);
   });
 
@@ -59,6 +59,59 @@ describe("auth route (integration)", () => {
     expect(r.status).toBe(400);
   });
 
+  // ── Password baseline: MUSES_PASSWORD_SECURITY_DECISION_2026-10-03 ──────
+  // 12 chars minimum + three-of-four character classes, enforced in the
+  // shared policy so the reset/settings forms say exactly the same thing.
+  it("enforces the 12-character minimum on registration", async () => {
+    const r = await POST(mockReq({ action: "register", email: "short@example.com", password: "Ab3&defghij" }));
+    expect(r.status).toBe(400);
+    expect((await r.json()).error).toMatch(/at least 12 characters/);
+  });
+
+  it("enforces three-of-four character classes on registration", async () => {
+    const r = await POST(mockReq({ action: "register", email: "twoclass@example.com", password: "ZebraHeadboard" }));
+    expect(r.status).toBe(400);
+    expect((await r.json()).error).toMatch(/at least 3 of/);
+  });
+
+  it("rejects whitespace-only and placeholder passwords", async () => {
+    const blank = await POST(mockReq({ action: "register", email: "spaces@example.com", password: "            " }));
+    expect(blank.status).toBe(400);
+    expect((await blank.json()).error).toMatch(/only spaces/);
+
+    const common = await POST(mockReq({ action: "register", email: "common@example.com", password: "Password1234" }));
+    expect(common.status).toBe(400);
+    expect((await common.json()).error).toMatch(/too common/);
+  });
+
+  it("lets a compliant password through to sign-up", async () => {
+    mockSignUp.mockResolvedValue({ data: { user: { id: "u-1", identities: [{ id: "u-1" }] } }, error: null });
+    const maybeSingle = vi.fn(async () => ({ data: { id: "p-1", name: "New Muse" }, error: null }));
+    const insert = vi.fn(() => ({ select: () => ({ maybeSingle }) }));
+    (globalThis as any).__authServiceMock = { from: vi.fn(() => ({ insert })) };
+
+    const r = await POST(mockReq({ action: "register", email: "ok@example.com", password: "MusaG0ld!2026x" }));
+    expect(r.status).toBe(202);
+    expect((await r.json()).success).toBe(true);
+    expect(insert).toHaveBeenCalled();
+  });
+
+  it("applies the same baseline when updating an existing password", async () => {
+    const r = await POST(mockReq({ action: "update-password", access_token: "tok", new_password: "Ab3&defghij" }));
+    expect(r.status).toBe(400);
+    expect((await r.json()).error).toMatch(/at least 12 characters/);
+  });
+
+  it("stores a compliant new password", async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { id: "auth-1" } }, error: null });
+    const updateUserById = vi.fn(async () => ({ error: null }));
+    (globalThis as any).__authServiceMock = { auth: { admin: { updateUserById } } };
+
+    const r = await POST(mockReq({ action: "update-password", access_token: "tok", new_password: "MusaG0ld!2026x" }));
+    expect(r.status).toBe(200);
+    expect(updateUserById).toHaveBeenCalledWith("auth-1", { password: "MusaG0ld!2026x" });
+  });
+
   it("rejects an overly long password with 400", async () => {
     const r = await POST(mockReq({ action: "register", email: "user@example.com", password: "A!1" + "x".repeat(300) }));
     expect(r.status).toBe(400);
@@ -70,7 +123,7 @@ describe("auth route (integration)", () => {
     // Threshold for register is 5 per IP.
     let status = 200;
     for (let i = 0; i < 8; i++) {
-      const r = await POST(mk({ action: "register", email: "rate@example.com", password: "Strong!123" }));
+      const r = await POST(mk({ action: "register", email: "rate@example.com", password: "MusaG0ld!2026x" }));
       status = r.status;
     }
     expect(status).toBe(429);
@@ -84,7 +137,7 @@ describe("auth route (integration)", () => {
     // rejection. This test previously asserted the anti-enumeration behaviour;
     // it was updated because the owner accepted the enumeration trade-off.
     mockSignUp.mockResolvedValue({ data: { user: { id: "opaque", identities: [] } }, error: null });
-    const r = await POST(mockReq({ action: "register", email: "existing@example.com", password: "Strong!123" }));
+    const r = await POST(mockReq({ action: "register", email: "existing@example.com", password: "MusaG0ld!2026x" }));
     const body = await r.json();
     expect(r.status).toBe(409);
     expect(body).toMatchObject({ code: "ACCOUNT_EXISTS" });
@@ -95,7 +148,7 @@ describe("auth route (integration)", () => {
 
   it("explicitly rejects when Supabase returns an explicit duplicate error", async () => {
     mockSignUp.mockResolvedValue({ data: { user: null }, error: { message: "User already registered" } });
-    const r = await POST(mockReq({ action: "register", email: "dup@example.com", password: "Strong!123" }));
+    const r = await POST(mockReq({ action: "register", email: "dup@example.com", password: "MusaG0ld!2026x" }));
     const body = await r.json();
     expect(r.status).toBe(409);
     expect(body).toMatchObject({ code: "ACCOUNT_EXISTS" });

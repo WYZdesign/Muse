@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { fetchWithTimeout } from "../lib/api";
+import { validatePassword, passwordClasses, MIN_PASSWORD_LENGTH, PASSWORD_RULES_LABEL } from "@/lib/password-policy";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -20,10 +21,8 @@ export default function ResetPasswordPage() {
   }, []);
 
   const handleSubmit = async () => {
-    if (!password.trim()) { setError("Enter a new password"); return; }
-    if (password.length < 6) { setError("Minimum 6 characters"); return; }
-    if (!/[A-Z]/.test(password)) { setError("Needs a capital letter"); return; }
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) { setError("Needs a symbol"); return; }
+    const pwErr = validatePassword(password);
+    if (pwErr) { setError(pwErr); return; }
     if (password !== confirm) { setError("Passwords don't match"); return; }
     setError("");
     try {
@@ -46,8 +45,9 @@ export default function ResetPasswordPage() {
             <input type={showPass?"text":"password"} aria-label="New password" placeholder="New password" value={password} onChange={e=>{setPassword(e.target.value);setError("")}} style={{width:"100%",padding:"12px 44px 12px 14px",borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.06)",color:"#fff",fontSize:14,outline:"none",boxSizing:"border-box"}} />
             <button type="button" onClick={()=>setShowPass(p=>!p)} style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"var(--muted,#888)",cursor:"pointer",fontSize:18,padding:8,lineHeight:1}}>{showPass?"🙈":"👁️"}</button>
           </div>
+          <div style={{fontSize:12,color:"var(--muted,#888)",marginBottom:8}}>{PASSWORD_RULES_LABEL}</div>
           <input type="password" aria-label="Confirm password" placeholder="Confirm password" value={confirm} onChange={e=>{setConfirm(e.target.value);setError("")}} style={{width:"100%",padding:12,marginBottom:8,borderRadius:10,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.06)",color:"#fff",fontSize:14,outline:"none",boxSizing:"border-box"}} />
-          {password&&(()=>{const u=/[A-Z]/.test(password);const y=/[!@#$%^&*]/.test(password);const s=password.length>=8&&u&&y?password.length>=12?4:3:password.length>=6?2:1;const col=["","#ff6b6b","#ff9f43","#ffd700","#2ed573"][s];return(<div style={{marginBottom:8}}><div style={{fontSize:12,color:col,marginBottom:2}}>{["","Weak","Fair","Strong","Very strong"][s]}</div><div style={{display:"flex",gap:4}}>{[1,2,3,4].map(i=><div key={i} style={{flex:1,height:4,borderRadius:2,background:i<=s?col:"rgba(255,255,255,0.1)"}}/>)}</div></div>);})()}
+          {password&&(()=>{const cls=passwordClasses(password).length;const long=password.length>=MIN_PASSWORD_LENGTH;const s=long&&cls>=3?4:long?3:password.length>=8&&cls>=2?2:1;const col=["","#ff6b6b","#ff9f43","#ffd700","#2ed573"][s];return(<div style={{marginBottom:8}}><div style={{fontSize:12,color:col,marginBottom:2}}>{["","Weak","Fair","Strong","Valid"][s]}</div><div style={{display:"flex",gap:4}}>{[1,2,3,4].map(i=><div key={i} style={{flex:1,height:4,borderRadius:2,background:i<=s?col:"rgba(255,255,255,0.1)"}}/>)}</div></div>);})()}
           {error&&<div style={{color:"#ff6b6b",fontSize:12,marginBottom:8}}>{error}</div>}
           <button onClick={handleSubmit} style={{width:"100%",padding:12,borderRadius:10,background:"linear-gradient(135deg,#ffd700,#ff6b6b)",color:"#000",fontWeight:700,fontSize:15,border:"none",cursor:"pointer",marginTop:8}}>Update Password</button>
         </div>}

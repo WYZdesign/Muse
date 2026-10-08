@@ -11,6 +11,7 @@ import { BEHIND_CAMERA, IN_FRONT_CAMERA, AESTHETICS, lookingForOptions } from ".
 import { STRINGS } from "@/lib/strings";
 import { clearAllPageTourFlags } from "../components/pageTourContent";
 import { getMuseRole, roleBadgeText, type MuseRole } from "@/lib/role";
+import { validatePassword, PASSWORD_RULES_LABEL } from "@/lib/password-policy";
 import { isPaidTier } from "../components/subscriptionTiers";
 import { BoostAnalyticsPanel } from "../components/BoostAnalyticsPanel";
 import {
@@ -499,9 +500,8 @@ export const SettingsScreen = memo(function SettingsScreen({
   };
 
   const changePassword = async () => {
-    if (pwNew.length < 6) { showToast("Password must be at least 6 characters"); return; }
-    if (!/[A-Z]/.test(pwNew)) { showToast("Password needs a capital letter"); return; }
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(pwNew)) { showToast("Password needs a symbol"); return; }
+    const pwErr = validatePassword(pwNew);
+    if (pwErr) { showToast(pwErr); return; }
     if (pwNew !== pwConfirm) { showToast("Passwords don't match"); return; }
     setPwBusy(true);
     try {
@@ -1026,7 +1026,7 @@ export const SettingsScreen = memo(function SettingsScreen({
       {showChangePassword && (
         <SettingsSubPage title="Change Password" onClose={() => setShowChangePassword(false)}>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 2 }}>Enter a new password. Must be 6+ chars, include a capital letter and a symbol.</div>
+            <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 2 }}>Enter a new password. {PASSWORD_RULES_LABEL}</div>
             <input
               className="inp"
               type="password"
