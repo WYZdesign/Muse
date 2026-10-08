@@ -65,7 +65,7 @@ Vercel install.
 |---|------|--------|--------|
 | 2.1 | **Full user-flow E2E** (onboard → discover → match → book) | **DONE** — `tests/e2e/user-journey.spec.ts` walks the whole path in one pass (arrive → discover → decide → match → chat → book) in demo mode, so seams between screens are covered, not just each screen alone. Runs in the always-on `e2e-smoke` CI job. | — |
 | 2.2 | **Authenticated happy-path integration tests** (upload/match/push/verification) | **OPEN** — need staging credentials. | Medium |
-| 2.3 | **Component tests** (testing-library) | **OPEN** — screen sizes are frozen by line-count budgets, component behavior is not covered. | Medium |
+| 2.3 | **Component tests** | **PARTIAL** — 5 hook-free component test files (AuthScreen, OnboardingFlow, VerificationBanner, Nav, pageTourContent), rendered via `react-dom/server` so no jsdom. Nav pins the role-aware tab labels the e2e journey clicks; pageTourContent pins the `muse_tour_seen_*` keys the e2e helper seeds. Screen-level behaviour is still uncovered. | Medium |
 | 2.4 | **Coverage enforcement** | **DONE** — thresholds in vitest config (lines 86 / statements 81 / …), enforced in CI via `npm test -- --coverage`. | — |
 | 2.5 | **Visual regression** | **DONE** — `tests/e2e/visual-regression.spec.ts`, snapshot artifacts uploaded, mobile viewport matrix in CI. | — |
 
