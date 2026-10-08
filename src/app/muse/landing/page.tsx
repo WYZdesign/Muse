@@ -314,6 +314,10 @@ export default function MuseLandingPage() {
   const [heroError, setHeroError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<{ success: boolean; message: string } | null>(null);
+  // Referral loop: ?ref=<code> on arrival is attributed to the sharer, and the
+  // signup response carries the slot number + personal invite link back.
+  const [refCode, setRefCode] = useState("");
+  const [joinInfo, setJoinInfo] = useState<{ position: number; total: number; shareUrl: string } | null>(null);
   const [gateClosing, setGateClosing] = useState(false);
   // NOTE: always initialize false so server and client's first render match.
   // Reading sessionStorage in the initializer caused a hydration mismatch
@@ -329,6 +333,13 @@ export default function MuseLandingPage() {
 
   useEffect(() => {
     fetch("/api/muse/landing-stats").then(r => r.json()).then(d => { if (d.count !== undefined) setSignupCount(d.count); }).catch(() => {});
+  }, []);
+
+  // Read the invite code from the URL once. Anything not shaped like a code is
+  // ignored rather than sent, so a mangled link can never fail a signup.
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get("ref") || "";
+    if (/^[A-Za-z0-9]{3,16}$/.test(p)) setRefCode(p.toUpperCase());
   }, []);
 
   // Runs after hydration completes, so flipping this doesn't cause a
@@ -369,17 +380,22 @@ export default function MuseLandingPage() {
     setShowQrModal(true);
   };
 
+  const applyJoinResult = (data: any) => {
+    if (data && typeof data.position === "number" && data.shareUrl) {
+      setJoinInfo({ position: data.position, total: Number(data.total) || 0, shareUrl: data.shareUrl });
+    }
+  };
+
   const handleHeroSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!heroEmail.trim() || heroSubmitting) return;
     setHeroSubmitting(true);
     try {
-      const res = await fetch("/api/muse/waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: heroEmail.trim(), source: selectedSource }) });
-      if (res.ok) { setHeroDone(true); setSignupCount(c => c + 1); }
-      else {
-        const j = await res.json().catch(() => ({}));
-        setHeroError(j.error || "Something went wrong — please try again.");
-      }
+      const res = await fetch("/api/muse/waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: heroEmail.trim(), source: selectedSource, ...(refCode ? { ref: refCode } : {}) }) });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) { setHeroDone(true); setSignupCount(c => c + 1); applyJoinResult(data); }
+      else if (data?.code === "ALREADY_ON_LIST") { setHeroDone(true); applyJoinResult(data); }
+      else { setHeroError(data?.error || "Something went wrong — please try again."); }
     } catch { setHeroError("Something went wrong — please try again."); }
     finally { setHeroSubmitting(false); }
   };
@@ -393,11 +409,15 @@ export default function MuseLandingPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const res = await fetch("/api/muse/waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...formData, source: selectedSource }) });
+      const res = await fetch("/api/muse/waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...formData, source: selectedSource, ...(refCode ? { ref: refCode } : {}) }) });
       const data = await res.json();
       if (res.ok) {
         setSubmitResult({ success: true, message: "You're on the list! We'll notify you when Musa by WYZ launches." });
         setFormData({ email: "", phone: "" });
+        applyJoinResult(data);
+      } else if (data?.code === "ALREADY_ON_LIST" && typeof data.position === "number") {
+        setSubmitResult({ success: true, message: `You're already on the list — spot #${data.position}${data.total ? ` of ${data.total}` : ""}.` });
+        applyJoinResult(data);
       } else setSubmitResult({ success: false, message: data.error || "Something went wrong" });
     } catch { setSubmitResult({ success: false, message: "Network error. Please try again." }); }
     finally { setSubmitting(false); }
@@ -473,10 +493,11 @@ export default function MuseLandingPage() {
           ) : (
             <div className="muse-hero-email-done" data-depth="-0.3" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
               <span style={{ fontSize: 14, fontWeight: 600 }}>✓ You're on the list — we'll email you when it's your turn.</span>
-              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Founding members get lifetime Pro free.</span>
+              {joinInfo && <span style={{ fontSize: 13, color: "#ffd700" }}>You're #{joinInfo.position}{joinInfo.total ? ` of ${joinInfo.total}` : ""} in line.</span>}
+              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Founding members get lifetime Pro free.{joinInfo ? " Each friend you bring moves you up the list." : ""}</span>
               <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-                <button onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/muse/landing`); }} style={{ fontSize: 11, padding: "6px 14px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.25)", color: "#ffd700", cursor: "pointer" }}>Copy Link</button>
-                <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent("Just joined the Musa by WYZ waitlist ✦ Creative professional network for photographers, models, and filmmakers")}&url=${encodeURIComponent(`${window.location.origin}/muse/landing`)}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, padding: "6px 14px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.25)", color: "#ffd700", textDecoration: "none" }}>Share on X</a>
+                <button onClick={() => { navigator.clipboard?.writeText(joinInfo?.shareUrl || `${window.location.origin}/muse/landing`); }} style={{ fontSize: 11, padding: "6px 14px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.25)", color: "#ffd700", cursor: "pointer" }}>Copy Invite Link</button>
+                <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent("Just joined the Musa by WYZ waitlist ✦ Creative professional network for photographers, models, and filmmakers")}&url=${encodeURIComponent(joinInfo?.shareUrl || `${window.location.origin}/muse/landing`)}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, padding: "6px 14px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.25)", color: "#ffd700", textDecoration: "none" }}>Share on X</a>
               </div>
             </div>
           )}
@@ -651,7 +672,7 @@ export default function MuseLandingPage() {
                   </div>
                 </div>
                 <button type="submit" className="muse-btn primary" style={{ width: "100%", justifyContent: "center" }} disabled={submitting}>{submitting ? (<><span className="muse-spinner" /> Joining...</>) : (<>Claim My Spot <FiArrowRight size={16} /></>)}</button>
-                {submitResult && <div className={`muse-toast ${submitResult.success ? "success" : "error"}`}>{submitResult.message}</div>}
+                {submitResult && <div className={`muse-toast ${submitResult.success ? "success" : "error"}`}>{submitResult.message}{joinInfo && submitResult.success && <div style={{ marginTop: 6, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}><button type="button" onClick={() => { navigator.clipboard?.writeText(joinInfo.shareUrl); }} style={{ fontSize: 11, padding: "4px 12px", borderRadius: 99, background: "rgba(10,6,18,0.35)", border: "1px solid rgba(255,255,255,0.25)", color: "inherit", cursor: "pointer" }}>Copy invite link</button><span style={{ fontSize: 12, opacity: 0.8 }}>#{joinInfo.position}{joinInfo.total ? ` of ${joinInfo.total}` : ""} · each friend moves you up</span></div>}</div>}
                 <p className="muse-form-note">By joining, you agree to our <a href="/muse/terms">Terms</a> &amp; <a href="/muse/privacy">Privacy Policy</a>. No spam, ever.</p>
               </form>
 

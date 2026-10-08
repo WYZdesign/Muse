@@ -27,6 +27,8 @@ export const WaitlistSchema = z.object({
   email: emailField,
   phone: z.string().max(40).nullish(),
   source: z.string().max(64).nullish(),
+  /** Optional ?ref= share code from whoever invited this signup. */
+  ref: z.string().max(16).regex(/^[A-Za-z0-9]+$/).nullish(),
 });
 export type WaitlistInput = z.infer<typeof WaitlistSchema>;
 

@@ -1,7 +1,51 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const inserts: any[] = [];
-let insertError: { code?: string } | null = null;
+type Row = Record<string, any>;
+const tables: Record<string, Row[]> = {
+  muse_waitlist: [],
+  muse_landing_analytics: [],
+  muse_qr_events: [],
+};
+let forcedInsertError: { code?: string } | null = null;
+
+function makeBuilder(table: string, opts?: { head?: boolean }) {
+  const rows = () => tables[table] ?? [];
+  const filters: Array<{ op: "eq" | "lt"; c: string; v: any }> = [];
+  const matched = () =>
+    rows().filter((r) => filters.every((f) => (f.op === "eq" ? r[f.c] === f.v : r[f.c] < f.v)));
+  const api: any = {
+    eq: (c: string, v: any) => { filters.push({ op: "eq", c, v }); return api; },
+    lt: (c: string, v: any) => { filters.push({ op: "lt", c, v }); return api; },
+    maybeSingle: async () => ({ data: matched()[0] ?? null, error: null }),
+    then: (onF: any, onR: any) =>
+      Promise.resolve(opts?.head
+        ? { count: matched().length, data: null, error: null }
+        : { count: matched().length, data: matched(), error: null }
+      ).then(onF, onR),
+  };
+  return api;
+}
+
+function makeClient() {
+  return {
+    from: (table: string) => ({
+      insert: async (row: Row) => {
+        if (table === "muse_waitlist") {
+          if (forcedInsertError) return { error: forcedInsertError };
+          if ((tables.muse_waitlist ?? []).some((r) => r.email === row.email)) {
+            return { error: { code: "23505" } };
+          }
+          (tables.muse_waitlist ??= []).push(row);
+          return { error: null, data: row };
+        }
+        (tables[table] ??= []).push(row);
+        return { error: null, data: row };
+      },
+      upsert: async (row: Row) => { (tables[table] ??= []).push(row); return { error: null }; },
+      select: (_cols: string, opts?: { head?: boolean }) => makeBuilder(table, opts),
+    }),
+  };
+}
 
 vi.mock("@/lib/rate-limit", () => ({
   checkRate: vi.fn(async () => true),
@@ -12,41 +56,7 @@ vi.mock("@/lib/email", () => ({
   waitlistWelcome: vi.fn(() => ({ to: "a@b.c", subject: "welcome", html: "" })),
 }));
 vi.mock("@/lib/supabase", () => ({
-  getServiceClient: vi.fn(() => ({
-    from: (table: string) => {
-      if (table === "muse_waitlist") {
-        return {
-          insert: async (row: any) => {
-            if (insertError) return { error: insertError };
-            inserts.push(row);
-            return { error: null };
-          },
-        };
-      }
-      if (table === "muse_landing_analytics") {
-        return {
-          select: () => ({
-            eq: () => ({
-              maybeSingle: async () => ({ data: { signups: 3 }, error: null }),
-            }),
-          }),
-          upsert: async (row: any) => {
-            inserts.push({ __analytics: row });
-            return { error: null };
-          },
-        };
-      }
-      if (table === "muse_qr_events") {
-        return {
-          insert: async (row: any) => {
-            inserts.push({ __qr: row });
-            return { error: null };
-          },
-        };
-      }
-      return { insert: async () => ({ error: null }) };
-    },
-  })),
+  getServiceClient: vi.fn(() => makeClient()),
 }));
 
 import { POST } from "@/app/api/muse/waitlist/route";
@@ -60,14 +70,16 @@ function mockReq(body: unknown, ip = "10.0.0.1") {
   } as any;
 }
 
-describe("waitlist route", () => {
-  beforeEach(() => {
-    inserts.length = 0;
-    insertError = null;
-    vi.clearAllMocks();
-    vi.stubEnv("MUSE_DEMO_MODE", "false");
-  });
+beforeEach(() => {
+  tables.muse_waitlist.length = 0;
+  tables.muse_landing_analytics.length = 0;
+  tables.muse_qr_events.length = 0;
+  forcedInsertError = null;
+  vi.clearAllMocks();
+  vi.stubEnv("MUSE_DEMO_MODE", "false");
+});
 
+describe("waitlist route", () => {
   it("409 demo mode", async () => {
     vi.stubEnv("MUSE_DEMO_MODE", "true");
     const r = await POST(mockReq({ email: "a@b.c" }));
@@ -93,14 +105,15 @@ describe("waitlist route", () => {
     expect(r.status).toBe(200);
     const body = await r.json();
     expect(body.success).toBe(true);
-    const row = inserts.find((x) => x.email);
-    expect(row.email).toBe("foo@example.com");
-    expect(inserts.some((x) => x.__qr)).toBe(true);
+    const row = tables.muse_waitlist.find((x) => x.email);
+    expect(row).toBeDefined();
+    expect(row!.email).toBe("foo@example.com");
+    expect(tables.muse_qr_events.length).toBe(1);
     expect(sendEmail).toHaveBeenCalled();
   });
 
   it("409 on unique violation (23505)", async () => {
-    insertError = { code: "23505" };
+    forcedInsertError = { code: "23505" };
     const r = await POST(mockReq({ email: "dup@example.com" }));
     expect(r.status).toBe(409);
     const body = await r.json();
@@ -108,8 +121,86 @@ describe("waitlist route", () => {
   });
 
   it("500 on other insert errors", async () => {
-    insertError = { code: "XX000" };
+    forcedInsertError = { code: "XX000" };
     const r = await POST(mockReq({ email: "x@example.com" }));
     expect(r.status).toBe(500);
+  });
+});
+
+describe("waitlist referral loop", () => {
+  it("issues a shareable referral code, position and share link", async () => {
+    const r = await POST(mockReq({ email: "first@example.com" }));
+    expect(r.status).toBe(200);
+    const body = await r.json();
+
+    const row = tables.muse_waitlist[0];
+    expect(row.id).toEqual(expect.any(String));
+    expect(row.created_at).toEqual(expect.any(String));
+    // 8 chars from the human-friendly alphabet (no 0/O/1/I/L).
+    expect(row.referral_code).toMatch(/^[A-HJ-NP-Z2-9]{8}$/);
+    expect(row.referred_by).toBeNull();
+
+    expect(body.referralCode).toBe(row.referral_code);
+    expect(body.position).toBe(1);
+    expect(body.total).toBe(1);
+    expect(body.referrals).toBe(0);
+    expect(body.shareUrl).toContain(`?ref=${row.referral_code}`);
+    expect(body.shareUrl).toContain("/muse/landing");
+  });
+
+  it("attributes a ?ref= signup to the referrer", async () => {
+    const referrer = {
+      id: "11111111-1111-1111-1111-111111111111",
+      created_at: "2026-10-08T00:00:00.000Z",
+      referral_code: "REF12345",
+      email: "referrer@example.com",
+      source: "default",
+    };
+    tables.muse_waitlist.push(referrer);
+
+    const r = await POST(mockReq({ email: "invited@example.com", ref: "REF12345" }));
+    expect(r.status).toBe(200);
+    const body = await r.json();
+    const invited = tables.muse_waitlist.find((x) => x.email === "invited@example.com");
+    expect(invited).toBeDefined();
+    expect(invited!.referred_by).toBe(referrer.id);
+    // Second signup of the day: you arrive #2, then your own credit is 0.
+    expect(body.position).toBe(2);
+    expect(body.total).toBe(2);
+  });
+
+  it("ignores an unknown ref so a stale link can never block a signup", async () => {
+    const r = await POST(mockReq({ email: "plain@example.com", ref: "ZZZZ9999" }));
+    expect(r.status).toBe(200);
+    const row = tables.muse_waitlist.find((x) => x.email === "plain@example.com");
+    expect(row).toBeDefined();
+    expect(row!.referred_by).toBeNull();
+  });
+
+  it("rejects a malformed ref code with 400", async () => {
+    const r = await POST(mockReq({ email: "badref@example.com", ref: "not a code!" }));
+    expect(r.status).toBe(400);
+    expect(tables.muse_waitlist.length).toBe(0);
+  });
+
+  it("returns the existing slot (position + link) when the email repeats", async () => {
+    await POST(mockReq({ email: "again@example.com" }));
+    const code = tables.muse_waitlist[0].referral_code;
+
+    const r = await POST(mockReq({ email: "again@example.com" }));
+    expect(r.status).toBe(409);
+    const body = await r.json();
+    expect(body.code).toBe("ALREADY_ON_LIST");
+    expect(body.position).toBe(1);
+    expect(body.total).toBe(1);
+    expect(body.referralCode).toBe(code);
+    expect(body.shareUrl).toContain(`?ref=${code}`);
+    expect(tables.muse_waitlist.length).toBe(1);
+  });
+
+  it("keeps sendEmail fail-open on every path", async () => {
+    await POST(mockReq({ email: "a1@example.com" }));
+    await POST(mockReq({ email: "a2@example.com", ref: "REF12345" }));
+    expect(sendEmail).toHaveBeenCalledTimes(2);
   });
 });
