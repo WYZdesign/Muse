@@ -13,6 +13,22 @@ import { sanitizeAvailabilityStatus, sanitizeTravelDestinations, sanitizeTravelD
 import { normalizePortfolioVisibility } from "@/lib/muse-portfolio-visibility";
 import { UUID_RE, NextResponse, safeServerError, type ActionContext } from "./shared";
 
+// Loose row shapes for values that come straight off Supabase (the client is
+// created without database generics, so query results are `any`). These name
+// only the fields the code actually reads.
+type PaymentRow = { id: string | number; created_at?: string | null };
+type BoostPurchaseRow = { status?: string | null; quantity?: number | null };
+type SearchAlert = { searchId: unknown; name: unknown; newMatches: unknown[] };
+
+/** muse_briefs / muse_forum_posts expose their author through a nested select.
+ *  The Supabase client infers that to-one relation as an ARRAY even though it
+ *  returns a single object at runtime, so accept either shape and read the id. */
+function isBlockedAuthor(row: { author_id?: unknown }, blocked: Set<string>): boolean {
+  const a = row.author_id as { id?: unknown } | { id?: unknown }[] | null | undefined;
+  const id = Array.isArray(a) ? a[0]?.id : a?.id;
+  return blocked.has(String(id));
+}
+
 export const preferencesSave = async ({ sb, profile, rest }: ActionContext) => {
   const ALLOWED_PREFS = new Set([
     "nsfw", "showOnline", "showDistance", "notifications", "emailNotifications",
@@ -69,7 +85,7 @@ export const preferencesSave = async ({ sb, profile, rest }: ActionContext) => {
   if (rest.toggleNotificationPref && typeof rest.toggleNotificationPref === "object") {
     const { key, value } = rest.toggleNotificationPref as { key: string; value: boolean };
     if (["match", "message", "brief", "like", "push", "email"].includes(key)) {
-      const existing = (source as any).notifications || {};
+      const existing = (source as { notifications?: Record<string, unknown> }).notifications || {};
       prefs.notifications = { ...existing, [key]: value };
     }
   }
@@ -116,7 +132,7 @@ export const clientSync = async ({ sb, profile, rest, ip }: ActionContext) => {
   if (!await checkRate(ip, "sync", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   const results: string[] = [];
   if (rest.matches?.length) {
-    for (const m of rest.matches as any[]) {
+    for (const m of rest.matches as { id: string }[]) {
       await sb.from("muse_matches").upsert(
         { user_id: profile.id, target_id: m.id, matched_at: new Date().toISOString() },
         { onConflict: "user_id,target_id", ignoreDuplicates: true }
@@ -147,8 +163,8 @@ export const paymentsGet = async ({ sb, profile }: ActionContext) => {
   const { data: asPayer } = await sb.from("muse_booking_payments").select("*, payer_id(name, avatar), payee_id(name, avatar), booking_id(session_id, status)")
     .eq("payer_id", profile.id).order("created_at", { ascending: false }).limit(50);
   const all = [...(asPayee || []), ...(asPayer || [])];
-  const deduped = Array.from(new Map(all.map((p: any) => [p.id, p])).values());
-  deduped.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  const deduped = Array.from(new Map(all.map((p: PaymentRow) => [p.id, p])).values());
+  deduped.sort((a: PaymentRow, b: PaymentRow) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
   return NextResponse.json({ payments: deduped });
 };
 
@@ -178,7 +194,7 @@ export const searchAll = async ({ sb, profile, rest, ip }: ActionContext) => {
   const pattern = ilikeContainsPattern(q);
   const parsedLimit = Number(rawLimit);
   const limit = Number.isFinite(parsedLimit) ? Math.min(50, Math.max(1, Math.floor(parsedLimit))) : 20;
-  const results: any = { users: [], briefs: [], communities: [] };
+  const results: Record<string, unknown[]> = { users: [], briefs: [], communities: [] };
 
   // Same "blocking was write-only" gap fixed across get.ts's list endpoints
   // this session (feed/briefs/forum/sessions/moments/events) — searchAll
@@ -188,7 +204,7 @@ export const searchAll = async ({ sb, profile, rest, ip }: ActionContext) => {
   let searchBlockedIds = new Set<string>();
   if (type === "all" || type === "users" || type === "briefs" || type === "forum") {
     const { data: blocks } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profile.id},target_id.eq.${profile.id}`);
-    searchBlockedIds = new Set((blocks || []).map((b: any) => (String(b.user_id) === String(profile.id) ? String(b.target_id) : String(b.user_id))));
+    searchBlockedIds = new Set((blocks || []).map((b: { user_id: unknown; target_id: unknown }) => (String(b.user_id) === String(profile.id) ? String(b.target_id) : String(b.user_id))));
   }
 
   if (type === "all" || type === "users") {
@@ -219,7 +235,7 @@ export const searchAll = async ({ sb, profile, rest, ip }: ActionContext) => {
     if (sort === "popular") query = query.order("views_count", { ascending: false });
     else if (sort === "newest") query = query.order("created_at", { ascending: false });
     const { data: users } = await query.limit(limit);
-    results.users = (users || []).filter((u: any) => !searchBlockedIds.has(String(u.id)));
+    results.users = (users || []).filter((u: { id: unknown }) => !searchBlockedIds.has(String(u.id)));
   }
 
   if (type === "all" || type === "briefs") {
@@ -228,7 +244,7 @@ export const searchAll = async ({ sb, profile, rest, ip }: ActionContext) => {
       .or(`title.ilike.${pattern},description.ilike.${pattern},type.ilike.${pattern}`)
       .eq("status", "open")
       .limit(limit);
-    results.briefs = (briefs || []).filter((b: any) => !searchBlockedIds.has(String(b.author_id?.id)));
+    results.briefs = (briefs || []).filter((b: { author_id?: unknown }) => !isBlockedAuthor(b, searchBlockedIds));
   }
 
   if (type === "all" || type === "communities") {
@@ -245,7 +261,7 @@ export const searchAll = async ({ sb, profile, rest, ip }: ActionContext) => {
       .or(`title.ilike.${pattern},body.ilike.${pattern},category.ilike.${pattern}`)
       .order("created_at", { ascending: false })
       .limit(limit);
-    results.forum = (posts || []).filter((p: any) => !searchBlockedIds.has(String(p.author_id?.id)));
+    results.forum = (posts || []).filter((p: { author_id?: unknown }) => !isBlockedAuthor(p, searchBlockedIds));
   }
 
   if (type === "messages") {
@@ -289,7 +305,7 @@ import { NextResponse as _NR } from "next/server";
 
 export const BOOST_DURATIONS = { "24h": 1, "72h": 3, "7d": 7 } as const;
 
-async function grantBoosts(sb: any, userId: string, count: number) {
+async function grantBoosts(sb: ActionContext["sb"], userId: string, count: number) {
   if (count <= 0) return;
   const { data: prof } = await sb.from("muse_profiles").select("boost_inventory").eq("id", userId).maybeSingle();
   const cur = Number(prof?.boost_inventory || 0);
@@ -301,7 +317,7 @@ export { grantBoosts as addBoostInventory };
 
 // Spends a boost (inventory first, then Pro weekly allowance) and sets the
 // active-boost expiry. Returns the new expiry, or null if none could be spent.
-export async function spendBoost(sb: any, profileId: string, durationKey: string): Promise<string | null> {
+export async function spendBoost(sb: ActionContext["sb"], profileId: string, durationKey: string): Promise<string | null> {
   const hours = BOOST_DURATIONS[durationKey as keyof typeof BOOST_DURATIONS];
   if (!hours) return null;
   const { data: prof } = await sb.from("muse_profiles").select("tier, boost_inventory, boost_expires_at").eq("id", profileId).maybeSingle();
@@ -366,18 +382,19 @@ export async function saveBoostPurchase({ sb, profile, rest }: ActionContext) {
     .eq("user_id", profile.id)
     .maybeSingle();
   if (error || !purchase) return _NR.json({ error: "Purchase not found" }, { status: 404 });
-  if ((purchase as any).status === "granted") {
-    return _NR.json({ success: true, alreadyGranted: true, quantity: (purchase as any).quantity });
+  const boost = purchase as BoostPurchaseRow;
+  if (boost.status === "granted") {
+    return _NR.json({ success: true, alreadyGranted: true, quantity: boost.quantity });
   }
   // Security hardening: only grant after the Stripe webhook marks the row
   // `paid`. A `pending` row means the checkout hasn't completed/confirmed yet,
   // so granting would hand out boosts the user never actually paid for.
-  if ((purchase as any).status !== "paid") {
+  if (boost.status !== "paid") {
     return _NR.json({ error: "Payment not confirmed yet", code: "NOT_PAID" }, { status: 402 });
   }
-  await grantBoosts(sb, profile.id, Number((purchase as any).quantity || qty));
+  await grantBoosts(sb, profile.id, Number(boost.quantity || qty));
   await sb.from("muse_boost_purchases").update({ status: "granted", granted_at: new Date().toISOString() }).eq("id", purchaseId);
-  return _NR.json({ success: true, quantity: Number((purchase as any).quantity || qty) });
+  return _NR.json({ success: true, quantity: Number(boost.quantity || qty) });
 }
 
 // Audit fix (2026-09-08): the "is this boost timestamp still active" check was
@@ -393,7 +410,7 @@ export function isBoostActive(expiresAt: string | null | undefined): boolean {
 }
 
 // Shared boost state — used by boostActivate and surfaced to the client.
-export async function getBoostStatus(sb: any, profileId: string) {
+export async function getBoostStatus(sb: ActionContext["sb"], profileId: string) {
   const { data: prof } = await sb.from("muse_profiles")
     .select("tier, boost_inventory, boost_expires_at")
     .eq("id", profileId).maybeSingle();
@@ -434,7 +451,7 @@ export async function boostAnalytics({ sb, profile }: ActionContext) {
   const likesReceived = incomingLikes?.length || 0;
   let matchesReceived = 0;
   if (likesReceived > 0) {
-    const likerIds = incomingLikes!.map((r: any) => r.user_id);
+    const likerIds = incomingLikes!.map((r: { user_id: string }) => r.user_id);
     const { count } = await sb.from("muse_matches")
       .select("*", { count: "exact", head: true })
       .eq("user_id", profile.id)
@@ -490,7 +507,7 @@ export const savedSearchAlerts = async ({ sb, profile }: Pick<ActionContext, "sb
     .select("id, name, query, filters, last_notified_at")
     .eq("user_id", profile.id);
   if (!searches?.length) return NextResponse.json({ alerts: [] });
-  const alerts: any[] = [];
+  const alerts: SearchAlert[] = [];
   for (const search of searches) {
     const since = search.last_notified_at || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const pattern = search.query ? `%${search.query}%` : null;
