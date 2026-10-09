@@ -15,7 +15,10 @@ import { resolvePortfolioGate } from "@/lib/muse-portfolio-visibility";
 import { publicAge } from "@/lib/muse-age";
 
 const PRIVATE_ALBUM_PREFIX = "storage://muse-private/";
-async function albumPhotoForViewer(sb: ReturnType<typeof getServiceClient>, photo: any) {
+/** A gallery row as stored; only `img_url` is inspected, the rest pass through. */
+type AlbumPhotoRow = { img_url?: unknown } & Record<string, unknown>;
+
+async function albumPhotoForViewer(sb: ReturnType<typeof getServiceClient>, photo: AlbumPhotoRow): Promise<AlbumPhotoRow> {
   const value = typeof photo?.img_url === "string" ? photo.img_url : "";
   if (!value.startsWith(PRIVATE_ALBUM_PREFIX)) return photo;
   const path = value.slice(PRIVATE_ALBUM_PREFIX.length);
@@ -32,7 +35,20 @@ const CREATIVE_SIDE: Record<string, "behind" | "front"> = {
 };
 const Z_COMPAT: Record<string, string[]> = { Aries: ["Leo", "Sagittarius", "Gemini", "Aquarius"], Taurus: ["Virgo", "Capricorn", "Cancer", "Pisces"], Gemini: ["Libra", "Aquarius", "Aries", "Leo"], Cancer: ["Scorpio", "Pisces", "Taurus", "Virgo"], Leo: ["Aries", "Sagittarius", "Gemini", "Libra"], Virgo: ["Taurus", "Capricorn", "Cancer", "Scorpio"], Libra: ["Gemini", "Aquarius", "Aries", "Sagittarius"], Scorpio: ["Cancer", "Pisces", "Taurus", "Capricorn"], Sagittarius: ["Aries", "Leo", "Gemini", "Libra"], Capricorn: ["Taurus", "Virgo", "Cancer", "Scorpio"], Aquarius: ["Gemini", "Libra", "Aries", "Sagittarius"], Pisces: ["Cancer", "Scorpio", "Taurus", "Virgo"] };
 const M_COMPAT: Record<string, string[]> = { INTJ: ["ENTP", "ENFP"], INTP: ["ENTJ", "ENFJ"], ENTJ: ["INTP", "INFP"], ENTP: ["INTJ", "INFJ"], INFJ: ["ENFP", "ENTP"], INFP: ["ENFJ", "ENTJ"], ENFJ: ["INFP", "INTP"], ENFP: ["INFJ", "INTJ"], ISTJ: ["ESFP", "ESTP"], ISFJ: ["ESFP", "ESTP"], ESTJ: ["ISFP", "ISTP"], ESFJ: ["ISFP", "ISTP"], ISTP: ["ESFJ", "ESTJ"], ISFP: ["ESFJ", "ESTJ"], ESTP: ["ISTJ", "ISFJ"], ESFP: ["ISTJ", "ISFJ"] };
-function calcMatchScore(a: any, b: any): number {
+/** The subset of a profile row calcMatchScore reads. Fields are optional and
+ *  loosely typed because the values come straight off Supabase rows. */
+type MatchProfile = {
+  styles?: unknown;
+  looking?: unknown;
+  type?: string | null;
+  zodiac?: string | null;
+  chinese?: string | null;
+  mbti?: string | null;
+  life_path?: string | number | null;
+  verified?: boolean | null;
+};
+
+function calcMatchScore(a: MatchProfile, b: MatchProfile): number {
   let s = 40;
   const aStyles = Array.isArray(a.styles) ? a.styles : [];
   const bStyles = Array.isArray(b.styles) ? b.styles : [];
@@ -42,7 +58,7 @@ function calcMatchScore(a: any, b: any): number {
   const bLooking = Array.isArray(b.looking) ? b.looking : [];
   if (aLooking.some((l: string) => bLooking.some((bl: string) => bl.toLowerCase().includes(l.toLowerCase()) || l.toLowerCase().includes(bl.toLowerCase())))) s += 15;
   if (aLooking.some((l: string) => (b.type || "").toLowerCase().includes(l.toLowerCase()))) s += 8;
-  const aSide = CREATIVE_SIDE[a.type]; const bSide = CREATIVE_SIDE[b.type];
+  const aSide = a.type ? CREATIVE_SIDE[a.type] : undefined; const bSide = b.type ? CREATIVE_SIDE[b.type] : undefined;
   if (aSide && bSide && aSide !== bSide) {
     s += 6;
     const aLooks = aLooking.some((l: string) => (b.type || "").toLowerCase().includes(l.toLowerCase()));
