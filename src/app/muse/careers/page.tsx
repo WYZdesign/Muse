@@ -1,3 +1,4 @@
+/** Public careers page. */
 import type { Metadata } from "next";
 import { getCareersUrl } from "@/lib/urls";
 

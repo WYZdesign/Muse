@@ -1,3 +1,4 @@
+/** Report-a-user dialog: collects a reason and submits it via the moderation action. */
 import type { Ref } from "react";
 import { FiArrowLeft, FiX } from "react-icons/fi";
 import { trackError } from "@/lib/errorTracker";

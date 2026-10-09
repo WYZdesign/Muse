@@ -1,3 +1,4 @@
+/** Prop and state contracts shared across the modal components. */
 import type { CSSProperties, Dispatch, RefObject, SetStateAction, SyntheticEvent } from "react";
 import type { LikeAnchor, Match, Profile, Screen, ShootDisclosure } from "../components/types";
 import type { ProfileReview, ViewProfile, CurrentUser } from "../page-models";

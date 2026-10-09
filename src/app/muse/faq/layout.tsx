@@ -1,3 +1,4 @@
+/** Metadata wrapper for the FAQ route. */
 import type { Metadata } from "next";
 import { getFaqUrl } from "@/lib/urls";
 

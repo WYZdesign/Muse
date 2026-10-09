@@ -1,3 +1,4 @@
+/** Barrel for the screen hook set so screens import from one path. */
 export { useUserState } from "./useUserState";
 export { useAppState } from "./useAppState";
 export { useFeedState } from "./useFeedState";

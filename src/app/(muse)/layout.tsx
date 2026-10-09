@@ -1,3 +1,4 @@
+/** Authenticated app-shell layout: shell metadata plus noindex for the app route. */
 import type { Metadata, Viewport } from "next";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import SplashScreen from "@/components/SplashScreen";

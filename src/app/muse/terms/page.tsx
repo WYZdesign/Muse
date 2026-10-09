@@ -1,3 +1,4 @@
+/** Public terms of service at /muse/terms. */
 import type { Metadata } from "next";
 import { getTermsUrl } from "@/lib/urls";
 

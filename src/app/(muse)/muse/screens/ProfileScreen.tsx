@@ -1,3 +1,4 @@
+/** Own/public profile screen: view and edit, portfolio, and match shortcuts. */
 import React, { memo, useState, useEffect } from "react";
 import Image from "next/image";
 import { FiArrowLeft, FiEdit2, FiSettings, FiUsers, FiShoppingBag, FiDollarSign, FiClock, FiExternalLink, FiTrendingUp, FiFileText, FiBriefcase, FiZap } from "react-icons/fi";

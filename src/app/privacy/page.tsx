@@ -1,3 +1,4 @@
+/** Top-level /privacy alias of the policy, used by email footers and external links. */
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

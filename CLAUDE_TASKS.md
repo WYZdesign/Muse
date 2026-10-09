@@ -62,10 +62,18 @@ NetworkScreen (1760) + SettingsScreen (1601). L-1 and M-3 are already satisfied.
 - **Docs reconciled** — `ROADMAP.md` restated with measured numbers;
   `DELIVERY_STATUS.md` header moved `63f9d71` → `0d99220` (44-commit catch-up).
 
-**Still open (low priority):** `unindexed_foreign_keys` (36) and `unused_index`
-(63) advisor lints; the `sql/MUSE_SCHEMA_FULL_*.sql` dumps still predate
-migrations 0001-0037 (the migration chain is the authority for a live DB, but a
-fresh DB built from the dump would need the chain reconciled).
+**Still open (low priority):** `unused_index` (~98) advisor lints (mostly "no
+scans recorded yet" for the 36 FK indexes added in `0038`; re-measure under real
+traffic before dropping); the `sql/MUSE_SCHEMA_FULL_*.sql` dumps still predate
+the migrations (the migration chain is the authority for a live DB, but a fresh
+DB built from the dump would need the chain reconciled).
+
+**DONE (opencode, 2026-10-08 later batches):** **L-2** — the 28 remaining
+files without a header now carry a one-line "why this file exists" comment
+(the "121" figure was stale). Tier 2.1 user-journey E2E, Tier 2.3 component
+tests (Nav, pageTourContent), Tier 4.4 load tester, Tier 1.4 bundle analysis
+(Next built-in), migration 0038 (36 FK indexes). Also repaired the iOS usage
+descriptions and landed the stranded ChatGPT docs/audit branches.
 
 **ASSIGNED TO YOU (Claude):**
 1. **XL-1 rolling `any` purge.** 3 files already done (`components/MatchCard.tsx`

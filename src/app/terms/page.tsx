@@ -1,3 +1,4 @@
+/** Top-level /terms alias of the terms of service. */
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

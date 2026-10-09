@@ -1,3 +1,4 @@
+/** Public pricing page (plan tiers and CTAs). */
 import type { Metadata } from "next";
 import { getMuseUrl } from "@/lib/urls";
 

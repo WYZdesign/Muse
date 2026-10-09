@@ -1,3 +1,4 @@
+/** Scheduled watchdog for safety check-ins that have gone overdue. */
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
 import { sendEmail, notify } from "@/lib/email";

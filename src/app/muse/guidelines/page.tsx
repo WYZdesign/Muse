@@ -1,3 +1,4 @@
+/** Public community guidelines page. */
 import type { Metadata } from "next";
 import { getGuidelinesUrl } from "@/lib/urls";
 

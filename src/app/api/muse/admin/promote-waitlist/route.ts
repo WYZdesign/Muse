@@ -1,3 +1,4 @@
+/** Admin action: promote a waitlist entry into a real account. */
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
 import { checkRate, clientIp } from "@/lib/rate-limit";

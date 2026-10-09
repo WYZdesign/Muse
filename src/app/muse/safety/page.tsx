@@ -1,3 +1,4 @@
+/** Public safety page at /muse/safety. */
 import type { Metadata } from "next";
 import { getSafetyUrl } from "@/lib/urls";
 

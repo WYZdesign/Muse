@@ -1,3 +1,4 @@
+/** Metadata wrapper for the landing route. */
 import type { Metadata } from "next";
 import { getLandingUrl } from "@/lib/urls";
 

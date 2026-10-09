@@ -1,3 +1,4 @@
+/** Global 404 boundary for unmatched routes. */
 import Link from "next/link";
 
 export default function NotFound() {

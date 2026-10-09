@@ -1,3 +1,4 @@
+/** Generates /sitemap.xml from the public route list. */
 import type { MetadataRoute } from "next";
 import { getMuseUrl } from "@/lib/urls";
 

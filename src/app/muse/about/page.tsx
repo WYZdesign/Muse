@@ -1,3 +1,4 @@
+/** Public About page (static marketing content). */
 import type { Metadata } from "next";
 import { getMuseUrl } from "@/lib/urls";
 

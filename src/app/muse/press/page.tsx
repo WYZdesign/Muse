@@ -1,3 +1,4 @@
+/** Public press and media page. */
 import type { Metadata } from "next";
 import { getPressUrl } from "@/lib/urls";
 

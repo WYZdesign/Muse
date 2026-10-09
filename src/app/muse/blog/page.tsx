@@ -1,3 +1,4 @@
+/** Public blog index page. */
 import type { Metadata } from "next";
 import { getMuseUrl } from "@/lib/urls";
 

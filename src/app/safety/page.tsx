@@ -1,3 +1,4 @@
+/** Top-level /safety route serving the community-guidelines content. */
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

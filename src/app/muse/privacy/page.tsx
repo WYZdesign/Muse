@@ -1,3 +1,4 @@
+/** Public privacy policy at /muse/privacy. */
 import type { Metadata } from "next";
 import { getPrivacyUrl } from "@/lib/urls";
 

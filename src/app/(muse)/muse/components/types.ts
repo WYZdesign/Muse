@@ -1,3 +1,4 @@
+/** Component-layer display types (profile cards, badges) shared by the component set. */
 export type Profile = typeof PROFILES[number] & { photos?: string[]; badges?: {name:string;desc:string;icon:string;color:string}[]; matchScore?: number; rulesScore?: number; cosineScore?: number; exp?: string; avatar?: string; stats?: { matches: number; likes: number; superLikes: number; passes: number; bookingsCompleted: number; matchesReceived: number; messagesSent: number }; createdAt?: number; referrals?: number; portfolios?: {img:string;title:string;type:string}[]; foundingTier?: string; proExpiresAt?: string; tier?: string; nsfw?: boolean; status?: string };
 export type Brief = typeof BRIEFS[number];
 export type Match = Partial<Profile> & {

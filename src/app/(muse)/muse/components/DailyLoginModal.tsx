@@ -1,3 +1,4 @@
+/** Daily-login reward modal: surfaces the streak/quest reward once per day (gated on muse_quest_login_day). */
 import StreakWidget from "./StreakWidget";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 

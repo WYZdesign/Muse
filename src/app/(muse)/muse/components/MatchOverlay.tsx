@@ -1,3 +1,4 @@
+/** Full-screen celebration shown when a new match is created. */
 import type { CSSProperties, PointerEvent, SyntheticEvent } from "react";
 import Image from "next/image";
 import { FiX } from "react-icons/fi";

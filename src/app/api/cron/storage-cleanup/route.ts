@@ -1,3 +1,4 @@
+/** Scheduled worker that removes orphaned storage objects and clears finished cleanup jobs. */
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
 import { isDemoMode } from "@/lib/demo-mode";

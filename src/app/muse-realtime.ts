@@ -1,3 +1,4 @@
+/** Realtime channel helpers for chat and notifications (Supabase subscription setup, message shape). */
 import { supabase } from "@/lib/supabase";
 import { authFetch } from "@/app/(muse)/muse/lib/auth-client";
 import { trackError } from "@/lib/errorTracker";
