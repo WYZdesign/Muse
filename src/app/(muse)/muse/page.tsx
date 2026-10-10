@@ -427,7 +427,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   // "asked, granted" and "asked, denied" — never asks twice in a session.
   useMotionPermission();
 
-  const { liveProfiles, setLiveProfiles, matches, setMatches, likedBy, setLikedBy, blockedUsers, setBlockedUsers, matchStreak, setMatchStreak } = useDiscoveryData({ apiFetch, authFetch, profileId: authUser?.profile?.id ?? null });
+  const { liveProfiles, setLiveProfiles, discoverError, matches, setMatches, likedBy, setLikedBy, blockedUsers, setBlockedUsers, matchStreak, setMatchStreak } = useDiscoveryData({ apiFetch, authFetch, profileId: authUser?.profile?.id ?? null });
   // Ref to avoid stale closure on rapid swipes — always holds latest matches
   const matchesRef = useRef(matches);
   useEffect(() => { matchesRef.current = matches; }, [matches]);
@@ -563,6 +563,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
 
 
   const showToast = useCallback((msg: string | { msg: string; onTap?: () => void; type?: ToastType }) => { const t = typeof msg === "string" ? { msg } : msg; setToastMsg(t); setTimeout(() => setToastMsg(null), 3000); }, []);
+  useEffect(() => { if (discoverError) showToast({ msg: discoverError, type: "error" }); }, [discoverError, showToast]);
 
   // Back-navigation history: showScreen pushes the screen we're leaving so a
   // back button can return to the ACTUAL previous page (e.g. Analytics → back
