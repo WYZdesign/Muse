@@ -56,6 +56,15 @@ async function openMatchMenu(page: PwPage): Promise<void> {
 
 test.describe('Discover Deck', () => {
   test.beforeEach(async ({ page }) => {
+    // The deck is motion-heavy (card transforms, animated backdrop, particles).
+    // Under Playwright's software renderer that work starves the main thread, so
+    // input dispatch and locator visibility checks stall for tens of seconds and a
+    // plain waitForSelector(TOP_CARD) can time out even though the card is already
+    // in the DOM. That was the CI flake: a first-attempt timeout at the wait below
+    // that only passed on retry. The app honors prefers-reduced-motion, so ask for
+    // it up front; each test below then exercises the same DOM and handlers with
+    // the render load off.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await loginAsDemoUser(page);
     await dismissPageTour(page);
     await page.waitForSelector('[data-screen="discover"].active, [data-screen="discover"]', { timeout: 15000 });
@@ -158,12 +167,8 @@ test.describe('Discover Deck', () => {
   test('a drag advances the deck through consecutive placeholder cards', async ({ page }) => {
     test.setTimeout(180_000);
 
-    // The deck is motion-heavy (card transforms, animated backdrop, particles).
-    // Under Playwright's software renderer that work starves the main thread, so
-    // input dispatch stalls for tens of seconds and a drag appears to hang even
-    // though the gesture itself is fine. The app honors prefers-reduced-motion,
-    // so asking for it exercises the same swipe path with the render load off.
-    await page.emulateMedia({ reducedMotion: 'reduce' });
+    // Reduced motion is requested in beforeEach; the drag below rides the same
+    // swipe path with the render load off.
 
     // If the app's pointer handlers ever block the renderer main thread, a
     // mouse action never returns and the failure is a bare "test timeout".
