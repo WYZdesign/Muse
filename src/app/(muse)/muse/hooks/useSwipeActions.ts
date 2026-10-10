@@ -272,20 +272,26 @@ export function useSwipeActions({
   const onPointerDown = useCallback((e: ReactPointerEvent) => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
     const target = e.target as HTMLElement;
-    // If user taps inside the scrollable card info area, let native scroll handle it
-    // Don't capture pointer — capture steals all subsequent pointer events from children
+    const card = e.currentTarget as HTMLElement;
+    const cardTop = card.getBoundingClientRect().top;
+    const arm = (capture: boolean) => {
+      dragRef.current = { startX: e.clientX, startY: e.clientY, active: true, relY: e.clientY - cardTop, startTime: Date.now(), el: card, axis: null };
+      if (capture) card.setPointerCapture?.(e.pointerId);
+    };
+    // `.card-info-scroll` is z-index 2 over `.card-hero` (z-index 1) and spans
+    // the whole card, so it is the reported target for almost every point on
+    // the photo — including the surface a user actually drags. Returning here
+    // without arming meant the gesture could never start, so the deck only
+    // advanced from the radial-menu buttons. Arm it, but do NOT capture yet:
+    // capturing here steals subsequent pointer events from the scroll
+    // container and breaks native vertical scrolling. onPointerMove takes the
+    // capture once the gesture proves horizontal, and disarms on vertical.
     if (target.closest && target.closest('.card-info-scroll')) {
+      arm(false);
       return;
     }
     if (target.closest && (target.closest('.card-action-btn') || target.closest('.card-portfolio-btn') || target.closest('.card-photo-thumb') || target.closest('button') || target.closest('a'))) return;
-    const card = e.currentTarget as HTMLElement;
-    const cardTop = card.getBoundingClientRect().top;
-    const relY = e.clientY - cardTop;
-    dragRef.current = { startX: e.clientX, startY: e.clientY, active: true, relY, startTime: Date.now(), el: card, axis: null };
-    // Only capture pointer if user is NOT starting inside the scrollable card
-    // info area — capture steals all subsequent pointer events from children,
-    // which breaks native scroll in .card-info-scroll.
-    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+    arm(true);
   }, []);
 
   const onPointerMove = useCallback((e: ReactPointerEvent) => {
@@ -306,6 +312,11 @@ export function useSwipeActions({
       // before locking into swipe mode — lets vertical scroll win by default.
       if (absDx < absDy * 1.5) return;
       dragRef.current.axis = "x";
+      // Capture only now: the gesture is horizontal, so taking the pointer can
+      // no longer interfere with scrolling, and the drag survives the card
+      // leaving the cursor on a fast flick. (A gesture armed by the
+      // .card-info-scroll branch above started without capture.)
+      dragRef.current.el?.setPointerCapture?.(e.pointerId);
     }
     dragValuesRef.current = { x: 0, y: 0, opacity: 0 };
     if (dragRef.current.axis === "x") {

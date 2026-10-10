@@ -47,6 +47,23 @@ const layerCache = new Map<string, HTMLCanvasElement[] | null>();
 
 let segmenterPromise: Promise<any> | null = null;
 
+/**
+ * Proves the main thread survived a long, frame-starving pass. The layout
+ * watchdog (app/layout.tsx) reloads the page when rAF stops for a long time;
+ * an in-browser segmentation pass cannot pump frames while it runs, so a
+ * finished pass is indistinguishable from a freeze at the exact moment the
+ * watchdog next gets a turn. Stamping this after the heavy work says "that
+ * pause was me, and I am done", so a completed pass never triggers a reload
+ * that would throw away the user's Discover position.
+ */
+function markAlive(): void {
+  try {
+    (window as unknown as { __museAlive?: number }).__museAlive = Date.now();
+  } catch {
+    /* non-browser context */
+  }
+}
+
 async function fetchDepthMap(imageUrl: string): Promise<string | null> {
   if (depthUrlCache.has(imageUrl)) return depthUrlCache.get(imageUrl) ?? null;
   try {
@@ -252,6 +269,9 @@ export function attachSpatialDepth(cardSelector: string, imgSelector: string): (
       if (cancelled) return;
 
       const layers = await buildLayersFor(src, sourceImg);
+      // buildLayersFor is the long, main-thread-blocking pass (model load +
+      // segmentation or per-pixel banding). Report liveness the moment it ends.
+      markAlive();
       if (cancelled || !layers || !layers.length) continue;
 
       const container = img.parentElement as HTMLElement | null;

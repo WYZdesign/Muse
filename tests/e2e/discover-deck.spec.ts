@@ -142,4 +142,178 @@ test.describe('Discover Deck', () => {
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden({ timeout: 5000 });
   });
+
+  // Requirement (Torreé): every placeholder card on Discover must be swipeable —
+  // not just the first one. A PASS (left) has no notification path in demo mode,
+  // so it deterministically advances; this drives the real pointer gesture
+  // (onPointerUp commits when a horizontal drag clears 80px) and then repeats,
+  // proving the deck keeps advancing past card 1.
+  //
+  // Regression this pins: `.card-info-scroll` is z-index 2 over `.card-hero`
+  // (z-index 1) and spans the whole card, so it is the reported target for
+  // nearly every point on the photo. useSwipeActions used to return from
+  // onPointerDown without arming the drag for that target, which meant a drag
+  // started anywhere on the card could never commit — the deck only advanced
+  // from the radial-menu buttons.
+  test('a drag advances the deck through consecutive placeholder cards', async ({ page }) => {
+    test.setTimeout(180_000);
+
+    // The deck is motion-heavy (card transforms, animated backdrop, particles).
+    // Under Playwright's software renderer that work starves the main thread, so
+    // input dispatch stalls for tens of seconds and a drag appears to hang even
+    // though the gesture itself is fine. The app honors prefers-reduced-motion,
+    // so asking for it exercises the same swipe path with the render load off.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+
+    // If the app's pointer handlers ever block the renderer main thread, a
+    // mouse action never returns and the failure is a bare "test timeout".
+    // A 200ms heartbeat plus captured page/console errors turns that into a
+    // diagnosable message instead.
+    const pageErrors: string[] = [];
+    page.on('pageerror', (e) => pageErrors.push(`pageerror: ${String(e).slice(0, 300)}`));
+    page.on('console', (m) => { if (m.type() === 'error') pageErrors.push(`console: ${m.text().slice(0, 300)}`); });
+    // layout.tsx's watchdog calls location.reload() when it decides the app has
+    // frozen. A reload mid-gesture destroys the deck state, so record it.
+    page.on('framenavigated', (frame) => {
+      if (frame === page.mainFrame()) pageErrors.push(`NAVIGATED ${frame.url()}`);
+    });
+    await page.evaluate(() => {
+      const w = window as unknown as { __hb?: { max: number; n: number; last: number }; __hbId?: number };
+      w.__hb = { max: 0, n: 0, last: performance.now() };
+      w.__hbId = window.setInterval(() => {
+        const now = performance.now();
+        if (!w.__hb) return;
+        w.__hb.max = Math.max(w.__hb.max, now - w.__hb.last);
+        w.__hb.n += 1;
+        w.__hb.last = now;
+      }, 200);
+    });
+    const heartbeat = async () => page.evaluate(() => {
+      const w = window as unknown as { __hb?: { max: number; n: number } };
+      // A missing __hb means the page was replaced (watchdog reload) since the
+      // heartbeat was installed; that is a different fact from "no stalls".
+      return w.__hb ? { max: Math.round(w.__hb.max), n: w.__hb.n } : { missing: true };
+    }).catch((e) => ({ evalFailed: String(e).slice(0, 120) }));
+
+    /** Run a mouse action, but never let it hang the whole test: a blocked
+     *  renderer shows up as a stalled heartbeat with the errors that led to it. */
+    const timed = async <T,>(label: string, ms: number, fn: () => Promise<T>): Promise<T> => {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const timeout = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => {
+          // Never await page work here: if the renderer is wedged, an evaluate
+          // never returns and the rejection below would never be raised.
+          const readHb = heartbeat();
+          const bounded = Promise.race([
+            readHb,
+            new Promise<null>((r) => setTimeout(() => r(null), 1500)),
+          ]) as Promise<unknown>;
+          void bounded.then((hb) => {
+            reject(new Error(`${label} hung (${ms}ms); heartbeat=${JSON.stringify(hb)} errors=${JSON.stringify(pageErrors.slice(-4))}`));
+          });
+        }, ms);
+      });
+      try {
+        return await Promise.race([fn(), timeout]);
+      } finally { clearTimeout(timer); }
+    };
+
+    /** Poll for the top card with fresh evaluate() calls and keep the observed
+     *  counts. waitForSelector sat through a 10s timeout in this spec while the
+     *  same selector evaluated to 1 match, so the result has to be observable
+     *  from inside the test rather than trusted. */
+    const waitForTop = async (ms: number): Promise<{ counts: number[]; elapsed: number }> => {
+      const t0 = Date.now();
+      const counts: number[] = [];
+      for (;;) {
+        const n = await page.evaluate(() =>
+          document.querySelectorAll('.card-stack .swipe-card.top-card').length
+        ).catch(() => -1);
+        counts.push(n);
+        if (n > 0) return { counts, elapsed: Date.now() - t0 };
+        if (Date.now() - t0 >= ms) return { counts, elapsed: Date.now() - t0 };
+        await new Promise((r) => setTimeout(r, 150));
+      }
+    };
+
+    /** Drag left from a point onPointerDown will actually arm from: never a
+     *  button/link (those bail out) and never inside .card-prompts (that
+     *  subtree stops pointer propagation). */
+    const dragLeft = async () => {
+      const waited = await waitForTop(8000);
+      if (waited.counts[waited.counts.length - 1] <= 0) {
+        const state = await page.evaluate(() => {
+          const stack = document.querySelector('.card-stack');
+          const cards = Array.from(document.querySelectorAll('.swipe-card'));
+          return {
+            hasStack: !!stack,
+            stackTopCount: document.querySelectorAll('.card-stack .swipe-card.top-card').length,
+            cardCount: cards.length,
+            classes: cards.map((c) => c.className).slice(0, 5),
+            names: cards.map((c) => (c.querySelector('.card-hero-name') as HTMLElement | null)?.textContent?.trim() ?? '').slice(0, 6),
+            bodyText: (document.body.innerText || '').replace(/\s+/g, ' ').slice(0, 200),
+          };
+        }).catch(() => null);
+        const hb = await heartbeat();
+        throw new Error(
+          `deck vanished (no .top-card): polls=${JSON.stringify(waited)} state=${JSON.stringify(state)} heartbeat=${JSON.stringify(hb)} errors=${JSON.stringify(pageErrors.slice(-4))}`,
+        );
+      }
+      const box = await page.locator(TOP_CARD).first().boundingBox();
+      if (!box) throw new Error('no top card to drag');
+      const x = box.x + box.width / 2;
+      let y = box.y + box.height * 0.3;
+      for (const f of [0.3, 0.2, 0.45, 0.6]) {
+        const candY = box.y + box.height * f;
+        const ok = await page.evaluate(([px, py]) => {
+          const el = document.elementFromPoint(px, py) as HTMLElement | null;
+          if (!el) return false;
+          if (el.closest('button, a, [role="button"], .card-prompts')) return false;
+          // Prefer the bare info-scroll/hero surface itself rather than a
+          // descendant that may stop propagation.
+          return el.classList.contains('card-info-scroll') || !!el.closest('.card-hero') || el.classList.contains('swipe-card');
+        }, [x, candY]);
+        if (ok) { y = candY; break; }
+      }
+      await timed('mouse.move', 20_000, () => page.mouse.move(x, y));
+      await timed('mouse.down', 20_000, () => page.mouse.down());
+      await timed('mouse.drag', 20_000, () => page.mouse.move(x - 180, y, { steps: 6 }));
+      await timed('mouse.up', 20_000, () => page.mouse.up());
+    };
+
+    // Read the name without locator auto-waiting: an empty deck must resolve to
+    // '' immediately instead of hanging the poll until the whole test times out.
+    const topName = async () =>
+      (await page.evaluate(() => {
+        const el = document.querySelector('.card-stack .swipe-card.top-card .card-hero-name');
+        return el ? (el.textContent || '').trim() : '';
+      }).catch(() => '')) || '';
+
+    const firstName = await topName();
+    expect(firstName.length).toBeGreaterThan(1);
+
+    const names = [firstName];
+    // Two consecutive swipes: the second only works if the first advanced.
+    for (let i = 0; i < 2; i++) {
+      const before = names[names.length - 1];
+      let advanced = false;
+      // One retry: pointer-event simulation is not perfectly deterministic
+      // (the card can be mid-swap when the next drag starts), but if the
+      // swipe path is broken both attempts still fail the assertion below.
+      for (let attempt = 0; attempt < 2 && !advanced; attempt++) {
+        await dragLeft();
+        try {
+          await expect.poll(topName, { timeout: 3500 }).not.toBe(before);
+          advanced = true;
+        } catch {
+          /* retry the drag */
+        }
+      }
+      expect(advanced, `swipe ${i + 1} did not advance the deck (still "${before}")`).toBe(true);
+      names.push(await topName());
+      // Let the 500ms swipe lock in useSwipeActions release before the next drag.
+      await page.waitForTimeout(700);
+    }
+    expect(new Set(names).size, 'each swipe should land on a different card').toBe(3);
+  });
 });

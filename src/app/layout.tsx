@@ -109,7 +109,12 @@ const BLANK_SCREEN_WATCHDOG = `(function () {
       lastFrame = Date.now();
       requestAnimationFrame(tick);
     }
-    var STALE_MS = 12000;
+    // 12s was too tight: legitimately heavy one-off main-thread work (the
+    // in-browser ML segmentation behind Discover's depth effect, large image
+    // processing) can exceed it on a slower device, and reloading once it
+    // finally finishes just throws away the session for no reason. Only a
+    // genuinely pathological stall should trip this now.
+    var STALE_MS = 30000;
     var CHECK_EVERY_MS = 3000;
     var rendered = false;
     var pulseInterval = setInterval(function () {
@@ -119,6 +124,13 @@ const BLANK_SCREEN_WATCHDOG = `(function () {
         requestAnimationFrame(tick);
       }
       if (document.visibilityState !== "visible") return;
+      // Long-task escape hatch. While a heavy task runs it cannot pump rAF
+      // frames, so a completed task is indistinguishable from a freeze at the
+      // instant this check finally gets a turn. App code that knowingly does
+      // long synchronous work stamps window.__museAlive when it finishes;
+      // treat that as a heartbeat so finished work never counts as a freeze.
+      var alive = window.__museAlive || 0;
+      if (alive > lastFrame) lastFrame = alive;
       var staleFor = Date.now() - lastFrame;
       if (staleFor > STALE_MS) {
         clearInterval(pulseInterval);
