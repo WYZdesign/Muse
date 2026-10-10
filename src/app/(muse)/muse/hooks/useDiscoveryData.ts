@@ -19,6 +19,7 @@ type RankedProfile = ReturnType<typeof normalizeProfile> & {
 
 export function useDiscoveryData({ apiFetch, authFetch, profileId }: UseDiscoveryDataArgs) {
   const [liveProfiles, setLiveProfiles] = useState<RankedProfile[] | null>(null);
+  const [discoverError, setDiscoverError] = useState<string | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
   const [likedBy, setLikedBy] = useState<Profile[]>([]);
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
@@ -31,10 +32,15 @@ export function useDiscoveryData({ apiFetch, authFetch, profileId }: UseDiscover
   useEffect(() => {
     if (!profileId) return;
     let cancelled = false;
+    setDiscoverError(null);
     authFetch("/api/muse?type=discover-ranked")
-      .then(r => r.json())
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`discover-ranked request failed (${r.status})`);
+        return r.json();
+      })
       .then(d => {
-        if (cancelled || !Array.isArray(d.profiles)) return;
+        if (cancelled) return;
+        if (!Array.isArray(d.profiles)) throw new Error("discover-ranked returned an invalid payload");
         const enriched: RankedProfile[] = (d.profiles as RawRow[]).map((p) => ({
           ...normalizeProfile(p),
           matchScore: Number(p.matchScore || 0),
@@ -50,7 +56,11 @@ export function useDiscoveryData({ apiFetch, authFetch, profileId }: UseDiscover
         }));
         setLiveProfiles(enriched);
       })
-      .catch((err) => { trackError("fetch_discover_ranked", { err: String(err) }); });
+      .catch((err) => {
+        if (cancelled) return;
+        setDiscoverError("Discover is temporarily unavailable. Please refresh and try again.");
+        trackError("fetch_discover_ranked", { err: String(err) });
+      });
     return () => { cancelled = true; };
   }, [profileId]);
 
@@ -105,6 +115,7 @@ export function useDiscoveryData({ apiFetch, authFetch, profileId }: UseDiscover
 
   return {
     liveProfiles, setLiveProfiles,
+    discoverError,
     matches, setMatches,
     likedBy, setLikedBy,
     blockedUsers, setBlockedUsers,
