@@ -43,10 +43,56 @@ export interface PublicProfileUser {
   };
   btsPhotos?: string[];
   videos?: string[];
-  reviews?: { id: string; rating: number; body?: string; reviewer_id?: { name: string } }[];
-  feedPosts?: { id: string; text?: string; image?: string; likes?: number; comments?: number }[];
+  reviews?: PublicProfileReview[];
+  feedPosts?: PublicProfileFeedPost[];
   online?: boolean;
   nsfw?: boolean;
+  // Role/match/visibility fields read via the live API or the demo deck —
+  // optional because a bare profile record (e.g. from a listing card) may
+  // not carry them, but real ones do once fetched/joined server-side.
+  audience?: string | null;
+  matchScore?: number;
+  score?: number;
+  showMatchPercent?: boolean;
+  showAge?: boolean;
+  showOnline?: boolean;
+  showZodiac?: boolean;
+  showChinese?: boolean;
+  showMbti?: boolean;
+  showLifePath?: boolean;
+  teamSize?: number | string;
+  hiredCount?: number;
+}
+
+export interface PublicProfileReview {
+  id: string;
+  rating: number;
+  body?: string;
+  reviewer_id?: { name: string };
+}
+
+export interface PublicProfileFeedPost {
+  id: string;
+  text?: string;
+  image?: string;
+  likes?: number;
+  comments?: number;
+}
+
+/** Shape of the `trust` object returned by `GET /api/muse?type=creative-trust`
+ * (see `get.ts`) — the buyer-side "can I trust this person" card. */
+export interface PublicProfileTrust {
+  verified?: boolean;
+  ageVerified?: boolean;
+  rating?: number | null;
+  reviewCount?: number;
+  criteria?: Record<string, number | null>;
+  completedAsHost?: number;
+  profileCompletionPct?: number;
+  isBoosted?: boolean;
+  responseRate?: number | null;
+  lastSeen?: string | null;
+  lastSeenDaysAgo?: number | null;
 }
 
 export interface PublicProfileScreenProps {
@@ -57,8 +103,8 @@ export interface PublicProfileScreenProps {
   onBlock?: (user: PublicProfileUser) => void;
   onMute?: (user: PublicProfileUser) => void;
   handleImgError?: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
-  currentUser?: any;
-  apiFetch?: (url: string, opts?: any) => Promise<any>;
+  currentUser?: { audience?: string | null; type?: string | null } | null;
+  apiFetch?: (url: string, opts?: RequestInit) => Promise<Response>;
   showToast?: (msg: string) => void;
   lightboxPhotos?: string[];
   lightboxIdx?: number;
@@ -85,12 +131,12 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
   const [photoIdx, setPhotoIdx] = useState(0);
   const [showMenu, setShowMenu] = useState(false);
   const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
-  const [reviews, setReviews] = useState<any[]>(user.reviews || []);
-  const [feedPosts, setFeedPosts] = useState<any[]>(user.feedPosts || []);
-  const [trust, setTrust] = useState<any | null>(null);
+  const [reviews, setReviews] = useState<PublicProfileReview[]>(user.reviews || []);
+  const [feedPosts, setFeedPosts] = useState<PublicProfileFeedPost[]>(user.feedPosts || []);
+  const [trust, setTrust] = useState<PublicProfileTrust | null>(null);
 
   // Role detection — determines which profile variant to render
-  const viewedRole: MuseRole = getMuseRole({ audience: (user as any).audience, type: user.type });
+  const viewedRole: MuseRole = getMuseRole({ audience: user.audience, type: user.type });
   const viewerRole: MuseRole = currentUser ? getMuseRole({ audience: currentUser.audience, type: currentUser.type }) : "creative";
   const isMuseProfile = viewedRole === "muse";
   const isCreativeProfile = viewedRole === "creative";
@@ -107,17 +153,22 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
     // Populated demo reviews (owner: demo must look published) so the Reviews
     // section isn't silently hidden behind an empty live fetch.
     if (process.env.NEXT_PUBLIC_DEMO_MODE !== "false") {
+      // Bug fix (2026-10-08, found via the XL-1 any-purge): these demo rows
+      // used to carry `text`/`author` fields, but the render below (and the
+      // real `reviews` type) reads `body`/`reviewer_id.name` — so every demo
+      // review silently rendered as "Anonymous" with no body text. Typing
+      // `reviews` properly (instead of `any[]`) surfaced the mismatch.
       setReviews([
-        { id: "dr1", rating: 5, text: "Absolutely nailed the brief and delivered ahead of schedule. Would book again any time.", author: "Jordan Blake", created_at: new Date(Date.now() - 9 * 86400000).toISOString() },
-        { id: "dr2", rating: 5, text: "Professional, calm on set and great with direction. The final edits were gorgeous.", author: "Priya Nair", created_at: new Date(Date.now() - 26 * 86400000).toISOString() },
-        { id: "dr3", rating: 4, text: "Great communication and a really collaborative shoot. Highly recommend.", author: "Lena Ortiz", created_at: new Date(Date.now() - 54 * 86400000).toISOString() },
+        { id: "dr1", rating: 5, body: "Absolutely nailed the brief and delivered ahead of schedule. Would book again any time.", reviewer_id: { name: "Jordan Blake" } },
+        { id: "dr2", rating: 5, body: "Professional, calm on set and great with direction. The final edits were gorgeous.", reviewer_id: { name: "Priya Nair" } },
+        { id: "dr3", rating: 4, body: "Great communication and a really collaborative shoot. Highly recommend.", reviewer_id: { name: "Lena Ortiz" } },
       ]);
       return;
     }
     let cancelled = false;
     apiFetch(`/api/muse?type=reviews&profile_id=${encodeURIComponent(user.id)}`)
-      .then((r: any) => r.json())
-      .then((d: any) => { if (!cancelled) setReviews(d.reviews || []); })
+      .then((r) => r.json() as Promise<{ reviews?: PublicProfileReview[] }>)
+      .then((d) => { if (!cancelled) setReviews(d.reviews || []); })
       .catch(() => {});
     return () => { cancelled = true; };
   }, [user.id, apiFetch]);
@@ -127,16 +178,16 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
     if (process.env.NEXT_PUBLIC_DEMO_MODE !== "false") {
       // Populated demo posts for the profile's Feed section.
       setFeedPosts([
-        { id: "dp1", text: "Behind the scenes from yesterday's editorial shoot — one light, one reflector, a lot of patience.", likes: 128, comments: 14, created_at: new Date(Date.now() - 2 * 86400000).toISOString() },
-        { id: "dp2", text: "New portrait series is up in my portfolio. Shot entirely on golden hour light.", likes: 96, comments: 9, created_at: new Date(Date.now() - 8 * 86400000).toISOString() },
-        { id: "dp3", text: "Looking for a stylist for a neon-noir concept next month. Brief is in Collab.", likes: 64, comments: 21, created_at: new Date(Date.now() - 15 * 86400000).toISOString() },
+        { id: "dp1", text: "Behind the scenes from yesterday's editorial shoot — one light, one reflector, a lot of patience.", likes: 128, comments: 14 },
+        { id: "dp2", text: "New portrait series is up in my portfolio. Shot entirely on golden hour light.", likes: 96, comments: 9 },
+        { id: "dp3", text: "Looking for a stylist for a neon-noir concept next month. Brief is in Collab.", likes: 64, comments: 21 },
       ]);
       return;
     }
     let cancelled = false;
     apiFetch(`/api/muse?type=feed&profile_id=${encodeURIComponent(user.id)}`)
-      .then((r: any) => r.json())
-      .then((d: any) => { if (!cancelled) setFeedPosts(d.posts || []); })
+      .then((r) => r.json() as Promise<{ posts?: PublicProfileFeedPost[] }>)
+      .then((d) => { if (!cancelled) setFeedPosts(d.posts || []); })
       .catch(() => {});
     return () => { cancelled = true; };
   }, [user.id, apiFetch]);
@@ -150,19 +201,29 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
     if (process.env.NEXT_PUBLIC_DEMO_MODE !== "false") {
       // Populated demo trust card (verification, review aggregate, completed
       // bookings, response rate) so the buyer-side trust surface renders.
-      setTrust({ verified: true, reviewCount: 3, avgRating: 4.7, completedAsHost: 17, responseRatePct: 98, boosted: true, lastSeen: new Date(Date.now() - 8 * 60000).toISOString() });
+      //
+      // Bug fix (2026-10-08, found via the XL-1 any-purge): this literal used
+      // to use `avgRating`/`responseRatePct`/`boosted` and omitted
+      // `lastSeenDaysAgo`, but the render below reads `rating`/`responseRate`/
+      // `isBoosted`/`lastSeenDaysAgo` (the real field names `get.ts`'s
+      // creative-trust handler returns) — so in demo mode the rating tile,
+      // response-rate tile, last-active tile, and "Boosted" badge all
+      // silently never rendered (only the `completedAsHost` tile happened to
+      // match). Typing `trust` as `any` is what let the names drift apart
+      // undetected; `PublicProfileTrust` now mirrors the real API shape.
+      setTrust({ verified: true, ageVerified: true, rating: 4.7, reviewCount: 3, criteria: { communication: 4.8, reliability: 4.9, creative_quality: 4.7, professionalism: 4.8, safety: 5 }, completedAsHost: 17, profileCompletionPct: 96, isBoosted: true, responseRate: 98, lastSeen: new Date(Date.now() - 8 * 60000).toISOString(), lastSeenDaysAgo: 0 });
       return;
     }
     let cancelled = false;
     apiFetch(`/api/muse?type=creative-trust&profile_id=${encodeURIComponent(user.id)}`)
-      .then((r: any) => r.json())
-      .then((d: any) => { if (!cancelled) setTrust(d.trust || null); })
+      .then((r) => r.json() as Promise<{ trust?: PublicProfileTrust | null }>)
+      .then((d) => { if (!cancelled) setTrust(d.trust || null); })
       .catch(() => {});
     return () => { cancelled = true; };
   }, [user.id, apiFetch]);
 
   const avgRating = reviews.length > 0
-    ? (reviews.reduce((sum: number, r: any) => sum + (r.rating || 0), 0) / reviews.length).toFixed(1)
+    ? (reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length).toFixed(1)
     : null;
 
   const openLightbox = useCallback((idx: number) => {
@@ -223,8 +284,8 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
                   same 15% threshold and gated by the profile owner's
                   showMatchPercent visibility toggle (round-34 settings). */}
               {(() => {
-                const ms = Number((user as any).matchScore ?? (user as any).score ?? 0);
-                const showMatchPercent = (user as any).showMatchPercent !== false;
+                const ms = Number(user.matchScore ?? user.score ?? 0);
+                const showMatchPercent = user.showMatchPercent !== false;
                 return ms >= 15 && showMatchPercent ? (
                   <div
                     className="card-match-topleft"
@@ -246,7 +307,7 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
               <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "60px 20px 20px", background: "linear-gradient(to top,rgba(10,6,18,0.97) 0%,rgba(10,6,18,0.7) 50%,transparent 100%)", pointerEvents: "none" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
                   <span style={{ fontSize: 26, fontWeight: 800, fontFamily: "'Playfair Display',serif", fontStyle: "italic", color: "#fff" }}>{displayName}</span>
-                  {user.age && (user as any).showAge !== false && <span style={{ fontSize: 22, fontWeight: 600, color: "rgba(255,255,255,0.6)" }}>{user.age}</span>}
+                  {user.age && user.showAge !== false && <span style={{ fontSize: 22, fontWeight: 600, color: "rgba(255,255,255,0.6)" }}>{user.age}</span>}
                   {(user.isVerified || user.verified) && <button type="button" aria-label="About identity verification" title="Identity verified" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Identity Verified", desc: "Identity verified by Musa by WYZ — we confirmed this member's government ID and professional credentials.", icon: "✓", color: "#22c55e" }); }} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, margin: -11, padding: 0, borderRadius: "50%", background: "rgba(34,197,94,0.2)", border: "1.5px solid rgba(34,197,94,0.5)", fontSize: 12, fontWeight: 800, color: "#22c55e", pointerEvents: "auto", cursor: "pointer" }}>✓</button>}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "var(--gold)", fontWeight: 600, marginBottom: 6 }}>
@@ -263,7 +324,7 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
                     </span>
                   )}
                 </div>
-                {user.online && (user as any).showOnline !== false && (
+                {user.online && user.showOnline !== false && (
                   <button type="button" aria-label="About online status" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Online", desc: "This member is online right now — a good time to reach out.", icon: "🟢", color: "#4ade80" }); }} style={{ display: "inline-flex", alignItems: "center", gap: 5, minHeight: 44, fontSize: 12, fontWeight: 600, color: "#4ade80", background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.25)", borderRadius: 99, padding: "4px 10px", pointerEvents: "auto", cursor: "pointer" }}>
                     <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 6px rgba(74,222,128,0.5)" }} />
                     Online
@@ -315,10 +376,10 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
             Settings > Privacy & Safety visibility toggle for that field
             (free toggles: zodiac, MBTI, life path, Chinese zodiac). */}
         {(() => {
-          const showZodiac = (user as any).showZodiac !== false;
-          const showChinese = (user as any).showChinese !== false;
-          const showMbti = (user as any).showMbti !== false;
-          const showLifePath = (user as any).showLifePath !== false;
+          const showZodiac = user.showZodiac !== false;
+          const showChinese = user.showChinese !== false;
+          const showMbti = user.showMbti !== false;
+          const showLifePath = user.showLifePath !== false;
           const anyVisible = (user.zodiac && showZodiac) || (user.mbti && showMbti) || (user.lifePath && showLifePath) || ((user.chineseZodiac || user.chinese) && showChinese);
           if (!anyVisible) return null;
           return (
@@ -356,8 +417,8 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
             // Musa stats: briefs, team, hiring rate, response
             [
               { label: "Briefs", value: typeof user.collabs === "number" ? user.collabs : "—" },
-              { label: "Team", value: (user as any).teamSize || "—" },
-              { label: "Hired", value: (user as any).hiredCount ? `${(user as any).hiredCount}` : "—" },
+              { label: "Team", value: user.teamSize || "—" },
+              { label: "Hired", value: user.hiredCount ? `${user.hiredCount}` : "—" },
               { label: "Response", value: typeof user.responseRate === "number" ? `${user.responseRate}%` : "—" },
             ].map((s, i) => (
               <div key={i} style={{ padding: "14px 8px", textAlign: "center", borderRight: i < 3 ? "1px solid rgba(255,255,255,0.04)" : undefined }}>
@@ -440,10 +501,10 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
                 </div>
               )}
             </div>
-            {trust.criteria && Object.values(trust.criteria).some((v: any) => v != null) && (
+            {trust.criteria && Object.values(trust.criteria).some((v) => v != null) && (
               <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 6 }}>
                 {["communication", "reliability", "creative_quality", "professionalism", "safety"].map((k) => {
-                  const v = trust.criteria[k];
+                  const v = trust.criteria?.[k];
                   if (v == null) return null;
                   const label = k.replace("_", " ");
                   return (
@@ -502,7 +563,7 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.05 }}>Recent Posts</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {feedPosts.slice(0, 3).map((post: any) => (
+              {feedPosts.slice(0, 3).map((post) => (
                 <div key={post.id} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, overflow: "hidden" }}>
                   {post.image && (
                     <div style={{ position: "relative", aspectRatio: "16/10", overflow: "hidden" }}>
@@ -535,7 +596,7 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
               )}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {reviews.slice(0, 5).map((rv: any) => (
+              {reviews.slice(0, 5).map((rv) => (
                 <div key={rv.id} style={{ padding: "12px 14px", borderRadius: 14, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.04)" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
                     <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{rv.reviewer_id?.name || "Anonymous"}</span>

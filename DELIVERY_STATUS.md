@@ -27,7 +27,22 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `a017543a`
+## Confirmed merged, last verified at: `d086110c`
+
+### Reconciliation — 2026-10-10 (Claude): `a017543a` → `d086110c`, 12 commits
+
+`git fetch origin` found `origin/main` 12 commits ahead of this file's last-verified header (and this file's own header was itself already 9 commits stale when I found it — it had been updated to `a017543a` by a commit that landed earlier in the same range, so the header had drifted from the true tip within its own reconciliation window). Grouped:
+
+- **The idea from `CLAUDE_CONFERENCE_MEMO_2026-10-07.md` got built, then a real vulnerability in it got caught same-day.** `0cf44510` implements referral codes + an honest queue position + `?ref=` attribution on the waitlist signup — exactly the "referral/queue-position on existing waitlist infra" acquisition idea from that memo and from `MUSE_GTM_WAITLIST_PR_STRATEGY_2026-10-07.md`. `576a71d0` landed right after it: the duplicate-signup 409 was echoing back the row's position/referral_code/share link for an **unauthenticated** endpoint, so posting a stranger's email would read back that stranger's own invite code and position. Fixed to return only a message + error code on duplicate, nothing identifying. Worth knowing before promoting this feature to a wider audience: the fix is in, verified with a test asserting none of those fields leak.
+- **Real security/perf hardening, all DB-side, all Codex's/wyzmind's lane:** `573d7425` + a follow-up collapse 94→81 RLS policies (multiple-permissive-policy lint, 25→0, verified with role-impersonation probes before/after); `e1d23088` wraps the 64 flagged per-row `auth.uid()`/`auth.jwt()` calls in scalar subqueries (RLS initplan lint 64→0, policy set unchanged, 9/9 probes byte-identical); `79221cc3` indexes the 36 unindexed foreign keys the advisor flagged (migration 0038).
+- **The npm-audit cluster is actually clear now, properly.** `a017543a` patches `next` `16.3.6→16.3.8` (not the `16.4.0` minor that broke Vercel's install earlier this engagement) — this is the real, non-breaking fix for the advisory cluster this file has been tracking as "pre-existing" since September. `706ca6fe` replaces the bare `npm audit` CI gate with a self-testing one (`scripts/audit-gate.mjs`, allowlists by exact GHSA id, self-tests its own FAIL path) so a *new* advisory inside `next` still fails the gate instead of silently passing because the package name was allowlisted.
+- **`60fda83c`** — one shared password policy (`src/lib/password-policy.ts`) across register/reset/settings, replacing three independently-drifting copies.
+- **Merges landed from the other agents' own assigned work**, all showing 0 commits ahead of `origin/main` when checked: `73115536`/`a8dea027` (ChatGPT's closed-beta readiness gates, corner-system/page-split audits, iOS camera/mic/photos/location usage-description declarations — `9ab37da9` then brand-corrected those strings to "Musa by WYZ"), `ba920240` (Codex's `visual-backend-audit-20261007` branch — the 5000-point audit docs, the register generator, the conference-handoff doc, the Musa naming-transition workstream — all now actually in the tree, not just referenced via `git show` the way this session read them earlier).
+- **Test/perf additions**: `02529f92` (Nav role-label + tour-key contract tests), `8a0ba299` (a full arrive→discover→decide→match→chat→book e2e flow), `083bf5cc` (a dependency-free load tester, `scripts/load-test.mjs`, measured against the new staging deployment — ROADMAP rows updated to match reality instead of estimates).
+- **`2ef3e248`/`d086110c`** — more `XL-1` `any`-purge: `get.ts`'s match helpers (a "seed slice," not the whole file) and all 20 in `muse-actions/misc.ts`.
+- **3 new branches exist, all currently a no-op to merge** (0 commits ahead of this tip): `chore/next-16.3.8-security-patch` (superseded — its content is `a017543a`, already on `main`), `opencode/env-password-waitlist-batch`, `staging`.
+
+**This session's own `claude/quality-backlog-round2` (the PublicProfileScreen any-purge + its 2 demo-mode bug fixes, `ba1e67bf`) was NOT YET merged when this reconciliation was written**, and would have hit a `DELIVERY_STATUS.md` merge conflict with the doc-heavy commits above if merged as-is (confirmed via `git merge-tree` — conflict was in this file only, not in any source file). Rather than leave that for whoever merges it, this session cherry-picked `ba1e67bf` onto a fresh branch (`claude/quality-backlog-round3`) off this exact tip and re-wrote the doc reconciliation from scratch here, so the bundle from this branch applies clean. The old `claude/quality-backlog-round2` branch/bundle should be treated as superseded by this one — same code change, no doc conflict.
 
 ### Reconciliation — 2026-10-08 (Codex, third batch): `a63b2949` → `a017543a`
 
@@ -511,7 +526,17 @@ Until it runs, saving a custom "Other" type/style will fail.
 
 ## Pending delivery — NOT in the codebase yet
 
-### Branch `claude/restore-pending-fixes` (off `origin/main`@`c8eff22`) — 2026-10-06 (Claude)
+### Branch `claude/quality-backlog-round3` (off `origin/main`@`d086110c`) — 2026-10-10 (Claude)
+
+Supersedes `claude/quality-backlog-round2` (same code, cherry-picked onto this tip to avoid the `DELIVERY_STATUS.md` conflict that branch would have hit — see the reconciliation entry above). 1 substantive commit plus this doc update:
+
+- **`f323b998` — `types(backlog/XL-1): purge any from PublicProfileScreen (25 -> 0)`**: typing `reviews`/`feedPosts`/`trust` properly instead of `any` surfaced 2 real demo-mode bugs — the demo reviews literal used `text`/`author` instead of the real `body`/`reviewer_id.name` field names (every demo review rendered as "Anonymous" with no text), and the demo trust-card literal used `avgRating`/`responseRatePct`/`boosted` and never set `lastSeenDaysAgo` instead of the real `rating`/`responseRate`/`isBoosted`/`lastSeenDaysAgo` (the rating tile, response-rate tile, last-active tile, and "Boosted" badge all silently never rendered). Both fixed; 2 new regression tests.
+
+Full gate clean: `npx tsc --noEmit` clean · `npx eslint` (touched files) 0 errors · `npx vitest run` **169 files / 1312 tests PASS** (+2 new, baseline moved up from everyone else's work since the last check) · `npx next build` clean (dummy `OAUTH_STATE_SECRET`). No push access (confirmed again). Delivered as a bundle, same as always; see the handover note.
+
+Remaining `any`-drift after this: ~1,337 repo-wide. Hottest non-test files, worst-first: `get.ts` (95 — someone's already taken a "seed slice" out of it per `2ef3e248`, but it's still the single biggest one), `DiscoverScreen.tsx` (59), `MenuModal.tsx` (42), `NetworkScreen.tsx` (38), `FeedScreen.tsx` (34), `CommunityScreen.tsx` (23).
+
+### Branch `claude/restore-pending-fixes` (off `origin/main`@`c8eff22`) — 2026-10-06 (Claude) — ⚠️ HISTORICAL, fully merged via `8fa97a86`, nothing below this line is still pending
 
 Everything here was already fixed, tested, and delivered earlier in this engagement (as the `claude-ci-unblock` bundle and later `claude-full-integration`), but never actually landed as an ancestor of `origin/main` — confirmed by diffing `bcc2220..origin/main` on each affected file and getting 0 lines back, i.e. these files are byte-identical to the pre-fix state even after wyzmind's recent push. Re-verified each fix is still correct against the current codebase (nothing it touches was changed by the validation/testing work that did land) and re-ran the full gate clean before committing. Four commits:
 
