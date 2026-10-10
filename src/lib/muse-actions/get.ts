@@ -73,6 +73,214 @@ function calcMatchScore(a: MatchProfile, b: MatchProfile): number {
   return Math.min(s, 99);
 }
 
+// Row shapes for the Supabase reads below. The clients are created without a
+// generated Database type, so every `.data` comes back as `any`; these name
+// only the columns the code actually reads and are narrowed at each query.
+// Fields are optional so one shape can serve the several selects that hit the
+// same table. Genuinely opaque values stay `unknown`.
+type BlockRow = { user_id?: unknown; target_id?: unknown };
+
+/** The single "other party" id per muse_blocks row: if the row's user_id is me,
+ *  the other party is target_id, otherwise it is user_id. Every block check in
+ *  this file (Discover/feed/briefs/forum/events/sessions/moments) maps rows
+ *  through exactly this expression - one helper keeps them in lockstep. */
+function blockedIdSet(
+  blocks: BlockRow[] | null | undefined,
+  profileId: string | null | undefined,
+): Set<string> {
+  return new Set((blocks || []).map((b) => (String(b.user_id) === String(profileId) ? String(b.target_id) : String(b.user_id))));
+}
+
+/** The age-verification columns read by isAgeVerificationCurrent(). */
+type ViewerVerifiedRow = { age_verified?: boolean | null; age_verified_at?: string | null };
+
+/** A muse_profiles row, narrowed to the columns this dispatcher reads. */
+type ProfileRow = {
+  id?: unknown;
+  auth_id?: string | null;
+  name?: string | null;
+  type?: string | null;
+  avatar?: string | null;
+  bio?: string | null;
+  loc?: string | null;
+  email?: string | null;
+  styles?: string[] | null;
+  looking?: string[] | null;
+  nsfw?: boolean | null;
+  suspended?: boolean | null;
+  photos?: unknown;
+  preferences?: {
+    showAge?: boolean;
+    showOnline?: boolean;
+    notifications?: Record<string, unknown>;
+    [key: string]: unknown;
+  } | null;
+  birthdate?: string | null;
+  zodiac?: string | null;
+  chinese?: string | null;
+  mbti?: string | null;
+  life_path?: string | number | null;
+  age_verified?: boolean | null;
+  age_verified_at?: string | null;
+  verified?: boolean | null;
+  boost_inventory?: string | number | null;
+  boost_expires_at?: string | null;
+  last_seen_at?: string | null;
+  views_count?: number | null;
+  profile_completion_pct?: number | null;
+  created_at?: string | null;
+};
+
+/** Just the id of a row (album ids, completed-booking ids, etc.). */
+type IdRow = { id?: unknown };
+
+/** A nested reviewer reference (muse_reviews.reviewer_id). */
+type ReviewerRef = { name?: string | null; avatar?: string | null; type?: string | null };
+
+/** A muse_reviews row, including the five structured criteria columns. */
+type ReviewRow = {
+  id?: unknown;
+  rating?: number | null;
+  body?: string | null;
+  created_at?: string | null;
+  reviewee_id?: unknown;
+  reviewer_id?: ReviewerRef | null;
+  criteria_communication?: number | null;
+  criteria_reliability?: number | null;
+  criteria_creative_quality?: number | null;
+  criteria_professionalism?: number | null;
+  criteria_safety?: number | null;
+};
+
+/** Criteria columns keyed dynamically by the short name in the review loops. */
+type ReviewCriteriaAccess = Record<string, number | null | undefined>;
+
+/** A muse_matches row that only carries an outgoing target id. */
+type MatchTargetRow = { target_id?: unknown };
+
+/** A muse_matches row with its embedded target profile. */
+type MatchRow = { id?: unknown; user_id?: unknown; target_id?: ProfileRow | null };
+
+/** A feed or forum post with its embedded author profile. */
+type PostRow = { author_id?: ProfileRow | null };
+
+/** A muse_briefs row with its embedded author profile. */
+type BriefRow = { author_id?: ProfileRow | null };
+
+/** A muse_events row (the organizer lives in created_by). */
+type EventRow = { created_by?: unknown };
+
+/** A muse_rsvps row. */
+type RsvpRow = { event_id?: unknown };
+
+/** A muse_community_members row for the roster view. */
+type MemberRow = {
+  user_id?: unknown;
+  user_name?: string | null;
+  user_avatar?: string | null;
+  role?: string | null;
+  joined_at?: string | null;
+};
+
+/** A muse_sessions row. host_id is a required FK; name is the session title. */
+type SessionRow = { host_id: string; name?: string | null; title?: string | null };
+
+/** The profile columns used to resolve a session host's trust signals. */
+type HostRefRow = { id: string; name?: string | null; verified?: boolean | null };
+
+/** A muse_professionals row (user_id references auth.users). */
+type ProfessionalRow = { user_id?: string | null };
+
+/** The muse_profiles columns used to resolve a professional's profile id. */
+type ProfileAuthRow = { id: string; auth_id: string; verified?: boolean | null };
+
+/** A muse_activity_log row with just its actor. */
+type ActivityActorRow = { actor_id?: unknown; created_at?: string | null };
+
+/** A muse_activity_log row with just its user. */
+type ActivityUserRow = { user_id?: unknown };
+
+/** A muse_notifications row with its embedded sender profile. */
+type NotificationRow = {
+  id?: unknown;
+  user_id?: unknown;
+  type?: string | null;
+  read?: boolean | null;
+  body?: string | null;
+  created_at?: string | null;
+  from_id?: { name?: string | null; avatar?: string | null } | null;
+};
+
+/** A muse_photo_likes row. */
+type PhotoLikeRow = { photo_url: string };
+
+/** A muse_moments row with its embedded author profile. */
+type MomentRow = { author_id?: ProfileRow | null };
+
+/** A muse_bookings row (embedded session/host/user rows pass through). */
+type BookingRow = {
+  id: string;
+  status?: string | null;
+  created_at?: string | null;
+  completed_at?: string | null;
+  session_id?: unknown;
+  host_id?: unknown;
+  user_id?: unknown;
+};
+
+/** A muse_booking_payments row joined to a booking. */
+type BookingPaymentRow = { booking_id?: unknown; status?: string | null };
+
+/** A muse_booking_payments row carrying an amount (my-analytics). */
+type AmountRow = { amount_cents?: number | null; status?: string | null };
+
+/** A muse_booking_payments row carrying a net amount (payout readiness). */
+type NetAmountRow = { net_amount_cents?: number | null; status?: string | null };
+
+/** A muse_stripe_connect row. */
+type ConnectRow = {
+  stripe_account_id?: unknown;
+  charges_enabled?: boolean | null;
+  payouts_enabled?: boolean | null;
+  details_submitted?: boolean | null;
+};
+
+/** A muse_albums row. */
+type AlbumRow = {
+  id: string;
+  profile_id?: string | null;
+  title?: string | null;
+  description?: string | null;
+  cover_url?: string | null;
+  access_level?: string | null;
+  tags?: unknown;
+  position?: number | null;
+  view_count?: number | null;
+  like_count?: number | null;
+  created_at?: string | null;
+};
+
+/** A muse_album_access grant row. */
+type AlbumGrantRow = { album_id: string };
+
+/** A muse_album_photos row counted per album. */
+type AlbumPhotoCountRow = { album_id: string };
+
+/** A muse_admin_audit_log row (shape varies, only passed through to JSON). */
+type AuditRow = Record<string, unknown>;
+
+/** A muse_safety_incidents row for the moderation SLA tile. */
+type IncidentRow = { status?: string | null; created_at: string; reviewed_at?: string | null };
+
+/** A status-only row (refund requests). */
+type StatusRow = { status?: string | null };
+
+/** A muse_calls row for the call stats tile. */
+type CallRow = { status?: string | null; kind?: string | null };
+
+/** A profile row plus a recorded activity count (top creators). */
+type TopCreatorRow = ProfileRow & { activity: number };
+
 export async function GET(req: NextRequest) {
   try {
     const sb = getServiceClient();
@@ -97,20 +305,20 @@ export async function GET(req: NextRequest) {
       // deny unless the viewer is verified and current.
       let viewerVerified = false;
       if (profileId) {
-        const { data: vp } = await sb.from("muse_profiles").select("age_verified, age_verified_at").eq("id", profileId).maybeSingle();
-        viewerVerified = isAgeVerificationCurrent(vp as any);
+        const { data: vp }: { data: ViewerVerifiedRow | null } = await sb.from("muse_profiles").select("age_verified, age_verified_at").eq("id", profileId).maybeSingle();
+        viewerVerified = isAgeVerificationCurrent(vp);
       }
-      const { data } = await sb.from("muse_profiles").select("id, name, type, avatar, bio, loc, styles, looking, nsfw, suspended, travel_dates, availability_status, budget_range, travel_destinations, preferences, birthdate").limit(100);
+      const { data }: { data: ProfileRow[] | null } = await sb.from("muse_profiles").select("id, name, type, avatar, bio, loc, styles, looking, nsfw, suspended, travel_dates, availability_status, budget_range, travel_destinations, preferences, birthdate").limit(100);
       // Blocks were write-only until now — muse_blocks was never consulted
       // anywhere, so a blocked user could still show up in Discover, match,
       // and message the person who blocked them. Filter both directions:
       // people I've blocked, and people who've blocked me.
       let blockedIds = new Set<string>();
       if (profileId) {
-        const { data: blocks } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
-        blockedIds = new Set((blocks || []).map((b: any) => (String(b.user_id) === String(profileId) ? String(b.target_id) : String(b.user_id))));
+        const { data: blocks }: { data: BlockRow[] | null } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
+        blockedIds = blockedIdSet(blocks, profileId);
       }
-      const visible = (data || []).filter((p: any) => {
+      const visible = (data || []).filter((p) => {
         if (profileId && String(p.id) === String(profileId)) return false;
         if (blockedIds.has(String(p.id))) return false;
         if (p.suspended) return false;
@@ -118,7 +326,7 @@ export async function GET(req: NextRequest) {
         const hasAvatar = typeof p.avatar === "string" && p.avatar.trim().length > 0;
         const hasPhotos = Array.isArray(p.photos) && p.photos.length > 0;
         return hasAvatar || hasPhotos;
-      }).map((p: any) => {
+      }).map((p) => {
         // Derived age only (never the raw birthdate), gated by the owner's own
         // "Show age" preference — same showDistance/showAge pattern as
         // app/api/muse/match/route.ts. preferences is stripped after deriving.
@@ -135,18 +343,18 @@ export async function GET(req: NextRequest) {
       // the requesting user (professional fit + vibe, mirroring the client's
       // calcMatch), and surface actively-boosted profiles first. This makes
       // "getting discovered" real against live rows rather than demo data.
-      const { data: viewer } = await sb.from("muse_profiles")
+      const { data: viewer }: { data: ProfileRow | null } = await sb.from("muse_profiles")
         .select("id, type, styles, looking, zodiac, chinese, mbti, life_path, age_verified, age_verified_at")
         .eq("id", profileId).maybeSingle();
       if (!viewer) return NextResponse.json({ error: "Not found" }, { status: 404 });
-      const viewerVerified = isAgeVerificationCurrent(viewer as any);
-      const { data } = await sb.from("muse_profiles")
+      const viewerVerified = isAgeVerificationCurrent(viewer);
+      const { data }: { data: ProfileRow[] | null } = await sb.from("muse_profiles")
         .select("id, name, type, avatar, bio, loc, styles, looking, nsfw, suspended, zodiac, chinese, mbti, life_path, boost_expires_at, preferences, birthdate, verified, last_seen_at")
         .limit(400);
       let blockedIds = new Set<string>();
       {
-        const { data: blocks } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
-        blockedIds = new Set((blocks || []).map((b: any) => (String(b.user_id) === String(profileId) ? String(b.target_id) : String(b.user_id))));
+        const { data: blocks }: { data: BlockRow[] | null } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
+        blockedIds = blockedIdSet(blocks, profileId);
       }
       // A profile the viewer already liked/matched (a muse_matches row with
       // user_id = profileId, mutual or not) kept resurfacing in the swipe deck
@@ -156,12 +364,12 @@ export async function GET(req: NextRequest) {
       // the viewer doesn't mean the viewer has seen/decided on them yet.
       let alreadyMatchedIds = new Set<string>();
       {
-        const { data: ownMatches } = await sb.from("muse_matches").select("target_id").eq("user_id", profileId);
-        alreadyMatchedIds = new Set((ownMatches || []).map((m: any) => String(m.target_id)));
+        const { data: ownMatches }: { data: MatchTargetRow[] | null } = await sb.from("muse_matches").select("target_id").eq("user_id", profileId);
+        alreadyMatchedIds = new Set((ownMatches || []).map((m) => String(m.target_id)));
       }
       const side = CREATIVE_SIDE[viewer.type as string] || null;
       const scored = (data || [])
-        .filter((p: any) => {
+        .filter((p) => {
           if (String(p.id) === String(profileId)) return false;
           if (blockedIds.has(String(p.id))) return false;
           if (alreadyMatchedIds.has(String(p.id))) return false;
@@ -171,8 +379,8 @@ export async function GET(req: NextRequest) {
           const hasPhotos = Array.isArray(p.photos) && p.photos.length > 0;
           return hasAvatar || hasPhotos;
         })
-        .map((p: any) => {
-          const base = calcMatchScore(viewer as any, p);
+        .map((p) => {
+          const base = calcMatchScore(viewer, p);
           const boosted = isBoostActive(p.boost_expires_at);
           // Derived age/online-visibility only, gated by the owner's own
           // "Show age"/"Show online status" preferences; the raw birthdate +
@@ -181,10 +389,10 @@ export async function GET(req: NextRequest) {
           // — this card previously never showed the verified checkmark or
           // online dot for any real profile, since neither column was ever
           // fetched here, unlike the matches/feed/profiles handlers).
-          return { ...p, age: publicAge(p), showAge: p.preferences?.showAge !== false, showOnline: p.preferences?.showOnline !== false, birthdate: undefined, preferences: undefined, matchScore: base, boosted, sideMatches: !!side && !!CREATIVE_SIDE[p.type] && CREATIVE_SIDE[p.type] !== side };
+          return { ...p, age: publicAge(p), showAge: p.preferences?.showAge !== false, showOnline: p.preferences?.showOnline !== false, birthdate: undefined, preferences: undefined, matchScore: base, boosted, sideMatches: !!side && !!CREATIVE_SIDE[p.type as string] && CREATIVE_SIDE[p.type as string] !== side };
         });
       // Boosted + complementary-side first, then by match score; capped for payload.
-      scored.sort((a: any, b: any) => {
+      scored.sort((a, b) => {
         const ap = (a.boosted ? 1 : 0) + (a.sideMatches ? 0.5 : 0) + a.matchScore / 100;
         const bp = (b.boosted ? 1 : 0) + (b.sideMatches ? 0.5 : 0) + b.matchScore / 100;
         return bp - ap;
@@ -202,10 +410,10 @@ export async function GET(req: NextRequest) {
       // "profiles" above, just against target_id instead of the row itself.
       let viewerVerified = false;
       {
-        const { data: vp } = await sb.from("muse_profiles").select("age_verified, age_verified_at").eq("id", profileId).maybeSingle();
-        viewerVerified = isAgeVerificationCurrent(vp as any);
+        const { data: vp }: { data: ViewerVerifiedRow | null } = await sb.from("muse_profiles").select("age_verified, age_verified_at").eq("id", profileId).maybeSingle();
+        viewerVerified = isAgeVerificationCurrent(vp);
       }
-      const { data } = await sb.from("muse_matches").select("id, user_id, target_id(id, name, type, avatar, bio, loc, styles, looking, zodiac, chinese, mbti, life_path, last_seen_at, nsfw, preferences, birthdate)").eq("user_id", profileId);
+      const { data }: { data: MatchRow[] | null } = (await sb.from("muse_matches").select("id, user_id, target_id(id, name, type, avatar, bio, loc, styles, looking, zodiac, chinese, mbti, life_path, last_seen_at, nsfw, preferences, birthdate)").eq("user_id", profileId)) as unknown as { data: MatchRow[] | null };
       // Same gap the comment above "profiles"/"discover-ranked" describes:
       // blocking someone stops them appearing in future Discover results but
       // never hid an EXISTING match — a blocked person you'd already matched
@@ -214,12 +422,12 @@ export async function GET(req: NextRequest) {
       // only helps for blocks that happen after this fix ships; filter here
       // too so it's correct immediately, including for any block action that
       // predates this patch and left an orphaned match row behind.
-      const { data: blocks } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
-      const blockedIds = new Set((blocks || []).map((b: any) => (String(b.user_id) === String(profileId) ? String(b.target_id) : String(b.user_id))));
+      const { data: blocks }: { data: BlockRow[] | null } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
+      const blockedIds = blockedIdSet(blocks, profileId);
       const gated = (data || [])
-        .filter((m: any) => !blockedIds.has(String(m.target_id?.id)))
-        .map((m: any) => {
-          const t = m.target_id || {};
+        .filter((m) => !blockedIds.has(String(m.target_id?.id)))
+        .map((m) => {
+          const t: ProfileRow = m.target_id || {};
           // Same derived-age gating as the profiles/discover-ranked payloads:
           // only `age`, only when the target's own showAge allows it, and never
           // the raw birthdate or the preferences blob.
@@ -251,7 +459,7 @@ export async function GET(req: NextRequest) {
       // last_seen_at joined so the client can render an online indicator on
       // each post's author, same presence signal already used for matches
       // (see useDiscoveryData.ts's `online` computation).
-      const { data } = await sb.from("muse_feed_posts").select("*, author_id(id, name, avatar, last_seen_at, verified)").order("created_at", { ascending: false }).limit(50);
+      const { data }: { data: PostRow[] | null } = await sb.from("muse_feed_posts").select("*, author_id(id, name, avatar, last_seen_at, verified)").order("created_at", { ascending: false }).limit(50);
       // Blocking was enforced for discover-ranked/profiles/matches and for
       // cleaning up an existing match (see userBlock in forum.ts), but this
       // listing — and briefs/forum right below it — never consulted
@@ -260,9 +468,9 @@ export async function GET(req: NextRequest) {
       // Network forum. Same blockedIds pattern as discover-ranked/profiles.
       let posts = data || [];
       if (profileId) {
-        const { data: blocks } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
-        const blockedIds = new Set((blocks || []).map((b: any) => (String(b.user_id) === String(profileId) ? String(b.target_id) : String(b.user_id))));
-        posts = posts.filter((p: any) => !blockedIds.has(String(p.author_id?.id)));
+        const { data: blocks }: { data: BlockRow[] | null } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
+        const blockedIds = blockedIdSet(blocks, profileId);
+        posts = posts.filter((p) => !blockedIds.has(String(p.author_id?.id)));
       }
       return NextResponse.json({ posts });
     }
@@ -272,47 +480,47 @@ export async function GET(req: NextRequest) {
       // so a brief's poster can see interest on their own post without a
       // separate round-trip — CollabScreen.tsx surfaces this only to the
       // brief's own author, not to other viewers.
-      const { data } = await sb.from("muse_briefs").select("*, author_id(id, name, avatar), muse_brief_applications(count)").order("created_at", { ascending: false }).limit(50);
+      const { data }: { data: BriefRow[] | null } = await sb.from("muse_briefs").select("*, author_id(id, name, avatar), muse_brief_applications(count)").order("created_at", { ascending: false }).limit(50);
       // Same gap as "feed" above — blocking never reached this listing.
       let briefs = data || [];
       if (profileId) {
-        const { data: blocks } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
-        const blockedIds = new Set((blocks || []).map((b: any) => (String(b.user_id) === String(profileId) ? String(b.target_id) : String(b.user_id))));
-        briefs = briefs.filter((b: any) => !blockedIds.has(String(b.author_id?.id)));
+        const { data: blocks }: { data: BlockRow[] | null } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
+        const blockedIds = blockedIdSet(blocks, profileId);
+        briefs = briefs.filter((b) => !blockedIds.has(String(b.author_id?.id)));
       }
       return NextResponse.json({ briefs });
     }
 
     if (type === "forum") {
-      const { data } = await sb.from("muse_forum_posts").select("*, author_id(id, name, avatar)").order("created_at", { ascending: false }).limit(50);
+      const { data }: { data: PostRow[] | null } = await sb.from("muse_forum_posts").select("*, author_id(id, name, avatar)").order("created_at", { ascending: false }).limit(50);
       // Same gap as "feed" above — blocking never reached this listing.
       let posts = data || [];
       if (profileId) {
-        const { data: blocks } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
-        const blockedIds = new Set((blocks || []).map((b: any) => (String(b.user_id) === String(profileId) ? String(b.target_id) : String(b.user_id))));
-        posts = posts.filter((p: any) => !blockedIds.has(String(p.author_id?.id)));
+        const { data: blocks }: { data: BlockRow[] | null } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
+        const blockedIds = blockedIdSet(blocks, profileId);
+        posts = posts.filter((p) => !blockedIds.has(String(p.author_id?.id)));
       }
       return NextResponse.json({ posts });
     }
 
     if (type === "events") {
-      const { data } = await sb.from("muse_events").select("*").limit(50);
+      const { data }: { data: EventRow[] | null } = await sb.from("muse_events").select("*").limit(50);
       // Same gap as feed/briefs/forum/sessions/moments above — a blocked
       // organizer's (created_by, per communities.ts's eventCreate) events
       // kept showing on CommunityScreen's Events tab.
       let events = data || [];
       if (profileId) {
-        const { data: blocks } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
-        const blockedIds = new Set((blocks || []).map((b: any) => (String(b.user_id) === String(profileId) ? String(b.target_id) : String(b.user_id))));
-        events = events.filter((e: any) => !blockedIds.has(String(e.created_by)));
+        const { data: blocks }: { data: BlockRow[] | null } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
+        const blockedIds = blockedIdSet(blocks, profileId);
+        events = events.filter((e) => !blockedIds.has(String(e.created_by)));
       }
       return NextResponse.json({ events });
     }
 
     if (type === "rsvps") {
       if (!profileId) return NextResponse.json({ rsvps: [] });
-      const { data } = await sb.from("muse_rsvps").select("event_id").eq("user_id", profileId);
-      return NextResponse.json({ rsvps: (data || []).map((r: any) => r.event_id) });
+      const { data }: { data: RsvpRow[] | null } = await sb.from("muse_rsvps").select("event_id").eq("user_id", profileId);
+      return NextResponse.json({ rsvps: (data || []).map((r) => r.event_id) });
     }
 
     if (type === "export") {
@@ -324,7 +532,7 @@ export async function GET(req: NextRequest) {
       const { data: authUser, error: authErr } = await authSb.auth.getUser(token);
       if (authErr || !authUser.user) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
-      const { data: profile } = await sb.from("muse_profiles").select("*").eq("auth_id", authUser.user.id).single();
+      const { data: profile }: { data: ProfileRow | null } = await sb.from("muse_profiles").select("*").eq("auth_id", authUser.user.id).single();
       if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
       const pid = profile.id;
 
@@ -366,30 +574,30 @@ export async function GET(req: NextRequest) {
     if (type === "community-members") {
       const communityId = req.nextUrl.searchParams.get("communityId") || "";
       if (!UUID_RE.test(communityId)) return NextResponse.json({ members: [] });
-      const { data } = await sb.from("muse_community_members")
+      const { data }: { data: MemberRow[] | null } = await sb.from("muse_community_members")
         .select("user_id, user_name, user_avatar, role, joined_at")
         .eq("community_id", communityId)
         .order("joined_at", { ascending: true })
         .limit(200);
       const rolePriority: Record<string, number> = { admin: 0, moderator: 1, member: 2 };
-      const rows = (data || []).slice().sort((a: any, b: any) => (rolePriority[a.role] ?? 2) - (rolePriority[b.role] ?? 2));
+      const rows = (data || []).slice().sort((a, b) => (rolePriority[a.role as string] ?? 2) - (rolePriority[b.role as string] ?? 2));
       return NextResponse.json({ members: rows });
     }
 
     if (type === "sessions") {
-      const { data } = await sb.from("muse_sessions").select("*").order("date", { ascending: true }).limit(20);
+      const { data }: { data: SessionRow[] | null } = await sb.from("muse_sessions").select("*").order("date", { ascending: true }).limit(20);
       // Same "blocking never reached this listing" gap as feed/briefs/forum
       // above — a blocked host's bookable sessions kept showing on Browse.
       let rows = data || [];
       if (profileId) {
-        const { data: blocks } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
-        const blockedIds = new Set((blocks || []).map((b: any) => (String(b.user_id) === String(profileId) ? String(b.target_id) : String(b.user_id))));
-        rows = rows.filter((s: any) => !blockedIds.has(String(s.host_id)));
+        const { data: blocks }: { data: BlockRow[] | null } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
+        const blockedIds = blockedIdSet(blocks, profileId);
+        rows = rows.filter((s) => !blockedIds.has(String(s.host_id)));
       }
       // Trust signals for the browse cards: whether the host is identity-verified
       // and how many sessions they've actually completed as a host — both real
       // counts, not derived from the session's own (self-reported) `rating`.
-      const hostIds = [...new Set(rows.map((s: any) => s.host_id).filter(Boolean))];
+      const hostIds = [...new Set(rows.map((s) => s.host_id).filter(Boolean))];
       let verifiedByHost = new Map<string, boolean>();
       // muse_sessions has no `name` column — it's the SESSION's title, not the
       // HOST's name. SessionsScreen's card headline, book-toast, aria-label and
@@ -398,20 +606,20 @@ export async function GET(req: NextRequest) {
       // this every real session silently showed its own title a second time
       // where the host's name belonged — normalizeSession()'s `s.name ?? s.title`
       // fallback masked it instead of surfacing a blank/undefined.
-      let nameByHost = new Map<string, string>();
+      let nameByHost = new Map<string, string | null | undefined>();
       const completedByHost = new Map<string, number>();
       if (hostIds.length) {
-        const { data: hosts } = await sb.from("muse_profiles").select("id, name, verified").in("id", hostIds);
-        verifiedByHost = new Map((hosts || []).map((h: any) => [h.id, !!h.verified]));
-        nameByHost = new Map((hosts || []).map((h: any) => [h.id, h.name]));
-        const { data: completed } = await sb.from("muse_bookings").select("host_id").in("host_id", hostIds).eq("status", "completed");
+        const { data: hosts }: { data: HostRefRow[] | null } = await sb.from("muse_profiles").select("id, name, verified").in("id", hostIds);
+        verifiedByHost = new Map((hosts || []).map((h) => [h.id, !!h.verified]));
+        nameByHost = new Map((hosts || []).map((h) => [h.id, h.name]));
+        const { data: completed }: { data: Array<{ host_id?: unknown }> | null } = await sb.from("muse_bookings").select("host_id").in("host_id", hostIds).eq("status", "completed");
         for (const b of completed || []) {
-          const hid = String((b as any).host_id);
+          const hid = String(b.host_id);
           completedByHost.set(hid, (completedByHost.get(hid) || 0) + 1);
         }
       }
       return NextResponse.json({
-        sessions: rows.map((s: any) => ({
+        sessions: rows.map((s) => ({
           ...s,
           name: nameByHost.get(s.host_id) || s.name,
           hostVerified: !!verifiedByHost.get(s.host_id),
@@ -433,33 +641,33 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === "professionals") {
-      const { data } = await sb.from("muse_professionals").select("*").order("created_at", { ascending: false }).limit(50);
+      const { data }: { data: ProfessionalRow[] | null } = await sb.from("muse_professionals").select("*").order("created_at", { ascending: false }).limit(50);
       // muse_professionals.user_id references auth.users, not muse_profiles — resolve
       // each professional's real profile id so the client's connect action targets
       // something the handler can actually find (was silently 400ing for real pros).
       const rows = data || [];
-      const userIds = rows.map((p: any) => p.user_id).filter(Boolean);
+      const userIds = rows.map((p) => p.user_id).filter(Boolean);
       let profileIdByAuthId = new Map<string, string>();
       let verifiedByProfileId = new Map<string, boolean>();
       if (userIds.length) {
-        const { data: profiles } = await sb.from("muse_profiles").select("id, auth_id, verified").in("auth_id", userIds);
-        profileIdByAuthId = new Map((profiles || []).map((pr: any) => [pr.auth_id, pr.id]));
-        verifiedByProfileId = new Map((profiles || []).map((pr: any) => [pr.id, !!pr.verified]));
+        const { data: profiles }: { data: ProfileAuthRow[] | null } = await sb.from("muse_profiles").select("id, auth_id, verified").in("auth_id", userIds);
+        profileIdByAuthId = new Map((profiles || []).map((pr) => [pr.auth_id, pr.id]));
+        verifiedByProfileId = new Map((profiles || []).map((pr) => [pr.id, !!pr.verified]));
       }
       // Trust line ("N★ (M reviews)") sourced from real muse_reviews rows keyed
       // by the professional's resolved profile id — never a made-up number.
       const profileIds = [...profileIdByAuthId.values()];
       const reviewStatsByProfileId = new Map<string, { rating: number; count: number; criteria: Record<string, number> }>();
       if (profileIds.length) {
-        const { data: reviews } = await sb.from("muse_reviews").select("reviewee_id, rating, criteria_communication, criteria_reliability, criteria_creative_quality, criteria_professionalism, criteria_safety").in("reviewee_id", profileIds);
+        const { data: reviews }: { data: ReviewRow[] | null } = await sb.from("muse_reviews").select("reviewee_id, rating, criteria_communication, criteria_reliability, criteria_creative_quality, criteria_professionalism, criteria_safety").in("reviewee_id", profileIds);
         const sums = new Map<string, { sum: number; count: number; criteria: Record<string, { sum: number; count: number }> }>();
         for (const r of reviews || []) {
-          const rid = String((r as any).reviewee_id);
+          const rid = String(r.reviewee_id);
           const cur = sums.get(rid) || { sum: 0, count: 0, criteria: {} };
-          cur.sum += (r as any).rating || 0;
+          cur.sum += r.rating || 0;
           cur.count += 1;
           for (const key of ["communication", "reliability", "creative_quality", "professionalism", "safety"]) {
-            const val = (r as any)[`criteria_${key}`];
+            const val = (r as unknown as ReviewCriteriaAccess)[`criteria_${key}`];
             if (val) {
               const c = cur.criteria[key] || { sum: 0, count: 0 };
               c.sum += val;
@@ -482,8 +690,8 @@ export async function GET(req: NextRequest) {
         }
       }
       return NextResponse.json({
-        professionals: rows.map((p: any) => {
-          const profileId = profileIdByAuthId.get(p.user_id) || null;
+        professionals: rows.map((p) => {
+          const profileId = profileIdByAuthId.get(String(p.user_id)) || null;
           const stats = profileId ? reviewStatsByProfileId.get(profileId) : undefined;
           return {
             ...p,
@@ -501,12 +709,12 @@ export async function GET(req: NextRequest) {
       const targetProfileId = req.nextUrl.searchParams.get("profile_id") || (profileId || "");
       if (!targetProfileId) return NextResponse.json({ error: "profile_id required" }, { status: 400 });
       if (!UUID_RE.test(targetProfileId)) return NextResponse.json({ reviews: [] });
-      const { data } = await sb.from("muse_reviews")
+      const { data }: { data: ReviewRow[] | null } = (await sb.from("muse_reviews")
         .select("id, rating, body, created_at, reviewer_id(name, avatar, type), criteria_communication, criteria_reliability, criteria_creative_quality, criteria_professionalism, criteria_safety")
         .eq("reviewee_id", targetProfileId)
         .order("created_at", { ascending: false })
-        .limit(50);
-      const reviews = (data || []).map((r: any) => ({
+        .limit(50)) as unknown as { data: ReviewRow[] | null };
+      const reviews = (data || []).map((r) => ({
         id: r.id, rating: r.rating, body: r.body, created_at: r.created_at, reviewer_id: r.reviewer_id,
         criteria: {
           communication: r.criteria_communication || null,
@@ -527,20 +735,20 @@ export async function GET(req: NextRequest) {
       const targetProfileId = req.nextUrl.searchParams.get("profile_id") || (profileId || "");
       if (!targetProfileId) return NextResponse.json({ error: "profile_id required" }, { status: 400 });
       if (!UUID_RE.test(targetProfileId)) return NextResponse.json({ trust: null });
-      const { data: p } = await sb.from("muse_profiles")
+      const { data: p }: { data: ProfileRow | null } = await sb.from("muse_profiles")
         .select("id, name, avatar, type, verified, age_verified, age_verified_at, boost_inventory, boost_expires_at, last_seen_at, created_at, profile_completion_pct")
         .eq("id", targetProfileId).maybeSingle();
       if (!p) return NextResponse.json({ trust: null });
-      const { data: reviews } = await sb.from("muse_reviews")
+      const { data: reviews }: { data: ReviewRow[] | null } = await sb.from("muse_reviews")
         .select("rating, criteria_communication, criteria_reliability, criteria_creative_quality, criteria_professionalism, criteria_safety")
         .eq("reviewee_id", targetProfileId);
       let reviewCount = 0, ratingSum = 0;
       const crit: Record<string, number> = {};
       for (const r of reviews || []) {
         reviewCount += 1;
-        ratingSum += (r as any).rating || 0;
+        ratingSum += r.rating || 0;
         for (const k of ["communication", "reliability", "creative_quality", "professionalism", "safety"]) {
-          const v = (r as any)[`criteria_${k}`];
+          const v = (r as unknown as ReviewCriteriaAccess)[`criteria_${k}`];
           if (v) crit[k] = (crit[k] || 0) + v;
         }
       }
@@ -555,11 +763,11 @@ export async function GET(req: NextRequest) {
       // received, how many did they respond to (accept/decline)? A high rate is a
       // strong "they actually reply" signal for a buyer — surfaced here with the
       // other trust data instead of silently omitted.
-      const { data: reqs } = await sb.from("muse_message_requests")
+      const { data: reqs }: { data: StatusRow[] | null } = await sb.from("muse_message_requests")
         .select("status")
         .eq("request_to", targetProfileId);
       const totalReqs = (reqs || []).length;
-      const respondedReqs = (reqs || []).filter((r: any) => r.status === "accepted" || r.status === "declined").length;
+      const respondedReqs = (reqs || []).filter((r) => r.status === "accepted" || r.status === "declined").length;
       const responseRate = totalReqs >= 3 ? Math.round((respondedReqs / totalReqs) * 100) : null;
       const lastSeen = p.last_seen_at || null;
       const lastSeenDaysAgo = lastSeen ? Math.floor((Date.now() - new Date(lastSeen).getTime()) / (24 * 60 * 60 * 1000)) : null;
@@ -585,55 +793,55 @@ export async function GET(req: NextRequest) {
       // URLs so Discover/portfolio/profile can render real counts in one call.
       const urls = (req.nextUrl.searchParams.get("urls") || "").split(",").map((u: string) => u.trim()).filter(Boolean).slice(0, 50);
       if (!urls.length) return NextResponse.json({ counts: {} });
-      const { data: rows } = await sb.from("muse_photo_likes").select("photo_url").in("photo_url", urls);
+      const { data: rows }: { data: PhotoLikeRow[] | null } = await sb.from("muse_photo_likes").select("photo_url").in("photo_url", urls);
       const counts: Record<string, number> = {};
       for (const u of urls) counts[u] = 0;
-      for (const r of rows || []) { const u = (r as any).photo_url; if (counts[u] != null) counts[u]++; }
+      for (const r of rows || []) { const u = r.photo_url; if (counts[u] != null) counts[u]++; }
       // Whether the viewer liked each (if authed).
       const likedByMe: Record<string, boolean> = {};
       if (profileId) {
-        const { data: mine } = await sb.from("muse_photo_likes").select("photo_url").eq("user_id", profileId).in("photo_url", urls);
-        for (const r of mine || []) likedByMe[(r as any).photo_url] = true;
+        const { data: mine }: { data: PhotoLikeRow[] | null } = await sb.from("muse_photo_likes").select("photo_url").eq("user_id", profileId).in("photo_url", urls);
+        for (const r of mine || []) likedByMe[r.photo_url] = true;
       }
       return NextResponse.json({ counts, likedByMe });
     }
 
     if (type === "moments") {
-      const { data } = await sb.from("muse_moments")
+      const { data }: { data: MomentRow[] | null } = (await sb.from("muse_moments")
         .select("id, text, img, type, likes, comments, created_at, author_id(id, name, avatar)")
         .gt("expires_at", new Date().toISOString())
         .order("created_at", { ascending: false })
-        .limit(50);
+        .limit(50)) as unknown as { data: MomentRow[] | null };
       // Same gap as feed/briefs/forum/sessions above — a blocked author's BTS
       // moments kept showing. author_id now also selects id (needed to filter).
       let moments = data || [];
       if (profileId) {
-        const { data: blocks } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
-        const blockedIds = new Set((blocks || []).map((b: any) => (String(b.user_id) === String(profileId) ? String(b.target_id) : String(b.user_id))));
-        moments = moments.filter((m: any) => !blockedIds.has(String(m.author_id?.id)));
+        const { data: blocks }: { data: BlockRow[] | null } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
+        const blockedIds = blockedIdSet(blocks, profileId);
+        moments = moments.filter((m) => !blockedIds.has(String(m.author_id?.id)));
       }
       return NextResponse.json({ moments });
     }
 
     if (type === "bookings") {
       if (!profileId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-      const { data: asBooker } = await sb.from("muse_bookings")
+      const { data: asBooker }: { data: BookingRow[] | null } = await sb.from("muse_bookings")
         .select("id, status, created_at, completed_at, session_id(id, title, type, rate, duration, img), host_id(id, name, avatar, type, verified)")
         .eq("user_id", profileId).order("created_at", { ascending: false });
-      const { data: asHost } = await sb.from("muse_bookings")
+      const { data: asHost }: { data: BookingRow[] | null } = await sb.from("muse_bookings")
         .select("id, status, created_at, completed_at, session_id(id, title, type, rate, duration, img), user_id(id, name, avatar, type, verified)")
         .eq("host_id", profileId).order("created_at", { ascending: false });
       // The "Pay" button (client) needs to know whether a booking has already
       // been paid for (held in escrow or fully captured) so it can hide once
       // paid, rather than staying visible forever since a booking's own
       // `status` tracks session confirmation, not payment.
-      const bookingIds = [...(asBooker || []), ...(asHost || [])].map((b: any) => b.id);
-      const paymentStatusByBooking: Record<string, string> = {};
+      const bookingIds = [...(asBooker || []), ...(asHost || [])].map((b) => b.id);
+      const paymentStatusByBooking: Record<string, string | null> = {};
       if (bookingIds.length) {
-        const { data: payments } = await sb.from("muse_booking_payments").select("booking_id, status").in("booking_id", bookingIds);
-        for (const p of payments || []) paymentStatusByBooking[String((p as any).booking_id)] = (p as any).status;
+        const { data: payments }: { data: BookingPaymentRow[] | null } = await sb.from("muse_booking_payments").select("booking_id, status").in("booking_id", bookingIds);
+        for (const p of payments || []) paymentStatusByBooking[String(p.booking_id)] = p.status ?? null;
       }
-      const withPaymentStatus = (rows: any[] | null) => (rows || []).map(b => ({ ...b, payment_status: paymentStatusByBooking[String(b.id)] || null }));
+      const withPaymentStatus = (rows: BookingRow[] | null) => (rows || []).map(b => ({ ...b, payment_status: paymentStatusByBooking[String(b.id)] || null }));
       return NextResponse.json({ asBooker: withPaymentStatus(asBooker), asHost: withPaymentStatus(asHost) });
     }
 
@@ -650,27 +858,27 @@ export async function GET(req: NextRequest) {
       const { count: likesReceived } = await sb.from("muse_matches")
         .select("*", { count: "exact", head: true })
         .eq("target_id", profileId);
-      const { data: me } = await sb.from("muse_profiles").select("views_count").eq("id", profileId).maybeSingle();
-      return NextResponse.json({ views: (me as any)?.views_count || 0, likesReceived: likesReceived || 0 });
+      const { data: me }: { data: ProfileRow | null } = await sb.from("muse_profiles").select("views_count").eq("id", profileId).maybeSingle();
+      return NextResponse.json({ views: me?.views_count || 0, likesReceived: likesReceived || 0 });
     }
 
     if (type === "profile-viewers" && user) {
-      const { data: viewers } = await sb.from("muse_activity_log")
+      const { data: viewers }: { data: ActivityActorRow[] | null } = await sb.from("muse_activity_log")
         .select("actor_id, created_at")
         .eq("user_id", profileId)
         .eq("action", "profile_view")
         .order("created_at", { ascending: false })
         .limit(50);
-      const viewerIds = [...new Set((viewers || []).map((v: any) => v.actor_id).filter(Boolean))];
+      const viewerIds = [...new Set((viewers || []).map((v) => v.actor_id).filter(Boolean))];
       if (viewerIds.length === 0) return NextResponse.json({ viewers: [] });
-      const { data: profiles } = await sb.from("muse_profiles")
+      const { data: profiles }: { data: ProfileRow[] | null } = await sb.from("muse_profiles")
         .select("id, name, avatar, verified, type")
         .in("id", viewerIds);
-      const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
+      const profileMap = new Map((profiles || []).map((p) => [p.id, p]));
       const result = (viewers || [])
-        .filter((v: any) => profileMap.has(v.actor_id))
-        .reduce((acc: any[], v: any) => {
-          if (!acc.find((x: any) => x.id === v.actor_id)) {
+        .filter((v) => profileMap.has(v.actor_id))
+        .reduce<Array<ProfileRow & { viewedAt?: string | null }>>((acc, v) => {
+          if (!acc.find((x) => x.id === v.actor_id)) {
             acc.push({ ...profileMap.get(v.actor_id), viewedAt: v.created_at });
           }
           return acc;
@@ -683,7 +891,7 @@ export async function GET(req: NextRequest) {
       // nonexistent on muse_profiles in production — selecting either fails
       // the whole query, `p` comes back null, and every user shows "0%".
       // Dropped both. Real per-user photos live in the albums system.
-      const { data: p, error: pErr } = await sb.from("muse_profiles")
+      const { data: p, error: pErr }: { data: ProfileRow | null; error: { message?: string } | null } = await sb.from("muse_profiles")
         .select("id, name, bio, styles, looking, avatar, type, age_verified, zodiac, chinese, mbti, life_path")
         .eq("id", profileId).maybeSingle();
       if (pErr) console.error("[profile-completion] query failed:", pErr.message);
@@ -692,8 +900,8 @@ export async function GET(req: NextRequest) {
         .select("*", { count: "exact", head: true }).eq("user_id", profileId);
       const { count: totalPrompts } = await sb.from("muse_prompt_bank")
         .select("*", { count: "exact", head: true }).eq("active", true);
-      const { data: myAlbums } = await sb.from("muse_albums").select("id").eq("profile_id", profileId);
-      const myAlbumIds = (myAlbums || []).map((a: any) => a.id);
+      const { data: myAlbums }: { data: IdRow[] | null } = await sb.from("muse_albums").select("id").eq("profile_id", profileId);
+      const myAlbumIds = (myAlbums || []).map((a) => a.id);
       let myPhotoCount = 0;
       if (myAlbumIds.length) {
         const { count: pc } = await sb.from("muse_album_photos")
@@ -701,15 +909,15 @@ export async function GET(req: NextRequest) {
         myPhotoCount = pc || 0;
       }
       const breakdown: Record<string, { done: boolean; weight: number }> = {
-        avatar: { done: !!(p as any).avatar, weight: 15 },
-        bio: { done: !!((p as any).bio && (p as any).bio.length >= 20), weight: 15 },
-        styles: { done: !!(p as any).styles && (p as any).styles.length > 0, weight: 10 },
-        looking: { done: !!(p as any).looking && (p as any).looking.length > 0, weight: 10 },
-        type: { done: !!(p as any).type, weight: 10 },
+        avatar: { done: !!p.avatar, weight: 15 },
+        bio: { done: !!(p.bio && p.bio.length >= 20), weight: 15 },
+        styles: { done: !!(p.styles && p.styles.length > 0), weight: 10 },
+        looking: { done: !!(p.looking && p.looking.length > 0), weight: 10 },
+        type: { done: !!p.type, weight: 10 },
         prompts: { done: (promptCount || 0) >= 3, weight: 15 },
-        verification: { done: !!(p as any).age_verified, weight: 10 },
+        verification: { done: !!p.age_verified, weight: 10 },
         photos: { done: myPhotoCount >= 2, weight: 10 },
-        personality: { done: !!((p as any).zodiac || (p as any).chinese || (p as any).mbti || (p as any).life_path), weight: 5 },
+        personality: { done: !!(p.zodiac || p.chinese || p.mbti || p.life_path), weight: 5 },
       };
       let totalWeight = 0;
       let doneWeight = 0;
@@ -757,14 +965,14 @@ export async function GET(req: NextRequest) {
         .eq("user_id", profileId);
 
       // Earnings (completed bookings as host)
-      const { data: completedBookings } = await sb.from("muse_bookings")
+      const { data: completedBookings }: { data: IdRow[] | null } = await sb.from("muse_bookings")
         .select("id")
         .eq("host_id", profileId)
         .eq("status", "completed");
       const bookingIds = (completedBookings || []).map(b => b.id);
       let totalEarnings = 0;
       if (bookingIds.length) {
-        const { data: payments } = await sb.from("muse_booking_payments")
+        const { data: payments }: { data: AmountRow[] | null } = await sb.from("muse_booking_payments")
           .select("amount_cents, status")
           .in("booking_id", bookingIds)
           .eq("status", "succeeded");
@@ -772,10 +980,10 @@ export async function GET(req: NextRequest) {
       }
 
       // Profile views (current total)
-      const { data: me } = await sb.from("muse_profiles").select("views_count").eq("id", profileId).maybeSingle();
+      const { data: me }: { data: ProfileRow | null } = await sb.from("muse_profiles").select("views_count").eq("id", profileId).maybeSingle();
 
       return NextResponse.json({
-        views: (me as any)?.views_count || 0,
+        views: me?.views_count || 0,
         viewsLast30Days: viewsLog?.length || 0,
         matchesReceived: matchesReceived || 0,
         messagesSent: messagesSent || 0,
@@ -804,8 +1012,8 @@ export async function GET(req: NextRequest) {
       // just never made it to this GET endpoint, which is what
       // ProfileScreen's Activity tab / page.tsx's activityFeed merge
       // actually calls.
-      const { data } = await sb.from("muse_notifications").select("*, from_id(name, avatar)").eq("user_id", profile.id).order("created_at", { ascending: false }).limit(30);
-      const notifications = (data || []).map((n: any) => ({ ...n, from: n.from_id?.name || "", avatar: n.from_id?.avatar || "" }));
+      const { data }: { data: NotificationRow[] | null } = await sb.from("muse_notifications").select("*, from_id(name, avatar)").eq("user_id", profile.id).order("created_at", { ascending: false }).limit(30);
+      const notifications = (data || []).map((n) => ({ ...n, from: n.from_id?.name || "", avatar: n.from_id?.avatar || "" }));
       return NextResponse.json({ notifications });
     }
 
@@ -820,8 +1028,8 @@ export async function GET(req: NextRequest) {
     if (type === "notifications-grouped" && user) {
       const { data: profile } = await sb.from("muse_profiles").select("id").eq("auth_id", user.id).maybeSingle();
       if (!profile) return NextResponse.json({ groups: {} });
-      const { data } = await sb.from("muse_notifications").select("*").eq("user_id", profile.id).order("created_at", { ascending: false }).limit(100);
-      const groups: Record<string, { items: any[]; unread: number }> = {};
+      const { data }: { data: NotificationRow[] | null } = await sb.from("muse_notifications").select("*").eq("user_id", profile.id).order("created_at", { ascending: false }).limit(100);
+      const groups: Record<string, { items: NotificationRow[]; unread: number }> = {};
       const categorize = (t: string) => {
         if (t === "match" || t === "like") return "matches";
         if (t === "message" || t === "message_request" || t === "message_request_accepted") return "messages";
@@ -830,7 +1038,7 @@ export async function GET(req: NextRequest) {
         return "other";
       };
       for (const n of (data || [])) {
-        const cat = categorize(n.type);
+        const cat = categorize(n.type as string);
         if (!groups[cat]) groups[cat] = { items: [], unread: 0 };
         groups[cat].items.push(n);
         if (!n.read) groups[cat].unread++;
@@ -844,9 +1052,9 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === "notification-prefs" && user) {
-      const { data: profile } = await sb.from("muse_profiles").select("id, preferences").eq("auth_id", user.id).maybeSingle();
+      const { data: profile }: { data: ProfileRow | null } = await sb.from("muse_profiles").select("id, preferences").eq("auth_id", user.id).maybeSingle();
       if (!profile) return NextResponse.json({ prefs: {} });
-      const prefs = (profile as any).preferences?.notifications || {};
+      const prefs = profile.preferences?.notifications || {};
       return NextResponse.json({ prefs });
     }
 
@@ -871,18 +1079,18 @@ export async function GET(req: NextRequest) {
       // ("connect Stripe to get paid"). Stripe Connect account state lives in
       // muse_stripe_connect; earnings aggregate from completed-as-host
       // succeeded payments.
-      const { data: connectRow } = await sb.from("muse_stripe_connect")
+      const { data: connectRow }: { data: ConnectRow | null } = await sb.from("muse_stripe_connect")
         .select("stripe_account_id, charges_enabled, payouts_enabled, details_submitted")
         .eq("user_id", profileId)
         .maybeSingle();
       const connected = !!connectRow?.stripe_account_id;
       const chargesEnabled = !!connectRow?.charges_enabled;
-      const { data: completedAsHost } = await sb.from("muse_bookings")
+      const { data: completedAsHost }: { data: IdRow[] | null } = await sb.from("muse_bookings")
         .select("id").eq("host_id", profileId).eq("status", "completed");
-      const ids = (completedAsHost || []).map((b: any) => b.id);
+      const ids = (completedAsHost || []).map((b) => b.id);
       let unpaidEarningsCents = 0;
       if (ids.length) {
-        const { data: pays } = await sb.from("muse_booking_payments")
+        const { data: pays }: { data: NetAmountRow[] | null } = await sb.from("muse_booking_payments")
           .select("net_amount_cents, status").in("booking_id", ids)
           .in("status", ["succeeded", "held"]);
         unpaidEarningsCents = (pays || []).reduce((s, p) => s + Number(p.net_amount_cents || 0), 0);
@@ -927,33 +1135,33 @@ export async function GET(req: NextRequest) {
       const portfolioGate = await resolvePortfolioGate(sb, targetProfileId, profileId);
       if (!portfolioGate.allowed) return NextResponse.json({ albums: [] });
       const query = sb.from("muse_albums").select("id, profile_id, title, description, cover_url, access_level, tags, position, view_count, like_count, created_at").eq("profile_id", targetProfileId).order("position");
-      const { data: albums, error } = await query;
+      const { data: albums, error }: { data: AlbumRow[] | null; error: unknown } = await query;
       if (error) return safeServerError(error, "db op");
       let visible = albums || [];
       if (!isOwner) {
-        const inviteAlbumIds = (albums || []).filter((a: any) => a.access_level === "invite").map((a: any) => a.id);
+        const inviteAlbumIds = (albums || []).filter((a) => a.access_level === "invite").map((a) => a.id);
         let grantedIds = new Set<string>();
         if (profileId && inviteAlbumIds.length) {
-          const { data: grants } = await sb.from("muse_album_access").select("album_id").eq("viewer_profile_id", profileId).in("album_id", inviteAlbumIds);
-          grantedIds = new Set((grants || []).map((g: any) => g.album_id));
+          const { data: grants }: { data: AlbumGrantRow[] | null } = await sb.from("muse_album_access").select("album_id").eq("viewer_profile_id", profileId).in("album_id", inviteAlbumIds);
+          grantedIds = new Set((grants || []).map((g) => g.album_id));
         }
-        visible = (albums || []).filter((a: any) => a.access_level === "public" || (a.access_level === "invite" && grantedIds.has(a.id)));
+        visible = (albums || []).filter((a) => a.access_level === "public" || (a.access_level === "invite" && grantedIds.has(a.id)));
       }
       // Attach photo counts without exposing photo rows for albums the viewer can't open.
-      const albumIds = visible.map((a: any) => a.id);
+      const albumIds = visible.map((a) => a.id);
       const counts: Record<string, number> = {};
       if (albumIds.length) {
-        const { data: photoRows } = await sb.from("muse_album_photos").select("album_id").in("album_id", albumIds);
+        const { data: photoRows }: { data: AlbumPhotoCountRow[] | null } = await sb.from("muse_album_photos").select("album_id").in("album_id", albumIds);
         for (const row of photoRows || []) counts[row.album_id] = (counts[row.album_id] || 0) + 1;
       }
-      return NextResponse.json({ albums: visible.map((a: any) => ({ ...a, photo_count: counts[a.id] || 0 })) });
+      return NextResponse.json({ albums: visible.map((a) => ({ ...a, photo_count: counts[a.id] || 0 })) });
     }
 
     if (type === "album-photos") {
       const albumId = req.nextUrl.searchParams.get("album_id");
       if (!albumId) return NextResponse.json({ error: "album_id required" }, { status: 400 });
       if (!UUID_RE.test(albumId)) return NextResponse.json({ photos: [] });
-      const { data: album } = await sb.from("muse_albums").select("id, profile_id, access_level").eq("id", albumId).maybeSingle();
+      const { data: album }: { data: AlbumRow | null } = await sb.from("muse_albums").select("id, profile_id, access_level").eq("id", albumId).maybeSingle();
       if (!album) return NextResponse.json({ error: "Not found" }, { status: 404 });
       const isOwner = !!profileId && String(profileId) === String(album.profile_id);
       // Outer privacy gate: the owner's portfolioVisibility applies before the
@@ -970,9 +1178,9 @@ export async function GET(req: NextRequest) {
         const hasGrant = profileId ? !!(await sb.from("muse_album_access").select("id").eq("album_id", albumId).eq("viewer_profile_id", profileId).maybeSingle()).data : false;
         if (!hasGrant) return NextResponse.json({ error: "You don't have access to this album" }, { status: 403 });
       }
-      const { data: photos, error } = await sb.from("muse_album_photos").select("id, img_url, caption, position, created_at").eq("album_id", albumId).order("position");
+      const { data: photos, error }: { data: AlbumPhotoRow[] | null; error: unknown } = await sb.from("muse_album_photos").select("id, img_url, caption, position, created_at").eq("album_id", albumId).order("position");
       if (error) return safeServerError(error, "db op");
-      return NextResponse.json({ photos: await Promise.all((photos || []).map((photo: any) => albumPhotoForViewer(sb, photo))) });
+      return NextResponse.json({ photos: await Promise.all((photos || []).map((photo) => albumPhotoForViewer(sb, photo))) });
     }
 
     if (type === "admin-analytics") {
@@ -1008,10 +1216,10 @@ export async function GET(req: NextRequest) {
 
       // Simple week-over-week retention: users active in the prior 7-14 day
       // window who were also active in the most recent 7 days.
-      const activeLastWeek = new Set((activity7d.data || []).map((r: any) => r.user_id).filter(Boolean));
-      const activePriorWeek = new Set((activity14dPrior.data || []).map((r: any) => r.user_id).filter(Boolean));
+      const activeLastWeek = new Set(((activity7d.data || []) as ActivityUserRow[]).map((r) => r.user_id).filter(Boolean));
+      const activePriorWeek = new Set(((activity14dPrior.data || []) as ActivityUserRow[]).map((r) => r.user_id).filter(Boolean));
       let retained = 0;
-      activePriorWeek.forEach((id: any) => { if (activeLastWeek.has(id)) retained++; });
+      activePriorWeek.forEach((id) => { if (activeLastWeek.has(id)) retained++; });
       const retentionRate = activePriorWeek.size > 0 ? Math.round((retained / activePriorWeek.size) * 100) : null;
 
       // Feature usage breakdown by event name
@@ -1037,20 +1245,20 @@ export async function GET(req: NextRequest) {
       let payments = undefined;
       let connectedAccounts = 0;
       try {
-        const { data: payData } = await sb.from("muse_booking_payments").select("amount_cents, commission_cents, status");
-        const succeeded = (payData || []).filter((p: any) => p.status === "succeeded");
+        const { data: payData }: { data: Array<AmountRow & { commission_cents?: number | null }> | null } = await sb.from("muse_booking_payments").select("amount_cents, commission_cents, status");
+        const succeeded = (payData || []).filter((p) => p.status === "succeeded");
         payments = {
           total: (payData || []).length,
           succeeded: succeeded.length,
-          totalVolume: succeeded.reduce((s: number, p: any) => s + (p.amount_cents || 0), 0),
-          totalCommission: succeeded.reduce((s: number, p: any) => s + (p.commission_cents || 0), 0),
+          totalVolume: succeeded.reduce((s: number, p) => s + (p.amount_cents || 0), 0),
+          totalCommission: succeeded.reduce((s: number, p) => s + (p.commission_cents || 0), 0),
         };
         const { count } = await sb.from("muse_stripe_connect").select("*", { count: "exact", head: true });
         connectedAccounts = count || 0;
       } catch { /* tables may not exist yet */ }
 
       // Audit log: recent 50 admin queries
-      let auditLog: any[] = [];
+      let auditLog: AuditRow[] = [];
       try {
         const { data: auditEntries } = await sb.from("muse_admin_audit_log")
           .select("*").order("created_at", { ascending: false }).limit(50);
@@ -1060,12 +1268,12 @@ export async function GET(req: NextRequest) {
       // ── Round 2: moderation SLA, refunds, calls, top creators ──
       let moderation = undefined;
       try {
-        const { data: inc } = await sb.from("muse_safety_incidents").select("status, created_at, reviewed_at").limit(2000);
+        const { data: inc }: { data: IncidentRow[] | null } = await sb.from("muse_safety_incidents").select("status, created_at, reviewed_at").limit(2000);
         const rows = inc || [];
-        const open = rows.filter((r: any) => r.status !== "resolved" && r.status !== "dismissed").length;
-        const resolved = rows.filter((r: any) => r.reviewed_at);
+        const open = rows.filter((r) => r.status !== "resolved" && r.status !== "dismissed").length;
+        const resolved = rows.filter((r): r is IncidentRow & { reviewed_at: string } => !!r.reviewed_at);
         const avgHours = resolved.length
-          ? Math.round(resolved.reduce((s: number, r: any) =>
+          ? Math.round(resolved.reduce((s: number, r) =>
               s + (new Date(r.reviewed_at).getTime() - new Date(r.created_at).getTime()) / 3600000, 0) / resolved.length)
           : null;
         moderation = { total: rows.length, open, resolved: resolved.length, avgResolutionHours: avgHours };
@@ -1085,41 +1293,41 @@ export async function GET(req: NextRequest) {
 
       let refunds = undefined;
       try {
-        const { data: rr } = await sb.from("muse_refund_requests").select("status").limit(2000);
+        const { data: rr }: { data: StatusRow[] | null } = await sb.from("muse_refund_requests").select("status").limit(2000);
         const rows = rr || [];
         refunds = {
           total: rows.length,
-          open: rows.filter((r: any) => r.status === "open" || r.status === "pending").length,
-          approved: rows.filter((r: any) => r.status === "approved").length,
-          rejected: rows.filter((r: any) => r.status === "rejected").length,
+          open: rows.filter((r) => r.status === "open" || r.status === "pending").length,
+          approved: rows.filter((r) => r.status === "approved").length,
+          rejected: rows.filter((r) => r.status === "rejected").length,
         };
       } catch { /* table may not exist yet */ }
 
       let calls = undefined;
       try {
-        const { data: cl } = await sb.from("muse_calls").select("status, kind").limit(5000);
+        const { data: cl }: { data: CallRow[] | null } = await sb.from("muse_calls").select("status, kind").limit(5000);
         const rows = cl || [];
         calls = {
           total: rows.length,
-          answered: rows.filter((r: any) => r.status === "answered" || r.status === "ended").length,
-          missed: rows.filter((r: any) => r.status === "missed" || r.status === "declined").length,
-          voicemails: rows.filter((r: any) => r.status === "voicemail").length,
+          answered: rows.filter((r) => r.status === "answered" || r.status === "ended").length,
+          missed: rows.filter((r) => r.status === "missed" || r.status === "declined").length,
+          voicemails: rows.filter((r) => r.status === "voicemail").length,
         };
       } catch { /* table may not exist yet */ }
 
       // Top creators by recorded activity (30d) — who's actually driving the app.
-      let topCreators: any[] = [];
+      let topCreators: TopCreatorRow[] = [];
       try {
         const counts = new Map<string, number>();
-        for (const r of activity7d.data || []) {
-          const id = (r as any).user_id;
-          if (id) counts.set(id, (counts.get(id) || 0) + 1);
+        for (const r of (activity7d.data || []) as ActivityUserRow[]) {
+          const id = r.user_id;
+          if (id) counts.set(String(id), (counts.get(String(id)) || 0) + 1);
         }
         const topIds = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id]) => id);
         if (topIds.length) {
-          const { data: profs } = await sb.from("muse_profiles").select("id, name, type, avatar").in("id", topIds);
-          topCreators = (profs || []).map((p: any) => ({ ...p, activity: counts.get(p.id) || 0 }))
-            .sort((a: any, b: any) => b.activity - a.activity);
+          const { data: profs }: { data: ProfileRow[] | null } = await sb.from("muse_profiles").select("id, name, type, avatar").in("id", topIds);
+          topCreators = (profs || []).map((p) => ({ ...p, activity: counts.get(String(p.id)) || 0 }))
+            .sort((a, b) => b.activity - a.activity);
         }
       } catch { /* best-effort */ }
 
