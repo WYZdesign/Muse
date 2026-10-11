@@ -6,47 +6,90 @@ import { FiArrowLeft, FiPlus, FiSearch, FiGrid, FiRepeat, FiDollarSign, FiVolume
 import { matchesBriefSearch } from "../components/searchMatch";
 import Nav from "../components/Nav";
 import { EmptyState } from "../components/EmptyState";
-import type { Screen, Brief } from "../components/types";
+import type { Screen, Brief, Match } from "../components/types";
 import { BRIEFS } from "../components/types";
 import HScroll from "../components/HScroll";
 import { viewerSide } from "@/lib/role";
 import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
 import { BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
 import { useFocusTrap } from "../hooks/useFocusTrap";
+import type { CurrentUser, AuthFetchFn } from "../page-models";
+
+// The Collab category chips (page.tsx's museCat state) and the categories a
+// brief itself can carry (briefCat, without the "all" filter value).
+type BriefCatAll = "all" | "tfp" | "paid" | "opencall" | "concept";
+type BriefCat = "tfp" | "paid" | "opencall" | "concept";
+
+// A brief as useBriefsState stores it: the optimistic rows posted this session
+// (uid() numeric ids, persisted through useMusePersistence).
+type UserBrief = {
+  id: number;
+  title: string;
+  desc: string;
+  budget: string;
+  tags: string[];
+  cat: string;
+};
+
+// Stored rows keep the author fields optional: a fresh UserBrief gains them in
+// the merge below, and setUserBriefs must stay assignable from page.tsx's
+// plain UserBrief state under strictFunctionTypes.
+type StoredBrief = UserBrief & {
+  author?: string;
+  authorImg?: string;
+  deadline?: string;
+  urgent?: boolean;
+  nsfw?: boolean;
+};
+
+// One row on the brief board after the merge stamps the local author fields
+// onto each userBriefs row. liveBriefs rows arrive already shaped by
+// normalizeBrief (author join flattened, applicantCount unpacked) and the
+// demo fallback is BRIEFS. applicantCount/author_id exist only on live rows;
+// author_id is how "is this my brief?" joins live rows to the current user.
+// id is number to match the optimistic apply/save state and uid() - live DB
+// rows carry UUID strings at runtime but are only ever keyed, compared, or
+// passed opaquely (same call FeedPostRow makes in page-models).
+type CollabBrief = StoredBrief & {
+  author: string;
+  authorImg: string;
+  applicantCount?: number;
+  author_id?: { id?: string } | null;
+};
 
 export interface CollabScreenProps {
   screen: Screen;
   showScreen: (s: Screen) => void;
   goBack?: () => void;
-  museCat: "all" | "tfp" | "paid" | "opencall" | "concept";
-  setMuseCat: (c: "all" | "tfp" | "paid" | "opencall" | "concept") => void;
-  userBriefs: any[];
-  setUserBriefs: React.Dispatch<React.SetStateAction<any[]>>;
+  museCat: BriefCatAll;
+  setMuseCat: (c: BriefCatAll) => void;
+  userBriefs: StoredBrief[];
+  setUserBriefs: React.Dispatch<React.SetStateAction<StoredBrief[]>>;
   showPostBrief: boolean;
   setShowPostBrief: (v: boolean) => void;
-  liveBriefs: any[];
+  liveBriefs: CollabBrief[];
   showNsfw: boolean;
-  currentUser: any;
-  apiFetch: (url: string, opts?: any) => Promise<any>;
+  currentUser: CurrentUser;
+  apiFetch: AuthFetchFn;
   showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
-  uid: () => any;
+  uid: () => number;
   openHamburger?: () => void;
   unreadNotificationCount?: number;
   appliedBriefs?: number[];
   setAppliedBriefs?: React.Dispatch<React.SetStateAction<number[]>>;
   savedBriefs?: number[];
   setSavedBriefs?: React.Dispatch<React.SetStateAction<number[]>>;
-  setChatTarget?: (t: any) => void;
+  setChatTarget?: (m: Match) => void;
   briefTitle?: string;
   setBriefTitle?: (v: string) => void;
   briefDesc?: string;
   setBriefDesc?: (v: string) => void;
   briefBudget?: string;
   setBriefBudget?: (v: string) => void;
-  briefCat?: "tfp" | "paid" | "opencall" | "concept";
-  setBriefCat?: (c: "tfp" | "paid" | "opencall" | "concept") => void;
+  briefCat?: BriefCat;
+  setBriefCat?: (c: BriefCat) => void;
   setShowReport?: (v: boolean) => void;
-  setReportTarget?: (t: any) => void;
+  setReportTarget?: (t: { id: number | string; type: string; name: string }) => void;
   demo?: boolean;
   /** Same shared onError fallback every other avatar <Image> in the app uses
    *  (sets a data-fallback flag + swaps src once). Optional for backward
@@ -82,7 +125,7 @@ export const CollabScreen = memo(function CollabScreen({
   setBriefDesc = () => {},
   briefBudget = "",
   setBriefBudget = () => {},
-  briefCat = "concept" as "tfp" | "paid" | "opencall" | "concept",
+  briefCat = "concept",
   setBriefCat = () => {},
   openHamburger,
   unreadNotificationCount,
@@ -96,7 +139,7 @@ export const CollabScreen = memo(function CollabScreen({
   // "...more" pattern, audit finding li-1). Briefs have no detail screen to
   // click through to (unlike Feed posts, which already open a post-detail
   // view), so this needs its own expand toggle rather than just a CSS clamp.
-  const [expandedBriefIds, setExpandedBriefIds] = useState<Set<any>>(new Set());
+  const [expandedBriefIds, setExpandedBriefIds] = useState<Set<number>>(new Set());
 
   // Two independent audit findings (Thumbtack's "Describe your project"
   // free-text search, TaskRabbit's near-identical placeholder) converged on
@@ -113,17 +156,17 @@ export const CollabScreen = memo(function CollabScreen({
   // elsewhere in this hook family — there's no per-user "hidden briefs"
   // table on the backend, and adding one is a bigger change than this pass
   // is scoped for. A toast with Undo keeps the dismiss from being a trap.
-  const [hiddenBriefIds, setHiddenBriefIds] = useState<Set<any>>(new Set());
+  const [hiddenBriefIds, setHiddenBriefIds] = useState<Set<number>>(new Set());
   // Audit fix (2026-09-08, wyzmind's Torreé batch item 3): the "meet in public
   // places" safety reminder used to sit inline in every tfp/paid/opencall card's
   // body, permanently taking up space. Torreé asked for it to become a small
   // top-left "ⓘ" icon that opens a popup with the full text instead. Tracks
   // which single brief's popup is open (or null for none).
-  const [safetyInfoBriefId, setSafetyInfoBriefId] = useState<any>(null);
+  const [safetyInfoBriefId, setSafetyInfoBriefId] = useState<number | null>(null);
   const safetyInfoBriefTrap = useFocusTrap(safetyInfoBriefId !== null, () => setSafetyInfoBriefId(null));
   const postBriefTrap = useFocusTrap(showPostBrief, () => setShowPostBrief(false));
   const safetyGuidelinesTrap = useFocusTrap(safetyInfoOpen, () => setSafetyInfoOpen(false));
-  const hideBrief = (id: any) => {
+  const hideBrief = (id: number) => {
     setHiddenBriefIds(prev => new Set(prev).add(id));
     showToast({ msg: "Hidden from your feed", onTap: () => setHiddenBriefIds(prev => { const next = new Set(prev); next.delete(id); return next; }) });
   };
@@ -133,7 +176,7 @@ export const CollabScreen = memo(function CollabScreen({
     try {
       const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "brief", title: briefTitle.trim(), desc: briefDesc.trim(), budget: briefBudget.trim() || "Negotiable", cat: briefCat, tags: [], paid: briefCat === "paid" }) });
       if (!r.ok) throw new Error("failed");
-      setUserBriefs((prev: any[]) => [{ id: uid(), title: briefTitle.trim(), desc: briefDesc.trim(), budget: briefBudget.trim() || "Negotiable", tags: [], cat: briefCat, author: currentUser.name, authorImg: currentUser.avatar, deadline: "Flexible", urgent: false, nsfw: false }, ...prev]);
+      setUserBriefs((prev) => [{ id: uid(), title: briefTitle.trim(), desc: briefDesc.trim(), budget: briefBudget.trim() || "Negotiable", tags: [], cat: briefCat, author: currentUser.name, authorImg: currentUser.avatar, deadline: "Flexible", urgent: false, nsfw: false }, ...prev]);
       setShowPostBrief(false);
       setBriefTitle(""); setBriefDesc(""); setBriefBudget(""); setBriefCat("concept");
       showToast("Brief posted!");
@@ -210,14 +253,14 @@ export const CollabScreen = memo(function CollabScreen({
             beat of reading for a frequently-tapped row like this one. Kept
             to a plain 11px icon, no extra vertical space taken. */}
         {([["all", "All", FiGrid], ["tfp", "TFP", FiRepeat], ["paid", "Paid", FiDollarSign], ["opencall", "Open Call", FiVolume2], ["concept", "Concept", FiZap]] as const).map(([k, l, Icon]) => (
-          <div key={k} className={"conn-tab" + (museCat === k ? " active" : "")} role="tab" aria-selected={museCat === k} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setMuseCat(k as any); } }} onClick={() => setMuseCat(k as any)} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+          <div key={k} className={"conn-tab" + (museCat === k ? " active" : "")} role="tab" aria-selected={museCat === k} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setMuseCat(k); } }} onClick={() => setMuseCat(k)} style={{ display: "flex", alignItems: "center", gap: 5 }}>
             <Icon size={11} />{l}
           </div>
         ))}
       </div>
       <div className="briefs-scroll">
         {(() => {
-          const allBriefs = [
+          const allBriefs: CollabBrief[] = [
             ...userBriefs.map(b => ({
               ...b,
               author: currentUser.name,
@@ -242,7 +285,7 @@ export const CollabScreen = memo(function CollabScreen({
           // through liveBriefs instead, identified by its author_id join —
           // both are checked so "is this my own brief?" is correct either way.
           const localOwnIds = new Set(userBriefs.map(b => b.id));
-          const isOwnBrief = (b: any) => localOwnIds.has(b.id) || b.author_id?.id === currentUser?.id;
+          const isOwnBrief = (b: CollabBrief) => localOwnIds.has(b.id) || b.author_id?.id === currentUser?.id;
           const ordered = side === "industry"
             ? [...filtered.filter(isOwnBrief), ...filtered.filter(b => !isOwnBrief(b))]
             : [...filtered.filter(b => !isOwnBrief(b)), ...filtered.filter(isOwnBrief)];
@@ -422,7 +465,7 @@ export const CollabScreen = memo(function CollabScreen({
             <textarea className="inp" aria-label="Brief description" placeholder="Describe the project" rows={3} value={briefDesc} onChange={e => setBriefDesc(e.target.value)} style={{ marginBottom: 8, resize: "none" }} />
             <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
               <input className="inp" aria-label="Budget" placeholder="Budget" value={briefBudget} onChange={e => setBriefBudget(e.target.value)} style={{ flex: 1 }} />
-              <select className="inp" aria-label="Project category" value={briefCat} onChange={e => setBriefCat(e.target.value as any)} style={{ flex: 1 }}>
+              <select className="inp" aria-label="Project category" value={briefCat} onChange={e => setBriefCat(e.target.value as BriefCat)} style={{ flex: 1 }}>
                 <option value="concept">Concept</option>
                 <option value="tfp">TFP</option>
                 <option value="paid">Paid</option>
