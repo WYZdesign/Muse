@@ -16,6 +16,7 @@ import type { Screen, Match, SessionListing } from "../components/types";
 import { SESSIONS } from "../components/types";
 import HScroll from "../components/HScroll";
 import { STRINGS } from "@/lib/strings";
+import type { CurrentUser, AuthFetchFn, ViewProfile } from "../page-models";
 
 export interface SessionsScreenProps {
   screen: Screen;
@@ -24,15 +25,15 @@ export interface SessionsScreenProps {
   sessTab: "sessions" | "bookings" | "requests";
   setSessTab: (t: "sessions" | "bookings" | "requests") => void;
   matches: Match[];
-  setMatches: React.Dispatch<React.SetStateAction<any[]>>;
-  openChat: (m: any) => void;
-  setChatTarget: (m: any) => void;
-  apiFetch: (url: string, opts?: any) => Promise<any>;
-  authFetch: (url: string, opts?: any) => Promise<any>;
+  setMatches: React.Dispatch<React.SetStateAction<Match[]>>;
+  openChat: (m: Match) => void;
+  setChatTarget: (m: Match) => void;
+  apiFetch: AuthFetchFn;
+  authFetch: AuthFetchFn;
   showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
   handleImgError: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
-  uid: () => any;
-  currentUser: any;
+  uid: () => number;
+  currentUser: CurrentUser;
   setShowAgeVerification: (v: boolean) => void;
   setShowReport?: (v: boolean) => void;
   setReportTarget?: (t: { id: number | string; type: string; name: string }) => void;
@@ -41,16 +42,52 @@ export interface SessionsScreenProps {
   demo?: boolean;
   liveSessions?: SessionListing[];
   setLiveSessions?: React.Dispatch<React.SetStateAction<SessionListing[] | null>>;
-  myBookings?: { asBooker: any[]; asHost: any[] };
-  setMyBookings?: React.Dispatch<React.SetStateAction<{ asBooker: any[]; asHost: any[] }>>;
-  bookingReminders?: any[];
-  setDisclosureTarget?: (t: any) => void;
+  myBookings?: { asBooker: SessionBooking[]; asHost: SessionBooking[] };
+  setMyBookings?: React.Dispatch<React.SetStateAction<{ asBooker: SessionBooking[]; asHost: SessionBooking[] }>>;
+  bookingReminders?: BookingReminder[];
+  setDisclosureTarget?: (t: { id: string; name: string } | null) => void;
   setDisclosureBookingId?: (id: string) => void;
   setShowDisclosureModal?: (v: boolean) => void;
-  setViewProfile?: (p: any) => void;
+  setViewProfile?: (p: ViewProfile | null) => void;
   savedSessionIds?: (string | number)[];
   setSavedSessionIds?: React.Dispatch<React.SetStateAction<(string | number)[]>>;
 }
+
+// A session card / detail-modal row. SessionListing covers the browse-card
+// fields; the detail modal and host-availability toggle also read a few
+// columns that live DB rows carry (get.ts's "sessions" handler spreads the
+// raw muse_sessions row, which has duration/date/host_id) but the static
+// SESSIONS demo array never sets.
+type SessionDetail = SessionListing & {
+  duration?: string;
+  date?: string;
+  host_id?: string | number | null;
+  isMine?: boolean;
+};
+
+// A muse_bookings row as the Bookings/Requests tabs and their action
+// handlers see it (get.ts "bookings" handler: id + status + payment_status
+// plus the embedded session/host/user join objects).
+type BookingParty = { id?: string; name?: string; avatar?: string; verified?: boolean; type?: string };
+type BookingSessionRef = { id?: string; title?: string; rate?: string; img?: string; type?: string; duration?: string };
+type SessionBooking = {
+  id: string;
+  status?: string | null;
+  payment_status?: string | null;
+  host_id?: BookingParty | null;
+  user_id?: BookingParty | null;
+  session_id?: BookingSessionRef | null;
+};
+
+// One upcoming-shoot reminder row (useSessionData booking-reminders).
+type BookingReminder = {
+  bookingId?: string;
+  isHost?: boolean;
+  sessionTitle?: string;
+  sessionDate?: string;
+  sessionTime?: string;
+  sessionLocation?: string;
+};
 
 // Booking/payment confirmation transparency (competitive-audit finding —
 // Calendly+Stripe / Airbnb both show both sides a plain-language payment
@@ -120,8 +157,8 @@ export const SessionsScreen = memo(function SessionsScreen({
   // sent to the host rather than a new muse_bookings column, since that
   // column doesn't exist and this session's whole audit has been about the
   // cost of assuming one does.
-  const [detailSession, setDetailSession] = useState<any>(null);
-  const [bookFormTarget, setBookFormTarget] = useState<any>(null);
+  const [detailSession, setDetailSession] = useState<SessionDetail | null>(null);
+  const [bookFormTarget, setBookFormTarget] = useState<SessionDetail | null>(null);
   const [bookForm, setBookForm] = useState({ sizing: "", requirements: "", message: "" });
   const [bookSubmitting, setBookSubmitting] = useState(false);
   const [newSession, setNewSession] = useState({ title: "", description: "", type: "Photoshoot", rate: "", duration: "60 min", date: "", location: "" });
@@ -131,9 +168,9 @@ export const SessionsScreen = memo(function SessionsScreen({
   // (the liveSessions array is owned by the parent hook, so we can't mutate it
   // directly here). Only shown on sessions the current user hosts.
   const [availability, setAvailability] = useState<Record<string, boolean>>({});
-  const isHostOwned = (s: any) => !!s && (String(s.host_id) === String(currentUser?.id) || !!s.isMine);
-  const sessionAvailable = (s: any) => availability[String(s.id)] ?? s.available;
-  const toggleAvailability = async (s: any) => {
+  const isHostOwned = (s: SessionDetail) => !!s && (String(s.host_id) === String(currentUser?.id) || !!s.isMine);
+  const sessionAvailable = (s: SessionDetail) => availability[String(s.id)] ?? s.available;
+  const toggleAvailability = async (s: SessionDetail) => {
     if (demo) { showToast("Session availability is read-only in this demo."); return; }
     const next = !sessionAvailable(s);
     setAvailability(p => ({ ...p, [String(s.id)]: next }));
@@ -178,7 +215,7 @@ export const SessionsScreen = memo(function SessionsScreen({
       else { showToast(j.error || "Couldn't file request"); }
     } catch { showToast("Couldn't file request"); }
   };
-  const doBookSession = async (s: any, note?: { sizing: string; requirements: string; message: string }) => {
+  const doBookSession = async (s: SessionDetail, note?: { sizing: string; requirements: string; message: string }) => {
     // A demo preview is a completed local interaction, not a failed booking.
     // Returning success lets the form dismiss after its explanatory toast;
     // returning false stranded visitors in the modal after "Send Request".
@@ -271,7 +308,7 @@ export const SessionsScreen = memo(function SessionsScreen({
     apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { savedSessionIds: next } }) }).catch(() => showToast(isSaved ? "Couldn't unsave — try again" : "Couldn't save — try again"));
   };
 
-  const [reviewTarget, setReviewTarget] = useState<any>(null);
+  const [reviewTarget, setReviewTarget] = useState<SessionBooking | null>(null);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewBody, setReviewBody] = useState("");
   const [reviewSending, setReviewSending] = useState(false);
@@ -328,7 +365,7 @@ export const SessionsScreen = memo(function SessionsScreen({
   const cancelBookingTrap = useFocusTrap(cancelTarget !== null, () => setCancelTarget(null));
   const reviewTrap = useFocusTrap(reviewTarget !== null, () => setReviewTarget(null));
 
-  const payBooking = async (booking: any) => {
+  const payBooking = async (booking: SessionBooking) => {
     if (demo) { showToast("Payment is unavailable in this demo."); return; }
     const host = booking.host_id;
     const session = booking.session_id;
@@ -471,7 +508,7 @@ export const SessionsScreen = memo(function SessionsScreen({
                     >
                       {s.available ? "Book Session" : "Waitlist"}
                     </button>
-                    <button style={{ flex: "0 0 44px", width: 44, height: 44, background: "transparent", border: "none", color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 12 }} aria-label="View Profile" title="View Profile" onClick={() => setViewProfile(s)}><FiEye size={18} /></button>
+                    <button style={{ flex: "0 0 44px", width: 44, height: 44, background: "transparent", border: "none", color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 12 }} aria-label="View Profile" title="View Profile" onClick={() => setViewProfile(s as unknown as ViewProfile)}><FiEye size={18} /></button>
                     <button
                       style={{ flex: "0 0 44px", width: 44, height: 44, background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: savedSessionIds.includes(s.id) ? "var(--gold)" : "var(--text2)" }}
                       onClick={() => toggleSaveSession(s.id)}
@@ -527,8 +564,9 @@ export const SessionsScreen = memo(function SessionsScreen({
               </EmptyState>
             )}
             {myBookings.asBooker.map(b => {
-              const host = b.host_id || {};
-              const sess = b.session_id || {};
+              const host: BookingParty = b.host_id || {};
+              const sess: BookingSessionRef = b.session_id || {};
+              const hostImg = host.avatar || sess.img;
               const label = b.status === "pending" ? "Awaiting host" : b.status === "confirmed" ? "Confirmed" : b.status === "completed" ? "Completed" : "Cancelled";
               const statusColors: Record<string, { bg: string; bd: string; c: string }> = {
                 completed: BADGE_COLORS.green,
@@ -536,13 +574,13 @@ export const SessionsScreen = memo(function SessionsScreen({
                 cancelled: BADGE_COLORS.red,
                 pending: BADGE_COLORS.muted,
               };
-              const sc = statusColors[b.status] || BADGE_COLORS.muted;
+              const sc = statusColors[String(b.status)] || BADGE_COLORS.muted;
               const pp = paymentStatusPill(b.payment_status);
               return (
                 <div key={b.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "row", alignItems: "stretch" }}>
                 <div style={{ position: "relative", width: "25%", alignSelf: "stretch", minHeight: 120, flexShrink: 0 }}>
-                    {(host.avatar || sess.img) && (
-                      <Image src={host.avatar || sess.img} alt={host.name || "Host"} fill sizes="25vw" style={{ objectFit: "cover" }} onError={handleImgError} />
+                    {hostImg && (
+                      <Image src={hostImg} alt={host.name || "Host"} fill sizes="25vw" style={{ objectFit: "cover" }} onError={handleImgError} />
                     )}
                   </div>
                   <div className="conn-content" style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", justifyContent: "center" }}>
@@ -600,8 +638,9 @@ export const SessionsScreen = memo(function SessionsScreen({
               <EmptyState icon="🗓️" title="No requests yet" sub="When someone books one of your sessions, you'll see their request here to accept or decline." style={{ padding: "24px 20px" }} />
             )}
             {myBookings.asHost.map(b => {
-              const booker = b.user_id || {};
-              const sess = b.session_id || {};
+              const booker: BookingParty = b.user_id || {};
+              const sess: BookingSessionRef = b.session_id || {};
+              const bookerImg = booker.avatar || sess.img;
               const label = b.status === "pending" ? "Pending" : b.status === "confirmed" ? "Confirmed" : b.status === "completed" ? "Completed" : "Cancelled";
               const statusColors: Record<string, { bg: string; bd: string; c: string }> = {
                 completed: BADGE_COLORS.green,
@@ -609,13 +648,13 @@ export const SessionsScreen = memo(function SessionsScreen({
                 cancelled: BADGE_COLORS.red,
                 pending: BADGE_COLORS.muted,
               };
-              const sc = statusColors[b.status] || BADGE_COLORS.muted;
+              const sc = statusColors[String(b.status)] || BADGE_COLORS.muted;
               const pp = paymentStatusPill(b.payment_status);
               return (
                 <div key={b.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "row", alignItems: "stretch" }}>
                   <div style={{ position: "relative", width: "25%", alignSelf: "stretch", minHeight: 110, flexShrink: 0 }}>
-                    {(booker.avatar || sess.img) && (
-                      <Image src={booker.avatar || sess.img} alt={booker.name || "Booker"} fill sizes="25vw" style={{ objectFit: "cover" }} onError={handleImgError} />
+                    {bookerImg && (
+                      <Image src={bookerImg} alt={booker.name || "Booker"} fill sizes="25vw" style={{ objectFit: "cover" }} onError={handleImgError} />
                     )}
                   </div>
                   <div className="conn-content" style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", justifyContent: "center" }}>
