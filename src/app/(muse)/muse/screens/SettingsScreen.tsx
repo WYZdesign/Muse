@@ -6,7 +6,7 @@ import { mfaStatus, mfaEnroll, mfaVerify, mfaUnenroll } from "../lib/api";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 // Push subscribe/unsubscribe arrive as PROPS (page.tsx owns the real impls) —
 // importing the module fns here too shadowed them and invited drift.
-import type { Screen } from "../components/types";
+import type { Screen } from "../components/types"; import type { CurrentUser, AuthUser, AuthFetchFn, MuseTheme, BlockedProfileRow } from "../page-models"; import type { OnboardingData } from "../hooks/useAuthOnboardingState";
 import { BEHIND_CAMERA, IN_FRONT_CAMERA, AESTHETICS, lookingForOptions } from "../components/types";
 import { STRINGS } from "@/lib/strings";
 import { clearAllPageTourFlags } from "../components/pageTourContent";
@@ -36,8 +36,8 @@ export interface SettingsScreenProps {
   screen: Screen;
   showScreen: (s: Screen) => void;
   goBack?: () => void;
-  currentUser: any;
-  obData: any;
+  currentUser: CurrentUser;
+  obData: OnboardingData;
   showNsfw: boolean;
   setShowNsfw: (v: boolean) => void;
   notifPrefs: Record<string, boolean>;
@@ -47,7 +47,7 @@ export interface SettingsScreenProps {
   obConnectedSocials: Record<string, boolean>;
   toggleSocial: (k: string) => void;
   theme: string;
-  setTheme: (t: any) => void;
+  setTheme: (t: MuseTheme) => void;
   openHamburger: () => void;
   unreadNotificationCount: number;
   showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
@@ -76,21 +76,21 @@ export interface SettingsScreenProps {
   setShowReferral: (v: boolean) => void;
   setShowSafetyCheckin: (v: boolean) => void;
   setShowPromptBank: (v: boolean) => void;
-  promptResponses: any[];
-  promptBankData: any[];
-  myGeo: any;
+  promptResponses: unknown[];
+  promptBankData: unknown[];
+  myGeo: unknown;
   setShowAgeGate: (v: boolean) => void;
   setPendingNsfw: (v: boolean) => void;
   setShowAgeVerification: (v: boolean) => void;
   /** Persisted profile preferences (muse_profiles.preferences) — seeds the
    *  Portfolio & Availability sub-pages with the user's saved values. */
   preferences?: Record<string, unknown>;
-  authUser?: any;
+  authUser?: AuthUser;
   showBlockedUsers?: boolean;
   setShowBlockedUsers?: (v: boolean | ((p: boolean) => boolean)) => void;
   setScreen?: (s: Screen) => void;
   setObStep?: (s: number) => void;
-  apiFetch?: (url: string, opts?: any) => Promise<any>;
+  apiFetch?: AuthFetchFn;
   setShowQuests?: (v: boolean) => void;
   questClaimables?: number;
   ageVerified?: boolean;
@@ -118,7 +118,7 @@ export interface SettingsScreenProps {
   setShowMatchPercent?: (v: boolean) => void;
   userTier?: string;
   setUpsell?: (v: { feature: string; reason: string; icon?: string } | null) => void;
-  authFetch?: (url: string, opts?: any) => Promise<any>;
+  authFetch?: AuthFetchFn;
   setSupportOpen?: (v: boolean) => void;
 }
 
@@ -362,17 +362,17 @@ export const SettingsScreen = memo(function SettingsScreen({
   const [hireNotes, setHireNotes] = useState<string>(String(preferences.hireNotes ?? ""));
   const [showPersonality, setShowPersonality] = useState(false);
   const [showCreativeProfile, setShowCreativeProfile] = useState(false);
-  const [cpType, setCpType] = useState((obData as any)?.type || "");
+  const [cpType, setCpType] = useState((obData)?.type || "");
   const [cpCustomTypePending, setCpCustomTypePending] = useState(false);
-  const [cpLooking, setCpLooking] = useState<string[]>((obData as any)?.looking || []);
-  const [cpStyles, setCpStyles] = useState<string[]>((obData as any)?.styles || []);
+  const [cpLooking, setCpLooking] = useState<string[]>((obData)?.looking || []);
+  const [cpStyles, setCpStyles] = useState<string[]>((obData)?.styles || []);
   const [cpShowCustomStyleInput, setCpShowCustomStyleInput] = useState(false);
   const [cpCustomStyleDraft, setCpCustomStyleDraft] = useState("");
   const [cpCustomStylePending, setCpCustomStylePending] = useState(false);
-  const [persZodiac, setPersZodiac] = useState((obData as any)?.zodiac || "");
-  const [persChinese, setPersChinese] = useState((obData as any)?.chinese || "");
-  const [persMbti, setPersMbti] = useState((obData as any)?.mbti || "");
-  const [persLifePath, setPersLifePath] = useState((obData as any)?.lifePath || "");
+  const [persZodiac, setPersZodiac] = useState((obData)?.zodiac || "");
+  const [persChinese, setPersChinese] = useState((obData)?.chinese || "");
+  const [persMbti, setPersMbti] = useState((obData)?.mbti || "");
+  const [persLifePath, setPersLifePath] = useState<string | number>((obData)?.lifePath || "");
   const [pwCurrent, setPwCurrent] = useState("");
   const [pwNew, setPwNew] = useState("");
   const [pwConfirm, setPwConfirm] = useState("");
@@ -478,7 +478,7 @@ export const SettingsScreen = memo(function SettingsScreen({
         const d = await r.json();
         if (!cancelled && Array.isArray(d?.blocked)) {
           const map: Record<string, { name: string; avatar?: string }> = {};
-          d.blocked.forEach((p: any) => { if (p?.id) map[p.id] = { name: p.name, avatar: p.avatar }; });
+          d.blocked.forEach((p: BlockedProfileRow) => { if (p?.id) map[p.id] = { name: p.name, avatar: p.avatar }; });
           setBlockedProfiles(map);
         }
       } catch { /* non-fatal — falls back to showing raw ids below */ }
@@ -1085,7 +1085,7 @@ export const SettingsScreen = memo(function SettingsScreen({
             const CHINESE = ["Rat","Ox","Tiger","Rabbit","Dragon","Snake","Horse","Goat","Monkey","Rooster","Dog","Pig"];
             const MBTI = ["INTJ","INTP","ENTJ","ENTP","INFJ","INFP","ENFJ","ENFP","ISTJ","ISFJ","ESTJ","ESFJ","ISTP","ISFP","ESTP","ESFP"];
             const LIFE_PATHS = [1,2,3,4,5,6,7,8,9,11,22,33];
-            const chipRow = (label: string, options: (string|number)[], value: any, setValue: (v: any) => void) => (
+            const chipRow = <T extends string | number>(label: string, options: T[], value: T, setValue: (v: T) => void) => (
               <div style={{ marginBottom: 18 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 8, textAlign: "center" }}>{label}</div>
                 <div className="chips" style={{ marginBottom: 0 }}>
@@ -1101,7 +1101,7 @@ export const SettingsScreen = memo(function SettingsScreen({
                 {chipRow("Zodiac", ZODIAC, persZodiac, setPersZodiac)}
                 {chipRow("Chinese Zodiac", CHINESE, persChinese, setPersChinese)}
                 {chipRow("MBTI", MBTI, persMbti, setPersMbti)}
-                {chipRow("Life Path", LIFE_PATHS, persLifePath, setPersLifePath)}
+                {chipRow<string | number>("Life Path", LIFE_PATHS, persLifePath, setPersLifePath)}
                 <button className="btn btn-gold" style={{ width: "100%", marginTop: 8 }} onClick={async () => {
                   try {
                     await apiFetch?.("/api/muse/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update-profile", zodiac: persZodiac, chinese: persChinese, mbti: persMbti, life_path: persLifePath }) });
@@ -1123,7 +1123,7 @@ export const SettingsScreen = memo(function SettingsScreen({
               else if (arr.length < max) set([...arr, v]);
               else showToast(`Max ${max} selected`);
             };
-            const row = (label: string, options: string[], value: any, onPick: (v: string) => void, multi = false) => (
+            const row = (label: string, options: string[], value: string | string[], onPick: (v: string) => void, multi = false) => (
               <div style={{ marginBottom: 16 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 8, textAlign: "center" }}>{label}</div>
                 <div className="chips" style={{ marginBottom: 0 }}>

@@ -245,3 +245,10 @@ export type FeedStory = {
   media?: string[];
   time: string;
 };
+
+// Settings (role-adaptive) view models. MuseTheme is the persisted theme union
+// (page.tsx's theme state); BlockedProfileRow is the enriched blocked-users row
+// the Settings blocked-users sub-page fetches by id and falls back from to the
+// raw id when a profile has not resolved.
+export type MuseTheme = "lasunset" | "deepspace" | "nebula" | "deepsea" | "cinder" | "boreal" | "sunrise" | "daylight" | "sky" | "rose" | "meadow" | "frost";
+export type BlockedProfileRow = { id?: string; name: string; avatar?: string };
