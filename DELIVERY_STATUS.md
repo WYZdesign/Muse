@@ -27,9 +27,9 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `ca11a44a`
+## Confirmed merged, last verified at: `fdfc54a4`
 
-### Reconciliation — 2026-10-10 (opencode/WYZMIND): `d086110c` → `ca11a44a`, 7 commits + 1 merge
+### Reconciliation — 2026-10-10 (opencode/WYZMIND): `d086110c` → `fdfc54a4`, 8 commits + 1 merge
 
 - **`2cea4719 fix(discover)`** — unblocked live Discover card photos: the hero is `<Image unoptimized>`, so profile photos load straight from `*.supabase.co`, which CSP `img-src` did not allow (demo mode uses unsplash, which hid it). Added `*.supabase.co` + `replicate.delivery` to `img-src` and `storage.googleapis.com` to `connect-src` (BodyPix model). Also: pointerdown on `.card-info-scroll` (z-index 2 over the hero, so the target for nearly every drag point) now arms the swipe, with pointer capture only once the axis locks to x so vertical scroll still works. And the layout watchdog `STALE_MS` 12s -> 30s plus a `window.__museAlive` heartbeat stamped after the heavy segmentation pass, so a finished pass is not mistaken for a freeze and no longer reloads away the user's deck position.
 - **`f75ba78b refactor(types)`** — purged all 107 `any` from `muse-actions/get.ts` (local row types + a `blockedIdSet` helper for the block-filter expression that repeated at nine sites). Types-only, no runtime change.
@@ -38,8 +38,9 @@ same way.
 - **`feff7af1 refactor(types)`** — purged all 94 `any` from `DiscoverScreen.tsx` (local `DiscoverCard` type, reuse of `DiscoveryProfile`/`CardAlbum`/`CurrentUser`/`ViewProfile`/`Match`/`GeoResult`; props and `useState` typed). Types-only, DOM unchanged.
 - **`c82e7d08 refactor(types)`** — purged all 47 `any` from `MenuModal.tsx` (activity-panel row types + prop types from `page-models`/`components/types`). Types-only, DOM unchanged.
 - **`ca11a44a refactor(types)`** — purged all 40 `any` from `NetworkScreen.tsx`; added `NetworkForumPost`/`ThreadReply`/etc to `page-models.ts`. Types-only, DOM unchanged.
+- **`fdfc54a4 refactor(types)`** — purged all 40 `any` from `FeedScreen.tsx`; added `FeedPostRow`/`FeedReply`/`FeedStory` to `page-models.ts`. Types-only, DOM unchanged.
 
-Verification at this tip: `tsc` 0, `vitest` 169 files / 1320 tests, `next build` clean, `audit-gate` PASS. Repo-wide `any` now 445 across 78 files (was 760/82 before this batch).
+Verification at this tip: `tsc` 0, `vitest` 169 files / 1320 tests, `next build` clean, `audit-gate` PASS. Repo-wide `any` now 405 across 77 files (was 760/82 before this batch).
 
 ### Reconciliation — 2026-10-10 (Claude): `a017543a` → `d086110c`, 12 commits
 
