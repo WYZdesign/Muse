@@ -8,11 +8,35 @@ import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
 import Nav from "../components/Nav";
 import type { Screen } from "../components/types";
 import { getPostShareUrl } from "@/lib/urls";
+import type { AuthFetchFn, FeedStory } from "../page-models";
+
+// One BTS "moment" row in the shared stories slot. The slot holds three
+// sources: the static INITIAL_STORIES demo fallback (numeric 501-505 ids),
+// the live rows useFeedData maps from /api/muse?type=moments, and the
+// optimistic rows postVoiceMoment/Feed push this session. FeedStory carries
+// the base card fields (id/author/avatar/type/text/time/img/media) that every
+// source sets; the engagement, NSFW, voice and share-view fields below are
+// read only on this screen, so they stay optional (some sources omit them and
+// the render already falls back with `|| 0` / `|| "now"`).
+type BtsStory = FeedStory & {
+  likes?: number;
+  comments?: number;
+  liked?: boolean;
+  video?: boolean;
+  ts?: number;
+  nsfw?: boolean;
+  views?: number;
+  caption?: string;
+  transcript?: string;
+  mediaUrl?: string;
+  media_url?: string;
+  durationMs?: number;
+};
 
 export interface BtsScreenProps {
   screen: Screen;
-  stories: any[];
-  setStories: React.Dispatch<React.SetStateAction<any[]>>;
+  stories: BtsStory[];
+  setStories: React.Dispatch<React.SetStateAction<BtsStory[]>>;
   showScreen: (s: Screen) => void;
   goBack?: () => void;
   openHamburger: () => void;
@@ -20,7 +44,7 @@ export interface BtsScreenProps {
   showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
   setShowStory: (idx: number) => void;
   handleImgError: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
-  apiFetch: (url: string, opts?: any) => Promise<any>;
+  apiFetch: AuthFetchFn;
   currentUser?: { name: string; avatar: string } | null;
   uploadImage?: (file: File) => Promise<string>;
   /** Uploads a recorded voice/video clip (WebM) — kind tells the server which. */
@@ -153,7 +177,7 @@ export const BtsScreen = memo(function BtsScreen({
   }, []);
 
   const handleLike = useCallback(
-    (s: any) => {
+    (s: BtsStory) => {
       if (DEMO_MODE) { showToast("BTS likes are unavailable in this demo."); return; }
       const newLiked = !s.liked;
       setStories((prev) =>
@@ -171,7 +195,7 @@ export const BtsScreen = memo(function BtsScreen({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "like-moment", momentId: s.id, liked: newLiked }),
-      }).then((r: any) => { if (!r.ok) throw new Error("failed"); }).catch(() => {
+      }).then((r) => { if (!r.ok) throw new Error("failed"); }).catch(() => {
         setStories((prev) =>
           prev.map((item) =>
             item.id === s.id
@@ -186,7 +210,7 @@ export const BtsScreen = memo(function BtsScreen({
   );
 
   const handleShare = useCallback(
-    (s: any) => {
+    (s: BtsStory) => {
       const url = getPostShareUrl(s.id);
       if (navigator.share) {
         navigator.share({ title: "Musa BTS", text: "Check out this BTS moment on Musa", url }).catch(() => {});
@@ -199,7 +223,7 @@ export const BtsScreen = memo(function BtsScreen({
   );
 
   const submitComment = useCallback(
-    async (s: any) => {
+    async (s: BtsStory) => {
       if (DEMO_MODE) { showToast("BTS comments are unavailable in this demo."); return; }
       const text = commentDraft.trim();
       if (!text || sendingComment) return;
@@ -236,7 +260,7 @@ export const BtsScreen = memo(function BtsScreen({
     if (holdTimerRef.current) { clearTimeout(holdTimerRef.current); holdTimerRef.current = null; }
   }, []);
 
-  const startHold = useCallback((s: any) => {
+  const startHold = useCallback((s: BtsStory) => {
     longPressFiredRef.current = false;
     cancelHold();
     holdTimerRef.current = setTimeout(() => {
@@ -246,7 +270,7 @@ export const BtsScreen = memo(function BtsScreen({
     }, HOLD_MS);
   }, [cancelHold, setReportTarget, setShowReport]);
 
-  const reportStory = useCallback((s: any) => {
+  const reportStory = useCallback((s: BtsStory) => {
     setReportTarget({ id: s.id, type: "moment", name: s.author || s.caption || "moment" });
     setShowReport(true);
   }, [setReportTarget, setShowReport]);
@@ -647,8 +671,8 @@ export const BtsScreen = memo(function BtsScreen({
                 {/* Action bar — one evenly-distributed row of like/comment/share/
                     views so every card reads clean at the bottom (no duplicate rows). */}
                 {(() => {
-                  const views = typeof (s as any).views === "number"
-                    ? (s as any).views
+                  const views = typeof s.views === "number"
+                    ? s.views
                     : 50 + (s.likes || 0) * 8 + (s.comments || 0) * 15;
                   const fmt = (n: number) => n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "") + "K" : String(n);
                   const itemStyle: React.CSSProperties = {
@@ -667,23 +691,23 @@ export const BtsScreen = memo(function BtsScreen({
                     cursor: "pointer",
                     transition: "background 0.2s, color 0.2s",
                     whiteSpace: "nowrap",
-                  } as any;
+                  };
                   return (
                     <div style={{ display: "flex", alignItems: "stretch", gap: 2, padding: "2px 8px 10px", borderTop: "1px solid rgba(255,255,255,0.05)", marginTop: 8 }}>
-                      <button onClick={() => handleLike(s)} aria-label="Like" style={{ ...itemStyle, background: s.liked ? "rgba(255,215,0,0.15)" : "transparent", color: s.liked ? "var(--gold)" : "var(--muted, #999)" } as any}>
+                      <button onClick={() => handleLike(s)} aria-label="Like" style={{ ...itemStyle, background: s.liked ? "rgba(255,215,0,0.15)" : "transparent", color: s.liked ? "var(--gold)" : "var(--muted, #999)" }}>
                         <span aria-hidden="true" style={{ fontSize: 17 }}>{s.liked ? "✦" : "✧"}</span>{fmt(s.likes || 0)}
                       </button>
                       <button
                         onClick={() => { setCommentingId(commentingId === s.id ? null : s.id); setCommentDraft(""); }}
                         aria-label="Comment"
-                        style={{ ...itemStyle } as any}
+                        style={{ ...itemStyle }}
                       >
                         <span aria-hidden="true" style={{ fontSize: 17 }}>✎</span>{fmt(s.comments || 0)}
                       </button>
-                      <button onClick={() => handleShare(s)} aria-label="Share" style={{ ...itemStyle } as any}>
+                      <button onClick={() => handleShare(s)} aria-label="Share" style={{ ...itemStyle }}>
                         <span aria-hidden="true" style={{ fontSize: 17 }}>↗</span>Share
                       </button>
-                      <div style={{ ...itemStyle, cursor: "default" } as any} title="Views" aria-label="Views">
+                      <div style={{ ...itemStyle, cursor: "default" }} title="Views" aria-label="Views">
                         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.75 }}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
                         {fmt(views)}
                       </div>
