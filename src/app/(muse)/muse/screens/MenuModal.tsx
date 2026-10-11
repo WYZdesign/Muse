@@ -4,6 +4,8 @@ import React, { memo, useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
 import { FiArrowLeft, FiUsers, FiCalendar, FiShare2, FiUser, FiSettings, FiStar, FiX, FiBell, FiTrash2 } from "react-icons/fi";
 import type { Screen, Match } from "../components/types";
+import type { CurrentUser, AuthUser, ViewProfile, Professional, AuthFetchFn } from "../page-models";
+import type { ActivityFeedItem } from "../hooks/useNotificationSync";
 import StreakWidget from "../components/StreakWidget";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import { EmptyState } from "../components/EmptyState";
@@ -23,12 +25,65 @@ const DEMO_NOTIFICATIONS = [
   { id: "n7", from: "Dev Patel", text: "commented: “This lighting is unreal 🔥”", type: "comment", read: true, created_at: new Date(Date.now() - 3 * 86400000).toISOString() },
 ];
 
+// Local shapes for the activity panel. Notification rows come back from the
+// panel's own GET (from/avatar/text/read/created_at); report rows from
+// `type=my-reports`; booking rows are page.tsx's myBookings (id/status/
+// created_at plus the embedded session title). Optional where a row may omit
+// a field; `created_at` stays required because it always reaches `new Date`.
+type NotificationItem = {
+  id: string | number;
+  from?: string;
+  avatar?: string;
+  _systemAvatar?: string;
+  text?: string;
+  type?: string;
+  read?: boolean;
+  created_at: string;
+};
+
+type MyReport = {
+  id: string | number;
+  status?: string;
+  target_type?: string;
+  reason?: string;
+  resolution_note?: string;
+  created_at: string;
+};
+
+type BookingRow = {
+  id: string | number;
+  status?: string;
+  created_at: string;
+  session_id?: { title?: string } | null;
+};
+
+type BookingsForHub = { asBooker: BookingRow[]; asHost: BookingRow[] };
+
+type HubTab = "notif" | "applied" | "saved" | "bookings" | "reports";
+
+// Page-level discovery preferences (page.tsx / SettingsScreen own the same shape).
+type DiscoveryPrefs = { ageMin: number; ageMax: number; distance: number; gender: string };
+
+// The forum-post row useFeedData owns; page passes its setter straight through.
+type ForumPostRow = {
+  id: number;
+  title: string;
+  body: string;
+  author: string;
+  avatar: string;
+  votes: number;
+  comments: { author: string; text: string }[];
+  cat: string;
+  time: string;
+  pinned: boolean;
+};
+
 interface ActivityPanelProps {
-  authFetch: any;
+  authFetch: AuthFetchFn;
   demo?: boolean;
   appliedBriefs: (string | number)[];
   savedBriefs: (string | number)[];
-  bookingsForHub: any;
+  bookingsForHub?: BookingsForHub;
   weeklyLogins: boolean[];
   loginStreak: number;
   setShowHamburger: (v: boolean) => void;
@@ -54,10 +109,10 @@ function NotificationAvatar({ name, src, letter }: { name?: string; src?: string
 // time (governed by activeDragId from the parent); while one is active, all other
 // rows' handlers short-circuit and stay inert.
 function SwipeableNotification({ a, activeDragId, setActiveDragId, onRemove, disabled = false }: {
-  a: any;
-  activeDragId: any;
-  setActiveDragId: (id: any) => void;
-  onRemove: (id: any) => void;
+  a: NotificationItem;
+  activeDragId: string | null;
+  setActiveDragId: (id: string | null) => void;
+  onRemove: (id: string) => void;
   disabled?: boolean;
 }) {
   const rowRef = useRef<HTMLDivElement>(null);
@@ -111,7 +166,7 @@ function SwipeableNotification({ a, activeDragId, setActiveDragId, onRemove, dis
         dxRef.current = 0;
         setDx(0);
         setDragging(false);
-        setActiveDragId(null as any);
+        setActiveDragId(null);
         return;
       }
     }
@@ -125,7 +180,7 @@ function SwipeableNotification({ a, activeDragId, setActiveDragId, onRemove, dis
     if (!startRef.current) { setDragging(false); return; }
     startRef.current = null;
     setDragging(false);
-    setActiveDragId(null as any);
+    setActiveDragId(null);
     horizDragRef.current = false;
     if (Math.abs(dxRef.current) > 90) {
       setRemoving(true);
@@ -147,7 +202,7 @@ function SwipeableNotification({ a, activeDragId, setActiveDragId, onRemove, dis
     dxRef.current = 0;
     setDx(0);
     setDragging(false);
-    setActiveDragId(null as any);
+    setActiveDragId(null);
   };
 
   if (gone) return null;
@@ -199,8 +254,8 @@ function SwipeableNotification({ a, activeDragId, setActiveDragId, onRemove, dis
 
 function ActivityPanel({ authFetch, demo = false, appliedBriefs, savedBriefs, bookingsForHub, weeklyLogins, loginStreak, setShowHamburger, showScreen, onStreakTap, onMarkAllRead, briefTitleById }: ActivityPanelProps) {
   const [hubTab, setHubTab] = useState<"notif" | "applied" | "saved" | "bookings" | "reports">("notif");
-  const [myReports, setMyReports] = useState<any[] | null>(null);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [myReports, setMyReports] = useState<MyReport[] | null>(null);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   // Bumped on every loadNotifications call, and stamped onto that call's own
   // closure as reqId — see the comment below for why.
   const notifReqIdRef = useRef(0);
@@ -208,9 +263,9 @@ function ActivityPanel({ authFetch, demo = false, appliedBriefs, savedBriefs, bo
   // the id of the row currently being dragged so every other SwipeableNotification
   // short-circuits its handlers. pendingDeletionRef guards the backend call so a
   // notification is deleted exactly once (it also stays deleted on reload).
-  const [activeDragId, setActiveDragId] = useState<any>(null);
-  const pendingDeletionRef = useRef<Set<any>>(new Set());
-  const removeNotification = useCallback((id: any) => {
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const pendingDeletionRef = useRef<Set<string>>(new Set());
+  const removeNotification = useCallback((id: string) => {
     if (demo) return;
     if (pendingDeletionRef.current.has(id)) return;
     pendingDeletionRef.current.add(id);
@@ -228,10 +283,10 @@ function ActivityPanel({ authFetch, demo = false, appliedBriefs, savedBriefs, bo
   const [briefTitleMap, setBriefTitleMap] = useState<Record<string, string>>(briefTitleById || {});
   useEffect(() => {
     let cancelled = false;
-    authFetch("/api/muse?type=briefs").then((r: any) => r.json()).then((d: any) => {
+    authFetch("/api/muse?type=briefs").then((r) => r.json()).then((d: { briefs?: Array<{ id?: string | number; title?: string; name?: string }> }) => {
       if (cancelled) return;
       const map: Record<string, string> = { ...(briefTitleById || {}) };
-      for (const b of (d.briefs || [])) { if (b?.id != null && (b.title || b.name)) map[String(b.id)] = b.title || b.name; }
+      for (const b of (d.briefs || [])) { if (b?.id != null && (b.title || b.name)) map[String(b.id)] = (b.title || b.name) as string; }
       setBriefTitleMap(map);
     }).catch(() => {});
     return () => { cancelled = true; };
@@ -239,7 +294,7 @@ function ActivityPanel({ authFetch, demo = false, appliedBriefs, savedBriefs, bo
 
   useEffect(() => {
     if (hubTab === "reports" && myReports === null && authFetch) {
-      authFetch("/api/muse?type=my-reports").then((r: any) => r.json()).then((d: any) => setMyReports(d.reports || [])).catch(() => setMyReports([]));
+      authFetch("/api/muse?type=my-reports").then((r) => r.json()).then((d: { reports?: MyReport[] }) => setMyReports(d.reports || [])).catch(() => setMyReports([]));
     }
   }, [hubTab, myReports, authFetch]);
 
@@ -273,7 +328,7 @@ function ActivityPanel({ authFetch, demo = false, appliedBriefs, savedBriefs, bo
       // Only forward `type` for actual category filters (match/message/booking/etc).
       const isCategoryFilter = notifFilter !== "all" && notifFilter !== "unread";
       const res = await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get-notifications", limit: 30, offset: append ? notifOffset : 0, unreadOnly: notifFilter === "unread", type: isCategoryFilter ? notifFilter : undefined }) });
-      const data = await res.json();
+      const data: { success?: boolean; notifications?: NotificationItem[] } = await res.json();
       if (reqId !== notifReqIdRef.current) return; // superseded by a newer request — discard
       if (data.success) {
         const newNotifs = data.notifications || [];
@@ -334,7 +389,7 @@ onMarkAllRead?.();
     } catch { /* clear is best-effort */ }
   };
 
-  const tabBtn = (key: any, label: string) => (
+  const tabBtn = (key: HubTab, label: string) => (
     <button type="button" key={key} aria-pressed={hubTab === key} className={"conn-tab-sub" + (hubTab === key ? " active" : "")} onClick={() => setHubTab(key)} style={{ fontSize: 11, padding: "5px 10px", flexShrink: 0 }}>{label}</button>
   );
 
@@ -409,7 +464,7 @@ onMarkAllRead?.();
       {hubTab === "bookings" && (() => {
         const b = bookingsForHub || { asBooker: [], asHost: [] };
         if (!b.asBooker.length && !b.asHost.length) return <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>No bookings yet.</div>;
-        const row = (x: any, role: string) => (
+        const row = (x: BookingRow, role: string) => (
           <div key={x.id} style={{ padding: "10px 12px", background: "var(--card-bg)", borderRadius: 12, marginBottom: 8 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{x.session_id?.title || "Session"}</span>
@@ -419,15 +474,15 @@ onMarkAllRead?.();
           </div>
         );
         return (<>
-          {b.asBooker.map((x: any) => row(x, "Booked by you"))}
-          {b.asHost.map((x: any) => row(x, "You're hosting"))}
+          {b.asBooker.map((x) => row(x, "Booked by you"))}
+          {b.asHost.map((x) => row(x, "You're hosting"))}
         </>);
       })()}
       {hubTab === "reports" && (myReports === null
         ? <div style={{ textAlign: "center", padding: 30, color: "var(--muted)", fontSize: 13 }}>Loading…</div>
         : myReports.length === 0
           ? <div style={{ textAlign: "center", padding: 40, color: "var(--muted)", fontSize: 13 }}>You haven't reported anything.</div>
-          : myReports.map((r: any) => {
+          : myReports.map((r) => {
             const status = r.status || "open";
             const statusMeta: Record<string, { label: string; color: string }> = {
               open: { label: "Under review", color: "#ffd166" },
@@ -460,44 +515,44 @@ export interface MenuModalProps {
   hamburgerScreen: string;
   setHamburgerScreen: (v: string) => void;
   showScreen: (s: Screen) => void;
-  liveCommunities: any[] | null;
-  liveEvents: any[] | null;
-  liveProfessionals: any[] | null;
+  liveCommunities: unknown[] | null;
+  liveEvents: unknown[] | null;
+  liveProfessionals: Professional[] | null;
   showNsfw: boolean;
   rsvpdEvents: number[];
   setRsvpdEvents: React.Dispatch<React.SetStateAction<number[]>>;
   matches: Match[];
-  openChat: (m: any) => void;
-  setChatTarget: (m: any) => void;
+  openChat: (m: Match) => void;
+  setChatTarget: React.Dispatch<React.SetStateAction<Match | null>>;
   showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
   handleImgError: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
-  setViewProfile: (p: any) => void;
-  currentUser: any;
+  setViewProfile: (p: ViewProfile | null) => void;
+  currentUser: CurrentUser;
   showNewPost: boolean;
   setShowNewPost: (v: boolean) => void;
   newPostTitle: string;
   setNewPostTitle: (v: string) => void;
   newPostBody: string;
   setNewPostBody: (v: string) => void;
-  setForumPosts: React.Dispatch<React.SetStateAction<any[]>>;
-  liveForum: any[] | null;
-  setLiveForum?: React.Dispatch<React.SetStateAction<any[] | null>>;
+  setForumPosts: React.Dispatch<React.SetStateAction<ForumPostRow[]>>;
+  liveForum: unknown[] | null;
+  setLiveForum?: React.Dispatch<React.SetStateAction<unknown[] | null>>;
   forumSort: "hot" | "new" | "top";
   setForumSort: (s: "hot" | "new" | "top") => void;
-  expandedPost: any;
-  setExpandedPost: (id: any) => void;
+  expandedPost: number | null;
+  setExpandedPost: React.Dispatch<React.SetStateAction<number | null>>;
   commentText: string;
   setCommentText: (v: string) => void;
   setSupportOpen: (v: boolean) => void;
   doLogoutFull: () => void;
-  discoveryPrefs: any;
-  setDiscoveryPrefs: React.Dispatch<React.SetStateAction<any>>;
+  discoveryPrefs: DiscoveryPrefs;
+  setDiscoveryPrefs: React.Dispatch<React.SetStateAction<DiscoveryPrefs>>;
   notifPrefs: Record<string, boolean>;
   setNotifPrefs: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
    setShowNsfw: React.Dispatch<React.SetStateAction<boolean>>;
   appliedBriefs?: number[];
   savedBriefs?: number[];
-  bookingsForHub?: { asBooker: any[]; asHost: any[] };
+  bookingsForHub?: BookingsForHub;
   setShowSafetyCheckin?: (v: boolean) => void;
   setShowPromptBank?: (v: boolean) => void;
   setShowBlockedUsers?: (v: boolean) => void;
@@ -521,15 +576,15 @@ nearQuests?: number;
   setScreen: (s: Screen) => void;
   setShowAgeVerification: (v: boolean) => void;
   setObStep?: (v: number) => void;
-  apiFetch: (url: string, opts?: any) => Promise<any>;
-  authFetch: (url: string, opts?: any) => Promise<any>;
-  uid: () => any;
-  authUser: any;
+  apiFetch: AuthFetchFn;
+  authFetch: AuthFetchFn;
+  uid: () => number;
+  authUser: AuthUser;
   onOpenActivity?: () => void;
   onMarkAllRead?: () => void;
   briefTitleById?: Record<string, string>;
   unreadCount?: number;
-  activityFeed?: {id:number;from:string;avatar:string;text:string;time:string;read:boolean}[];
+  activityFeed?: ActivityFeedItem[];
   demo?: boolean;
   getReferralTier?: (count: number) => { tier: string; perks: string; discount?: number; nextThreshold?: number | null };
 }
@@ -636,7 +691,7 @@ export const MenuModal = memo(function MenuModal({
   // Focus trap + Escape-to-close + focus restore while the sheet is open.
   // On a sub-screen Escape steps back to the menu root; otherwise it closes.
   const hamburgerRef = useFocusTrap<HTMLDivElement>(showHamburger, () => {
-    if (hamburgerScreen) setHamburgerScreen(null as any);
+    if (hamburgerScreen) setHamburgerScreen(null as unknown as string);
     else setShowHamburger(false);
   });
 
@@ -666,7 +721,7 @@ export const MenuModal = memo(function MenuModal({
         <button
           type="button"
           className="hamburger-close"
-          onClick={() => { if (hamburgerScreen) setHamburgerScreen(null as any); else setShowHamburger(false); }}
+          onClick={() => { if (hamburgerScreen) setHamburgerScreen(null as unknown as string); else setShowHamburger(false); }}
           aria-label={hamburgerScreen ? "Back to menu" : "Close menu"}
         >
           {hamburgerScreen ? <FiArrowLeft size={18} /> : <FiX size={18} />}
@@ -717,7 +772,7 @@ export const MenuModal = memo(function MenuModal({
                 // today via "Edit Profile"/other indirect taps — this just makes the
                 // primary Menu entry point consistent with Sessions/Network/Community.
                 setShowHamburger(false);
-                showScreen(item.key as any);
+                showScreen(item.key as Screen);
               };
               return (
                 <button
