@@ -27,9 +27,9 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `9271b331`
+## Confirmed merged, last verified at: `1e85ef0f`
 
-### Reconciliation — 2026-10-10 (opencode/WYZMIND): `d086110c` → `9271b331`, 22 commits + 1 merge
+### Reconciliation — 2026-10-10 (opencode/WYZMIND): `d086110c` → `1e85ef0f`, 27 commits + 1 merge
 
 - **`2cea4719 fix(discover)`** — unblocked live Discover card photos: the hero is `<Image unoptimized>`, so profile photos load straight from `*.supabase.co`, which CSP `img-src` did not allow (demo mode uses unsplash, which hid it). Added `*.supabase.co` + `replicate.delivery` to `img-src` and `storage.googleapis.com` to `connect-src` (BodyPix model). Also: pointerdown on `.card-info-scroll` (z-index 2 over the hero, so the target for nearly every drag point) now arms the swipe, with pointer capture only once the axis locks to x so vertical scroll still works. And the layout watchdog `STALE_MS` 12s -> 30s plus a `window.__museAlive` heartbeat stamped after the heavy segmentation pass, so a finished pass is not mistaken for a freeze and no longer reloads away the user's deck position.
 - **`f75ba78b refactor(types)`** — purged all 107 `any` from `muse-actions/get.ts` (local row types + a `blockedIdSet` helper for the block-filter expression that repeated at nine sites). Types-only, no runtime change.
@@ -44,10 +44,14 @@ same way.
 - **`db292db1 refactor(types)`** — purged all 23 `any` from `SessionsScreen.tsx`; local session/booking row types plus CurrentUser/AuthFetchFn/ViewProfile/Match. Types-only, DOM unchanged.
 - **`50f1e898 refactor(types)`** — purged all 19 `any` from `ChatScreen.tsx`; local ChatMessage/ChatTarget/CallLogEntry types; removed two erased casts (`as any[]` on messages, `as any` on messagesEndRef). Types-only, DOM unchanged.
 - **`9271b331 refactor(types)`** — purged all 18 `any` from `MusesScreen.tsx`; local MusesMatchActions/MessageRequest types. Types-only, DOM unchanged.
+- **`35598ebc refactor(types)`** — purged all 17 `any` from `CollabScreen.tsx`; local brief row/category types. Types-only, DOM unchanged.
+- **`ddfa504b refactor(types)`** — purged all 17 `any` from `BtsScreen.tsx`; local BTS item shape. Types-only, DOM unchanged.
+- **`6b8c1da5 refactor(types)`** — purged all 22 `any` from `test-support/sb.ts` (test infra); added a local recursive `SbArg` call-log type and internal fluent-builder types, `SbResult.data/error` as `unknown`. Exported API and behavior unchanged (createSb object-literal keys identical, makeSb Object.assign, `(x ?? [])[0]` == `x?.[0]`). Types-only.
+- **`1e85ef0f refactor(types)`** — purged all 22 `any` from `SettingsScreen.tsx`; added `MuseTheme`/`BlockedProfileRow` to `page-models` because the file sits exactly at its 1601-line ratchet (import merged onto the existing line, 0 line growth). Types-only, DOM unchanged.
 
 Deploy ops notes for whoever pushes next: (1) a Vercel build can fail with `git_info_fail` = GitHub secondary rate limit while Vercel fetches commit info; it is not a code problem, fix by redeploying the same SHA (`POST /v13/deployments` with `deploymentId`). (2) A docs-only push can CANCEL the previous commit's still-in-flight build, so push the code commit first, confirm its deploy is READY, then push the docs commit; if the tip deploy shows CANCELED, check the previous code SHA is READY rather than assuming failure.
 
-Verification at this tip: `tsc` 0, `vitest` 169 files / 1320 tests, `next build` clean, `audit-gate` PASS. Repo-wide `any` now 297 across 72 files (was 760/82 before this batch; count excludes `*.test.*`).
+Verification at this tip: `tsc` 0, `vitest` 169 files / 1320 tests, `next build` clean, `audit-gate` PASS. Repo-wide `any` now 219 across 68 files (was 760/82 before this batch; count excludes `*.test.*`).
 
 ### Reconciliation — 2026-10-10 (Claude): `a017543a` → `d086110c`, 12 commits
 
