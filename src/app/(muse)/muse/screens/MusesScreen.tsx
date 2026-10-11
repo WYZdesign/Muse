@@ -4,20 +4,21 @@ import React, { memo, useEffect, useState, useRef } from "react";
 import { ensureDeviceTiltActive, getDeviceTilt, createSpatialScene } from "../hooks/useDeviceTilt";
 import Image from "next/image";
 import { FiArrowLeft, FiSearch, FiGrid, FiList, FiX, FiStar, FiFlag, FiUserX } from "react-icons/fi";
-import MatchCard from "../components/MatchCard";
+import MatchCard, { type MatchCardProps } from "../components/MatchCard";
 import Nav from "../components/Nav";
 import UpsellModal from "../components/UpsellModal";
 import { EmptyState } from "../components/EmptyState";
 import type { Screen, Match, Profile } from "../components/types";
 import { isPaidTier } from "../components/subscriptionTiers";
 import { BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
+import type { CurrentUser, AuthFetchFn, ViewProfile } from "../page-models";
 
 export interface MusesScreenProps {
   screen: Screen;
   showScreen: (s: Screen) => void;
   goBack?: () => void;
   matches: Match[];
-  setMatches: React.Dispatch<React.SetStateAction<any[]>>;
+  setMatches: React.Dispatch<React.SetStateAction<Match[]>>;
   searchOpen: boolean;
   setSearchOpen: (v: boolean) => void;
   matchesView: "list" | "grid";
@@ -25,26 +26,57 @@ export interface MusesScreenProps {
   showLikesYou: boolean;
   setShowLikesYou: (v: boolean | ((p: boolean) => boolean)) => void;
   likedBy: Profile[];
-  openChat: (m: any) => void;
-  setChatTarget: (m: any) => void;
+  openChat: (m: Match) => void;
+  setChatTarget: (m: Match) => void;
   setBlockTarget: (t: { id: string; name: string } | null) => void;
-  setReportTarget: (t: any) => void;
-  apiFetch: (url: string, opts?: any) => Promise<any>;
+  setReportTarget: (t: { id: number | string; type: string; name: string } | null) => void;
+  apiFetch: AuthFetchFn;
   showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
   handleImgError: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
-  setViewProfile: (p: any) => void;
-  currentUser: any;
+  setViewProfile: (p: ViewProfile | null) => void;
+  currentUser: CurrentUser;
   showNsfw: boolean;
   openHamburger?: () => void;
   unreadNotificationCount?: number;
   searchQuery?: string;
   setSearchQuery?: (v: string) => void;
   expandedMatchId?: string | null;
-  matchActions?: any;
-  messageRequests?: any[];
-  setMessageRequests?: React.Dispatch<React.SetStateAction<any[]>>;
+  matchActions: MusesMatchActions;
+  messageRequests?: unknown[];
+  setMessageRequests?: React.Dispatch<React.SetStateAction<unknown[]>>;
   demo?: boolean;
 }
+
+// The per-card action bag page.tsx hands down as `matchActions`. Mirrors
+// MatchCard's own `actions` shape except setReportTarget, whose param page.tsx
+// declares with required type/name (its reportTarget state) while MatchCard's
+// accepts them optional. Under strictFunctionTypes neither shape satisfies both
+// call sites, so the MatchCard JSX below carries one erased cast.
+type MusesMatchActions = {
+  setExpandedMatchId: (v: string | null) => void;
+  setChatTarget: (v: Match) => void;
+  showScreen: (s: Screen) => void;
+  setReportTarget: (t: { id: number | string; type: string; name: string } | null) => void;
+  setShowReport: (v: boolean) => void;
+  setUnmatchTarget: (t: { id: string; name: string }) => void;
+  setBlockTarget: (t: { id: string; name: string } | null) => void;
+  handleImgError: (e: React.SyntheticEvent<HTMLImageElement>) => void;
+  getIcebreaker: (type: string, seed?: string) => string;
+  setViewProfile: (p: ViewProfile | null) => void;
+};
+
+// A pending message request. The hook hands these back as `unknown[]` (live
+// rows join request_from; demo rows carry flat from_id/text fields that the
+// Inbox reads through the same optional chains and falls back past), so the
+// map below narrows once and reads whatever fields exist.
+type MessageRequest = {
+  id?: string | number;
+  request_from?: { id?: string | number; name?: string; avatar?: string } | null;
+  from_name?: string;
+  from_avatar?: string;
+  message_preview?: string;
+  time?: string;
+};
 
 export const MusesScreen = memo(function MusesScreen({
   screen,
@@ -93,7 +125,7 @@ export const MusesScreen = memo(function MusesScreen({
       return next;
     });
   };
-  const isNewMatch = (m: any) => !(m.messages && m.messages.length > 0) && !seenMatches.has(String(m.id));
+  const isNewMatch = (m: Match) => !(m.messages && m.messages.length > 0) && !seenMatches.has(String(m.id));
   // "Likes You" is already blurred/badged for free-tier viewers (the
   // in-context paywall) — this only covers what used to happen on tap: a
   // plain toast instead of a real upsell moment.
@@ -165,7 +197,7 @@ export const MusesScreen = memo(function MusesScreen({
         setMatches(prev => prev.filter(m => String(m.id) !== cardId));
         showToast("Unmatched");
         try {
-          apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "unmatch", target_id: cardId }) }).then((r: any) => {
+          apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "unmatch", target_id: cardId }) }).then((r: Response) => {
             if (!r.ok) { setMatches(prevMatches); showToast("Couldn't unmatch — try again"); }
           });
         } catch { setMatches(prevMatches); showToast("Couldn't unmatch — try again"); }
@@ -178,7 +210,7 @@ export const MusesScreen = memo(function MusesScreen({
           setBlockTarget({ id: String(target.id), name: target.name || "Unknown" });
           showToast(`${target.name || "User"} blocked`);
           try {
-            apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "block", target_id: cardId }) }).then((r: any) => {
+            apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "block", target_id: cardId }) }).then((r: Response) => {
               if (!r.ok) { setMatches(prevMatches); showToast("Couldn't block — try again"); }
             });
           } catch { setMatches(prevMatches); showToast("Couldn't block — try again"); }
@@ -315,7 +347,7 @@ export const MusesScreen = memo(function MusesScreen({
             <EmptyState icon="📬" title="No pending requests" sub="When someone messages you for the first time, their request will appear here." style={{ padding: "40px 20px" }} />
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {messageRequests.map((req: any) => (
+              {(messageRequests as MessageRequest[]).map((req) => (
                 <div key={req.id} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 16, display: "flex", gap: 12, alignItems: "flex-start" }}>
                   <div style={{ width: 48, height: 48, borderRadius: 12, overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.06)" }}>
                     {(() => { const av = req.request_from?.avatar || req.from_avatar; return av ? (
@@ -334,17 +366,17 @@ export const MusesScreen = memo(function MusesScreen({
                       <button onClick={async () => {
                         if (demo) { showToast?.("Message requests are unavailable in this demo."); return; }
                         const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "message-request-accept", requestId: req.id }) });
-                        if (r.ok) { setMessageRequests(prev => prev.filter((x: any) => x.id !== req.id)); showToast?.("Request accepted"); }
+                        if (r.ok) { setMessageRequests(prev => (prev as MessageRequest[]).filter(x => x.id !== req.id)); showToast?.("Request accepted"); }
                       }} style={{ padding: "6px 14px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#00C853,#00E676)", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Accept</button>
                       <button onClick={async () => {
                         if (demo) { showToast?.("Message requests are unavailable in this demo."); return; }
                         const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "message-request-decline", requestId: req.id }) });
-                        if (r.ok) { setMessageRequests(prev => prev.filter((x: any) => x.id !== req.id)); showToast?.("Request declined"); }
+                        if (r.ok) { setMessageRequests(prev => (prev as MessageRequest[]).filter(x => x.id !== req.id)); showToast?.("Request declined"); }
                       }} style={{ padding: "6px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "var(--text2)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Decline</button>
                       <button onClick={async () => {
                         if (demo) { showToast?.("Message requests are unavailable in this demo."); return; }
                         const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "message-request-block", requestId: req.id }) });
-                        if (r.ok) { setMessageRequests(prev => prev.filter((x: any) => x.id !== req.id)); showToast?.("User blocked"); }
+                        if (r.ok) { setMessageRequests(prev => (prev as MessageRequest[]).filter(x => x.id !== req.id)); showToast?.("User blocked"); }
                       }} style={{ padding: "6px 14px", borderRadius: 10, border: "1px solid rgba(255,60,60,0.3)", background: "transparent", color: "#ff6b6b", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Block</button>
                     </div>
                   </div>
@@ -369,7 +401,7 @@ export const MusesScreen = memo(function MusesScreen({
                 // Audit fix: matched to the Matches-grid card's aspect-ratio fix
                 // (3/4 -> 2/3) — same "card too short, crops most of the profile
                 // photo under object-fit:cover" issue on this grid.
-                <div key={p.id} className="muse-likes-card" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (!unlocked) { setShowLikesUpsell(true); } else { setViewProfile(p); } } }} style={{ position: "relative", borderRadius: 16, overflow: "hidden", aspectRatio: "2/3", cursor: "pointer", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }} onClick={() => { if (!unlocked) { setShowLikesUpsell(true); } else { setViewProfile(p); } }}>
+                <div key={p.id} className="muse-likes-card" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (!unlocked) { setShowLikesUpsell(true); } else { setViewProfile(p as unknown as ViewProfile); } } }} style={{ position: "relative", borderRadius: 16, overflow: "hidden", aspectRatio: "2/3", cursor: "pointer", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }} onClick={() => { if (!unlocked) { setShowLikesUpsell(true); } else { setViewProfile(p as unknown as ViewProfile); } }}>
                   <Image loading="lazy" src={p.img} alt={p.name} fill sizes="(max-width: 600px) 50vw, 300px" style={{ objectFit: "cover", filter: !unlocked ? "blur(4px)" : undefined }} />
                   <div className="muse-likes-info" style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "12px 10px", background: "linear-gradient(to top,rgba(10,6,18,0.95) 0%,rgba(10,6,18,0.6) 60%,transparent 100%)" }}>
                     <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{p.name}</div>
@@ -419,7 +451,11 @@ export const MusesScreen = memo(function MusesScreen({
                   </div>
                 </div>
               )}
-              <MatchCard m={m} view={matchesView} isNew={isNewMatch(m)} actions={matchActions} />
+              {/* setReportTarget's param is required-shape here (page's
+                  reportTarget state) and optional-shape inside MatchCard, so no
+                  single type satisfies both under strictFunctionTypes. This one
+                  erased cast bridges the gap; runtime value is unchanged. */}
+              <MatchCard m={m} view={matchesView} isNew={isNewMatch(m)} actions={matchActions as MatchCardProps["actions"]} />
             </div>
           ))}
         </div>
