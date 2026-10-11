@@ -27,17 +27,18 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `feff7af1`
+## Confirmed merged, last verified at: `c82e7d08`
 
-### Reconciliation — 2026-10-10 (opencode/WYZMIND): `d086110c` → `feff7af1`, 5 commits + 1 merge
+### Reconciliation — 2026-10-10 (opencode/WYZMIND): `d086110c` → `c82e7d08`, 6 commits + 1 merge
 
 - **`2cea4719 fix(discover)`** — unblocked live Discover card photos: the hero is `<Image unoptimized>`, so profile photos load straight from `*.supabase.co`, which CSP `img-src` did not allow (demo mode uses unsplash, which hid it). Added `*.supabase.co` + `replicate.delivery` to `img-src` and `storage.googleapis.com` to `connect-src` (BodyPix model). Also: pointerdown on `.card-info-scroll` (z-index 2 over the hero, so the target for nearly every drag point) now arms the swipe, with pointer capture only once the axis locks to x so vertical scroll still works. And the layout watchdog `STALE_MS` 12s -> 30s plus a `window.__museAlive` heartbeat stamped after the heavy segmentation pass, so a finished pass is not mistaken for a freeze and no longer reloads away the user's deck position.
 - **`f75ba78b refactor(types)`** — purged all 107 `any` from `muse-actions/get.ts` (local row types + a `blockedIdSet` helper for the block-filter expression that repeated at nine sites). Types-only, no runtime change.
 - **`2945866f test(e2e)`** — hoisted `emulateMedia({ reducedMotion: 'reduce' })` into `discover-deck.spec.ts` beforeEach: the smoke job's first attempt had timed out at `waitForSelector(TOP_CARD)` and only passed on retry (1 flaky in run 38091104918). Same motion-starvation root cause as the drag test.
 - **`48612b8d merge(claude)`** — landed the previously unmerged `claude/quality-backlog-round3` bundle: `PublicProfileScreen` any purge (25 -> 0) which surfaced and fixed 2 real demo-mode bugs (demo reviews used `text`/`author` but render reads `body`/`reviewer_id.name`; demo trust card used `avgRating`/`responseRatePct`/`boosted` but render reads `rating`/`responseRate`/`isBoosted`/`lastSeenDaysAgo`), plus Claude's DELIVERY_STATUS/HANDOVER reconciliation. `claude/quality-backlog-round2` is superseded (same code, doc conflict).
 - **`feff7af1 refactor(types)`** — purged all 94 `any` from `DiscoverScreen.tsx` (local `DiscoverCard` type, reuse of `DiscoveryProfile`/`CardAlbum`/`CurrentUser`/`ViewProfile`/`Match`/`GeoResult`; props and `useState` typed). Types-only, DOM unchanged.
+- **`c82e7d08 refactor(types)`** — purged all 47 `any` from `MenuModal.tsx` (activity-panel row types + prop types from `page-models`/`components/types`). Types-only, DOM unchanged.
 
-Verification at this tip: `tsc` 0, `vitest` 169 files / 1320 tests, `next build` clean, `audit-gate` PASS. Repo-wide `any` now 532 across 80 files (was 760/82 before this batch).
+Verification at this tip: `tsc` 0, `vitest` 169 files / 1320 tests, `next build` clean, `audit-gate` PASS. Repo-wide `any` now 485 across 79 files (was 760/82 before this batch).
 
 ### Reconciliation — 2026-10-10 (Claude): `a017543a` → `d086110c`, 12 commits
 
