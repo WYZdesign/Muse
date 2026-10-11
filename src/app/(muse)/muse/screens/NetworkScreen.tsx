@@ -14,7 +14,7 @@ import { buildProfessionalBadges } from "../components/badgeColors";
 import { BadgeInfoModal, STYLE_FULL, type BadgeInfo } from "../components/badgeInfo";
 import { viewerSide } from "@/lib/role";
 import { MUSE_CLOSED_BETA_HIDE_SOCIAL } from "@/lib/config";
-import Nav from "../components/Nav";
+import Nav from "../components/Nav"; import type { CurrentUser, ViewProfile, NetworkForumPost, ThreadReply, ThreadReplyNode, ChatLaunchTarget } from "../page-models";
 
 export interface NetworkScreenProps {
   screen: Screen;
@@ -24,27 +24,27 @@ export interface NetworkScreenProps {
   openHamburger: () => void;
   unreadNotificationCount: number;
   matches: Match[];
-  apiFetch: (url: string, opts?: any) => Promise<any>;
+  apiFetch: (url: string, opts?: RequestInit) => Promise<Response>;
   showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
-  setViewProfile: (p: any) => void;
-  currentUser: any;
+  setViewProfile: (p: ViewProfile | null) => void;
+  currentUser: CurrentUser;
   handleImgError: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
-  openChat: (m: any) => void;
-  liveForum: any[] | null;
-  setLiveForum?: React.Dispatch<React.SetStateAction<any[] | null>>;
+  openChat(m: ChatLaunchTarget): void;
+  liveForum: NetworkForumPost[] | null;
+  setLiveForum?: React.Dispatch<React.SetStateAction<NetworkForumPost[] | null>>;
   showNewPost: boolean;
   setShowNewPost: (v: boolean) => void;
   newPostTitle: string;
   setNewPostTitle: (v: string) => void;
   newPostBody: string;
   setNewPostBody: (v: string) => void;
-  setForumPosts: React.Dispatch<React.SetStateAction<any[]>>;
+  setForumPosts: React.Dispatch<React.SetStateAction<NetworkForumPost[]>>;
   forumSort: "hot" | "new" | "top";
   setForumSort: (s: "hot" | "new" | "top") => void;
   forumCategory: string;
-  uid: () => any;
+  uid: () => number;
   setShowReport?: (v: boolean) => void;
-  setReportTarget?: (t: any) => void;
+  setReportTarget?: (t: { id: number | string; type: string; name: string }) => void;
   liveProfessionals: Professional[] | null;
   /** One-shot request to switch the internal pros/forum tab (e.g. so the
    *  Forum tutorial can be started from anywhere and land on the right
@@ -150,7 +150,7 @@ export const NetworkScreen = memo(function NetworkScreen({
       { imgShift: 15, imgRotate: 18, infoShift: 15, containerShift: 8, scale: 1.12 }
     );
   }, [screen]);
-  const [proDetail, setProDetail] = useState<any | null>(null);
+  const [proDetail, setProDetail] = useState<Professional | null>(null);
   const [connectedIds, setConnectedIds] = useState<Set<number>>(new Set());
   const [connectLoading, setConnectLoading] = useState<number | null>(null);
   const [expandedPostId, setExpandedPostId] = useState<number | null>(null);
@@ -166,7 +166,7 @@ export const NetworkScreen = memo(function NetworkScreen({
   // Depth map URLs for spatial effect — collect from current professionals list
   const proImageUrls = useMemo(() => {
     const urls: string[] = [];
-    [...liveProfessionals?.length ? liveProfessionals.map((p: any) => p.img).filter(Boolean) as string[] : []]
+    [...liveProfessionals?.length ? liveProfessionals.map((p) => p.img).filter(Boolean) : []]
       .slice(0, 50)
       .forEach((u) => { if (!urls.includes(u)) urls.push(u); });
     return urls;
@@ -176,7 +176,7 @@ export const NetworkScreen = memo(function NetworkScreen({
   const [proRateBand, setProRateBand] = useState<"all" | "tfp" | "50to100" | "100to150" | "gt150">("all");
   const [proLooking, setProLooking] = useState<string>("all");
   const [proSearchServer, setProSearchServer] = useState("");
-  const [proServerResults, setProServerResults] = useState<any[]>([]);
+  const [proServerResults, setProServerResults] = useState<Professional[]>([]);
   const [threadId, setThreadId] = useState<number | null>(null);
   const [threadSort, setThreadSort] = useState<"best" | "new">("best");
   const [replyTo, setReplyTo] = useState<string | null>(null);
@@ -184,7 +184,7 @@ export const NetworkScreen = memo(function NetworkScreen({
   const [commentVotes, setCommentVotes] = useState<Record<string, "up" | "down" | null>>({});
   // Real, DB-backed replies for the open thread (nested via parentReplyId).
   // Falls back to a post's inline `comments` for demo/seed posts.
-  const [threadReplies, setThreadReplies] = useState<Record<string, any[]>>({});
+  const [threadReplies, setThreadReplies] = useState<Record<string, ThreadReply[]>>({});
   const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
   const [filterSections, setFilterSections] = useState<Record<string, boolean>>({ experience: false, sort: false, rate: false, skills: false, looking: false });
   const iAmIndustry = viewerSide(currentUser?.type) === "industry";
@@ -199,9 +199,9 @@ export const NetworkScreen = memo(function NetworkScreen({
   const proList = (() => {
     // If server search has results, use those
     if (proSearchServer.trim().length >= 2 && proServerResults.length > 0) {
-      return proServerResults.filter((p: any) => showNsfw || !p.nsfw);
+      return proServerResults.filter((p) => showNsfw || !p.nsfw);
     }
-    let list = (liveProfessionals?.length ? liveProfessionals : (demo ? PROFESSIONALS : [])).filter((p) => showNsfw || !p.nsfw);
+    let list: Professional[] = (liveProfessionals?.length ? liveProfessionals : (demo ? PROFESSIONALS : [])).filter((p) => showNsfw || !p.nsfw);
     if (proExp !== "all") list = list.filter((p) => expBand(p.exp) === proExp);
     if (proHiringOnly) list = list.filter((p) => p.openings > 0);
     const q = proSearch.trim().toLowerCase();
@@ -253,13 +253,13 @@ export const NetworkScreen = memo(function NetworkScreen({
     if (value.trim().length >= 2) {
       try {
         const res = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "search", query: value, type: "users", limit: 50 }) });
-        const data = await res.json();
+        const data: { success?: boolean; results: { users?: unknown[] } } = await res.json();
         if (data.success) {
           // Audit fix (2026-10-07): search returns muse_profiles rows (avatar,
           // styles, no exp/openings/rate), but this directory is built for the
           // muse_professionals shape. Map fields (broken photos + "undefined"
           // stat tiles otherwise).
-          setProServerResults(((data.results.users || []) as any[]).map(toProfessionalRow));
+          setProServerResults((data.results.users || []).map(toProfessionalRow));
         }
       } catch { setProServerResults([]); }
     } else {
@@ -267,11 +267,11 @@ export const NetworkScreen = memo(function NetworkScreen({
     }
   };
 
-  function openProProfile(p: any) {
+  function openProProfile(p: Professional) {
     setProDetail(p);
   }
 
-  function handleConnect(p: any) {
+  function handleConnect(p: Professional) {
     if (demo) { showToast("Connection requests are unavailable in this demo."); return; }
     if (connectedIds.has(p.id)) return;
     setConnectLoading(p.id);
@@ -283,7 +283,7 @@ export const NetworkScreen = memo(function NetworkScreen({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "connect", targetId }),
     })
-      .then((r: any) => {
+      .then((r: Response) => {
         if (!r.ok) throw new Error("failed");
         setConnectedIds((prev) => {
           const n = new Set(prev);
@@ -299,7 +299,7 @@ export const NetworkScreen = memo(function NetworkScreen({
       .finally(() => setConnectLoading(null));
   }
 
-  function handleShare(p: any) {
+  function handleShare(p: Professional) {
     const text = `Check out ${p.name} \u2014 ${p.type} on Musa`;
     if (navigator.share) {
       navigator.share({ title: p.name, text }).catch(() => {});
@@ -308,7 +308,7 @@ export const NetworkScreen = memo(function NetworkScreen({
     }
   }
 
-  function handlePostShare(post: any) {
+  function handlePostShare(post: NetworkForumPost) {
     const text = `${post.title} \u2014 by ${post.author} on Musa Forum`;
     if (navigator.share) {
       navigator.share({ title: post.title, text }).catch(() => {});
@@ -321,7 +321,7 @@ export const NetworkScreen = memo(function NetworkScreen({
     if (demo) { showToast("Forum voting is unavailable in this demo."); return; }
     const current = votedPosts[postId];
     setVotedPosts((prev) => ({ ...prev, [postId]: current === direction ? null : direction }));
-    const applyDelta = (p: any) => {
+    const applyDelta = (p: NetworkForumPost) => {
       if (p.id !== postId) return p;
       let delta = 0;
       if (direction === "up") {
@@ -361,7 +361,7 @@ export const NetworkScreen = memo(function NetworkScreen({
 
   // Open a post's thread and lazily load its real replies (nested via
   // parentReplyId/depth). Demo/numeric posts keep using inline `comments`.
-  function openThread(postId: any) {
+  function openThread(postId: number) {
     setThreadId(postId);
     setReplyTo(null);
     setReplyToId(null);
@@ -372,21 +372,21 @@ export const NetworkScreen = memo(function NetworkScreen({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "forum", type: "get-replies", postId }),
     })
-      .then((r: any) => (r.ok ? r.json() : null))
-      .then((d: any) => {
-        if (!Array.isArray(d?.replies)) return;
+      .then((r: Response) => (r.ok ? r.json() : null))
+      .then((d: { replies?: ThreadReply[] } | null) => {
+        const replies = d?.replies; if (!Array.isArray(replies)) return;
         setThreadReplies((prev) => {
-          const serverIds = new Set(d.replies.map((r: any) => String(r.id)));
+          const serverIds = new Set(replies.map((r) => String(r.id)));
           const optimistic = (prev[key] || []).filter(
-            (r: any) => String(r.id).startsWith("tmp-") && !serverIds.has(String(r.id))
+            (r) => String(r.id).startsWith("tmp-") && !serverIds.has(String(r.id))
           );
-          return { ...prev, [key]: [...d.replies, ...optimistic] };
+          return { ...prev, [key]: [...replies, ...optimistic] };
         });
       })
       .catch(() => {});
   }
 
-  function addComment(postId: any, parentReplyId: string | null = null) {
+  function addComment(postId: number, parentReplyId: string | null = null) {
     if (demo) { showToast("Forum replies are unavailable in this demo."); return; }
     const text = (commentTexts[postId] || "").trim();
     if (!text) return;
@@ -396,7 +396,7 @@ export const NetworkScreen = memo(function NetworkScreen({
     let depth = 0;
     if (parentReplyId) {
       const existing = threadReplies[key] || [];
-      const findDepth = (list: any[], targetId: string, d: number): number | null => {
+      const findDepth = (list: ThreadReply[], targetId: string, d: number): number | null => {
         for (const r of list) {
           if (String(r.id) === targetId) return d;
           if (r.children?.length) {
@@ -407,9 +407,9 @@ export const NetworkScreen = memo(function NetworkScreen({
         return null;
       };
       // Build flat tree to search
-      const nodes = new Map<string, any>();
-      existing.forEach((r: any, i: number) => { const rk = r.id != null ? String(r.id) : `idx-${i}`; nodes.set(rk, { ...r, __key: rk, children: [] }); });
-      nodes.forEach((node) => { const pid = node.parentReplyId != null ? String(node.parentReplyId) : null; if (pid && nodes.has(pid) && pid !== node.__key) nodes.get(pid).children.push(node); });
+      const nodes = new Map<string, ThreadReplyNode>();
+      existing.forEach((r: ThreadReply, i: number) => { const rk = r.id != null ? String(r.id) : `idx-${i}`; nodes.set(rk, { ...r, __key: rk, children: [] }); });
+      nodes.forEach((node) => { const pid = node.parentReplyId != null ? String(node.parentReplyId) : null; if (pid && nodes.has(pid) && pid !== node.__key) (nodes.get(pid) as ThreadReplyNode).children.push(node); });
       const roots = [...nodes.values()].filter(n => !n.parentReplyId || !nodes.has(String(n.parentReplyId)));
       const found = findDepth(roots, String(parentReplyId), 0);
       if (found !== null) depth = Math.min(found + 1, 3);
@@ -424,8 +424,8 @@ export const NetworkScreen = memo(function NetworkScreen({
       depth,
       isOwn: true,
     };
-    const addC = (p: any) => (p.id === postId ? { ...p, comments: [...(p.comments || []), newComment] } : p);
-    const removeC = (p: any) => (p.id === postId ? { ...p, comments: (p.comments || []).filter((c: any) => c.id !== tempId) } : p);
+    const addC = (p: NetworkForumPost) => (p.id === postId ? { ...p, comments: [...(p.comments || []), newComment] } : p);
+    const removeC = (p: NetworkForumPost) => (p.id === postId ? { ...p, comments: (p.comments || []).filter((c) => c.id !== tempId) } : p);
     setLiveForum?.((prev) => (prev && prev.length ? prev.map(addC) : (demo ? FORUM_POSTS.map(addC) : prev)));
     setForumPosts((prev) => prev.map(addC));
     setThreadReplies((prev) => (prev[key] ? { ...prev, [key]: [...prev[key], newComment] } : prev));
@@ -435,7 +435,7 @@ export const NetworkScreen = memo(function NetworkScreen({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "forum", type: "reply", postId, text, parentReplyId: parentReplyId || undefined }),
-    }).then((r: any) => {
+    }).then((r: Response) => {
       if (!r.ok) throw new Error("failed");
       setReplyTo(null);
       setReplyToId(null);
@@ -443,7 +443,7 @@ export const NetworkScreen = memo(function NetworkScreen({
     }).catch(() => {
       setLiveForum?.((prev) => (prev && prev.length ? prev.map(removeC) : prev));
       setForumPosts((prev) => prev.map(removeC));
-      setThreadReplies((prev) => (prev[key] ? { ...prev, [key]: prev[key].filter((c: any) => c.id !== tempId) } : prev));
+      setThreadReplies((prev) => (prev[key] ? { ...prev, [key]: prev[key].filter((c) => c.id !== tempId) } : prev));
       showToast("Failed to post comment");
     });
   }
@@ -926,7 +926,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                             body: JSON.stringify({ action: "forum", title, body, userId: currentUser.id }),
                           });
                           if (!r.ok) {
-                            const d = await r.json().catch(() => ({} as any));
+                            const d: { code?: string } = await r.json().catch(() => ({}));
                             showToast(d.code === "SAFETY_BLOCK" ? "Post blocked by safety policy" : "Failed to post");
                             return;
                           }
@@ -936,7 +936,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                           // on it can match.
                           try {
                             const rf = await apiFetch("/api/muse?type=forum");
-                            const df = await rf.json();
+                            const df: { posts?: NetworkForumPost[] } = await rf.json();
                             if (df.posts) setLiveForum?.(df.posts);
                           } catch { /* live forum refresh is best-effort */ }
                           setForumPosts((prev) => [
@@ -1187,7 +1187,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                             if (demo) { showToast("Forum moderation is unavailable in this demo."); return; }
                             try {
                               const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "forum-post-pin", postId: post.id }) });
-                              const d = await r.json();
+                              const d: { success?: boolean; pinned: boolean; error?: string } = await r.json();
                               if (d.success) {
                                 setForumPosts((prev) => prev.map((p) => p.id === post.id ? { ...p, pinned: d.pinned } : p));
                                 showToast(d.pinned ? "Post pinned" : "Post unpinned");
@@ -1218,7 +1218,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                             No comments yet. Be the first to reply.
                           </div>
                         )}
-                        {post.comments.map((c: any, i: number) => (
+                        {post.comments.map((c, i) => (
                           <div
                             key={i}
                             style={{
@@ -1339,7 +1339,7 @@ export const NetworkScreen = memo(function NetworkScreen({
 
               {(() => {
                 const tKey = String(threadPost.id);
-                const source: any[] = threadReplies[tKey]?.length ? threadReplies[tKey] : (threadPost.comments || []);
+                const source: ThreadReply[] = threadReplies[tKey]?.length ? threadReplies[tKey] : (threadPost.comments || []);
                 if (source.length === 0) {
                   return (
                     <div style={{ textAlign: "center", padding: "20px 0", color: "var(--muted)", fontSize: 12, fontStyle: "italic" }}>
@@ -1350,19 +1350,19 @@ export const NetworkScreen = memo(function NetworkScreen({
                 // Nest by parentReplyId (data stays flat/correct server-side; only
                 // presentation is indented). Level is derived from the tree so it
                 // stays right even if `depth` is missing, capped at 3 levels.
-                const nodes = new Map<string, any>();
-                source.forEach((r: any, i: number) => {
+                const nodes = new Map<string, ThreadReplyNode>();
+                source.forEach((r: ThreadReply, i: number) => {
                   const rk = r.id != null ? String(r.id) : `idx-${i}`;
                   nodes.set(rk, { ...r, __key: rk, children: [] });
                 });
-                const roots: any[] = [];
+                const roots: ThreadReplyNode[] = [];
                 nodes.forEach((node) => {
                   const pid = node.parentReplyId != null ? String(node.parentReplyId) : null;
-                  if (pid && nodes.has(pid) && pid !== node.__key) nodes.get(pid).children.push(node);
+                  if (pid && nodes.has(pid) && pid !== node.__key) (nodes.get(pid) as ThreadReplyNode).children.push(node);
                   else roots.push(node);
                 });
                 if (threadSort === "new") roots.reverse();
-                const renderReply = (node: any, level: number): React.ReactNode => {
+                const renderReply = (node: ThreadReplyNode, level: number): React.ReactNode => {
                   const cvKey = `${threadPost.id}:${node.__key}`;
                   const cv = commentVotes[cvKey];
                   return (
@@ -1392,7 +1392,7 @@ export const NetworkScreen = memo(function NetworkScreen({
                           Reply
                         </button>
                       </div>
-                      {node.children.length > 0 && node.children.map((child: any) => renderReply(child, level + 1))}
+                      {node.children.length > 0 && node.children.map((child) => renderReply(child, level + 1))}
                     </div>
                   );
                 };

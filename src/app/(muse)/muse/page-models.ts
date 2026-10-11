@@ -1,4 +1,5 @@
 import type { PublicProfileUser } from "./screens/PublicProfileScreen";
+import type { Match } from "./components/types";
 import type { ToastInput } from "./modals/types";
 
 // Shared controller/component types (P2 type-clean pass).
@@ -149,4 +150,43 @@ export type Professional = {
   skills: string[];
   looking: string[];
   nsfw: boolean;
+};
+
+// Network forum/thread view models. The forum feed rows (live normalizeForumPost
+// rows and the static FORUM_POSTS demo fallback) share NetworkForumPost;
+// ThreadReply is a reply flat from the server, nested for display via
+// parentReplyId, and ChatLaunchTarget is the partial chat target the pro detail
+// modal hands to page.tsx's openChat (typed for a full Match).
+export type NetworkForumComment = { id?: string | number; author: string; text: string };
+export type NetworkForumPost = {
+  id: number;
+  title: string;
+  body: string;
+  author: string;
+  avatar: string;
+  votes: number;
+  comments: NetworkForumComment[];
+  cat: string;
+  time: string;
+  pinned: boolean;
+};
+export type ThreadReply = {
+  id?: string | number | null;
+  author: string;
+  avatar?: string;
+  text?: string;
+  time?: string;
+  parentReplyId?: string | number | null;
+  depth?: number;
+  isOwn?: boolean;
+  children?: ThreadReply[];
+};
+export type ThreadReplyNode = Omit<ThreadReply, "children"> & { __key: string; children: ThreadReplyNode[] };
+export type ChatLaunchTarget = {
+  id?: string | number;
+  name?: string;
+  type?: string;
+  img?: string;
+  avatar?: string;
+  messages?: Match["messages"];
 };
