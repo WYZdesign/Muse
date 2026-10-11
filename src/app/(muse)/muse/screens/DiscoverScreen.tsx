@@ -6,9 +6,12 @@ import { FiSearch, FiSettings, FiCompass, FiZap, FiCamera, FiX, FiChevronRight, 
 import Nav from "../components/Nav";
 import MuseMap from "../components/MuseMap";
 import { EmptyState } from "../components/EmptyState";
-import type { Screen, Profile, LikeAnchor } from "../components/types";
+import type { Screen, LikeAnchor, Match } from "../components/types";
 import { CITY_GEO } from "../components/types";
-import { distanceMiles } from "@/app/muse-realtime";
+import type { DiscoveryProfile } from "../lib/discover-deck";
+import type { CardAlbum } from "../hooks/useCardAlbumPhotos";
+import type { CurrentUser, ViewProfile } from "../page-models";
+import { distanceMiles, type GeoResult } from "@/app/muse-realtime";
 import { PORTRAIT_IMG } from "../components/photoOrientation";
 import { ensureDeviceTiltActive, getDeviceTilt, createSpatialScene } from "../hooks/useDeviceTilt";
 import { attachSpatialDepth } from "../hooks/useSpatialDepth";
@@ -21,21 +24,60 @@ import { useFocusTrap } from "../hooks/useFocusTrap";
 // reuse the exact same maps and modal instead of drifting copies).
 import { ZODIAC_FULL, MBTI_FULL, CHINESE_FULL, LIFE_PATH_FULL, STYLE_FULL, CONN_FULL, BadgeInfoModal } from "../components/badgeInfo";
 
+// Discover deck cards: the shared DiscoveryProfile shape (demo + live-ranked
+// rows) plus the fields only the live "discover-ranked" response carries
+// (boosted / showOnline) and the creative side/skills shown by the card
+// badges. `side` stays a plain string to keep the existing comparison below
+// valid (normalizeProfile derives it via viewerSide), and `long` mirrors the
+// GeoResult/CITY_GEO key even though the deck enrichment writes `lng`.
+type DiscoverCard = DiscoveryProfile & {
+  boosted?: boolean;
+  showOnline?: boolean;
+  skills?: string[];
+  side?: string;
+  long?: number;
+};
+
+/** The modal gallery state owned by page.tsx (matches its useState shape). */
+type GalleryView = { profileId: string | number; name: string; photos: string[]; idx: number };
+
+/** The discovery-preferences object owned by page.tsx. */
+type DiscoveryPrefs = { ageMin: number; ageMax: number; distance: number; gender: string };
+
+/** One result row from the global message/voice-note search. */
+type MessageSearchResult = {
+  id: string | number;
+  peer?: { id?: string; name?: string; avatar?: string };
+  kind?: string;
+  text?: string;
+  transcript?: string;
+};
+
+// The search rows build a partial chat target; page.tsx's openChat is typed
+// for a full Match but only stores the value, so the props read it through
+// this narrower shape.
+type ChatLaunchTarget = {
+  id?: string | number;
+  name?: string;
+  avatar?: string;
+  messages?: Match["messages"];
+};
+
 export interface DiscoverScreenProps {
   screen: Screen;
   showScreen: (s: Screen) => void;
   showNsfw: boolean;
   openHamburger: () => void;
   unreadNotificationCount: number;
-  discoveryPrefs: any;
-  setDiscoveryPrefs: React.Dispatch<React.SetStateAction<any>>;
+  discoveryPrefs: DiscoveryPrefs;
+  setDiscoveryPrefs: React.Dispatch<React.SetStateAction<DiscoveryPrefs>>;
   showDiscoveryPrefs: boolean;
   setShowDiscoveryPrefs: (v: boolean) => void;
   showFilterModal: boolean;
   setShowFilterModal: (v: boolean) => void;
   mapView: boolean;
   setMapView: (v: boolean | ((p: boolean) => boolean)) => void;
-  filteredProfiles: Profile[];
+  filteredProfiles: DiscoverCard[];
   isLoading?: boolean;
   currentIdx: number;
   setCurrentIdx: (v: number | ((p: number) => number)) => void;
@@ -46,22 +88,22 @@ export interface DiscoverScreenProps {
   setDiscoverSearchOpen: (v: boolean) => void;
   discoverSearch: string;
   setDiscoverSearch: (v: string) => void;
-  myGeo: any;
+  myGeo: GeoResult;
   myStyles?: string[];
-  apiFetch: (url: string, opts?: any) => Promise<any>;
+  apiFetch: (url: string, opts?: RequestInit) => Promise<Response>;
   demo?: boolean;
   showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
   doSwipe: (dir: "left" | "right" | "super") => void;
-  setViewProfile: (p: any) => void;
-  viewProfile: any;
+  setViewProfile: (p: ViewProfile | null) => void;
+  viewProfile: ViewProfile | null;
   handleImgError: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
-  matches: any[];
-  setMatches: React.Dispatch<React.SetStateAction<any[]>>;
-  openChat: (m: any) => void;
-  setChatTarget: (m: any) => void;
-  stories: any[];
-  currentUser: any;
-  uid: () => any;
+  matches: Match[];
+  setMatches: React.Dispatch<React.SetStateAction<Match[]>>;
+  openChat(m: ChatLaunchTarget): void;
+  setChatTarget: React.Dispatch<React.SetStateAction<Match | null>>;
+  stories: unknown[];
+  currentUser: CurrentUser;
+  uid: () => number;
   safeSetItem?: (k: string, v: string) => void;
   safeRemoveItem?: (k: string) => void;
   onPointerDown?: (e: React.PointerEvent) => void;
@@ -79,7 +121,7 @@ export interface DiscoverScreenProps {
   cardAlbumIdx?: number;
   setCardAlbumIdx?: (v: number) => void;
   cardAlbumPhotos?: string[];
-  cardAlbums?: any[];
+  cardAlbums?: CardAlbum[];
   portfolioPhotoIdx?: number;
   setPortfolioPhotoIdx?: (v: number | ((p: number) => number)) => void;
   setLightboxPhotos?: (p: string[]) => void;
@@ -97,8 +139,8 @@ export interface DiscoverScreenProps {
   setShowUnlimitedBadge?: (v: boolean) => void;
   dailyLikes?: number;
   superLikes?: number;
-  galleryView?: any;
-  setGalleryView?: (v: any) => void;
+  galleryView?: GalleryView | null;
+  setGalleryView?: React.Dispatch<React.SetStateAction<GalleryView | null>>;
   lightboxPhotos?: string[];
   lightboxIdx?: number;
   heroRef?: React.RefObject<HTMLDivElement | null>;
@@ -201,7 +243,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
   const cardPhotos = useMemo(() => {
     const m = new Map<string, { photos: string[]; all: string[] }>();
     for (const profile of filteredProfiles) {
-      const base: string[] = (profile as any).photos?.length ? (profile as any).photos : [profile.img];
+      const base: string[] = profile.photos?.length ? profile.photos : [profile.img];
       // Dedupe so no image repeats on a card; each slot is a distinct photo.
       const deduped: string[] = base.filter((p: string, i: number, a: string[]) => p && a.indexOf(p) === i);
       const portraitPics = deduped.filter((p: string) => !!PORTRAIT_IMG[p]);
@@ -217,7 +259,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
     return m;
   }, [filteredProfiles]);
   const topHeroSrc = (() => {
-    const base: string[] = (topCard as any)?.photos?.length ? (topCard as any).photos : [topCard?.img];
+    const base: (string | undefined)[] = topCard?.photos?.length ? topCard.photos : [topCard?.img];
     return (base[currentPhotoIdx ?? 0]) || topCard?.img || "";
   })();
 
@@ -250,7 +292,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
 
   // Global message search — matches message text AND voice-note transcripts
   // across all of the caller's conversations. Debounced, min 2 chars.
-  const [msgResults, setMsgResults] = useState<any[]>([]);
+  const [msgResults, setMsgResults] = useState<MessageSearchResult[]>([]);
   useEffect(() => {
     const q = discoverSearch.trim();
     if (q.length < 2) { setMsgResults([]); return; }
@@ -262,7 +304,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
         body: JSON.stringify({ action: "search", type: "messages", query: q, limit: 8 }),
       })
         .then((r) => r.json())
-        .then((d) => { if (!cancelled && d?.results) setMsgResults(d.results.messages || []); })
+        .then((d: { results?: { messages?: MessageSearchResult[] } }) => { if (!cancelled && d?.results) setMsgResults(d.results.messages || []); })
         .catch(() => { if (!cancelled) setMsgResults([]); });
     }, 300);
     return () => { cancelled = true; window.clearTimeout(t); };
@@ -270,7 +312,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
 
   useEffect(() => {
     if (!topHeroSrc || screen !== "discover") return;    let cancelled = false;
-    apiFetch(`/api/muse?type=photo-likes&urls=${encodeURIComponent(topHeroSrc)}`).then(r => r.json()).then(d => {
+    apiFetch(`/api/muse?type=photo-likes&urls=${encodeURIComponent(topHeroSrc)}`).then(r => r.json()).then((d: { likedByMe?: Record<string, boolean>; counts?: Record<string, number> } | null) => {
       if (!cancelled && d) setPhotoLike(prev => ({ ...prev, [topHeroSrc]: { liked: !!d.likedByMe?.[topHeroSrc], count: d.counts?.[topHeroSrc] || 0 } }));
     }).catch(() => {});
     return () => { cancelled = true; };
@@ -281,7 +323,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
     setPhotoLike(prev => ({ ...prev, [url]: { liked: !prev[url]?.liked, count: (prev[url]?.count || 0) + (prev[url]?.liked ? -1 : 1) } }));
     try {
       const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "toggle-photo-like", photoUrl: url }) });
-      const d = await r.json();
+      const d: { success?: boolean; liked: boolean; count: number } = await r.json();
       if (d.success) setPhotoLike(prev => ({ ...prev, [url]: { liked: d.liked, count: d.count } }));
     } catch { /* non-fatal */ }
   };
@@ -365,7 +407,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
             {discoverSearch.trim().length >= 2 && msgResults.length > 0 && (
               <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 12, right: 12, zIndex: 80, background: "var(--panel-bg-solid, #0f0a1a)", border: "1px solid var(--border-subtle)", borderRadius: 14, padding: 8, maxHeight: 300, overflowY: "auto", boxShadow: "0 14px 34px rgba(0,0,0,0.55)" }}>
                 <div style={{ fontSize: 10, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.5, padding: "4px 6px" }}>Messages &amp; voice notes</div>
-                {msgResults.map((m: any) => (
+                {msgResults.map((m) => (
                   <button key={m.id}
                     onClick={() => { setDiscoverSearch(""); setDiscoverSearchOpen(false); openChat({ id: m.peer?.id, name: m.peer?.name || "Chat", avatar: m.peer?.avatar, messages: [] }); }}
                     style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 6px", borderRadius: 10, border: "none", background: "transparent", color: "var(--text)", cursor: "pointer" }}>
@@ -381,12 +423,12 @@ export const DiscoverScreen = memo(function DiscoverScreen({
               <>
                 <button className="hdr-btn" onClick={() => setShowDiscoveryPrefs(true)} style={{ width: 44, height: 44 }} aria-label="Discovery Preferences"><FiSettings size={16} /></button>
                 <button className={"hdr-btn" + (mapView ? " hdr-btn-glow" : "")} onClick={() => setMapView(v => !v)} title="Map View" style={{ width: 44, height: 44 }} aria-label="Map View"><FiCompass size={16} /></button>
-                <button className={"hdr-btn" + (boostActive ? " hdr-btn-glow" : "")} onClick={() => { if (boostActive) { setBoostActive(false); setBoostEnd(0); try { safeRemoveItem?.("muse_boost"); } catch { /* storage may be unavailable */ } showToast("Boost off"); return; } const end = Date.now() + 1800000; if (demo) { setBoostActive(true); setBoostEnd(end); try { safeSetItem?.("muse_boost", "" + end); } catch { /* storage may be unavailable */ } showToast("Demo boost on for 30 min — no real promotion was purchased."); return; } apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "boost" }) }).then((r: any) => { if (r.ok) { setBoostActive(true); setBoostEnd(end); try { safeSetItem?.("muse_boost", "" + end); } catch { /* storage may be unavailable */ } showToast("Boost on for 30 min!"); } else { r.json?.().then((d: any) => showToast((d && (d.error || "Boost unavailable")) || "Boost unavailable")).catch(() => showToast("Boost unavailable")); } }).catch(() => showToast("Boost unavailable")); }} style={{ width: 44, height: 44 }} aria-label="Boost"><FiZap size={16} /></button>
+                <button className={"hdr-btn" + (boostActive ? " hdr-btn-glow" : "")} onClick={() => { if (boostActive) { setBoostActive(false); setBoostEnd(0); try { safeRemoveItem?.("muse_boost"); } catch { /* storage may be unavailable */ } showToast("Boost off"); return; } const end = Date.now() + 1800000; if (demo) { setBoostActive(true); setBoostEnd(end); try { safeSetItem?.("muse_boost", "" + end); } catch { /* storage may be unavailable */ } showToast("Demo boost on for 30 min — no real promotion was purchased."); return; } apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "boost" }) }).then((r) => { if (r.ok) { setBoostActive(true); setBoostEnd(end); try { safeSetItem?.("muse_boost", "" + end); } catch { /* storage may be unavailable */ } showToast("Boost on for 30 min!"); } else { r.json?.().then((d: { error?: string } | null) => showToast((d && (d.error || "Boost unavailable")) || "Boost unavailable")).catch(() => showToast("Boost unavailable")); } }).catch(() => showToast("Boost unavailable")); }} style={{ width: 44, height: 44 }} aria-label="Boost"><FiZap size={16} /></button>
               </>
             )}
           </div>
         </div>
-        {mapView && <MuseMap filteredProfiles={filteredProfiles as any} myGeo={myGeo ? { lat: myGeo.lat, lng: myGeo.long } : undefined} onClose={() => setMapView(false)} />}
+        {mapView && <MuseMap filteredProfiles={filteredProfiles} myGeo={myGeo ? { lat: myGeo.lat, lng: myGeo.long } : undefined} onClose={() => setMapView(false)} />}
         {!mapView && (
           <>
             <div className="card-stack" role="region" aria-label="Swipe cards to discover creatives" aria-roledescription="card carousel">
@@ -437,7 +479,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                         <>
                           <div
                             className="card-hero"
-                            ref={heroRef as any}
+                            ref={heroRef}
                           >
                             <Image
                               src={heroSrc}
@@ -447,9 +489,9 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                               draggable={false}
                               onError={handleImgError}
                               unoptimized
-                              style={{ objectFit: "cover", objectPosition: heroPortrait ? "center top" : "center", background: "linear-gradient(160deg,#1a0a2e,#0a0612)", transition: "transform 0.15s ease-out, filter 0.3s ease", transformStyle: "preserve-3d", filter: (profile as any).nsfw && !revealedNsfw.has(String(profile.id)) ? "blur(26px) brightness(0.7)" : "none" }}
+                              style={{ objectFit: "cover", objectPosition: heroPortrait ? "center top" : "center", background: "linear-gradient(160deg,#1a0a2e,#0a0612)", transition: "transform 0.15s ease-out, filter 0.3s ease", transformStyle: "preserve-3d", filter: profile.nsfw && !revealedNsfw.has(String(profile.id)) ? "blur(26px) brightness(0.7)" : "none" }}
                             />
-                                        {(profile as any).nsfw && !revealedNsfw.has(String(profile.id)) && (
+                                        {profile.nsfw && !revealedNsfw.has(String(profile.id)) && (
                                           <button
                                             onClick={(e) => { e.stopPropagation(); setRevealedNsfw(prev => { const n = new Set(prev); n.add(String(profile.id)); return n; }); }}
                                             style={{ position: "absolute", inset: 0, zIndex: 5, background: "rgba(10,6,18,0.45)", border: "none", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, cursor: "pointer" }}
@@ -469,8 +511,8 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                               // available (see round-37 audit: /api/muse/match returning 0
                               // candidates falls back to the demo deck, which was silently
                               // hiding the pill entirely).
-                              const ms = Number((profile as any).matchScore ?? (profile as any).score ?? 0);
-                              const reasons = (profile as any).matchReasons || [];
+                              const ms = Number(profile.matchScore ?? profile.score ?? 0);
+                              const reasons = profile.matchReasons || [];
                               // Round 46: match-percentage badge removed from card top-left
                               // per Torreé's decluttering ask — it was a tappable pill that
                               // opened the "why this match?" popover, but the same popover is
@@ -486,17 +528,17 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                             <div className="card-hero-name">
                               {profile.name}
                               {profile.verified && <span className="card-verified-mark">✓</span>}
-                              {profile.online && (profile as any).showOnline !== false && <span className="card-online-dot" />}
+                              {profile.online && profile.showOnline !== false && <span className="card-online-dot" />}
                             </div>
-                            {!!(profile as any).boosted && (
+                            {!!profile.boosted && (
                               <div className="card-hero-badge" style={{ background: "linear-gradient(135deg, rgba(255,215,0,0.28), rgba(233,30,99,0.28))", border: "1px solid rgba(255,215,0,0.55)", color: "#fff", fontWeight: 800, letterSpacing: 0.04 }}>⚡ BOOSTED</div>
                             )}
                             <div className="card-hero-type">{profile.type}</div>
                             <div className="card-hero-loc">
                               {profile.loc && <span>{profile.loc}</span>}
                               {(() => {
-                                const pLat = (profile as any).lat ?? CITY_GEO[profile.loc]?.lat;
-                                const pLong = (profile as any).long ?? CITY_GEO[profile.loc]?.long;
+                                const pLat = profile.lat ?? CITY_GEO[profile.loc]?.lat;
+                                const pLong = profile.long ?? CITY_GEO[profile.loc]?.long;
                                 if (myGeo && typeof pLat === "number" && typeof pLong === "number") {
                                   const d = distanceMiles({ lat: myGeo.lat, long: myGeo.long }, { lat: pLat, long: pLong });
                                   if (Number.isFinite(d)) return <span>{d < 1 ? "<1 mi" : `${Math.round(d)} mi`}</span>;
@@ -516,11 +558,11 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                               // scrolls into the full profile details where all of this
                               // already lives in full).
                               const all: React.ReactNode[] = [];
-                              (profile as any).skills?.slice(0, 2).forEach((s: string) => all.push(<span key={"sk-" + s} className="card-hero-badge">{s}</span>));
-                              if ((profile as any).zodiac) all.push(<span key="zo" className="card-hero-badge">{ZODIAC_GLYPH[(profile as any).zodiac] || "✦"} {(profile as any).zodiac}</span>);
-                              if ((profile as any).mbti) all.push(<span key="mb" className="card-hero-badge" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><MbtiIcon code={(profile as any).mbti} size={11} /> {(profile as any).mbti}</span>);
-                              if ((profile as any).lifePath) all.push(<span key="lp" className="card-hero-badge" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><LifePathIcon n={Number((profile as any).lifePath)} size={11} /> LP {(profile as any).lifePath}</span>);
-                              if ((profile as any).chinese) all.push(<span key="cn" className="card-hero-badge" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><ChineseZodiacIcon animal={(profile as any).chinese} size={11} /> {(profile as any).chinese}</span>);
+                              profile.skills?.slice(0, 2).forEach((s: string) => all.push(<span key={"sk-" + s} className="card-hero-badge">{s}</span>));
+                              if (profile.zodiac) all.push(<span key="zo" className="card-hero-badge">{ZODIAC_GLYPH[profile.zodiac] || "✦"} {profile.zodiac}</span>);
+                              if (profile.mbti) all.push(<span key="mb" className="card-hero-badge" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><MbtiIcon code={profile.mbti} size={11} /> {profile.mbti}</span>);
+                              if (profile.lifePath) all.push(<span key="lp" className="card-hero-badge" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><LifePathIcon n={Number(profile.lifePath)} size={11} /> LP {profile.lifePath}</span>);
+                              if (profile.chinese) all.push(<span key="cn" className="card-hero-badge" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><ChineseZodiacIcon animal={profile.chinese} size={11} /> {profile.chinese}</span>);
                               const shown = all.slice(0, 3);
                               const overflow = all.length - shown.length;
                               return (
@@ -572,7 +614,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                           <div className={"card-photo-dots" + (cardScrolled ? " hidden" : "")} aria-hidden={cardScrolled || undefined} inert={cardScrolled || undefined}>
                             {photos.map((_: string, i: number) => <button key={i} className={"card-photo-dot" + (i === currentPhotoIdx ? " active" : "")} aria-label={`Show photo ${i + 1}`} onClick={(e) => { e.stopPropagation(); setCurrentPhotoIdx?.(i); }} style={{ width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", padding: 0, cursor: "pointer" }}><span style={{ width: i === currentPhotoIdx ? 16 : 7, height: 7, borderRadius: i === currentPhotoIdx ? 4 : "50%", background: i === currentPhotoIdx ? "#FFD700" : "rgba(255,255,255,0.4)", transition: "all .25s", display: "block" }} /></button>)}
                           </div>
-                          {isTop && (!(profile as any).nsfw || revealedNsfw.has(String(profile.id))) && (
+                          {isTop && (!profile.nsfw || revealedNsfw.has(String(profile.id))) && (
                             <button
                               className={"card-anchor-like-btn" + (cardScrolled ? " hidden" : "")}
                               style={{ top: 12, right: 12, display: "flex", alignItems: "center", gap: 5 }}
@@ -591,28 +633,28 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                           )}
                           {isTop && (
                             <>
-                              <div ref={likeLabelRef as any} className="label label-like" aria-hidden="true">YES</div>
-                              <div ref={nopeLabelRef as any} className="label label-nope" aria-hidden="true" style={{ left: "auto", right: 20 }}>NOPE</div>
-                              <div ref={superLabelRef as any} className="label label-super" aria-hidden="true">SUPER</div>
+                              <div ref={likeLabelRef} className="label label-like" aria-hidden="true">YES</div>
+                              <div ref={nopeLabelRef} className="label label-nope" aria-hidden="true" style={{ left: "auto", right: 20 }}>NOPE</div>
+                              <div ref={superLabelRef} className="label label-super" aria-hidden="true">SUPER</div>
                             </>
                           )}
-                          <div className="card-info-scroll" ref={cardScrollRef as any} onScroll={(e) => { if (isTop) { const scrollY = (e.target as HTMLElement)?.scrollTop || 0; setCardScrolled?.(scrollY > 10); } }}>
+                          <div className="card-info-scroll" ref={cardScrollRef} onScroll={(e) => { if (isTop) { const scrollY = (e.target as HTMLElement)?.scrollTop || 0; setCardScrolled?.(scrollY > 10); } }}>
                             <div className="card-details">
-                              {(profile as any).prompts?.length > 0 && (
+                              {profile.prompts?.length > 0 && (
                                 <div className="card-section">
                                   <div className="card-section-title">Prompts</div>
                                   <div className="card-prompts" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
                                     <button className="card-prompt-arrow" aria-label="Previous prompt" onClick={(e) => { e.stopPropagation(); setPromptIdx?.(prev => Math.max(0, (prev ?? 0) - 1)); }} style={{ opacity: (promptIdx ?? 0) > 0 ? 1 : 0.3 }}>‹</button>
                                     <div className="card-prompt-text">
-                                      <div className="card-prompt-q">{(profile as any).prompts[promptIdx ?? 0]?.q || ""}</div>
-                                      <div className="card-prompt-a">{(profile as any).prompts[promptIdx ?? 0]?.a || ""}</div>
+                                      <div className="card-prompt-q">{profile.prompts[promptIdx ?? 0]?.q || ""}</div>
+                                      <div className="card-prompt-a">{profile.prompts[promptIdx ?? 0]?.a || ""}</div>
                                     </div>
-                                    <button className="card-prompt-arrow" aria-label="Next prompt" onClick={(e) => { e.stopPropagation(); setPromptIdx?.(prev => Math.min(((profile as any).prompts.length - 1), (prev ?? 0) + 1)); }} style={{ opacity: (promptIdx ?? 0) < ((profile as any).prompts.length - 1) ? 1 : 0.3 }}>›</button>
+                                    <button className="card-prompt-arrow" aria-label="Next prompt" onClick={(e) => { e.stopPropagation(); setPromptIdx?.(prev => Math.min((profile.prompts.length - 1), (prev ?? 0) + 1)); }} style={{ opacity: (promptIdx ?? 0) < (profile.prompts.length - 1) ? 1 : 0.3 }}>›</button>
                                   </div>
                                 </div>
                               )}
                               {profile.bio && <div className="card-section"><div className="card-section-title">About</div><div className="card-section-text">{profile.bio}</div></div>}
-                              {(profile as any).side === "industry" && <div className="card-section"><div className="card-section-title">Hiring</div><div className="card-section-tags"><span className="tag" style={{ borderColor: "rgba(100,181,246,0.4)", color: "#90caf9" }}>Industry — can book &amp; pay you</span></div></div>}
+                              {profile.side === "industry" && <div className="card-section"><div className="card-section-title">Hiring</div><div className="card-section-tags"><span className="tag" style={{ borderColor: "rgba(100,181,246,0.4)", color: "#90caf9" }}>Industry — can book &amp; pay you</span></div></div>}
                               {profile.looking.length > 0 && <div className="card-section"><div className="card-section-title">Looking for</div><div className="card-section-text">{profile.looking.join(", ")}</div></div>}
                               <div className="card-section"><div className="card-section-title">Creative Style</div>
                                 <div className="card-section-tags">{profile.styles.map(s => <span key={s} className="tag">{s}</span>)}</div>
@@ -620,19 +662,19 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                               <div className="card-section">
                                 <div className="card-section-title">Personality</div>
                                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                                  {(profile as any).zodiac && <span className="tag" style={{ background: "rgba(212,165,255,0.12)", border: "1px solid rgba(212,165,255,0.25)", color: "var(--lavender)" }}>{({ Aries: "♈ Aries", Taurus: "♉ Taurus", Gemini: "♊ Gemini", Cancer: "♋ Cancer", Leo: "♌ Leo", Virgo: "♍ Virgo", Libra: "♎ Libra", Scorpio: "♏ Scorpio", Sagittarius: "♐ Sagittarius", Capricorn: "♑ Capricorn", Aquarius: "♒ Aquarius", Pisces: "♓ Pisces" } as any)[(profile as any).zodiac] || (profile as any).zodiac}</span>}
-                                  {(profile as any).mbti && <span className="tag" style={{ background: "rgba(255,215,0,0.1)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)", display: "inline-flex", alignItems: "center", gap: 5 }}><MbtiIcon code={(profile as any).mbti} size={12} />{({ INTJ: "Architect", INTP: "Logician", ENTJ: "Commander", ENTP: "Debater", INFJ: "Advocate", INFP: "Mediator", ENFJ: "Protagonist", ENFP: "Campaigner", ISTJ: "Logistician", ISFJ: "Defender", ESTJ: "Executive", ESFJ: "Consul", ISTP: "Virtuoso", ISFP: "Adventurer", ESTP: "Entrepreneur", ESFP: "Entertainer" } as any)[(profile as any).mbti] || (profile as any).mbti} · {(profile as any).mbti}</span>}
-                                  {(profile as any).chinese && <span className="tag" style={{ background: "rgba(255,138,128,0.1)", border: "1px solid rgba(255,138,128,0.2)", color: "var(--coral)", display: "inline-flex", alignItems: "center", gap: 5 }}><ChineseZodiacIcon animal={(profile as any).chinese} size={12} /> {(profile as any).chinese}</span>}
-                                  {!!(profile as any).lifePath && <span className="tag" style={{ background: "rgba(152,251,152,0.1)", border: "1px solid rgba(152,251,152,0.2)", color: "var(--mint)", display: "inline-flex", alignItems: "center", gap: 5 }}><LifePathIcon n={Number((profile as any).lifePath)} size={12} /> Life Path {(profile as any).lifePath}</span>}
-                                  {(profile as any).connection && <span className="tag" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "var(--text2)" }}>{({ collab: "🤝 Collab", partner: "💼 Partner", friend: "👋 Friend", mentor: "🎓 Mentor" } as any)[(profile as any).connection] || (profile as any).connection}</span>}
+                                  {profile.zodiac && <span className="tag" style={{ background: "rgba(212,165,255,0.12)", border: "1px solid rgba(212,165,255,0.25)", color: "var(--lavender)" }}>{({ Aries: "♈ Aries", Taurus: "♉ Taurus", Gemini: "♊ Gemini", Cancer: "♋ Cancer", Leo: "♌ Leo", Virgo: "♍ Virgo", Libra: "♎ Libra", Scorpio: "♏ Scorpio", Sagittarius: "♐ Sagittarius", Capricorn: "♑ Capricorn", Aquarius: "♒ Aquarius", Pisces: "♓ Pisces" } as Record<string, string>)[profile.zodiac] || profile.zodiac}</span>}
+                                  {profile.mbti && <span className="tag" style={{ background: "rgba(255,215,0,0.1)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)", display: "inline-flex", alignItems: "center", gap: 5 }}><MbtiIcon code={profile.mbti} size={12} />{({ INTJ: "Architect", INTP: "Logician", ENTJ: "Commander", ENTP: "Debater", INFJ: "Advocate", INFP: "Mediator", ENFJ: "Protagonist", ENFP: "Campaigner", ISTJ: "Logistician", ISFJ: "Defender", ESTJ: "Executive", ESFJ: "Consul", ISTP: "Virtuoso", ISFP: "Adventurer", ESTP: "Entrepreneur", ESFP: "Entertainer" } as Record<string, string>)[profile.mbti] || profile.mbti} · {profile.mbti}</span>}
+                                  {profile.chinese && <span className="tag" style={{ background: "rgba(255,138,128,0.1)", border: "1px solid rgba(255,138,128,0.2)", color: "var(--coral)", display: "inline-flex", alignItems: "center", gap: 5 }}><ChineseZodiacIcon animal={profile.chinese} size={12} /> {profile.chinese}</span>}
+                                  {!!profile.lifePath && <span className="tag" style={{ background: "rgba(152,251,152,0.1)", border: "1px solid rgba(152,251,152,0.2)", color: "var(--mint)", display: "inline-flex", alignItems: "center", gap: 5 }}><LifePathIcon n={Number(profile.lifePath)} size={12} /> Life Path {profile.lifePath}</span>}
+                                  {profile.connection && <span className="tag" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "var(--text2)" }}>{({ collab: "🤝 Collab", partner: "💼 Partner", friend: "👋 Friend", mentor: "🎓 Mentor" } as Record<string, string>)[profile.connection] || profile.connection}</span>}
                                 </div>
                               </div>
-                              {(profile as any).zodiac && (
+                              {profile.zodiac && (
                                 <div className="card-section">
                                   <div className="card-section-title">Astrology</div>
                                   <div className="card-section-text" style={{ lineHeight: 1.6 }}>
-                                    <div style={{ marginBottom: 6 }}><strong style={{ color: "var(--lavender)" }}>{({ Aries: "♈ Aries, The Pioneer", Taurus: "♉ Taurus, The Builder", Gemini: "♊ Gemini, The Communicator", Cancer: "♋ Cancer, The Nurturer", Leo: "♌ Leo, The Performer", Virgo: "♍ Virgo, The Analyst", Libra: "♎ Libra, The Diplomat", Scorpio: "♏ Scorpio, The Strategist", Sagittarius: "♐ Sagittarius, The Explorer", Capricorn: "♑ Capricorn, The Achiever", Aquarius: "♒ Aquarius, The Visionary", Pisces: "♓ Pisces, The Dreamer" } as any)[(profile as any).zodiac] || (profile as any).zodiac}</strong></div>
-                                    <div style={{ fontSize: 12, color: "var(--text2)" }}>{({ Aries: "Bold, ambitious, and always first to try something new. Natural leader energy.", Taurus: "Reliable, patient, and deeply creative. Values quality over quantity.", Gemini: "Versatile, expressive, and quick-witted. Thrives on variety.", Cancer: "Intuitive, emotional, and protective. Creates safe spaces for others.", Leo: "Creative, passionate, and generous. Natural performer and collaborator.", Virgo: "Analytical, practical, and detail-oriented. Brings precision to every project.", Libra: "Balanced, social, and artistic. Sees beauty in everything.", Scorpio: "Resourceful, brave, and passionate. Deep focus and intensity.", Sagittarius: "Generous, idealistic, and adventurous. Always exploring new horizons.", Capricorn: "Responsible, disciplined, and ambitious. Builds lasting things.", Aquarius: "Progressive, original, and independent. Thinks outside the box.", Pisces: "Compassionate, artistic, and intuitive. Feels deeply and creates freely." } as any)[(profile as any).zodiac] || ""}</div>
+                                    <div style={{ marginBottom: 6 }}><strong style={{ color: "var(--lavender)" }}>{({ Aries: "♈ Aries, The Pioneer", Taurus: "♉ Taurus, The Builder", Gemini: "♊ Gemini, The Communicator", Cancer: "♋ Cancer, The Nurturer", Leo: "♌ Leo, The Performer", Virgo: "♍ Virgo, The Analyst", Libra: "♎ Libra, The Diplomat", Scorpio: "♏ Scorpio, The Strategist", Sagittarius: "♐ Sagittarius, The Explorer", Capricorn: "♑ Capricorn, The Achiever", Aquarius: "♒ Aquarius, The Visionary", Pisces: "♓ Pisces, The Dreamer" } as Record<string, string>)[profile.zodiac] || profile.zodiac}</strong></div>
+                                    <div style={{ fontSize: 12, color: "var(--text2)" }}>{({ Aries: "Bold, ambitious, and always first to try something new. Natural leader energy.", Taurus: "Reliable, patient, and deeply creative. Values quality over quantity.", Gemini: "Versatile, expressive, and quick-witted. Thrives on variety.", Cancer: "Intuitive, emotional, and protective. Creates safe spaces for others.", Leo: "Creative, passionate, and generous. Natural performer and collaborator.", Virgo: "Analytical, practical, and detail-oriented. Brings precision to every project.", Libra: "Balanced, social, and artistic. Sees beauty in everything.", Scorpio: "Resourceful, brave, and passionate. Deep focus and intensity.", Sagittarius: "Generous, idealistic, and adventurous. Always exploring new horizons.", Capricorn: "Responsible, disciplined, and ambitious. Builds lasting things.", Aquarius: "Progressive, original, and independent. Thinks outside the box.", Pisces: "Compassionate, artistic, and intuitive. Feels deeply and creates freely." } as Record<string, string>)[profile.zodiac] || ""}</div>
                                   </div>
                                 </div>
                               )}
@@ -654,8 +696,8 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                         style={{ position: "relative", borderRadius: 14, overflow: "hidden", aspectRatio: "3/4", background: "rgba(255,255,255,0.03)", cursor: "pointer" }}
                                         onClick={() => { setLightboxPhotos(albumPhotos); setLightboxIdx(portIdx); }}
                                       >
-                                         <Image loading="lazy" src={albumPhotos[portIdx]} alt={`${profile.name}'s portfolio photo ${portIdx + 1}`} fill sizes="(max-width: 600px) 50vw, 300px" style={{ objectFit: "cover", filter: (profile as any).nsfw && !revealedNsfw.has(String(profile.id)) ? "blur(26px) brightness(0.7)" : "none", transition: "filter .3s" }} onError={handleImgError} />
-{(profile as any).nsfw && !revealedNsfw.has(String(profile.id)) && (
+                                         <Image loading="lazy" src={albumPhotos[portIdx]} alt={`${profile.name}'s portfolio photo ${portIdx + 1}`} fill sizes="(max-width: 600px) 50vw, 300px" style={{ objectFit: "cover", filter: profile.nsfw && !revealedNsfw.has(String(profile.id)) ? "blur(26px) brightness(0.7)" : "none", transition: "filter .3s" }} onError={handleImgError} />
+{profile.nsfw && !revealedNsfw.has(String(profile.id)) && (
                                            <button tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setRevealedNsfw(prev => { const n = new Set(prev); n.add(String(profile.id)); return n; }); } }} onClick={(e) => { e.stopPropagation(); setRevealedNsfw(prev => { const n = new Set(prev); n.add(String(profile.id)); return n; }); }} style={{ position: "absolute", inset: 0, zIndex: 4, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: "rgba(10,6,18,0.45)", cursor: "pointer" }}>
                                              <div style={{ fontSize: 24, fontWeight: 800, color: "#ff8a80" }}>18+</div>
                                              <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", letterSpacing: 0.03 }}>NSFW content</div>
@@ -687,8 +729,8 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                                   );
                                 })()}
                               </div>
-                              <div className="match-score" style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}><div className="score-bar" style={{ flex: 1 }}><div className="score-fill" style={{ width: profile.score + "%" }} /></div><span className="score-text">{profile.score}%</span>{(profile as any).matchReasons?.length > 0 && <button onClick={(e) => { e.stopPropagation(); setWhyInfo({ score: profile.score, reasons: (profile as any).matchReasons }); }} aria-label="Why this match?" aria-haspopup="dialog" aria-expanded={!!whyInfo} aria-controls="why-match-dialog" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, flexShrink: 0, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.05)", color: "var(--muted)", cursor: "pointer", padding: 0 }}><FiInfo size={14} /></button>}</div>
-                              {(profile as any).badges?.length > 0 && <div className="card-section"><div className="card-section-title">Badges</div><div className="card-section-tags">{(profile as any).badges.map((b: any, i: number) => <button key={i} className="tag" onClick={(e) => { e.stopPropagation(); setBadgeInfo(b); }} style={{ minWidth: 44, minHeight: 44, display: "inline-flex", alignItems: "center", justifyContent: "center", background: `${b.color}20`, border: `1px solid ${b.color}40`, color: b.color, cursor: "pointer" }}>{b.icon} {b.name}</button>)}</div></div>}
+                              <div className="match-score" style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}><div className="score-bar" style={{ flex: 1 }}><div className="score-fill" style={{ width: profile.score + "%" }} /></div><span className="score-text">{profile.score}%</span>{(profile.matchReasons?.length ?? 0) > 0 && <button onClick={(e) => { e.stopPropagation(); setWhyInfo({ score: profile.score, reasons: profile.matchReasons as string[] }); }} aria-label="Why this match?" aria-haspopup="dialog" aria-expanded={!!whyInfo} aria-controls="why-match-dialog" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, flexShrink: 0, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.05)", color: "var(--muted)", cursor: "pointer", padding: 0 }}><FiInfo size={14} /></button>}</div>
+                              {profile.badges?.length > 0 && <div className="card-section"><div className="card-section-title">Badges</div><div className="card-section-tags">{profile.badges.map((b, i) => <button key={i} className="tag" onClick={(e) => { e.stopPropagation(); setBadgeInfo(b); }} style={{ minWidth: 44, minHeight: 44, display: "inline-flex", alignItems: "center", justifyContent: "center", background: `${b.color}20`, border: `1px solid ${b.color}40`, color: b.color, cursor: "pointer" }}>{b.icon} {b.name}</button>)}</div></div>}
                               <div className="card-section" style={{ fontSize: 12, color: "var(--muted)" }}>📍 {profile.loc}</div>
                             </div>
                           </div>
@@ -747,8 +789,8 @@ export const DiscoverScreen = memo(function DiscoverScreen({
           <button className="gallery-view-close" onClick={(e) => { e.stopPropagation(); setGalleryView(null); }} aria-label="Close"><FiX size={22} /></button>
           {galleryView.photos.length > 1 && (
             <>
-              <button className="gallery-view-nav gallery-view-prev" onClick={(e) => { e.stopPropagation(); setGalleryView((v: any) => v ? { ...v, idx: (v.idx - 1 + v.photos.length) % v.photos.length } : v); }} aria-label="Previous"><FiChevronRight size={26} style={{ transform: "rotate(180deg)" }} /></button>
-              <button className="gallery-view-nav gallery-view-next" onClick={(e) => { e.stopPropagation(); setGalleryView((v: any) => v ? { ...v, idx: (v.idx + 1) % v.photos.length } : v); }} aria-label="Next"><FiChevronRight size={26} /></button>
+              <button className="gallery-view-nav gallery-view-prev" onClick={(e) => { e.stopPropagation(); setGalleryView((v) => v ? { ...v, idx: (v.idx - 1 + v.photos.length) % v.photos.length } : v); }} aria-label="Previous"><FiChevronRight size={26} style={{ transform: "rotate(180deg)" }} /></button>
+              <button className="gallery-view-nav gallery-view-next" onClick={(e) => { e.stopPropagation(); setGalleryView((v) => v ? { ...v, idx: (v.idx + 1) % v.photos.length } : v); }} aria-label="Next"><FiChevronRight size={26} /></button>
             </>
           )}
           <div className="gallery-view-img-wrap" onClick={(e) => { e.stopPropagation(); }}>
