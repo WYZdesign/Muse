@@ -6,6 +6,16 @@ import { getServiceClient } from "@/lib/supabase";
 // hang a toast off of) so they still surface in the notification bell.
 type SupabaseClient = ReturnType<typeof getServiceClient>;
 
+/** A muse_quests row, narrowed to the columns the quest verbs read. The
+ *  service client is untyped, so each read is annotated with this shape. */
+type QuestRow = {
+  id: string;
+  title: string;
+  frequency: string;
+  target_count: number;
+  xp_reward: number;
+};
+
 /** Period bucket for quest progress. Weekly buckets are keyed by the Monday
  *  (UTC) date so weeks roll over cleanly; 'once' and 'lifetime' never reset. */
 export function questPeriodKey(frequency: string): string {
@@ -38,7 +48,7 @@ export async function notifyQuestComplete(sb: SupabaseClient, userId: string, ti
 /** Set ABSOLUTE progress on every active quest with this action_key
  *  (lifetime period). Used for level-based and meta quests. */
 export async function setQuestProgress(sb: SupabaseClient, profileId: string, actionKey: string, absolute: number): Promise<void> {
-  const { data: quests } = await sb.from("muse_quests").select("*").eq("active", true).eq("action_key", actionKey);
+  const { data: quests }: { data: QuestRow[] | null } = await sb.from("muse_quests").select("*").eq("active", true).eq("action_key", actionKey);
   for (const quest of quests || []) {
     const periodKey = questPeriodKey(quest.frequency);
     const clamped = Math.min(Math.max(0, Math.floor(absolute)), quest.target_count);
@@ -94,7 +104,7 @@ export async function refreshMetaQuest(sb: SupabaseClient, profileId: string): P
  *  complete_session, complete_host, get_verified, referral_signup. */
 export async function bumpQuest(sb: SupabaseClient, profileId: string, actionKey: string): Promise<void> {
   try {
-    const { data: quests } = await sb.from("muse_quests").select("*").eq("active", true).eq("action_key", actionKey);
+    const { data: quests }: { data: QuestRow[] | null } = await sb.from("muse_quests").select("*").eq("active", true).eq("action_key", actionKey);
     let anyCompleted = false;
     for (const quest of quests || []) {
       const periodKey = questPeriodKey(quest.frequency);
@@ -123,8 +133,8 @@ export async function bumpQuest(sb: SupabaseClient, profileId: string, actionKey
     if (anyCompleted) {
       // Award XP once per bump using the highest tier reward for this key —
       // slight over-award vs tracking per-tier ledgers, but never under-awards.
-      const { data: tiers } = await sb.from("muse_quests").select("xp_reward").eq("action_key", actionKey).eq("active", true);
-      const maxXp = Math.max(0, ...(tiers || []).map((q: any) => q.xp_reward || 0));
+      const { data: tiers }: { data: { xp_reward?: number | null }[] | null } = await sb.from("muse_quests").select("xp_reward").eq("action_key", actionKey).eq("active", true);
+      const maxXp = Math.max(0, ...(tiers || []).map((q) => q.xp_reward || 0));
       if (maxXp > 0) await awardQuestXp(sb, profileId, maxXp);
       await refreshMetaQuest(sb, profileId);
     }
@@ -138,7 +148,7 @@ export async function setReferralQuestProgress(sb: SupabaseClient, referrerId: s
   try {
     const { count: signupCount } = await sb.from("muse_referrals")
       .select("id", { count: "exact", head: true }).eq("referrer_id", referrerId);
-    const { data: quests } = await sb.from("muse_quests").select("*").eq("active", true).eq("action_key", "referral_signup");
+    const { data: quests }: { data: QuestRow[] | null } = await sb.from("muse_quests").select("*").eq("active", true).eq("action_key", "referral_signup");
     for (const q of quests || []) {
       const clamped = Math.min(signupCount || 0, q.target_count);
       const completed = clamped >= q.target_count;
@@ -174,11 +184,11 @@ export async function setReferralQuestProgress(sb: SupabaseClient, referrerId: s
 export async function bumpLoginStreak(sb: SupabaseClient, profileId: string): Promise<number> {
   try {
     const today = new Date().toISOString().slice(0, 10);
-    const { data: row } = await sb.from("muse_profiles")
+    const { data: row }: { data: { login_streak?: number | null; last_login_date?: string | null } | null } = await sb.from("muse_profiles")
       .select("login_streak, last_login_date")
       .eq("id", profileId).maybeSingle();
-    const prev = (row as any)?.last_login_date;
-    const streak = (row as any)?.login_streak || 0;
+    const prev = row?.last_login_date;
+    const streak = row?.login_streak || 0;
     if (prev === today) return streak;
     let newStreak = 1;
     if (prev) {
@@ -205,14 +215,14 @@ export const ROTATION_TIERS = new Set(["daily", "weekly", "monthly"]);
 /** Return a rotation-stable subset of quests. Within each rotating tier,
  *  the selected set is deterministic per UTC day/week/month so the same
  *  user sees the same quests all period, then auto-swaps on rollover. */
-export function rotateQuests(quests: any[], now?: Date): any[] {
+export function rotateQuests<T extends { id: string; quest_tier: string }>(quests: T[], now?: Date): T[] {
   const d = now || new Date();
   const periodBuckets: Record<string, string> = {
     daily:   `daily:${d.toISOString().slice(0, 10)}`,
     weekly:  `weekly:${d.toISOString().slice(0, 10)}`,
     monthly: `monthly:${d.toISOString().slice(0, 7)}`,
   };
-  const result: any[] = [];
+  const result: T[] = [];
   for (const tier of ROTATION_TIERS) {
     const tierQuests = quests.filter(q => q.quest_tier === tier);
     const limit = ROTATION_LIMITS[tier];

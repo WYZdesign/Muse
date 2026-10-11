@@ -17,6 +17,17 @@ import { bumpQuest } from "@/lib/questEngine";
 import Stripe from "stripe";
 import { UUID_RE, emailProfile, NextResponse, safeServerError, isAgeVerificationCurrent, type ActionContext } from "./shared";
 
+/** A muse_bookings row joined for the reminders readout: an id, its status,
+ *  the embedded session fields, and the other party (host or booker). */
+type BookingReminderRow = {
+  id: string | number;
+  status?: string | null;
+  session_id?: { title?: string | null; date?: string | null; time?: string | null; location?: string | null } | null;
+  host_id?: { id?: string; name?: string; avatar?: string } | null;
+  user_id?: { id?: string; name?: string; avatar?: string } | null;
+  __isHost?: boolean;
+};
+
 export const sessionBook = async ({ sb, profile, rest }: ActionContext) => {
   if (!await checkRateUser(profile.id, "book-session", 15)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   const { sessionId, note } = rest;
@@ -28,15 +39,15 @@ export const sessionBook = async ({ sb, profile, rest }: ActionContext) => {
   // existing free-text notification body the host already gets instead of a
   // new column.
   const bookerNote = sanitizeText(String(note || ""), 300);
-  const { data: booker } = await sb.from("muse_profiles").select("age_verified, age_verified_at").eq("id", profile.id).maybeSingle();
-  if (!isAgeVerificationCurrent(booker as any)) {
+  const { data: booker }: { data: { age_verified?: boolean | null; age_verified_at?: string | null } | null } = await sb.from("muse_profiles").select("age_verified, age_verified_at").eq("id", profile.id).maybeSingle();
+  if (!isAgeVerificationCurrent(booker)) {
     return NextResponse.json({ error: "Identity verification required", code: "VERIFICATION_REQUIRED" }, { status: 403 });
   }
   if (!UUID_RE.test(String(sessionId))) return NextResponse.json({ success: true, demo: true });
-  const { data: session } = await sb.from("muse_sessions").select("id, host_id").eq("id", sessionId).maybeSingle();
+  const { data: session }: { data: { id?: string; host_id?: string | null } | null } = await sb.from("muse_sessions").select("id, host_id").eq("id", sessionId).maybeSingle();
   if (!session) return NextResponse.json({ error: "Session not found" }, { status: 400 });
   // Use the session's own host_id — never trust client-supplied hostId
-  const effectiveHostId = (session as any).host_id || null;
+  const effectiveHostId = session.host_id || null;
   if (effectiveHostId) {
     const { data: host } = await sb.from("muse_profiles").select("id").eq("id", effectiveHostId).maybeSingle();
     if (!host) return NextResponse.json({ error: "Host not found" }, { status: 400 });
@@ -393,29 +404,33 @@ export const bookingReminders = async ({ sb, profile }: ActionContext) => {
   const now = new Date();
   const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
   const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-  const { data: upcomingAsBooker } = await sb.from("muse_bookings")
+  // Supabase's select parser infers embedded to-one joins (session_id/host_id)
+  // as arrays; the runtime rows are objects (see get.ts "bookings"). Cast the
+  // awaited response to the row shape the reminder loop reads, erased at
+  // runtime — same pattern as get.ts's match/profile embedded selects.
+  const { data: upcomingAsBooker }: { data: BookingReminderRow[] | null } = (await sb.from("muse_bookings")
     .select("id, status, session_id(id, title, date, time, location), host_id(id, name, avatar)")
     .eq("user_id", profile.id)
-    .in("status", ["pending", "confirmed"]);
-  const { data: upcomingAsHost } = await sb.from("muse_bookings")
+    .in("status", ["pending", "confirmed"])) as unknown as { data: BookingReminderRow[] | null };
+  const { data: upcomingAsHost }: { data: BookingReminderRow[] | null } = (await sb.from("muse_bookings")
     .select("id, status, session_id(id, title, date, time, location), user_id(id, name, avatar)")
     .eq("host_id", profile.id)
-    .in("status", ["pending", "confirmed"]);
+    .in("status", ["pending", "confirmed"])) as unknown as { data: BookingReminderRow[] | null };
   // Audit fix (2026-09-08): isHost used to be inferred from `!!b.host_id`, but
   // asBooker rows always join a truthy host_id object (the OTHER party) while
   // asHost rows never select host_id at all — that read isHost backwards for
   // both groups. Tagging each row with which query it came from instead of
   // inferring from a column that means something different in each query.
   const allBookings = [
-    ...(upcomingAsBooker || []).map((b: any) => ({ ...b, __isHost: false })),
-    ...(upcomingAsHost || []).map((b: any) => ({ ...b, __isHost: true })),
+    ...(upcomingAsBooker || []).map((b) => ({ ...b, __isHost: false })),
+    ...(upcomingAsHost || []).map((b) => ({ ...b, __isHost: true })),
   ];
-  const reminders = allBookings.filter((b: any) => {
+  const reminders = allBookings.filter((b) => {
     const sessionDate = b.session_id?.date;
     if (!sessionDate) return false;
     const d = new Date(sessionDate);
     return d >= now && d <= nextWeek;
-  }).map((b: any) => ({
+  }).map((b) => ({
     bookingId: b.id,
     status: b.status,
     sessionTitle: b.session_id?.title || "Untitled",

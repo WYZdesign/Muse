@@ -1,8 +1,23 @@
 import { getServiceClient } from "@/lib/supabase";
 
 // ═══ AWS Rekognition moderation (lazy-load SDK to avoid build-time cost) ═══
-let RekognitionClient: any, DetectModerationLabelsCommand: any, StartContentModerationCommand: any, GetContentModerationCommand: any;
-let rekognition: any = null;
+// Constructor + instance types for the lazily-imported SDK classes, so the
+// module-level holders are typed rather than `any`. `typeof import(...)` is a
+// type-only query (erased at build) that mirrors the dynamic import below.
+type RekognitionClientCtor = typeof import("@aws-sdk/client-rekognition").RekognitionClient;
+type DetectModerationLabelsCommandCtor = typeof import("@aws-sdk/client-rekognition").DetectModerationLabelsCommand;
+type StartContentModerationCommandCtor = typeof import("@aws-sdk/client-rekognition").StartContentModerationCommand;
+type GetContentModerationCommandCtor = typeof import("@aws-sdk/client-rekognition").GetContentModerationCommand;
+type RekognitionClientInstance = InstanceType<RekognitionClientCtor>;
+/** The `Video` member of StartContentModeration's input (AWS types it as an
+ *  S3 object only; the video path below still carries in-memory bytes). */
+type StartContentModerationVideo = NonNullable<ConstructorParameters<StartContentModerationCommandCtor>[0]["Video"]>;
+
+let RekognitionClient: RekognitionClientCtor | undefined;
+let DetectModerationLabelsCommand: DetectModerationLabelsCommandCtor | undefined;
+let StartContentModerationCommand: StartContentModerationCommandCtor | undefined;
+let GetContentModerationCommand: GetContentModerationCommandCtor | undefined;
+let rekognition: RekognitionClientInstance | null | undefined = null;
 
 async function getRekognition() {
   if (rekognition !== null) return rekognition;
@@ -43,6 +58,17 @@ const MODERATION_CATEGORIES: Record<string, { block: boolean; report: boolean }>
 
 const CSAM_CATEGORIES = ["Child Sexual Abuse", "Sexual Exploitation of Minors"];
 
+/** One flagged moderation label (or, for Sightengine, an engine tag; the
+ *  upload route also records an in-memory audio note as a detail row). */
+type ModerationDetail = {
+  category?: string;
+  confidence?: number;
+  timestamp?: number;
+  engine?: string;
+  kind?: string;
+  url?: string;
+};
+
 export interface ModerationResult {
   safe: boolean;
   scanned: boolean;
@@ -51,7 +77,7 @@ export interface ModerationResult {
   shouldBlock: boolean;
   shouldReport: boolean;
   isCSAM: boolean;
-  details: any[];
+  details: ModerationDetail[];
 }
 
 export async function scanWithRekognition(imageBuffer: Buffer): Promise<ModerationResult> {
@@ -73,7 +99,7 @@ export async function scanWithRekognition(imageBuffer: Buffer): Promise<Moderati
     let shouldBlock = false;
     let shouldReport = false;
     let isCSAM = false;
-    const details: any[] = [];
+    const details: ModerationDetail[] = [];
 
     for (const label of response.ModerationLabels || []) {
       const category = label.Name || "Unknown";
@@ -181,8 +207,13 @@ export async function startVideoModeration(
     return { error: "Rekognition unavailable" };
   }
   try {
+    // AWS's declared `Video` input is S3-only, but this code has always sent
+    // in-memory bytes. Build the value with Object.assign so `Bytes` is not a
+    // fresh literal against the narrow `Video` type; at runtime it is exactly
+    // `{ Bytes }` (the empty base has no S3Object), so behavior is unchanged.
+    const videoArg = Object.assign<StartContentModerationVideo, { Bytes: Uint8Array }>({}, { Bytes: videoBuffer });
     const command = new StartContentModerationCommand({
-      Video: { Bytes: videoBuffer },
+      Video: videoArg,
       MinConfidence: minConfidence,
     });
     const response = await client.send(command);
@@ -217,7 +248,7 @@ export async function getVideoModerationResult(
     let shouldBlock = false;
     let shouldReport = false;
     let isCSAM = false;
-    const details: any[] = [];
+    const details: ModerationDetail[] = [];
 
     for (const label of response.ModerationLabels || []) {
       const category = label.ModerationLabel?.Name || "Unknown";

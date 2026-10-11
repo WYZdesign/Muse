@@ -30,9 +30,30 @@ export interface PushSubscription {
   auth: string;
 }
 
+/** The JSON payload delivered to the browser push handler. `data` and
+ *  `actions` are opaque to this module (only serialized), so they stay
+ *  unknown-typed rather than any. */
+type PushPayload = {
+  title: string;
+  body: string;
+  icon?: string;
+  data?: unknown;
+  actions?: unknown[];
+  tag?: string;
+  vibrate?: number[];
+  badge?: string;
+};
+
+/** Structural view of the error web-push rejects with (WebPushError, or a
+ *  plain object in tests) — only the two fields read below. */
+type PushError = { statusCode?: number; message?: string };
+function isPushError(e: unknown): e is PushError {
+  return typeof e === "object" && e !== null;
+}
+
 export async function sendPushNotification(
   subscription: PushSubscription,
-  payload: { title: string; body: string; icon?: string; data?: any; actions?: any[]; tag?: string; vibrate?: number[]; badge?: string }
+  payload: PushPayload
 ): Promise<{ success: boolean; error?: string }> {
   if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
     return { success: false, error: "VAPID keys not configured" };
@@ -60,18 +81,18 @@ export async function sendPushNotification(
       }
     );
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Handle expired/invalid subscriptions
-    if (error.statusCode === 410 || error.statusCode === 404) {
+    if (isPushError(error) && (error.statusCode === 410 || error.statusCode === 404)) {
       return { success: false, error: "subscription_expired" };
     }
-    return { success: false, error: error.message || "Push failed" };
+    return { success: false, error: (isPushError(error) && error.message) || "Push failed" };
   }
 }
 
 export async function sendPushToUser(
   userId: string,
-  payload: { title: string; body: string; icon?: string; data?: any; actions?: any[]; tag?: string; vibrate?: number[]; badge?: string }
+  payload: PushPayload
 ): Promise<{ sent: number; failed: number; expired: number }> {
   const sb = (await import("@/lib/supabase")).getServiceClient();
 
@@ -121,8 +142,8 @@ export async function pushToProfile(
 ): Promise<void> {
   try {
     const sb = (await import("@/lib/supabase")).getServiceClient();
-    const { data } = await sb.from("muse_profiles").select("preferences").eq("id", userId).maybeSingle();
-    const prefs = (data as any)?.preferences?.notifications;
+    const { data }: { data: { preferences?: { notifications?: { push?: boolean } } } | null } = await sb.from("muse_profiles").select("preferences").eq("id", userId).maybeSingle();
+    const prefs = data?.preferences?.notifications;
     if (prefs && prefs.push === false) return;
   } catch { /* fail-open: send anyway if prefs check fails */ }
   await sendPushToUser(userId, { title, body, data: { url: ctaUrl } });
