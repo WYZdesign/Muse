@@ -10,16 +10,35 @@ import { isPaidTier } from "../components/subscriptionTiers";
 import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon, ChineseZodiacIcon } from "../components/traitIcons";
 import Lightbox from "../components/Lightbox";
 import { ZODIAC_FULL, MBTI_FULL, CHINESE_FULL, LIFE_PATH_FULL, STYLE_FULL, BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
+import type { CurrentUser, AuthFetchFn, TestScreen } from "../page-models";
+import type { OnboardingData } from "../hooks/useAuthOnboardingState";
+import type { Prompt, Response as PromptResponse } from "../components/PromptBankModal";
+import type { ProfileBadge } from "../page-helpers";
 
 const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
+
+// Referral "status" action response (same shape ReferralPanel reads). The
+// referral-rewards table only tracks free_month/credit grants, so there is
+// no paid-vs-pending status server-side.
+type ReferralRewardRow = { reward_type?: string; amount_cents?: number };
+type ReferralStatusData = {
+  code?: string;
+  referralUrl?: string;
+  totalReferrals?: number;
+  signedUp?: number;
+  subscribed?: number;
+  freeMonthsEarned?: number;
+  referrals?: number;
+  rewards?: ReferralRewardRow[];
+};
 
 export interface ProfileScreenProps {
   screen: Screen;
   showScreen: (s: Screen) => void;
   goBack?: () => void;
-  currentUser: any;
-  obData: any;
-  setObData: React.Dispatch<React.SetStateAction<any>>;
+  currentUser: CurrentUser;
+  obData: OnboardingData;
+  setObData: React.Dispatch<React.SetStateAction<OnboardingData>>;
   isUnlimited: boolean;
   showUnlimitedBadge: boolean;
   setShowUnlimitedBadge: (v: boolean) => void;
@@ -35,8 +54,8 @@ export interface ProfileScreenProps {
   setEditNsfw: (v: boolean) => void;
   setEditMediaKit?: (v: string) => void;
   showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
-  promptResponses: any[];
-  promptBankData: any[];
+  promptResponses: PromptResponse[];
+  promptBankData: Prompt[];
   setShowPromptBank: (v: boolean) => void;
   matches: Match[];
   obSelects?: string[];
@@ -48,7 +67,7 @@ export interface ProfileScreenProps {
   userTier?: string;
   portfolioTab?: "all" | "portrait" | "landscape" | "sets";
   setPortfolioTab?: (t: "all" | "portrait" | "landscape" | "sets") => void;
-  setSelectedPortfolio?: (p: any) => void;
+  setSelectedPortfolio?: (p: unknown) => void;
   // Portfolio grid photos were wired to setSelectedPortfolio, but that state
   // was never read anywhere — tapping a photo silently did nothing. Reusing
   // the same lifted lightbox state DiscoverScreen already uses (page.tsx)
@@ -57,18 +76,18 @@ export interface ProfileScreenProps {
   lightboxIdx?: number;
   setLightboxPhotos?: (p: string[]) => void;
   setLightboxIdx?: (i: number | ((p: number) => number)) => void;
-  activityFeed?: any[];
+  activityFeed?: { id: number; type: string; from: string; avatar: string; text: string; time: string; read: boolean }[];
   setShowShareProfile?: (v: boolean) => void;
   setScreen?: (s: Screen) => void;
-  setObTestKey?: (k: any) => void;
-  setTestScreen?: (s: any) => void;
+  setObTestKey?: (k: string) => void;
+  setTestScreen?: (s: TestScreen) => void;
   setObStep?: (s: number) => void;
   setObTestStep?: (s: number) => void;
-  setChatTarget?: (m: any) => void;
+  setChatTarget?: (m: Match) => void;
   unreadNotificationCount?: number;
-  checkProfileBadges?: (stats: any, createdAt: any) => any[];
+  checkProfileBadges?: (stats: CurrentUser["stats"], createdAt: number) => ProfileBadge[];
   getReferralTier?: (count: number) => { tier: string; perks: string; discount?: number; nextThreshold?: number | null };
-  apiFetch?: (url: string, opts?: any) => Promise<any>;
+  apiFetch?: AuthFetchFn;
   doLogout?: () => void;
   setShowQuests?: (v: boolean) => void;
   loginStreak?: number;
@@ -127,14 +146,14 @@ export const ProfileScreen = memo(function ProfileScreen({
   setChatTarget = () => {},
   checkProfileBadges = () => [],
   getReferralTier = () => ({ tier: "", perks: "" }),
-  apiFetch = async () => ({}),
+  apiFetch = async () => ({} as unknown as Response),
   doLogout = () => {},
   setShowQuests = () => {},
   loginStreak = 0,
   weeklyLogins = [false,false,false,false,false,false,false],
   questClaimables = 0,
 }: ProfileScreenProps) {
-  const [referralData, setReferralData] = useState<any>(null);
+  const [referralData, setReferralData] = useState<ReferralStatusData | null>(null);
   const [referralStats, setReferralStats] = useState<{totalEarned: number; paid: number; pending: number; purchases: number; signups: number} | null>(null);
   const [loadingReferral, setLoadingReferral] = useState(true);
   // Audit fix (Torreé batch Part B item 1): the Creative Type / Looking For /
@@ -163,12 +182,12 @@ export const ProfileScreen = memo(function ProfileScreen({
         // no paid-vs-pending status, so those two stay at their previous 0
         // default rather than inventing numbers).
         const res = await apiFetch("/api/muse/referral", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "status" }) });
-        const data = await res.json();
+        const data: ReferralStatusData = await res.json();
         if (data.code) {
           setReferralData(data);
           const totalEarnedCents = (data.rewards || [])
-            .filter((r: any) => r.reward_type === "credit")
-            .reduce((sum: number, r: any) => sum + (r.amount_cents || 0), 0);
+            .filter((r) => r.reward_type === "credit")
+            .reduce((sum, r) => sum + (r.amount_cents || 0), 0);
           setReferralStats({
             totalEarned: totalEarnedCents / 100,
             paid: 0,
@@ -204,8 +223,8 @@ export const ProfileScreen = memo(function ProfileScreen({
   useEffect(() => {
     let cancelled = false;
     apiFetch("/api/muse?type=albums&profile_id=me")
-      .then((r: any) => r.json())
-      .then((d: any) => { if (!cancelled) setPortfolioAlbums(Array.isArray(d.albums) ? d.albums : []); })
+      .then((r) => r.json())
+      .then((d) => { if (!cancelled) setPortfolioAlbums(Array.isArray(d.albums) ? d.albums : []); })
       .catch(() => { if (!cancelled) setPortfolioAlbums([]); });
     return () => { cancelled = true; };
   }, [apiFetch]);
@@ -218,8 +237,8 @@ export const ProfileScreen = memo(function ProfileScreen({
     setLightboxIdx(0);
     try {
       const res = await apiFetch(`/api/muse?type=album-photos&album_id=${albumId}`);
-      const d = await res.json();
-      const urls = (Array.isArray(d.photos) ? d.photos : []).map((p: any) => p.img_url).filter(Boolean);
+      const d: { photos?: { img_url?: string }[] } = await res.json();
+      const urls = (Array.isArray(d.photos) ? d.photos : []).map((p) => p.img_url).filter(Boolean) as string[];
       if (urls.length) { setLightboxPhotos(urls); setLightboxIdx(0); }
     } catch { /* keep the cover-only fallback already set */ }
   };
@@ -316,7 +335,7 @@ export const ProfileScreen = memo(function ProfileScreen({
         </div>
         <div className="section">
           <div className="section-title">Creative Type</div>
-          <div className="tag-row">{obData.type ? <button className="tag-pill" onClick={() => setBadgeInfo({ name: obData.type, desc: "Your creative role/type on Musa — what you do and how others find you.", icon: "🎯", color: "#FFD700" })} style={{ cursor: "pointer" }}>{obData.type}</button> : <button className="tag-pill" onClick={() => setBadgeInfo({ name: "Set your type", desc: "Add your creative type to help people understand what you do and find you.", icon: "✏️", color: "#FFD700" })} style={{ cursor: "pointer" }}>Set your type</button>}</div>
+          <div className="tag-row">{obData.type ? <button className="tag-pill" onClick={() => setBadgeInfo({ name: obData.type as string, desc: "Your creative role/type on Musa — what you do and how others find you.", icon: "🎯", color: "#FFD700" })} style={{ cursor: "pointer" }}>{obData.type}</button> : <button className="tag-pill" onClick={() => setBadgeInfo({ name: "Set your type", desc: "Add your creative type to help people understand what you do and find you.", icon: "✏️", color: "#FFD700" })} style={{ cursor: "pointer" }}>Set your type</button>}</div>
         </div>
         <div className="section">
           <div className="section-title">Looking For</div>
@@ -329,9 +348,9 @@ export const ProfileScreen = memo(function ProfileScreen({
         <div className="section">
           <div className="section-title">Personality</div>
           <div className="tag-row">
-            {obData.zodiac && <button className="tag-pill" onClick={() => setBadgeInfo({ name: `${obData.zodiac} — ${ZODIAC_FULL[obData.zodiac]?.tag || ""}`, desc: ZODIAC_FULL[obData.zodiac]?.desc || "", icon: ZODIAC_GLYPH[obData.zodiac] || "✦", color: "#FF69B4" })} style={{ cursor: "pointer" }}>{ZODIAC_GLYPH[obData.zodiac] || "✦"} {obData.zodiac}</button>}
-            {obData.chinese && <button className="tag-pill" onClick={() => setBadgeInfo({ name: obData.chinese, desc: CHINESE_FULL[obData.chinese] || "", icon: <ChineseZodiacIcon animal={obData.chinese} size={20} />, color: "#FFA500" })} style={{ display: "inline-flex", alignItems: "center", gap: 5, cursor: "pointer" }}><ChineseZodiacIcon animal={obData.chinese} size={12} /> {obData.chinese}</button>}
-            {obData.mbti && <button className="tag-pill" onClick={() => setBadgeInfo({ name: `${obData.mbti} — ${MBTI_FULL[obData.mbti]?.tag || ""}`, desc: MBTI_FULL[obData.mbti]?.desc || "", icon: <MbtiIcon code={obData.mbti} size={20} />, color: "#7B68EE" })} style={{ display: "inline-flex", alignItems: "center", gap: 5, cursor: "pointer" }}><MbtiIcon code={obData.mbti} size={12} /> {obData.mbti}</button>}
+            {obData.zodiac && <button className="tag-pill" onClick={() => setBadgeInfo({ name: `${obData.zodiac} — ${ZODIAC_FULL[obData.zodiac as string]?.tag || ""}`, desc: ZODIAC_FULL[obData.zodiac as string]?.desc || "", icon: ZODIAC_GLYPH[obData.zodiac as string] || "✦", color: "#FF69B4" })} style={{ cursor: "pointer" }}>{ZODIAC_GLYPH[obData.zodiac] || "✦"} {obData.zodiac}</button>}
+            {obData.chinese && <button className="tag-pill" onClick={() => setBadgeInfo({ name: obData.chinese as string, desc: CHINESE_FULL[obData.chinese as string] || "", icon: <ChineseZodiacIcon animal={obData.chinese as string} size={20} />, color: "#FFA500" })} style={{ display: "inline-flex", alignItems: "center", gap: 5, cursor: "pointer" }}><ChineseZodiacIcon animal={obData.chinese} size={12} /> {obData.chinese}</button>}
+            {obData.mbti && <button className="tag-pill" onClick={() => setBadgeInfo({ name: `${obData.mbti} — ${MBTI_FULL[obData.mbti as string]?.tag || ""}`, desc: MBTI_FULL[obData.mbti as string]?.desc || "", icon: <MbtiIcon code={obData.mbti as string} size={20} />, color: "#7B68EE" })} style={{ display: "inline-flex", alignItems: "center", gap: 5, cursor: "pointer" }}><MbtiIcon code={obData.mbti} size={12} /> {obData.mbti}</button>}
             {obData.lifePath && <button className="tag-pill" onClick={() => setBadgeInfo({ name: `Life Path ${obData.lifePath}`, desc: LIFE_PATH_FULL[String(obData.lifePath)] || "", icon: <LifePathIcon n={Number(obData.lifePath)} size={20} />, color: "#20B2AA" })} style={{ display: "inline-flex", alignItems: "center", gap: 5, cursor: "pointer" }}><LifePathIcon n={Number(obData.lifePath)} size={12} /> Path {obData.lifePath}</button>}
             {!obData.zodiac && !obData.chinese && !obData.mbti && !obData.lifePath && <span className="tag-pill" style={{ opacity: 0.5 }}>Add personality traits</span>}
           </div>
@@ -424,7 +443,7 @@ export const ProfileScreen = memo(function ProfileScreen({
                     onClick={async () => { 
                       try { 
                         const res = await apiFetch("/api/muse/referral", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "generate" }) }); 
-                        const j = await res.json(); 
+                        const j: { code?: string } = await res.json(); 
                         if (j.code) { 
                           const link = getReferralUrl(j.code); 
                           try { 
@@ -536,11 +555,11 @@ export const ProfileScreen = memo(function ProfileScreen({
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
             {(() => {
-              const filtered = portfolioAlbums.filter((a: any) => {
+              const filtered = portfolioAlbums.filter((a) => {
                 if (portfolioTab === "all") return true;
                 return Array.isArray(a.tags) && a.tags.includes(portfolioTab);
               });
-              if (filtered.length > 0) return filtered.slice(0, 9).map((a: any) => {
+              if (filtered.length > 0) return filtered.slice(0, 9).map((a) => {
                 const openLightbox = () => openAlbumLightbox(a.id, a.cover_url);
                 return (
                 <button key={a.id} type="button" aria-label={`Open ${a.title}`} onClick={openLightbox} style={{ aspectRatio: "3/4", borderRadius: 12, overflow: "hidden", background: "var(--card-bg)", position: "relative", cursor: "pointer", display: "block", width: "100%", border: 0, padding: 0 }}>
@@ -589,7 +608,7 @@ export const ProfileScreen = memo(function ProfileScreen({
               const text = a.text || "interacted with your profile";
               const time = a.time || "";
               const typeIcon: Record<string, string> = { like: "✦", match: "✦", message: "💬", profile_view: "👁", booking: "📅", quest: "⚡", brief: "📋", community: "👥" };
-              const icon = typeIcon[(a as any).type] || "•";
+              const icon = typeIcon[a.type] || "•";
               return (
                 <div key={a.id} style={{ display: "flex", gap: 10, padding: "10px", background: "rgba(255,255,255,0.02)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.04)", alignItems: "center" }}>
                   <div style={{ position: "relative", flexShrink: 0 }}>
