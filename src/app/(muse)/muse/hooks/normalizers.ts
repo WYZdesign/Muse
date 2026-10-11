@@ -1,6 +1,164 @@
 "use client";
 
 import { viewerSide } from "@/lib/role";
+import type { ViewerSide } from "@/lib/role";
+import type { CommunityRule } from "../components/types";
+import type { DiscoveryProfile } from "../lib/discover-deck";
+
+// Raw API row shapes: the opaque JSON each endpoint returns (PostgREST rows,
+// joined authors, embedded counts). Every normalizer reads its input
+// defensively with `??` fallback chains and emits the flat render shape the
+// screens consume, so the input type only needs the fields it actually reads.
+type RawProfileInput = {
+  id?: string | number;
+  name?: string;
+  img?: string;
+  avatar?: string;
+  type?: string;
+  bio?: string;
+  loc?: string;
+  styles?: string[];
+  matchScore?: number;
+  score?: number;
+  nsfw?: boolean;
+  looking?: string[];
+  zodiac?: string;
+  chinese?: string;
+  mbti?: string;
+  lifePath?: number | string;
+  life_path?: number | string;
+  photos?: string[];
+  collabs?: number;
+  verified?: boolean;
+  rulesScore?: number;
+  cosineScore?: number;
+  showDistance?: boolean;
+  side?: ViewerSide;
+};
+
+// normalizeProfile's output: the Discover card/view-model shape (DiscoveryProfile)
+// plus the `side` it derives, so live-ranked profiles stay assignable where
+// page.tsx feeds them to buildFilteredProfiles.
+type NormalizedProfile = DiscoveryProfile & { side: ViewerSide };
+
+type RawCommunityInput = {
+  id: number;
+  name: string;
+  img: string;
+  members?: number | string;
+  member_count?: number | string;
+  desc?: string;
+  description?: string;
+  cat?: string;
+  category?: string;
+  nsfw?: boolean;
+  is_nsfw?: boolean;
+  created_by?: string;
+  created_at?: string;
+  rules?: CommunityRule[];
+};
+
+type RawEventInput = {
+  id: number;
+  title: string;
+  img: string;
+  date: string;
+  desc?: string;
+  description?: string;
+  loc?: string;
+  location?: string;
+  nsfw?: boolean;
+  is_nsfw?: boolean;
+};
+
+type RawForumPostInput = {
+  id?: string | number;
+  title?: string;
+  body?: string;
+  author?: string;
+  avatar?: string;
+  author_id?: { name?: string; avatar?: string } | null;
+  cat?: string;
+  category?: string;
+  comments?: { author: string; text: string }[];
+  time?: string;
+  created_at?: string;
+};
+
+type RawBriefInput = {
+  id?: string | number;
+  title?: string;
+  budget?: string;
+  tags?: string[];
+  desc?: string;
+  description?: string;
+  cat?: string;
+  category?: string;
+  author?: string;
+  authorImg?: string;
+  author_id?: { name?: string; avatar?: string; id?: string } | null;
+  muse_brief_applications?: { count?: number }[] | null;
+  applicantCount?: number;
+};
+
+// normalizeBrief's output: the shape CollabScreen's CollabBrief expects (author
+// join flattened, applicantCount unpacked, id keyed as number to match the
+// optimistic apply/save state, same convention as FeedPostRow).
+type NormalizedBrief = {
+  id: number;
+  title: string;
+  budget: string;
+  tags: string[];
+  desc: string;
+  cat: string;
+  author: string;
+  authorImg: string;
+  applicantCount: number;
+  author_id?: { id?: string } | null;
+};
+
+type RawSessionInput = {
+  id: number;
+  name?: string;
+  title?: string;
+  type: string;
+  img: string;
+  rate: string;
+  rating: number;
+  sessions?: number;
+  available: boolean;
+  description: string;
+  location: string;
+  skills: string[];
+  hostVerified?: boolean;
+  hostCompletedSessions?: number;
+};
+
+type RawFeedPostInput = {
+  id?: string | number;
+  author?: string;
+  avatar?: string;
+  author_id?: { id?: string | number; name?: string; avatar?: string; verified?: boolean; last_seen_at?: string } | null;
+  authorVerified?: boolean;
+  rid?: string | number;
+  type?: string;
+  text?: string;
+  img?: string;
+  media?: string[];
+  likes?: number;
+  comments?: number;
+  shares?: number;
+  views?: number;
+  liked?: boolean;
+  liked_by?: string[];
+  saved?: boolean;
+  reactions?: Record<string, number>;
+  time?: string;
+  createdAt?: number;
+  created_at?: string;
+  isBts?: boolean;
+  lastSeen?: string;
+};
 
 /**
  * Normalizes a Discover profile card. Two different endpoints feed the same
@@ -14,7 +172,7 @@ import { viewerSide } from "@/lib/role";
  * zodiac/mbti/life-path badges on every Discover card. Idempotent like the
  * other normalizers here so it's safe to call from both fetch sites.
  */
-export function normalizeProfile(p: any) {
+export function normalizeProfile(p: RawProfileInput) {
   return {
     ...p,
     id: p.id,
@@ -39,10 +197,10 @@ export function normalizeProfile(p: any) {
     cosineScore: p.cosineScore,
     showDistance: p.showDistance !== false,
     side: p.side || viewerSide(p.type),
-  };
+  } as NormalizedProfile;
 }
 
-export function normalizeCommunity(c: any) {
+export function normalizeCommunity(c: RawCommunityInput) {
   return {
     ...c,
     members: c.members ?? c.member_count ?? 0,
@@ -52,7 +210,7 @@ export function normalizeCommunity(c: any) {
   };
 }
 
-export function normalizeEvent(e: any) {
+export function normalizeEvent(e: RawEventInput) {
   return {
     ...e,
     desc: e.desc ?? e.description ?? "",
@@ -61,7 +219,7 @@ export function normalizeEvent(e: any) {
   };
 }
 
-export function normalizeForumPost(p: any) {
+export function normalizeForumPost(p: RawForumPostInput) {
   return {
     ...p,
     author: p.author ?? p.author_id?.name ?? "Creative",
@@ -72,7 +230,7 @@ export function normalizeForumPost(p: any) {
   };
 }
 
-export function normalizeBrief(b: any) {
+export function normalizeBrief(b: RawBriefInput) {
   // muse_brief_applications(count) comes back as [{ count: N }] (PostgREST
   // embedded-count shape) or already-normalized as a plain number if this
   // row has been through normalizeBrief before (idempotent, like the other
@@ -88,10 +246,10 @@ export function normalizeBrief(b: any) {
     author: b.author ?? b.author_id?.name ?? "Creative",
     authorImg: b.authorImg ?? b.author_id?.avatar ?? "",
     applicantCount,
-  };
+  } as NormalizedBrief;
 }
 
-export function normalizeSession(s: any) {
+export function normalizeSession(s: RawSessionInput) {
   return {
     ...s,
     name: s.name ?? s.title ?? "Creative Pro",
@@ -117,7 +275,7 @@ export function normalizeSession(s: any) {
  * previously caused blank author names/avatars and undeduped double posts
  * whenever bootstrapData's fetch won the race.
  */
-export function normalizeFeedPost(p: any, profileId?: string | null) {
+export function normalizeFeedPost(p: RawFeedPostInput, profileId?: string | null) {
   const author = p.author_id || {};
   const createdAtMs = p.createdAt ?? (p.created_at ? new Date(p.created_at).getTime() : Date.now());
   return {

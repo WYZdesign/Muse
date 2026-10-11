@@ -1,6 +1,8 @@
 "use client";
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { Profile } from "../components/types";
+import type { BadgeInfo } from "../components/badgeInfo";
+import type { AuthUser, ViewProfile, ProfileReview, Professional, PortfolioSelection, PortfolioStats } from "../page-models";
 import { safeGetItem, safeSetItem } from "../lib/safe-storage";
 import { apiFetch } from "../lib/api";
 
@@ -102,12 +104,12 @@ export function useUserState() {
       status: "",
     }) as Profile
   );
-  const [authUser, setAuthUser] = useState<{ id: string; email: string; profile?: { id: string; [key: string]: unknown } } | null>(null);
+  const [authUser, setAuthUser] = useState<AuthUser>(null);
   const [excludedPortfolios, setExcludedPortfolios] = useState<string[]>([]);
   const [portfolioAccess, setPortfolioAccess] = useState<{ [key: string]: "public" | "private" | "invite" }>({});
-  const [selectedPortfolio, setSelectedPortfolio] = useState<any>(null);
+  const [selectedPortfolio, setSelectedPortfolio] = useState<PortfolioSelection | null>(null);
   const [showPortfolioModal, setShowPortfolioModal] = useState(false);
-  const [portfolioStats, setPortfolioStats] = useState<any>({});
+  const [portfolioStats, setPortfolioStats] = useState<PortfolioStats>({});
   const [cardAlbums, setCardAlbums] = useState<{ id: string; title: string; cover_url: string; access_level: string; photo_count: number }[]>([]);
   const [cardAlbumIdx, setCardAlbumIdx] = useState(0);
   const [cardAlbumPhotos, setCardAlbumPhotos] = useState<string[]>([]);
@@ -128,13 +130,13 @@ export function useUserState() {
   const [notifPrefs, setNotifPrefs] = useState<Record<string, boolean>>({ match: true, message: true, brief: true, like: true });
   const [pushEnabled, setPushEnabled] = useState<boolean>(false);
   const [userTier, setUserTier] = useState<string>("free");
-  const [liveProfessionals, setLiveProfessionals] = useState<any[] | null>(null);
-  const [viewProfile, setViewProfileRaw] = useState<any>(null);
-  const [badgeInfo, setBadgeInfo] = useState<any>(null);
+  const [liveProfessionals, setLiveProfessionals] = useState<Professional[] | null>(null);
+  const [viewProfile, setViewProfileRaw] = useState<ViewProfile | null>(null);
+  const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
   const [viewProfilePhotoIdx, setViewProfilePhotoIdx] = useState(0);
-  const [viewProfileReviews, setViewProfileReviews] = useState<any[]>([]);
+  const [viewProfileReviews, setViewProfileReviews] = useState<ProfileReview[]>([]);
   const [revealedNsfw, setRevealedNsfw] = useState<Set<string>>(new Set());
-  const [publicProfileUser, setPublicProfileUser] = useState<any>(null);
+  const [publicProfileUser, setPublicProfileUser] = useState<ViewProfile | null>(null);
   const [hamburgerScreen, setHamburgerScreen] = useState<string>("");
   const [blockTarget, setBlockTarget] = useState<{ id: string; name: string } | null>(null);
   const [hydrated, setHydrated] = useState(false);
@@ -144,7 +146,7 @@ export function useUserState() {
   const [syncingSdkSessionRef, setSyncingSdkSessionRef] = useState(false);
 
   const viewedSessionRef = useRef<Set<string>>(new Set());
-  const setViewProfile = useCallback((p: any) => {
+  const setViewProfile = useCallback((p: ViewProfile | null) => {
     setViewProfileRaw(p);
     try {
       const id = String(p?.id ?? "");
@@ -197,7 +199,7 @@ export function useUserState() {
     pushEnabled, setPushEnabled,
     userTier, setUserTier,
     liveProfessionals, setLiveProfessionals,
-    viewProfile, setViewProfile,
+    viewProfile: viewProfile as ViewProfile, setViewProfile,
     badgeInfo, setBadgeInfo,
     viewProfilePhotoIdx, setViewProfilePhotoIdx,
     viewProfileReviews, setViewProfileReviews,

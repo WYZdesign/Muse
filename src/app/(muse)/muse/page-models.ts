@@ -252,3 +252,19 @@ export type FeedStory = {
 // raw id when a profile has not resolved.
 export type MuseTheme = "lasunset" | "deepspace" | "nebula" | "deepsea" | "cinder" | "boreal" | "sunrise" | "daylight" | "sky" | "rose" | "meadow" | "frost";
 export type BlockedProfileRow = { id?: string; name: string; avatar?: string };
+
+// Selected-portfolio + per-portfolio stats slots owned by the user/profile
+// state hooks. The portfolio payload is opaque API data whose fields vary by
+// endpoint, so the record stays open; stats is a string-keyed map of opaque
+// per-portfolio values.
+export type PortfolioSelection = {
+  id?: string | number;
+  title?: string;
+  access_level?: string;
+  cover_url?: string;
+  photo_count?: number;
+  photos?: string[];
+  [key: string]: unknown;
+};
+
+export type PortfolioStats = { [key: string]: unknown };

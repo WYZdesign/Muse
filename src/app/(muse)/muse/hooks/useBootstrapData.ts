@@ -123,7 +123,7 @@ export function useBootstrapData({
         matchScore: p.matchScore, rulesScore: p.rulesScore, cosineScore: p.cosineScore,
         showDistance: p.showDistance !== false, age: p.age, showAge: p.showAge !== false,
         side: p.side || viewerSide(p.type),
-      })));
+      })) as unknown as NonNullable<ReturnType<typeof useDiscoveryData>["liveProfiles"]>);
       if (briefs?.briefs?.length) setLiveBriefs(briefs.briefs.map(normalizeBrief));
       if (feed?.posts?.length) {
         // Bug fix: this used to call setLiveFeed(feed.posts) with the raw,
