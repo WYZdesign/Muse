@@ -11,6 +11,7 @@ import ScreenSkeleton from "@/components/ScreenSkeleton";
 import Image from "next/image";
 import { STRINGS } from "@/lib/strings";
 import type { Screen } from "../components/types";
+import type { CurrentUser, ViewProfile, AuthFetchFn, FeedPostRow, FeedReply, FeedStory } from "../page-models";
 import { BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 
@@ -31,34 +32,34 @@ export interface FeedScreenProps {
   setNewPostTitle: (v: string) => void;
   newPostBody: string;
   setNewPostBody: (v: string) => void;
-  feedPosts: any[];
-  setFeedPosts: React.Dispatch<React.SetStateAction<any[]>>;
-  liveFeed?: any[] | null;
-  setLiveFeed?: React.Dispatch<React.SetStateAction<any[] | null>>;
-  currentUser: any;
-  apiFetch: (url: string, opts?: any) => Promise<any>;
-  authFetch: (url: string, opts?: any) => Promise<any>;
+  feedPosts: FeedPostRow[];
+  setFeedPosts: React.Dispatch<React.SetStateAction<FeedPostRow[]>>;
+  liveFeed?: FeedPostRow[] | null;
+  setLiveFeed?: React.Dispatch<React.SetStateAction<FeedPostRow[] | null>>;
+  currentUser: CurrentUser;
+  apiFetch: AuthFetchFn;
+  authFetch: AuthFetchFn;
   showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
   handleImgError: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
-  stories: any[];
-  setStories: React.Dispatch<React.SetStateAction<any[]>>;
+  stories: FeedStory[];
+  setStories: React.Dispatch<React.SetStateAction<FeedStory[]>>;
   uploadImage: (file: File, context: string) => Promise<string | null>;
   uploadMedia?: (file: File, folder: string, kind: "voice" | "video") => Promise<string | null>;
-  uid: () => any;
+  uid: () => number;
   bootstrapped?: boolean;
-  feedPostsStatic?: any[];
-  setFeedPostsStatic?: React.Dispatch<React.SetStateAction<any[]>>;
+  feedPostsStatic?: FeedPostRow[];
+  setFeedPostsStatic?: React.Dispatch<React.SetStateAction<FeedPostRow[]>>;
   demo?: boolean;
-  replyingTo?: any;
-  setReplyingTo?: (id: any) => void;
+  replyingTo?: number | null;
+  setReplyingTo?: (id: number) => void;
   commentText?: string;
   setCommentText?: (t: string) => void;
   openHamburger?: () => void;
   unreadNotificationCount?: number;
   setShowReport?: (v: boolean) => void;
-  setReportTarget?: (t: any) => void;
-  setShareTarget?: (t: any) => void;
-  setViewProfile?: (p: any) => void;
+  setReportTarget?: (t: { id: number | string; type: string; name: string }) => void;
+  setShareTarget?: (t: { id: number | string; text: string; img: string; author: string }) => void;
+  setViewProfile?: (p: ViewProfile | null) => void;
   onStatusSaved?: (status: string) => void;
 }
 
@@ -108,7 +109,7 @@ export const FeedScreen = memo(function FeedScreen({
   onStatusSaved = () => {},
   authFetch,
 }: FeedScreenProps) {
-  const [postReplies, setPostReplies] = useState<Record<number, any[]>>({});
+  const [postReplies, setPostReplies] = useState<Record<number, FeedReply[]>>({});
   const [postCommentTexts, setPostCommentTexts] = useState<Record<number, string>>({});
   const [detailPostId, setDetailPostId] = useState<number | null>(null);
   const detailPostTrap = useFocusTrap(detailPostId !== null, () => setDetailPostId(null));
@@ -132,14 +133,14 @@ export const FeedScreen = memo(function FeedScreen({
   // post doesn't also render as its own separate DB copy once liveFeed has
   // caught up (e.g. after a reload).
   const hasLiveFeed = !!(liveFeed && liveFeed.length);
-  const baseFeed = hasLiveFeed ? (liveFeed as any[]) : feedPostsStatic;
-  const visibleLocalPosts = hasLiveFeed
-    ? feedPosts.filter(lp => !(liveFeed as any[]).some(rp => rp.author === lp.author && (rp.text || "") === (lp.text || "")))
+  const baseFeed: FeedPostRow[] = hasLiveFeed ? (liveFeed ?? []) : feedPostsStatic;
+  const visibleLocalPosts: FeedPostRow[] = hasLiveFeed
+    ? feedPosts.filter(lp => !(liveFeed ?? []).some(rp => rp.author === lp.author && (rp.text || "") === (lp.text || "")))
     : feedPosts;
   // A single numeric sort key across demo posts (tiny hardcoded ids),
   // locally-created posts (uid()'s epoch-scale ids), and real DB posts
   // (UUID ids, not sortable by subtraction — use their createdAt instead).
-  const sortKey = (p: any) => typeof p.createdAt === "number" ? p.createdAt : p.id;
+  const sortKey = (p: FeedPostRow): number => typeof p.createdAt === "number" ? p.createdAt : p.id;
   const allFeedPosts = [...baseFeed, ...visibleLocalPosts].sort((a, b) => sortKey(b) - sortKey(a));
   const filteredFeedPosts = allFeedPosts.filter((post) => {
     if (feedFilter === "all") return true;
@@ -152,8 +153,8 @@ export const FeedScreen = memo(function FeedScreen({
   // actually holds the post — `liveFeed` for a real DB post, `feedPosts`
   // for a locally-created one (feedPostsStatic's demo posts are handled by
   // their own separate isStatic branch at each call site).
-  const isLivePost = (id: any) => hasLiveFeed && (liveFeed as any[]).some(p => p.id === id);
-  const updateFeedPostState = (postId: any, updater: (p: any) => any) => {
+  const isLivePost = (id: number | string) => hasLiveFeed && (liveFeed ?? []).some(p => p.id === id);
+  const updateFeedPostState = (postId: number | string, updater: (p: FeedPostRow) => FeedPostRow) => {
     if (isLivePost(postId)) {
       setLiveFeed?.(prev => (prev || []).map(p => p.id === postId ? updater(p) : p));
     } else {
@@ -179,9 +180,9 @@ export const FeedScreen = memo(function FeedScreen({
     return () => cancelAnimationFrame(raf);
   }, [screen]);
 
-  const openAuthorProfile = (p: { id?: any; name?: string; avatar?: string }, e: React.MouseEvent) => {
+  const openAuthorProfile = (p: { id?: number | string; name?: string; avatar?: string }, e: React.MouseEvent) => {
     e.stopPropagation();
-    setViewProfile({ id: p.id ?? p.name, name: p.name, img: p.avatar, type: "Creative" });
+    setViewProfile({ id: p.id ?? p.name, name: p.name, img: p.avatar, type: "Creative" } as ViewProfile);
   };
 
   // ── Camera capture (photo + video) → posts to Feed AND Moments ──
@@ -230,8 +231,9 @@ export const FeedScreen = memo(function FeedScreen({
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1080 } }, audio: mode === "video" });
       streamRef.current = stream;
       if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.play().catch(() => {}); }
-    } catch (err: any) {
-      setCamError(err?.name === "NotAllowedError" ? "Camera access denied — allow it in your browser settings" : err?.name === "NotFoundError" ? "No camera found on this device" : "Couldn't start the camera");
+    } catch (err) {
+      const errName = (err as { name?: string } | null)?.name;
+      setCamError(errName === "NotAllowedError" ? "Camera access denied — allow it in your browser settings" : errName === "NotFoundError" ? "No camera found on this device" : "Couldn't start the camera");
     }
   };
 
@@ -289,7 +291,7 @@ export const FeedScreen = memo(function FeedScreen({
     try {
       const rec = new MediaRecorder(streamRef.current, { mimeType: mime });
       chunksRef.current = [];
-      rec.ondataavailable = e => { if ((e as any).data?.size) chunksRef.current.push((e as any).data); };
+      rec.ondataavailable = e => { if (e.data.size) chunksRef.current.push(e.data); };
       rec.onstop = () => {
         setRecording(false);
         const blob = new Blob(chunksRef.current, { type: "video/webm" });
@@ -311,8 +313,8 @@ export const FeedScreen = memo(function FeedScreen({
     setDetailPostId(id);
     if (!postReplies[id]) {
       apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "forum", type: "get-replies", postId: id }) })
-        .then((r: any) => r.json?.())
-        .then((data: any) => { if (data?.replies?.length) setPostReplies(prev => ({ ...prev, [id]: data.replies })); })
+        .then((r) => r.json?.())
+        .then((data: { replies?: FeedReply[] }) => { if (data?.replies?.length) setPostReplies(prev => ({ ...prev, [id]: data.replies ?? [] })); })
         .catch(() => {});
     }
   };
@@ -321,7 +323,7 @@ export const FeedScreen = memo(function FeedScreen({
   // points at the underlying muse_moments row. Comments on it must target that
   // moment id so they land on the BTS moment (the `feed-comment` action handles
   // both feed-post ids and moment ids), not the ephemeral feed-post id.
-  const commentTargetId = (p: any) => p?.momentId ?? p?.id;
+  const commentTargetId = (p: FeedPostRow) => p?.momentId ?? p?.id;
 
   return (
     <div className={"screen-el" + (screen === "connections" ? " active" : "")} data-screen="connections">
@@ -361,7 +363,7 @@ export const FeedScreen = memo(function FeedScreen({
           ] as const).map(f => {
             const active = feedFilter === f.k;
             return (
-              <button type="button" key={f.k} role="tab" aria-selected={active} onClick={() => setFeedFilter(f.k as any)}
+              <button type="button" key={f.k} role="tab" aria-selected={active} onClick={() => setFeedFilter(f.k)}
                 style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: active ? "var(--text)" : "#90CAF9", background: active ? "rgba(144,202,249,0.3)" : "var(--card-bg)", border: active ? "1.5px solid rgba(144,202,249,0.4)" : "1px solid var(--border-subtle)", borderRadius: 99, padding: "10px 14px", minHeight: 44, display: "flex", alignItems: "center", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap", gap: 4 }}>
                 {f.l}
               </button>
@@ -616,18 +618,18 @@ export const FeedScreen = memo(function FeedScreen({
                     openPostDetail(post.id);
                     if (replyingTo !== post.id && !postReplies[post.id]) {
                       apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "forum", type: "get-replies", postId: post.id }) })
-                        .then((r: any) => r.json?.()).then((data: any) => {
-                          if (data?.replies?.length) setPostReplies(prev => ({ ...prev, [post.id]: data.replies }));
+                        .then((r) => r.json?.()).then((data: { replies?: FeedReply[] }) => {
+                          if (data?.replies?.length) setPostReplies(prev => ({ ...prev, [post.id]: data.replies ?? [] }));
                         }).catch(() => {});
                     }
                   }}>💬 {post.comments}</button>
-                  <button className="feed-action-btn" style={{ flex: 1, minWidth: 0, height: 44, background: "transparent", border: "none", color: "var(--text2)", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => setShareTarget(post)}>Share</button>
+                  <button className="feed-action-btn" style={{ flex: 1, minWidth: 0, height: 44, background: "transparent", border: "none", color: "var(--text2)", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => setShareTarget(post as { id: number | string; text: string; img: string; author: string })}>Share</button>
                   <button className="feed-action-btn" title="Save for later" style={{ flex: 1, minWidth: 0, height: 44, background: "transparent", border: "none", color: post.saved ? "#FFD700" : "var(--text2)", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => { const newSaved = !post.saved; if (feedPostsStatic.some(p => p.id === post.id)) { setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? ({ ...p, saved: newSaved }) : p)); } else { updateFeedPostState(post.id, p => ({ ...p, saved: newSaved })); } showToast(newSaved ? "Saved ✓" : "Removed from saves"); }}>{post.saved ? "Saved" : "Save"}</button>
                   <button type="button" className="feed-action-btn" aria-label={`Report ${post.author}'s post`} title="Report post" style={{ flex: 1, minWidth: 0, height: 44, background: "transparent", border: "none", color: "#ff6b6b", cursor: "pointer", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "0 4px", transition: "all .2s ease", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={(e) => { e.stopPropagation(); setShowReport(true); setReportTarget({ id: post.id, type: "feed_post", name: post.author }); }}><FiFlag size={13} /> Report</button>
                 </div>
                 {replyingTo === post.id && (
                   <div style={{ borderTop: "1px solid var(--border-subtle)" }}>
-                    {(postReplies[post.id] || []).map((reply: any, i: number) => (
+                    {(postReplies[post.id] || []).map((reply, i) => (
                       <div key={i} style={{ display: "flex", gap: 10, padding: "10px 16px", borderBottom: "1px solid var(--border-subtle)" }}>
                         <button tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setViewProfile({ id: reply.author, name: reply.author, img: reply.avatar, type: "Creative" }); } }} onClick={(e) => { e.stopPropagation(); openAuthorProfile({ id: reply.author, name: reply.author, avatar: reply.avatar }, e); }} style={{ flexShrink: 0, cursor: "pointer", padding: 0, border: "none", background: "none" }}>
                           <Image loading="lazy" src={reply.avatar || currentUser.avatar} alt={`${reply.author || "User"}'s avatar`} width={36} height={36} className="feed-avatar" style={{ flexShrink: 0, cursor: "pointer", borderRadius: "50%", objectFit: "cover" }} onError={handleImgError} />
@@ -648,12 +650,12 @@ export const FeedScreen = memo(function FeedScreen({
                             disabled={demo}
                             value={postCommentTexts[post.id] || ""}
                             onChange={e => setPostCommentTexts(prev => ({ ...prev, [post.id]: e.target.value }))}
-                            onKeyDown={async e => { if (e.key === "Enter" && (postCommentTexts[post.id] || "").trim()) { const txt = (postCommentTexts[post.id] || "").trim(); const isStatic = feedPostsStatic.some(p => p.id === post.id); if (isStatic) setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? { ...p, comments: p.comments + 1 } : p)); else updateFeedPostState(post.id, p => ({ ...p, comments: p.comments + 1 })); setPostReplies(prev => ({ ...prev, [post.id]: [...(prev[post.id] || []), { author: currentUser.name, avatar: currentUser.avatar, text: txt, time: "Just now" }] })); setPostCommentTexts(prev => ({ ...prev, [post.id]: "" })); if (isStatic) { showToast("Reply posted!"); return; } try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "feed-comment", postId: commentTargetId(post), text: txt }) }); if (!r.ok) throw new Error("failed"); showToast("Reply posted!"); } catch { updateFeedPostState(post.id, p => ({ ...p, comments: Math.max(0, p.comments - 1) })); setPostReplies(prev => ({ ...prev, [post.id]: (prev[post.id] || []).filter((r: any) => !(r.text === txt && r.author === currentUser.name)) })); showToast("Failed to post reply"); } } }}
+                            onKeyDown={async e => { if (e.key === "Enter" && (postCommentTexts[post.id] || "").trim()) { const txt = (postCommentTexts[post.id] || "").trim(); const isStatic = feedPostsStatic.some(p => p.id === post.id); if (isStatic) setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? { ...p, comments: p.comments + 1 } : p)); else updateFeedPostState(post.id, p => ({ ...p, comments: p.comments + 1 })); setPostReplies(prev => ({ ...prev, [post.id]: [...(prev[post.id] || []), { author: currentUser.name, avatar: currentUser.avatar, text: txt, time: "Just now" }] })); setPostCommentTexts(prev => ({ ...prev, [post.id]: "" })); if (isStatic) { showToast("Reply posted!"); return; } try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "feed-comment", postId: commentTargetId(post), text: txt }) }); if (!r.ok) throw new Error("failed"); showToast("Reply posted!"); } catch { updateFeedPostState(post.id, p => ({ ...p, comments: Math.max(0, p.comments - 1) })); setPostReplies(prev => ({ ...prev, [post.id]: (prev[post.id] || []).filter((r) => !(r.text === txt && r.author === currentUser.name)) })); showToast("Failed to post reply"); } } }}
                             style={{ width: "100%", margin: 0, border: "1px solid var(--border-subtle)", background: "rgba(255,255,255,0.06)", borderRadius: 99, padding: "10px 42px 10px 14px", fontSize: 13, color: "var(--text)" }}
                           />
                           <button
                             disabled={demo}
-                            onClick={async () => { if ((postCommentTexts[post.id] || "").trim()) { const txt = (postCommentTexts[post.id] || "").trim(); const isStatic = feedPostsStatic.some(p => p.id === post.id); if (isStatic) setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? { ...p, comments: p.comments + 1 } : p)); else updateFeedPostState(post.id, p => ({ ...p, comments: p.comments + 1 })); setPostReplies(prev => ({ ...prev, [post.id]: [...(prev[post.id] || []), { author: currentUser.name, avatar: currentUser.avatar, text: txt, time: "Just now" }] })); setPostCommentTexts(prev => ({ ...prev, [post.id]: "" })); if (isStatic) { showToast("Reply posted!"); return; } try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "feed-comment", postId: commentTargetId(post), text: txt }) }); if (!r.ok) throw new Error("failed"); showToast("Reply posted!"); } catch { updateFeedPostState(post.id, p => ({ ...p, comments: Math.max(0, p.comments - 1) })); setPostReplies(prev => ({ ...prev, [post.id]: (prev[post.id] || []).filter((r: any) => !(r.text === txt && r.author === currentUser.name)) })); showToast("Failed to post reply"); } } }}
+                            onClick={async () => { if ((postCommentTexts[post.id] || "").trim()) { const txt = (postCommentTexts[post.id] || "").trim(); const isStatic = feedPostsStatic.some(p => p.id === post.id); if (isStatic) setFeedPostsStatic(prev => prev.map(p => p.id === post.id ? { ...p, comments: p.comments + 1 } : p)); else updateFeedPostState(post.id, p => ({ ...p, comments: p.comments + 1 })); setPostReplies(prev => ({ ...prev, [post.id]: [...(prev[post.id] || []), { author: currentUser.name, avatar: currentUser.avatar, text: txt, time: "Just now" }] })); setPostCommentTexts(prev => ({ ...prev, [post.id]: "" })); if (isStatic) { showToast("Reply posted!"); return; } try { const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "feed-comment", postId: commentTargetId(post), text: txt }) }); if (!r.ok) throw new Error("failed"); showToast("Reply posted!"); } catch { updateFeedPostState(post.id, p => ({ ...p, comments: Math.max(0, p.comments - 1) })); setPostReplies(prev => ({ ...prev, [post.id]: (prev[post.id] || []).filter((r) => !(r.text === txt && r.author === currentUser.name)) })); showToast("Failed to post reply"); } } }}
                             style={{ position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)", width: 44, height: 44, borderRadius: "50%", border: "none", background: (postCommentTexts[post.id] || "").trim() ? "linear-gradient(135deg,var(--coral),var(--pink))" : "rgba(255,255,255,0.06)", color: (postCommentTexts[post.id] || "").trim() ? "#fff" : "rgba(255,255,255,0.25)", cursor: (postCommentTexts[post.id] || "").trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", transition: "all .2s" }}
                           ><FiSend size={14} /></button>
                       </div>
@@ -733,7 +735,7 @@ export const FeedScreen = memo(function FeedScreen({
                   {"Be the first to reply."}
                 </div>
               )}
-              {replies.map((reply: any, i: number) => (
+              {replies.map((reply, i) => (
                 <div key={i} style={{ display: "flex", gap: 10, padding: "10px 0", borderBottom: "1px solid var(--border-subtle)" }}>
                    <button tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setViewProfile({ id: reply.author, name: reply.author, img: reply.avatar, type: "Creative" }); } }} onClick={(e) => { e.stopPropagation(); openAuthorProfile({ id: reply.author, name: reply.author, avatar: reply.avatar }, e); }} style={{ flexShrink: 0, cursor: "pointer", padding: 0, border: "none", background: "none" }}>
                      <Image loading="lazy" src={reply.avatar || currentUser.avatar} alt={`${reply.author || "User"}'s avatar`} width={30} height={30} className="feed-avatar" style={{ flexShrink: 0, borderRadius: "50%", objectFit: "cover" }} onError={handleImgError} />

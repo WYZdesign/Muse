@@ -190,3 +190,58 @@ export type ChatLaunchTarget = {
   avatar?: string;
   messages?: Match["messages"];
 };
+
+// Feed (FeedScreen) view models. A feed card renders from three sources that all
+// share one shape: live DB rows (normalizeFeedPost), posts created this session
+// (numeric uid ids), and the static demo fallback. The id is typed number to
+// match the feedPosts/feedPostsStatic state owned by page.tsx; live DB rows carry
+// UUID strings at runtime but are only ever keyed, compared, or passed opaquely.
+export type FeedPostRow = {
+  id: number;
+  author: string;
+  avatar: string;
+  type: string;
+  text: string;
+  likes: number;
+  comments: number;
+  shares: number;
+  time: string;
+  liked: boolean;
+  saved: boolean;
+  img?: string;
+  media?: string[];
+  reactions?: Record<string, number>;
+  views?: number;
+  isBts?: boolean;
+  kind?: "voice" | "video";
+  mediaUrl?: string;
+  media_url?: string;
+  durationMs?: number;
+  transcript?: string;
+  momentId?: number | string;
+  online?: boolean;
+  lastSeen?: string;
+  createdAt?: number;
+  authorVerified?: boolean;
+  rid?: number | string;
+};
+
+export type FeedReply = {
+  author: string;
+  avatar?: string;
+  text?: string;
+  time?: string;
+};
+
+// A behind-the-scenes "moment" story row (FeedScreen writes these from captures;
+// the live moments fetch maps into the same slot).
+export type FeedStory = {
+  id: number | string;
+  author: string;
+  avatar: string;
+  type: string;
+  text: string;
+  img?: string;
+  media?: string[];
+  time: string;
+};
