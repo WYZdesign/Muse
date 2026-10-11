@@ -10,6 +10,7 @@ import { BADGE_COLORS } from "../components/badgeColors";
 import { BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
 import type { Screen, CommunityRule, CommunityMember } from "../components/types";
 import { COMMUNITIES, EVENTS, PROFILES } from "../components/types";
+import type { CurrentUser, AuthFetchFn } from "../page-models";
 import { getCommunityShareUrl, getEventShareUrl } from "@/lib/urls";
 import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
 import { useFocusTrap } from "../hooks/useFocusTrap";
@@ -21,18 +22,76 @@ import { CommunityRulesEditor } from "../components/CommunityRulesEditor";
 // to fetch — the member-list section is skipped (not faked) for demo groups.
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// Community (CommunityScreen) view models. Live DB rows (normalizeCommunity /
+// normalizeEvent), the static COMMUNITIES/EVENTS demo fallback, and the detail
+// modal all read through these shapes. Like FeedPostRow, id is typed number to
+// match rsvpdEvents (number[]) and the static datasets; live rows carry UUID
+// strings at runtime but are only ever keyed, compared, stringified, or passed
+// opaquely. members stays number | string because the demo dataset stores
+// display strings ("12.4k") while live rows carry numeric counts.
+export type CommunityGroupRow = {
+  id: number;
+  name: string;
+  img: string;
+  members: number | string;
+  desc: string;
+  cat: string;
+  nsfw: boolean;
+  created_by?: string;
+  created_at?: string;
+  rules?: CommunityRule[];
+};
+
+export type CommunityEventRow = {
+  id: number;
+  title: string;
+  img: string;
+  date: string;
+  loc: string;
+  desc: string;
+  nsfw: boolean;
+};
+
+// The detail modal's single state slot holds a group or an event, so every
+// field it reads is optional; the modal branches on detailType to pick.
+export type CommunityDetail = {
+  id: number;
+  name?: string;
+  title?: string;
+  img?: string;
+  members?: number | string;
+  cat?: string;
+  nsfw?: boolean;
+  desc?: string;
+  date?: string;
+  loc?: string;
+  created_by?: string;
+  created_at?: string;
+  rules?: CommunityRule[];
+};
+
+// A pending join request row from the get-community-join-requests action.
+export type CommunityJoinRequest = {
+  id: string | number;
+  user_id: string;
+  user_name: string;
+  user_avatar?: string;
+  status: string;
+  created_at?: string;
+};
+
 export interface CommunityScreenProps {
   screen: Screen;
   showScreen: (s: Screen) => void;
   goBack?: () => void;
   commTab: "groups" | "events";
   setCommTab: (t: "groups" | "events") => void;
-  liveCommunities: any[] | null;
-  liveEvents: any[] | null;
+  liveCommunities: CommunityGroupRow[] | null;
+  liveEvents: CommunityEventRow[] | null;
   showNsfw: boolean;
   rsvpdEvents: number[];
   setRsvpdEvents: React.Dispatch<React.SetStateAction<number[]>>;
-  apiFetch: (url: string, opts?: any) => Promise<any>;
+  apiFetch: AuthFetchFn;
   showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
   handleImgError: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
   openHamburger?: () => void;
@@ -41,11 +100,11 @@ export interface CommunityScreenProps {
   onJoinVoiceRoom?: (communityId: string, communityName: string) => void;
   setShowReport?: (v: boolean) => void;
   setReportTarget?: (t: { id: number | string; type: string; name: string }) => void;
-  currentUser?: any;
+  currentUser?: CurrentUser;
   demo?: boolean;
 }
 
-async function shareItem(title: string, url: string, showToast: (m: string) => void) {
+async function shareItem(title: string | undefined, url: string, showToast: (m: string) => void) {
   if (navigator.share) {
     try { await navigator.share({ title, url }); } catch { /* user dismissed */ }
   } else {
@@ -83,7 +142,7 @@ export const CommunityScreen = memo(function CommunityScreen({
   const [groupCatFilter, setGroupCatFilter] = useState<string>("all");
   const [form, setForm] = useState({ name: "", title: "", description: "", date: "", location: "", category: "", isNsfw: false });
   const [joinedIds, setJoinedIds] = useState<Set<number | string>>(new Set());
-  const [detailItem, setDetailItem] = useState<any>(null);
+  const [detailItem, setDetailItem] = useState<CommunityDetail | null>(null);
   const [detailType, setDetailType] = useState<"group" | "event" | null>(null);
   const detailTrap = useFocusTrap(detailItem !== null, () => setDetailItem(null));
   const createCommTrap = useFocusTrap(showCreate, () => setShowCreate(false));
@@ -93,7 +152,7 @@ export const CommunityScreen = memo(function CommunityScreen({
   const [membersLoading, setMembersLoading] = useState(false);
   const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
   // Moderation state — join-request queue and per-member action menu.
-  const [joinRequests, setJoinRequests] = useState<any[]>([]);
+  const [joinRequests, setJoinRequests] = useState<CommunityJoinRequest[]>([]);
   const [memberMenuFor, setMemberMenuFor] = useState<string | null>(null);
   const [memberActionId, setMemberActionId] = useState<string | null>(null);
 
@@ -114,7 +173,7 @@ export const CommunityScreen = memo(function CommunityScreen({
     return () => cancelAnimationFrame(raf);
   }, [screen]);
 
-  const toggleJoin = async (c: any) => {
+  const toggleJoin = async (c: CommunityDetail) => {
     if (demo) { showToast("Community membership is unavailable in this demo."); return; }
     const isJoined = joinedIds.has(c.id);
     setJoinLoading(String(c.id));
@@ -130,7 +189,7 @@ export const CommunityScreen = memo(function CommunityScreen({
     setJoinLoading(null);
   };
 
-  const handleRsvp = async (ev: any) => {
+  const handleRsvp = async (ev: CommunityDetail) => {
     if (demo) { showToast("Event RSVPs are unavailable in this demo."); return; }
     const isRsvpd = rsvpdEvents.includes(ev.id);
     setRsvpLoading(ev.id);
@@ -165,7 +224,7 @@ export const CommunityScreen = memo(function CommunityScreen({
     } catch { showToast("Failed to create"); }
   };
 
-  const openGroupDetail = (c: any) => {
+  const openGroupDetail = (c: CommunityGroupRow) => {
     setDetailItem(c);
     setDetailType("group");
     if (!demo) apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_keys: ["view_community"] }) }).catch(() => {});
@@ -193,17 +252,17 @@ export const CommunityScreen = memo(function CommunityScreen({
       setMembersLoading(true);
       apiFetch("/api/muse?type=community-members&communityId=" + c.id)
         .then(r => r.ok ? r.json() : { members: [] })
-        .then(d => setGroupMembers(Array.isArray(d.members) ? d.members : []))
+        .then((d: { members?: CommunityMember[] }) => setGroupMembers(Array.isArray(d.members) ? d.members : []))
         .catch(() => setGroupMembers([]))
         .finally(() => setMembersLoading(false));
       // Server enforces admin/mod access and returns [] for everyone else.
       apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "get-community-join-requests", communityId: c.id }) })
         .then(r => r.ok ? r.json() : { requests: [] })
-        .then(d => setJoinRequests(Array.isArray(d.requests) ? d.requests.filter((q: any) => q.status === "pending") : []))
+        .then((d: { requests?: CommunityJoinRequest[] }) => setJoinRequests(Array.isArray(d.requests) ? d.requests.filter((q) => q.status === "pending") : []))
         .catch(() => setJoinRequests([]));
     }
   };
-  const openEventDetail = (ev: any) => { setDetailItem(ev); setDetailType("event"); if (!demo) apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_keys: ["view_event"] }) }).catch(() => {}); };
+  const openEventDetail = (ev: CommunityEventRow) => { setDetailItem(ev); setDetailType("event"); if (!demo) apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_keys: ["view_event"] }) }).catch(() => {}); };
 
   // ─── MODERATION ───
   // Owner is the community creator (muse_communities.created_by === profile id);
@@ -235,7 +294,7 @@ export const CommunityScreen = memo(function CommunityScreen({
       "make-mod": "set-community-role",
       "remove-mod": "set-community-role",
     };
-    const body: any = { action: actionMap[kind], communityId, targetUserId };
+    const body: { action: string; communityId: number; targetUserId: string; reason?: string; duration?: number; role?: string } = { action: actionMap[kind], communityId, targetUserId };
     if (kind === "ban") body.reason = "Removed by moderator";
     if (kind === "mute") body.duration = 60 * 24;
     if (kind === "make-mod") body.role = "moderator";
@@ -243,18 +302,18 @@ export const CommunityScreen = memo(function CommunityScreen({
     try {
       const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       if (!r.ok) throw new Error("failed");
-      if (kind === "kick" || kind === "ban") setDetailItem((d: any) => d ? { ...d, members: Math.max(0, (d.members || 0) - 1) } : d);
+      if (kind === "kick" || kind === "ban") setDetailItem((d) => d ? { ...d, members: Math.max(0, ((d.members as number) || 0) - 1) } : d);
       showToast(kind === "kick" ? "Member kicked" : kind === "ban" ? "Member banned" : kind === "mute" ? "Member muted for 24h" : kind === "make-mod" ? "Member is now a moderator" : "Moderator removed");
     } catch {
       setGroupMembers(prevMembers);
-      if (kind === "kick" || kind === "ban") setDetailItem((d: any) => d ? { ...d, members: (d.members || 0) + 1 } : d);
+      if (kind === "kick" || kind === "ban") setDetailItem((d) => d ? { ...d, members: ((d.members as number) || 0) + 1 } : d);
       showToast("Couldn't update member — try again");
     } finally {
       setMemberActionId(null);
     }
   };
 
-  const handleJoinRequest = async (req: any, approve: boolean) => {
+  const handleJoinRequest = async (req: CommunityJoinRequest, approve: boolean) => {
     if (demo) { showToast("Join-request decisions are unavailable in this demo."); return; }
     if (!detailItem) return;
     const prevRequests = joinRequests;
@@ -264,7 +323,7 @@ export const CommunityScreen = memo(function CommunityScreen({
       if (!r.ok) throw new Error("failed");
       if (approve) {
         setGroupMembers((prev) => prev.some((x) => x.user_id === req.user_id) ? prev : [...prev, { user_id: req.user_id, user_name: req.user_name, user_avatar: req.user_avatar, role: "member" as const }]);
-        setDetailItem((d: any) => d ? { ...d, members: (d.members || 0) + 1 } : d);
+        setDetailItem((d) => d ? { ...d, members: ((d.members as number) || 0) + 1 } : d);
       }
       showToast(approve ? "Request approved" : "Request declined");
     } catch {
@@ -273,10 +332,10 @@ export const CommunityScreen = memo(function CommunityScreen({
     }
   };
 
-  const groups = (liveCommunities?.length ? liveCommunities : (demo ? COMMUNITIES : [])).filter((c: any) => showNsfw || !c.nsfw);
-  const events = (liveEvents?.length ? liveEvents : (demo ? EVENTS : [])).filter((e: any) => showNsfw || !e.nsfw);
-  const groupCategories = Array.from(new Set(groups.map((c: any) => c.cat).filter(Boolean))) as string[];
-  const filteredGroups = groupCatFilter === "all" ? groups : groups.filter((c: any) => c.cat === groupCatFilter);
+  const groups: CommunityGroupRow[] = (liveCommunities?.length ? liveCommunities : (demo ? COMMUNITIES : [])).filter((c) => showNsfw || !c.nsfw);
+  const events: CommunityEventRow[] = (liveEvents?.length ? liveEvents : (demo ? EVENTS : [])).filter((e) => showNsfw || !e.nsfw);
+  const groupCategories = Array.from(new Set(groups.map((c) => c.cat).filter(Boolean))) as string[];
+  const filteredGroups = groupCatFilter === "all" ? groups : groups.filter((c) => c.cat === groupCatFilter);
 
   return (
     <div className={"screen-el" + (screen === "community" ? " active" : "")} data-screen="community">
@@ -359,7 +418,7 @@ export const CommunityScreen = memo(function CommunityScreen({
                 <>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
                     <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "var(--text2)" }}><FiUsers size={14} /> {detailItem.members} members</span>
-                    {detailItem.cat && <button type="button" onClick={() => setBadgeInfo({ name: detailItem.cat, desc: "The category this community belongs to.", icon: "🏷", color: "#FFD700" })} style={{ fontSize: 12, padding: "4px 12px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)", fontWeight: 600 }}>{detailItem.cat}</button>}
+                    {detailItem.cat && <button type="button" onClick={() => setBadgeInfo({ name: detailItem.cat as string, desc: "The category this community belongs to.", icon: "🏷", color: "#FFD700" })} style={{ fontSize: 12, padding: "4px 12px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)", fontWeight: 600 }}>{detailItem.cat}</button>}
                     {detailItem.nsfw && <button type="button" onClick={() => setBadgeInfo({ name: "18+", desc: "Adult / NSFW community — only shown to verified adults.", icon: "🔞", color: "#ff6b6b" })} style={{ fontSize: 12, padding: "4px 12px", borderRadius: 99, background: "rgba(255,69,0,0.15)", border: "1px solid rgba(255,69,0,0.3)", color: "#ff6b6b", fontWeight: 600 }}>18+</button>}
                   </div>
                   <div style={{ fontSize: 14, color: "var(--text2)", lineHeight: 1.6, marginBottom: 20 }}>{detailItem.desc || "No description yet."}</div>
@@ -383,7 +442,7 @@ export const CommunityScreen = memo(function CommunityScreen({
                     canEdit={myRole === "admin"}
                     apiFetch={apiFetch}
                     showToast={showToast}
-                    onSaved={(nextRules) => setDetailItem((d: any) => d ? { ...d, rules: nextRules } : d)}
+                    onSaved={(nextRules) => setDetailItem((d) => d ? { ...d, rules: nextRules } : d)}
                   />
 
                   {/* Members — real roster fetched for DB-backed groups, with
@@ -526,7 +585,7 @@ export const CommunityScreen = memo(function CommunityScreen({
         {commTab === "events" && events.length === 0 && (
           <EmptyState icon={<FiCalendar size={44} />} title="No events yet" sub="When events are posted they'll appear here." />
         )}
-        {commTab === "groups" && filteredGroups.map((c: any) => (
+        {commTab === "groups" && filteredGroups.map((c) => (
           <div key={c.id} className="conn-card" style={{ marginBottom: 10, padding: 0, overflow: "hidden", flexDirection: "column", alignItems: "center", cursor: "pointer", position: "relative" }} onClick={() => openGroupDetail(c)}>
             {/* Top-banner layout (matches Events). Seeded communities have img:"" — a bare
                 <img src=""> doesn't reliably fire onError, so guard explicitly and render an
@@ -552,8 +611,8 @@ export const CommunityScreen = memo(function CommunityScreen({
                   const badges: { t: string; bg: string; bd: string; c: string }[] = [];
                   const cat = c.cat || "Community";
                   badges.push({ t: cat.charAt(0).toUpperCase() + cat.slice(1), ...BADGE_COLORS.gold });
-                  if ((c.members || 0) >= 500) badges.push({ t: "Large", ...BADGE_COLORS.blue });
-                  else if ((c.members || 0) >= 100) badges.push({ t: "Growing", ...BADGE_COLORS.blue });
+                  if (((c.members as number) || 0) >= 500) badges.push({ t: "Large", ...BADGE_COLORS.blue });
+                  else if (((c.members as number) || 0) >= 100) badges.push({ t: "Growing", ...BADGE_COLORS.blue });
                   else badges.push({ t: "Intimate", ...BADGE_COLORS.blue });
                   if (joinedIds.has(c.id)) badges.push({ t: "✓ Joined", ...BADGE_COLORS.green });
                   else badges.push({ t: "Open to Join", ...BADGE_COLORS.lavender });
@@ -570,7 +629,7 @@ export const CommunityScreen = memo(function CommunityScreen({
             </div>
           </div>
         ))}
-        {commTab === "events" && events.map((ev: any) => (
+        {commTab === "events" && events.map((ev) => (
           <div key={ev.id} className="conn-card" style={{ flexDirection: "column", alignItems: "center", marginBottom: 10, padding: 0, overflow: "hidden", borderRadius: 16, cursor: "pointer", position: "relative" }} onClick={() => openEventDetail(ev)}>
             {ev.img ? (
               <div style={{ position: "relative", width: "100%", height: 160 }}>
