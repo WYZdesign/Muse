@@ -7,32 +7,68 @@ import Nav from "../components/Nav";
 import RecorderSheet from "../components/RecorderSheet";
 import { authFetch } from "../lib/auth-client";
 import { useFocusTrap } from "../hooks/useFocusTrap";
-import type { Screen } from "../components/types";
+import type { Screen, Match } from "../components/types";
+import type { AuthUser, ViewProfile } from "../page-models";
+
+// One message in the active conversation. Match["messages"] only declares
+// from/text/time/img, but the live rows this screen renders also carry the
+// voice/video-note columns (kind/mediaUrl/durationMs/transcript) that the
+// recorder path writes.
+type ChatMessage = {
+  from: string;
+  text: string;
+  time: string;
+  img?: string;
+  kind?: "voice" | "video";
+  mediaUrl?: string;
+  durationMs?: number;
+  transcript?: string;
+};
+
+// The conversation target. Matches the Match rows page.tsx owns, widened only
+// where this screen reads more than Match declares: id is string | number
+// (live DB rows carry UUID string ids, demo rows are numeric) and messages
+// carry the clip columns above.
+type ChatTarget = Omit<Match, "messages" | "id"> & {
+  id: string | number;
+  messages: ChatMessage[];
+};
+
+// One row of the LiveKit call log (muse_calls) as fetchCallHistory returns it.
+type CallLogEntry = {
+  id?: string | number;
+  caller_id?: string | number;
+  kind?: string;
+  status?: string;
+  duration_ms?: number;
+  started_at: string;
+  voicemail_url?: string;
+};
 
 export interface ChatScreenProps {
   screen: Screen;
-  chatTarget: any;
-  setChatTarget: React.Dispatch<React.SetStateAction<any>>;
+  chatTarget: ChatTarget | null;
+  setChatTarget: React.Dispatch<React.SetStateAction<Match | null>>;
   showScreen: (s: Screen) => void;
   goBack?: () => void;
-  messages: any[];
-  setMessages: React.Dispatch<React.SetStateAction<any[]>>;
+  messages: Match["messages"];
+  setMessages: React.Dispatch<React.SetStateAction<Match["messages"]>>;
   chatText: string;
   setChatText: (t: string) => void;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   sendChat: () => void;
   sendChatImg?: (url: string) => void;
   handleImgError: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
-  setViewProfile: (p: any) => void;
-  setUnmatchTarget: (t: any) => void;
-  setBlockTarget: (t: any) => void;
+  setViewProfile: (p: ViewProfile | null) => void;
+  setUnmatchTarget: (t: { id: string | number; name: string }) => void;
+  setBlockTarget: (t: { id: string; name: string }) => void;
   setShowReport: (v: boolean) => void;
-  setReportTarget: (t: any) => void;
-  typingTarget: any;
+  setReportTarget: (t: { id: string | number; type: string; name: string }) => void;
+  typingTarget: number | null;
   themTyping?: boolean;
   demo?: boolean;
   realtimeStatus: "connecting" | "connected" | "disconnected";
-  sendTyping: any;
+  sendTyping?: () => void;
   openHamburger?: () => void;
   unreadNotificationCount?: number;
   showToast?: (msg: string | { msg: string; onTap?: () => void }) => void;
@@ -44,12 +80,12 @@ export interface ChatScreenProps {
   /** Starts a LiveKit voice/video call with this conversation's other person. */
   startCall?: (peerId: string, peerName: string, kind: "voice" | "video") => void;
   /** Recent call log with this conversation's other person. */
-  fetchCallHistory?: (peerId: string) => Promise<any[]>;
-  authUser?: any;
+  fetchCallHistory?: (peerId: string) => Promise<CallLogEntry[]>;
+  authUser?: AuthUser;
   chatInput?: string;
   setChatInput?: (v: string) => void;
   sendTypingRef?: React.MutableRefObject<() => void>;
-  setMatches?: React.Dispatch<React.SetStateAction<any[]>>;
+  setMatches?: React.Dispatch<React.SetStateAction<Match[]>>;
   persistMessage?: (opts: { myId: string; theirId: string; text: string; img?: string }) => Promise<void>;
   getIcebreaker?: (type: string, seed?: string) => string;
   sendMsg?: (text?: string) => void;
@@ -101,7 +137,7 @@ export const ChatScreen = memo(function ChatScreen({
   // Call history for this conversation (missed / answered / voicemail).
   const [showCallLog, setShowCallLog] = useState(false);
   const callLogTrap = useFocusTrap(showCallLog, () => setShowCallLog(false));
-  const [callLog, setCallLog] = useState<any[]>([]);
+  const [callLog, setCallLog] = useState<CallLogEntry[]>([]);
   // Media & clips shared in this conversation (photos, video notes, voice notes).
   const [showGallery, setShowGallery] = useState(false);
   const galleryTrap = useFocusTrap(showGallery, () => setShowGallery(false));
@@ -183,7 +219,7 @@ export const ChatScreen = memo(function ChatScreen({
           }}
         />
       )}
-      {showGallery && (() => {        const msgs = (chatTarget?.messages || []) as any[];
+      {showGallery && (() => {        const msgs = chatTarget?.messages || [];
         const photos = msgs.filter((m) => m.img && !m.kind);
         const clips = msgs.filter((m) => m.mediaUrl && (m.kind === "voice" || m.kind === "video"));
         const none = photos.length === 0 && clips.length === 0;
@@ -244,7 +280,7 @@ export const ChatScreen = memo(function ChatScreen({
             {callLog.length === 0 ? (
               <div style={{ fontSize: 13, color: "var(--muted)" }}>No calls with {chatTarget?.name} yet.</div>
             ) : (
-              callLog.map((c: any) => {
+              callLog.map((c: CallLogEntry) => {
                 const outgoing = String(c.caller_id) !== String(chatTarget?.id);
                 const when = new Date(c.started_at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
                 const label =
@@ -283,7 +319,7 @@ export const ChatScreen = memo(function ChatScreen({
                 right beside it (the larger, more natural tap target most people
                 would actually go for) did nothing. Wired the whole info block to
                 the same setViewProfile call. */}
-            <button className="chat-info" tabIndex={0} onClick={() => setViewProfile(chatTarget)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setViewProfile(chatTarget); } }} style={{ cursor: "pointer", padding: 0, border: "none", background: "none", display: "flex", flexDirection: "column" }}>
+            <button className="chat-info" tabIndex={0} onClick={() => setViewProfile(chatTarget as unknown as ViewProfile)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setViewProfile(chatTarget as unknown as ViewProfile); } }} style={{ cursor: "pointer", padding: 0, border: "none", background: "none", display: "flex", flexDirection: "column" }}>
               <span className="chat-name">{chatTarget.name}</span>
               <span className="chat-type">{typingTarget === chatTarget.id ? <span style={{ color: "var(--gold)", fontStyle: "italic" }}>typing…</span> : chatTarget.type}</span>
             </button>
@@ -312,7 +348,7 @@ export const ChatScreen = memo(function ChatScreen({
                     <button role="menuitem" onClick={openCallLog} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", color: "var(--text)", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}><FiPhone size={14} /> Call history</button>
                     <button role="menuitem" onClick={() => { setShowChatMenu(false); setShowReport(true); setReportTarget({ id: chatTarget.id, type: "user", name: chatTarget.name }); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", color: "var(--text)", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}><FiFlag size={14} /> Report</button>
                     <button role="menuitem" onClick={() => { setShowChatMenu(false); setUnmatchTarget({ id: chatTarget.id, name: chatTarget.name }); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", color: "var(--text)", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}><FiUserX size={14} /> Unmatch</button>
-                    <button role="menuitem" onClick={() => { setShowChatMenu(false); setBlockTarget({ id: chatTarget.id, name: chatTarget.name }); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", color: "#ff6b6b", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}><FiSlash size={14} /> Block</button>
+                    <button role="menuitem" onClick={() => { setShowChatMenu(false); setBlockTarget({ id: chatTarget.id as string, name: chatTarget.name }); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: "transparent", color: "#ff6b6b", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}><FiSlash size={14} /> Block</button>
                   </div>
                 </>
               )}
@@ -338,7 +374,7 @@ export const ChatScreen = memo(function ChatScreen({
               <button onClick={() => { setShowChatSearch(false); setChatQuery(""); }} aria-label="Close search" style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer" }}><FiX size={15} /></button>
             </div>
           )}
-          <div className="messages" ref={messagesEndRef as any}>
+          <div className="messages" ref={messagesEndRef}>
             {(chatTarget.messages || []).length === 0 && !(typingTarget === chatTarget.id) && (
               <div style={{ textAlign: "center", padding: "48px 24px 24px", color: "var(--muted)" }}>
                 <div style={{ fontSize: 38, marginBottom: 12 }}>🌊</div>
@@ -347,14 +383,14 @@ export const ChatScreen = memo(function ChatScreen({
               </div>
             )}
             {(chatTarget.messages || [])
-              .filter((msg: any) => {
+              .filter((msg: ChatMessage) => {
                 const q = chatQuery.trim().toLowerCase();
                 if (!q) return true;
                 // Searches message text AND the auto-transcript of voice notes.
                 return String(msg.text || "").toLowerCase().includes(q)
                   || String(msg.transcript || "").toLowerCase().includes(q);
               })
-              .map((msg: any, i: number) => (
+              .map((msg: ChatMessage, i: number) => (
               <div key={i} className={"msg " + (msg.from === "me" ? "msg-me" : "msg-them")}>
 {msg.img && (
                   <button style={{ position: "relative", display: "inline-block" }} onClick={() => setRevealedChatImgs(prev => { const n = new Set(prev); n.add(String(msg.img)); return n; })} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setRevealedChatImgs(prev => { const n = new Set(prev); n.add(String(msg.img)); return n; }); } }} tabIndex={0} aria-label="Reveal image">
