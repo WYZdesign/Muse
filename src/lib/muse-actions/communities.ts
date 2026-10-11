@@ -9,16 +9,31 @@ import { checkRate } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/request-safety";
 import { UUID_RE, NextResponse, safeServerError, type ActionContext } from "./shared";
 
+/** A muse_communities row, narrowed to the columns communityJoin reads. */
+type CommunityRow = { id?: unknown; is_private?: boolean | null };
+
+/** A raw rules entry from the request body (unvalidated until cleaned). */
+type CommunityRuleInput = { title?: unknown; body?: unknown };
+
+/** A muse_community_join_requests row read during approval. */
+type JoinRequestRow = {
+  id?: unknown;
+  user_id?: unknown;
+  user_name?: string | null;
+  user_avatar?: string | null;
+  status?: string | null;
+};
+
 export const communityJoin = async ({ sb, profile, rest }: ActionContext) => {
   const { communityId } = rest;
   if (!communityId) return NextResponse.json({ error: "communityId required" }, { status: 400 });
   const isStub = !UUID_RE.test(String(communityId));
   if (isStub) return NextResponse.json({ success: true, demo: true });
-  const { data: community } = await sb.from("muse_communities").select("id, is_private").eq("id", communityId).maybeSingle();
+  const { data: community }: { data: CommunityRow | null } = await sb.from("muse_communities").select("id, is_private").eq("id", communityId).maybeSingle();
   if (!community) return NextResponse.json({ error: "Community not found" }, { status: 400 });
   const { data: ban } = await sb.from("muse_community_bans").select("id").eq("community_id", communityId).eq("user_id", profile.id).maybeSingle();
   if (ban) return NextResponse.json({ error: "You are banned from this community" }, { status: 403 });
-  if ((community as any).is_private) {
+  if (community.is_private) {
     const { data: existing } = await sb.from("muse_community_join_requests")
       .select("id, status").eq("community_id", communityId).eq("user_id", profile.id).maybeSingle();
     if (existing && existing.status === "pending") return NextResponse.json({ success: true, pending: true });
@@ -123,10 +138,10 @@ export const communityUpdateRules = async ({ sb, profile, rest }: ActionContext)
   const { data: membership } = await sb.from("muse_community_members")
     .select("role").eq("community_id", communityId).eq("user_id", profile.id).maybeSingle();
   if (!membership || membership.role !== "admin") return NextResponse.json({ error: "Admin only" }, { status: 403 });
-  const cleaned = rules.map((r: any) => ({
+  const cleaned = rules.map((r: CommunityRuleInput) => ({
     title: sanitizeText(String(r.title || ""), 100),
     body: sanitizeText(String(r.body || ""), 500),
-  })).filter((r: any) => r.title);
+  })).filter((r) => r.title);
   const { error } = await sb.from("muse_communities").update({ rules: cleaned }).eq("id", communityId);
   if (error) return safeServerError(error, "db op");
   return NextResponse.json({ success: true });
@@ -278,15 +293,15 @@ export const communityApproveJoinRequest = async ({ sb, profile, rest }: ActionC
   if (!requester || (requester.role !== "admin" && requester.role !== "moderator")) {
     return NextResponse.json({ error: "Admin or moderator only" }, { status: 403 });
   }
-  const { data: req } = await sb.from("muse_community_join_requests")
+  const { data: req }: { data: JoinRequestRow | null } = await sb.from("muse_community_join_requests")
     .select("id, user_id, user_name, user_avatar, status").eq("id", requestId).maybeSingle();
   if (!req) return NextResponse.json({ error: "Request not found" }, { status: 404 });
-  if ((req as any).status !== "pending") return NextResponse.json({ error: "Request already processed" }, { status: 400 });
+  if (req.status !== "pending") return NextResponse.json({ error: "Request already processed" }, { status: 400 });
   await sb.from("muse_community_join_requests").update({
     status: "approved", reviewed_by: profile.id, reviewed_at: new Date().toISOString(),
   }).eq("id", requestId);
   await sb.from("muse_community_members").upsert(
-    { community_id: communityId, user_id: (req as any).user_id, user_name: (req as any).user_name, user_avatar: (req as any).user_avatar },
+    { community_id: communityId, user_id: req.user_id, user_name: req.user_name, user_avatar: req.user_avatar },
     { onConflict: "community_id,user_id", ignoreDuplicates: true }
   );
   const { count } = await sb.from("muse_community_members").select("*", { count: "exact", head: true }).eq("community_id", communityId);

@@ -10,6 +10,17 @@ import { askMuseAI } from "@/lib/aiDocs";
 import { scanWithRekognition, logScan } from "@/lib/contentScan";
 import { UUID_RE, isAdminEmail, NextResponse, safeServerError, type ActionContext } from "./shared";
 
+// Row shapes for the Supabase reads below. The clients are created without a
+// generated Database type, so every `.data` comes back as `any`; these name
+// only the columns the code reads and are narrowed at each query.
+type StrikeRow = { severity?: string | null; suspension_ends_at?: string | null };
+type DisclosureRow = { status?: string | null };
+type SafetyCheckinRow = { status?: string | null };
+type ActivityUserIdRow = { user_id?: unknown };
+
+/** The rule-based answer object adminBrain builds before AI enrichment. */
+type BrainResult = { answer?: string; data?: Record<string, unknown> };
+
 export const adminResolveAppeal = async ({ sb, profile, rest }: ActionContext) => {
   if (!isAdminEmail(profile.email)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -44,7 +55,7 @@ export const adminBrain = async ({ sb, profile, rest, ip }: ActionContext) => {
 
   try {
     const q = userQuery.toLowerCase();
-    let result: Record<string, unknown> = {};
+    let result: BrainResult = {};
 
     if (q.includes("user") && (q.includes("count") || q.includes("total") || q.includes("how many"))) {
       const { count } = await sb.from("muse_profiles").select("*", { count: "exact", head: true });
@@ -57,13 +68,13 @@ export const adminBrain = async ({ sb, profile, rest, ip }: ActionContext) => {
       const { count } = await sb.from("muse_reports").select("*", { count: "exact", head: true });
       result = { answer: `Total reports: ${count || 0}. Showing most recent.`, data: { reports: reports || [], count: count || 0 } };
     } else if (q.includes("strike") || q.includes("suspension") || q.includes("ban")) {
-      const { data: strikes } = await sb.from("muse_strikes").select("*, user_id(id, name, avatar)").order("created_at", { ascending: false }).limit(20);
+      const { data: strikes }: { data: StrikeRow[] | null } = await sb.from("muse_strikes").select("*, user_id(id, name, avatar)").order("created_at", { ascending: false }).limit(20);
       const { count } = await sb.from("muse_strikes").select("*", { count: "exact", head: true });
-      const suspended = (strikes || []).filter((s: any) => s.severity === "suspension" && (!s.suspension_ends_at || new Date(s.suspension_ends_at) > new Date()));
+      const suspended = (strikes || []).filter((s) => s.severity === "suspension" && (!s.suspension_ends_at || new Date(s.suspension_ends_at) > new Date()));
       result = { answer: `Total strikes: ${count || 0}. Currently suspended: ${suspended.length}.`, data: { strikes: strikes || [], suspendedCount: suspended.length } };
     } else if (q.includes("disclosure")) {
-      const { data: disclosures } = await sb.from("muse_disclosures").select("*, proposer_id(id, name), responder_id(id, name)").order("created_at", { ascending: false }).limit(20);
-      const blocked = (disclosures || []).filter((d: any) => d.status === "blocked");
+      const { data: disclosures }: { data: DisclosureRow[] | null } = await sb.from("muse_disclosures").select("*, proposer_id(id, name), responder_id(id, name)").order("created_at", { ascending: false }).limit(20);
+      const blocked = (disclosures || []).filter((d) => d.status === "blocked");
       result = { answer: `Total disclosures: ${(disclosures || []).length}. Blocked: ${blocked.length}.`, data: { disclosures: disclosures || [], blockedCount: blocked.length } };
     } else if (q.includes("active") || q.includes("retention") || q.includes("engagement")) {
       const since7d = new Date(Date.now() - 7 * 86400000).toISOString();
@@ -73,13 +84,13 @@ export const adminBrain = async ({ sb, profile, rest, ip }: ActionContext) => {
         sb.from("muse_activity_log").select("user_id").gte("created_at", since30d),
         sb.from("muse_profiles").select("id").gte("created_at", since30d),
       ]);
-      const activeUsers7d = new Set((active7d.data || []).map((r: any) => r.user_id).filter(Boolean)).size;
-      const activeUsers30d = new Set((active30d.data || []).map((r: any) => r.user_id).filter(Boolean)).size;
+      const activeUsers7d = new Set((active7d.data || []).map((r: ActivityUserIdRow) => r.user_id).filter(Boolean)).size;
+      const activeUsers30d = new Set((active30d.data || []).map((r: ActivityUserIdRow) => r.user_id).filter(Boolean)).size;
       result = { answer: `Active users (7d): ${activeUsers7d}, Active (30d): ${activeUsers30d}, New signups (30d): ${(newUsers30d.data || []).length}`, data: { active7d: activeUsers7d, active30d: activeUsers30d, newUsers30d: (newUsers30d.data || []).length } };
     } else if (q.includes("safety") || q.includes("checkin")) {
-      const { data: checkins } = await sb.from("muse_safety_checkins").select("*, user_id(id, name)").order("created_at", { ascending: false }).limit(20);
-      const pending = (checkins || []).filter((c: any) => c.status === "pending");
-      const cancelled = (checkins || []).filter((c: any) => c.status === "cancelled");
+      const { data: checkins }: { data: SafetyCheckinRow[] | null } = await sb.from("muse_safety_checkins").select("*, user_id(id, name)").order("created_at", { ascending: false }).limit(20);
+      const pending = (checkins || []).filter((c) => c.status === "pending");
+      const cancelled = (checkins || []).filter((c) => c.status === "cancelled");
       result = { answer: `Safety check-ins: ${(checkins || []).length} total. Pending: ${pending.length}. Cancelled: ${cancelled.length}.`, data: { checkins: checkins || [], pendingCount: pending.length, cancelledCount: cancelled.length } };
     } else if (q.includes("user") && (q.includes("detail") || q.includes("profile") || q.includes("info") || q.includes("lookup"))) {
       const searchTerm = q.replace(/.*(?:detail|profile|info|lookup)\s+(?:user\s*)?/i, "").trim();
@@ -96,7 +107,7 @@ export const adminBrain = async ({ sb, profile, rest, ip }: ActionContext) => {
         sb.from("muse_booking_payments").select("id, amount, status, created_at").or(`payer_id.eq.${user.id},payee_id.eq.${user.id}`).order("created_at", { ascending: false }).limit(10),
       ]);
       const { count: reportsAgainst } = await sb.from("muse_reports").select("*", { count: "exact", head: true }).eq("target_id", user.id);
-      const activeStrikes = (strikesRes.data || []).filter((s: any) => s.severity === "suspension" && (!s.suspension_ends_at || new Date(s.suspension_ends_at) > new Date()));
+      const activeStrikes = (strikesRes.data || []).filter((s: StrikeRow) => s.severity === "suspension" && (!s.suspension_ends_at || new Date(s.suspension_ends_at) > new Date()));
       const answer = [
         `👤 ${user.name} (${user.email}) — ${user.type || "N/A"} · ${user.tier || "free"} tier`,
         user.suspended ? "⚠️ SUSPENDED" : "Active",
@@ -135,7 +146,7 @@ export const adminBrain = async ({ sb, profile, rest, ip }: ActionContext) => {
     let aiSources: string[] = [];
     try {
       const enriched = await askMuseAI(
-        `Question: ${userQuery}\n\nLive metrics (from database): ${JSON.stringify((result as any).data || {})}`,
+        `Question: ${userQuery}\n\nLive metrics (from database): ${JSON.stringify(result.data || {})}`,
         { forAdmin: true }
       );
       if (enriched) {
@@ -147,10 +158,10 @@ export const adminBrain = async ({ sb, profile, rest, ip }: ActionContext) => {
     await sb.from("muse_admin_audit_log").insert({
       admin_user_id: profile.id, query_text: userQuery.slice(0, 1000),
       query_result_summary: answer.slice(0, 500),
-      result_row_count: Array.isArray((result as any).data?.users) ? (result as any).data.users.length : 0,
+      result_row_count: Array.isArray(result.data?.users) ? (result.data?.users as unknown[]).length : 0,
     });
 
-    return NextResponse.json({ answer, data: (result as any).data, sources: aiSources, ai: aiSources.length > 0 });
+    return NextResponse.json({ answer, data: result.data, sources: aiSources, ai: aiSources.length > 0 });
   } catch (err: unknown) {
     return NextResponse.json({ error: "Query failed: " + (err instanceof Error ? err.message : "unknown") }, { status: 500 });
   }

@@ -13,6 +13,22 @@ import { screenText, moderateText } from "@/lib/aiModeration";
 import { sendEmail, notify } from "@/lib/email";
 import { UUID_RE, applyStrikeAndEscalate, validateInput, NextResponse, safeServerError, isAdminEmail, getBlockedIds, type ActionContext } from "./shared";
 
+/** A muse_forum_replies row, narrowed to the columns the forum verb reads. */
+type ForumReplyRow = {
+  id: string;
+  post_id?: string | null;
+  user_id?: string | null;
+  user_name?: string | null;
+  user_avatar?: string | null;
+  text?: string | null;
+  created_at?: string | null;
+  parent_reply_id?: string | null;
+  depth?: number | null;
+};
+
+/** A muse_reports row carrying just its reporter (distinct-reporters check). */
+type ReporterRefRow = { reporter_id?: unknown };
+
 export const forumDispatch = async ({ sb, profile, rest, ip, rawType }: ActionContext) => {
   if (!await checkRate(ip, "forum", 5)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   const vErr = validateInput(rest);
@@ -20,7 +36,7 @@ export const forumDispatch = async ({ sb, profile, rest, ip, rawType }: ActionCo
   const { title, body: forumBody, text, cat, postId, parentReplyId } = rest;
   const forumType = rawType;
   if (forumType === "get-replies") {
-    const { data: replies, error: replErr } = await sb.from("muse_forum_replies")
+    const { data: replies, error: replErr }: { data: ForumReplyRow[] | null; error: unknown } = await sb.from("muse_forum_replies")
       .select("id, user_id, user_name, user_avatar, text, created_at, parent_reply_id, depth")
       .eq("post_id", postId)
       .order("created_at", { ascending: true })
@@ -31,8 +47,8 @@ export const forumDispatch = async ({ sb, profile, rest, ip, rawType }: ActionCo
     // never consulted muse_blocks either, so a blocked user's replies still
     // showed up in a thread to the person who blocked them (and vice versa).
     const blockedIds = await getBlockedIds(sb, profile.id);
-    const visible = (replies || []).filter((r: any) => !blockedIds.has(String(r.user_id)));
-    const mapped = visible.map((r: any) => ({
+    const visible = (replies || []).filter((r) => !blockedIds.has(String(r.user_id)));
+    const mapped = visible.map((r) => ({
       id: r.id,
       author: r.user_name || "User",
       avatar: r.user_avatar || "",
@@ -47,7 +63,7 @@ export const forumDispatch = async ({ sb, profile, rest, ip, rawType }: ActionCo
   if (forumType === "get-thread") {
     const { replyId } = rest;
     if (!replyId) return NextResponse.json({ error: "replyId required" }, { status: 400 });
-    const { data: thread, error: thrErr } = await sb.from("muse_forum_replies")
+    const { data: thread, error: thrErr }: { data: ForumReplyRow | null; error: unknown } = await sb.from("muse_forum_replies")
       .select("id, post_id, user_id, user_name, user_avatar, text, created_at, parent_reply_id, depth")
       .eq("id", replyId)
       .maybeSingle();
@@ -57,7 +73,7 @@ export const forumDispatch = async ({ sb, profile, rest, ip, rawType }: ActionCo
     let root = thread;
     let current = thread;
     while (current.parent_reply_id) {
-      const { data: parent } = await sb.from("muse_forum_replies")
+      const { data: parent }: { data: ForumReplyRow | null } = await sb.from("muse_forum_replies")
         .select("id, post_id, user_id, user_name, user_avatar, text, created_at, parent_reply_id, depth")
         .eq("id", current.parent_reply_id)
         .maybeSingle();
@@ -66,7 +82,7 @@ export const forumDispatch = async ({ sb, profile, rest, ip, rawType }: ActionCo
       current = parent;
     }
     // Now fetch all descendants of the root
-    const { data: allReplies, error: allErr } = await sb.from("muse_forum_replies")
+    const { data: allReplies, error: allErr }: { data: ForumReplyRow[] | null; error: unknown } = await sb.from("muse_forum_replies")
       .select("id, post_id, user_id, user_name, user_avatar, text, created_at, parent_reply_id, depth")
       .eq("post_id", thread.post_id || postId)
       .gte("depth", 0)
@@ -76,7 +92,7 @@ export const forumDispatch = async ({ sb, profile, rest, ip, rawType }: ActionCo
     if (allErr) return safeServerError(allErr, "db op");
     // Filter to only replies in this thread (root or descendant of root)
     const threadIds = new Set<string>();
-    const buildThreadSet = (parentId: string, replies: any[]) => {
+    const buildThreadSet = (parentId: string, replies: ForumReplyRow[]) => {
       threadIds.add(parentId);
       for (const r of replies) {
         if (r.parent_reply_id === parentId) {
@@ -87,8 +103,8 @@ export const forumDispatch = async ({ sb, profile, rest, ip, rawType }: ActionCo
     };
     buildThreadSet(root.id, allReplies || []);
     const blockedIds = await getBlockedIds(sb, profile.id);
-    const threadReplies = (allReplies || []).filter((r: any) => threadIds.has(r.id) && !blockedIds.has(String(r.user_id)));
-    const mapped = threadReplies.map((r: any) => ({
+    const threadReplies = (allReplies || []).filter((r) => threadIds.has(r.id) && !blockedIds.has(String(r.user_id)));
+    const mapped = threadReplies.map((r) => ({
       id: r.id,
       author: r.user_name || "User",
       avatar: r.user_avatar || "",
@@ -203,11 +219,11 @@ export const reportCreate = async ({ sb, profile, rest, ip }: ActionContext) => 
       const { count: distinctReporters } = await sb.from("muse_reports")
         .select("reporter_id", { count: "exact", head: true })
         .eq("target_id", target_id);
-      const { data: allReports } = await sb.from("muse_reports")
+      const { data: allReports }: { data: ReporterRefRow[] | null } = await sb.from("muse_reports")
         .select("reporter_id")
         .eq("target_id", target_id)
         .limit(50);
-      const distinct = new Set((allReports || []).map((r: any) => String(r.reporter_id))).size;
+      const distinct = new Set((allReports || []).map((r) => String(r.reporter_id))).size;
       if (distinct >= 3) {
         await applyStrikeAndEscalate(sb, target_id, {
           category: "standard",
@@ -262,8 +278,8 @@ export const forumPostPin = async ({ sb, profile, rest }: ActionContext) => {
   const isAdmin = isAdminEmail(profile.email);
   const isAuthor = String(post.author_id) === String(profile.id);
   if (!isAdmin && !isAuthor) return NextResponse.json({ error: "Admin or author only" }, { status: 403 });
-  const { data: current } = await sb.from("muse_forum_posts").select("pinned").eq("id", postId).maybeSingle();
-  const newPinned = !(current as any)?.pinned;
+  const { data: current }: { data: { pinned?: boolean | null } | null } = await sb.from("muse_forum_posts").select("pinned").eq("id", postId).maybeSingle();
+  const newPinned = !current?.pinned;
   await sb.from("muse_forum_posts").update({ pinned: newPinned }).eq("id", postId);
   return NextResponse.json({ success: true, pinned: newPinned });
 };
@@ -275,8 +291,8 @@ export const forumPostLock = async ({ sb, profile, rest }: ActionContext) => {
   if (!post) return NextResponse.json({ error: "Post not found" }, { status: 404 });
   const isAdmin = isAdminEmail(profile.email);
   if (!isAdmin) return NextResponse.json({ error: "Admin only" }, { status: 403 });
-  const { data: current } = await sb.from("muse_forum_posts").select("locked").eq("id", postId).maybeSingle();
-  const newLocked = !(current as any)?.locked;
+  const { data: current }: { data: { locked?: boolean | null } | null } = await sb.from("muse_forum_posts").select("locked").eq("id", postId).maybeSingle();
+  const newLocked = !current?.locked;
   await sb.from("muse_forum_posts").update({ locked: newLocked }).eq("id", postId);
   return NextResponse.json({ success: true, locked: newLocked });
 };
