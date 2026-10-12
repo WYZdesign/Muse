@@ -1,6 +1,7 @@
 "use client";
 
 import React, { memo, useState } from "react";
+import type { IconType } from "react-icons";
 import { FiArrowLeft, FiBookOpen } from "react-icons/fi";
 import Nav from "../components/Nav";
 import type { Screen } from "../components/types";
@@ -18,15 +19,15 @@ export interface CodexScreenProps {
 }
 
 // ── BADGE MASTER GLOSSARY ────────────────────────────────────────────────────
-const GI: Record<string, any> = { GiMoon, GiCrown, GiButterfly, GiPaintBrush, GiRat, GiBullHorns, GiTigerHead, GiRabbit, GiDragonHead, GiSnake, GiHorseHead, GiGoat, GiMonkey, GiRooster, GiSittingDog, GiPig };
+const GI: Record<string, IconType> = { GiMoon, GiCrown, GiButterfly, GiPaintBrush, GiRat, GiBullHorns, GiTigerHead, GiRabbit, GiDragonHead, GiSnake, GiHorseHead, GiGoat, GiMonkey, GiRooster, GiSittingDog, GiPig };
 // MBTI and Life Path icons come from the shared traitIcons module (single
 // source of truth — DiscoverScreen and ProfileScreen use the same maps) so
 // all three stay consistent instead of drifting. Life Path is re-keyed
 // "L1".."L33" here to match this glossary's own icon-key convention.
-const FI: Record<string, any> = {
+const FI: Record<string, IconType> = {
   FiZap, FiMapPin, FiSun, FiBriefcase, FiUsers, FiBookOpen, FiStar, FiTarget,
   ...MBTI_ICON,
-  ...Object.fromEntries(Object.entries(LIFE_PATH_ICON).map(([n, Icon]) => [`L${n}`, Icon])),
+  ...Object.fromEntries(Object.entries(LIFE_PATH_ICON).map(([n, Icon]): [string, IconType] => [`L${n}`, Icon])),
 };
 const LP_ICONS: Record<number, string> = { 1: "L1", 2: "L2", 3: "L3", 4: "L4", 5: "L5", 6: "L6", 7: "L7", 8: "L8", 9: "L9", 11: "L11", 22: "L22", 33: "L33" };
 // Was gated on the icon *name string* starting with "Gi"/"Fi" (react-icons'

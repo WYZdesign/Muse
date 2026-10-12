@@ -2,16 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
 import { isDemoMode } from "@/lib/demo-mode";
 
+/** A Supabase storage list entry; folder placeholders carry a null id. */
+type StorageListItem = { name: string; id?: string | null };
+
 /** Permanently purge accounts only after the published 30-day retention window. */
 async function removeStorageTree(sb: ReturnType<typeof getServiceClient>, bucket: string, prefix: string): Promise<void> {
-  const { data, error } = await sb.storage.from(bucket).list(prefix, { limit: 1000 });
+  const { data, error }: { data: StorageListItem[] | null; error: { message: string } | null } = await sb.storage.from(bucket).list(prefix, { limit: 1000 });
   if (error) throw error;
   const files: string[] = [];
   const folders: string[] = [];
   for (const item of data || []) {
     const path = `${prefix}/${item.name}`;
     // Supabase storage returns null id for folder placeholders.
-    if ((item as any).id) files.push(path); else folders.push(path);
+    if (item.id) files.push(path); else folders.push(path);
   }
   if (files.length) {
     const { error: removeError } = await sb.storage.from(bucket).remove(files);
@@ -69,7 +72,7 @@ export async function GET(req: NextRequest) {
           sb.from("muse_saved_searches").delete().eq("user_id", id),
           sb.from("muse_albums").delete().eq("profile_id", id),
         ]);
-        const failure = results.find((result: any) => result.error)?.error;
+        const failure = results.find((result) => result.error)?.error;
         if (failure) throw failure;
         const { error: profileError } = await sb.from("muse_profiles").delete().eq("id", id);
         if (profileError) throw profileError;

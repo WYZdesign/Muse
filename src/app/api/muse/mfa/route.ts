@@ -51,8 +51,8 @@ export async function GET(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     const totp = factors.totp || [];
     return NextResponse.json({
-      enabled: totp.some((f: any) => f.status === "verified"),
-      factors: totp.map((f: any) => ({ id: f.id, status: f.status, friendlyName: f.friendly_name })),
+      enabled: totp.some((f) => f.status === "verified"),
+      factors: totp.map((f) => ({ id: f.id, status: f.status, friendlyName: f.friendly_name })),
     });
   }
 

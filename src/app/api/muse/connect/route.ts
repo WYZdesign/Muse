@@ -9,6 +9,11 @@ import Stripe from "stripe";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 import { ConnectSchema, parseWith } from "@/lib/validate";
 
+/** The age-verification columns read off a muse_profiles row. */
+type AgeVerificationRow = { age_verified?: boolean | null; age_verified_at?: string | null };
+/** A muse_refund_requests row read by the refund-request handlers. */
+type RefundRequestRow = { id?: string | null; user_id?: string | null; status?: string | null };
+
 export const runtime = "nodejs";
 
 /**
@@ -176,8 +181,8 @@ export async function POST(req: NextRequest) {
 
       // Same Stripe Identity 18+ enforcement book-session applies — this action
       // creates a real PaymentIntent for a paid interaction, so gate it the same way.
-      const { data: payer } = await sb.from("muse_profiles").select("age_verified, age_verified_at").eq("id", profile.id).maybeSingle();
-      if (!isAgeVerificationCurrent(payer as any)) {
+      const { data: payer }: { data: AgeVerificationRow | null } = await sb.from("muse_profiles").select("age_verified, age_verified_at").eq("id", profile.id).maybeSingle();
+      if (!isAgeVerificationCurrent(payer)) {
         return NextResponse.json({ error: "Identity verification required", code: "VERIFICATION_REQUIRED" }, { status: 403 });
       }
 
@@ -489,11 +494,11 @@ export async function POST(req: NextRequest) {
     if (action === "cancel-refund-request") {
       const { requestId } = body;
       if (!requestId) return NextResponse.json({ error: "requestId required" }, { status: 400 });
-      const { data: req } = await sb.from("muse_refund_requests")
+      const { data: req }: { data: RefundRequestRow | null } = await sb.from("muse_refund_requests")
         .select("id, user_id, status").eq("id", requestId).maybeSingle();
       if (!req) return NextResponse.json({ error: "Request not found" }, { status: 404 });
       if (String(req.user_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      if ((req as any).status !== "open") return NextResponse.json({ error: "Already resolved" }, { status: 400 });
+      if (req.status !== "open") return NextResponse.json({ error: "Already resolved" }, { status: 400 });
       const { error } = await sb.from("muse_refund_requests").delete().eq("id", requestId);
       if (error) return NextResponse.json({ error: "Could not withdraw" }, { status: 500 });
       return NextResponse.json({ success: true });

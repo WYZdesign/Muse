@@ -7,9 +7,23 @@ import { getProfileShareUrl } from "@/lib/urls";
 
 export const dynamic = "force-dynamic";
 
-async function fetchProfile(id: string) {
+/** A muse_profiles row as selected for the public profile page. */
+type ProfileRow = {
+  id: string;
+  name: string;
+  type?: string;
+  avatar?: string;
+  bio?: string;
+  loc?: string;
+  styles?: string[];
+  zodiac?: string;
+  mbti?: string;
+  verified?: boolean;
+};
+
+async function fetchProfile(id: string): Promise<ProfileRow | null> {
   const sb = getServiceClient();
-  const { data } = await sb
+  const { data }: { data: ProfileRow | null } = await sb
     .from("muse_profiles")
     .select("id, name, type, avatar, bio, loc, styles, zodiac, mbti, verified")
     .eq("id", id)
@@ -19,7 +33,7 @@ async function fetchProfile(id: string) {
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
-  const p = (await fetchProfile(id)) as any;
+  const p = await fetchProfile(id);
   if (!p) return { title: "Profile not found — Musa" };
   const title = `${p.name} — ${p.type || "Creative"} on Musa`;
   const description = p.bio || `${p.name} is a ${p.type || "creative"} on Musa${p.loc ? `, based in ${p.loc}` : ""}. Discover and collaborate.`;
@@ -34,7 +48,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function ProfileDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const p = (await fetchProfile(id)) as any;
+  const p = await fetchProfile(id);
   if (!p) notFound();
 
   return (

@@ -12,6 +12,32 @@ export type RealtimeMessage = {
   created_at?: string;
 };
 
+/** A muse_messages row as returned by the history endpoint. */
+type MessageRow = {
+  sender_id?: unknown;
+  text?: string | null;
+  img?: string | null;
+  kind?: string | null;
+  media_url?: string | null;
+  media_type?: string | null;
+  duration_ms?: number | null;
+  transcript?: string | null;
+  created_at?: string | null;
+  client_msg_id?: string | null;
+};
+
+/** The live INSERT row forwarded by the muse_messages realtime channel. */
+type LiveMessageRow = {
+  sender_id: string;
+  text: string;
+  img?: string | null;
+  kind?: string | null;
+  media_url?: string | null;
+  media_type?: string | null;
+  duration_ms?: number | null;
+  transcript?: string | null;
+};
+
 function convoIdFor(a: string, b: string): string {
   return [a, b].sort().join("__");
 }
@@ -96,8 +122,8 @@ export async function fetchConversationHistory(opts: {
     );
     if (!res.ok) return [];
     const data = await res.json();
-    const rows = Array.isArray(data.messages) ? data.messages : [];
-    return rows.map((r: any) => ({
+    const rows: MessageRow[] = Array.isArray(data.messages) ? data.messages : [];
+    return rows.map((r) => ({
       from: String(r.sender_id) === String(opts.myId) ? ("me" as const) : ("them" as const),
       text: r.text || "",
       img: r.img || undefined,
@@ -195,8 +221,8 @@ export function subscribeToConversation(opts: {
           table: "muse_messages",
           filter: `match_id=eq.${convo}`,
         },
-        (payload: any) => {
-          const row = payload.new;
+        (payload: unknown) => {
+          const row = (payload as { new?: LiveMessageRow | null }).new;
           if (!row) return;
           const sender = row.sender_id;
           const text = row.text;

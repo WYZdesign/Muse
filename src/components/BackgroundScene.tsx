@@ -8,6 +8,15 @@ import { hexToRgba } from "@/lib/color";
 
 const PC = ["#FFD700","#FF6B6B","#D4A5FF","#98FB98","#FFDAB9","#87CEEB","#FF8A80","#FFD1A4","#FFB5C2","#FFE4B5","#FF9A56","#E6E6FA"];
 
+// A single comet spark and the comet that owns it, matching the fields pushed
+// in spawnComet()/animate() below.
+type CometSpark = { x: number; y: number; vx: number; vy: number; life: number; size: number; color: string };
+type Comet = {
+  x: number; y: number; vx: number; vy: number;
+  color: string; tailLen: number; life: number; maxLife: number;
+  sparks: CometSpark[]; active: boolean; size: number; freq: number; amp: number;
+};
+
 export default function BackgroundScene({ flash, paused = false }: { flash: string | null; paused?: boolean }) {
   const cometRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<HTMLDivElement>(null);
@@ -71,11 +80,11 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
     resize();
     window.addEventListener("resize", resize);
     const COLORS = ["#FFD700","#FF8A80","#D4A5FF","#FFBF00","#FFDAB9","#87CEEB","#98FB98","#FF69B4","#FFB5C2","#E6E6FA"];
-    const comets: any[] = [];
+    const comets: Comet[] = [];
     let animId = 0, spawnTimer = 0, t = 0;
 
     function spawnComet() {
-      if (comets.filter((c: any) => c.active).length >= 6) return;
+      if (comets.filter((c) => c.active).length >= 6) return;
       const angle = Math.random() < 0.5
         ? (Math.PI * 0.08 + Math.random() * Math.PI * 0.22)   // down-right ~14-54°
         : (Math.PI * 0.72 + Math.random() * Math.PI * 0.2);   // down-left ~130-165°

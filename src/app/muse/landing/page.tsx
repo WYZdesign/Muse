@@ -17,6 +17,12 @@ const QR_SOURCES = {
   personal: "?src=personal_invite",
 } as const;
 
+// DeviceOrientationEvent carries the iOS-style permission API only on some
+// browsers, so it is read off window through this narrow shape.
+type DeviceOrientationEventCtor = { requestPermission?: () => Promise<unknown> };
+// The waitlist join response: position/total/shareUrl are read behind a guard.
+type JoinResult = { position?: unknown; total?: unknown; shareUrl?: string };
+
 /* ── Mystical curly section divider ── */
 function SectionDivider() {
   return (
@@ -122,7 +128,8 @@ function useParallax<T extends HTMLElement>(strength = 16) {
     const onMouse = (e: MouseEvent) => { tx = (e.clientX / innerWidth - 0.5) * 2; ty = (e.clientY / innerHeight - 0.5) * 2; };
     const onOrient = (e: DeviceOrientationEvent) => { const g = Math.max(-1, Math.min(1, (e.gamma ?? 0) / 45)); const b = Math.max(-1, Math.min(1, (e.beta ?? 0) / 90)); tx = g; ty = b; };
     const onFirstTouch = () => {
-      const DOE = (window as any).DeviceOrientationEvent;
+      const w = window as unknown as { DeviceOrientationEvent?: DeviceOrientationEventCtor };
+      const DOE = w.DeviceOrientationEvent;
       if (DOE && typeof DOE.requestPermission === "function") DOE.requestPermission().catch(() => {});
     };
     let raf = 0;
@@ -380,7 +387,7 @@ export default function MuseLandingPage() {
     setShowQrModal(true);
   };
 
-  const applyJoinResult = (data: any) => {
+  const applyJoinResult = (data: JoinResult | null) => {
     if (data && typeof data.position === "number" && data.shareUrl) {
       setJoinInfo({ position: data.position, total: Number(data.total) || 0, shareUrl: data.shareUrl });
     }

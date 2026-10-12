@@ -6,6 +6,14 @@ import { embedText, cosineSimilarity, aiEnabled } from "@/lib/ai";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 import { parseWith, EmbeddingsSchema } from "@/lib/validate";
 
+/** A muse_profiles row as selected for the cosine search. */
+type SearchProfileRow = {
+  id?: unknown;
+  name?: string | null;
+  type?: string | null;
+  embedding: number[];
+};
+
 /**
  * Musa Embeddings API — OpenRouter + Supabase (replaces Ollama + Qdrant).
  * Actions: embed, search, batch-embed, info.
@@ -48,7 +56,7 @@ export async function POST(req: NextRequest) {
       if (!vector) return NextResponse.json({ error: "vector required" }, { status: 400 });
 
       const sb = getServiceClient();
-      const { data: profiles, error: searchErr } = await sb.from("muse_profiles")
+      const { data: profiles, error: searchErr }: { data: SearchProfileRow[] | null; error: { message: string } | null } = await sb.from("muse_profiles")
         .select("id, name, type, embedding")
         .not("embedding", "is", null)
         .limit(500);
@@ -58,8 +66,8 @@ export async function POST(req: NextRequest) {
       }
 
       const results = (profiles || [])
-        .filter((p: any) => String(p.id) !== String(excludeUserId) && Array.isArray(p.embedding) && p.embedding.length === vector.length)
-        .map((p: any) => ({ userId: p.id, name: p.name, type: p.type, score: cosineSimilarity(vector, p.embedding) }))
+        .filter((p) => String(p.id) !== String(excludeUserId) && Array.isArray(p.embedding) && p.embedding.length === vector.length)
+        .map((p) => ({ userId: p.id, name: p.name, type: p.type, score: cosineSimilarity(vector, p.embedding) }))
         .filter((r) => r.score >= (minScore || 0.3))
         .sort((a, b) => b.score - a.score)
         .slice(0, Math.min(limit || 10, 50));

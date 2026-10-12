@@ -7,9 +7,21 @@ import { getPostShareUrl } from "@/lib/urls";
 
 export const dynamic = "force-dynamic";
 
-async function fetchPost(id: string) {
+/** The embedded author join on a muse_feed_posts row. */
+type PostAuthor = { name?: string; avatar?: string };
+/** A muse_feed_posts row as selected for the public post page. */
+type PostRow = {
+  id: string;
+  text?: string;
+  img?: string;
+  type?: string;
+  created_at?: string;
+  author_id?: PostAuthor | null;
+};
+
+async function fetchPost(id: string): Promise<PostRow | null> {
   const sb = getServiceClient();
-  const { data } = await sb
+  const { data }: { data: PostRow | null } = await sb
     .from("muse_feed_posts")
     .select("id, text, img, type, created_at, author_id(id, name, avatar)")
     .eq("id", id)
@@ -21,7 +33,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const post = await fetchPost(id);
   if (!post) return { title: "Post not found — Musa" };
-  const author = (post as any).author_id as { name?: string } | null;
+  const author = post.author_id;
   const authorName = author?.name || "Musa Creative";
   const title = `${authorName} on Musa`;
   const description = (post.text || "").slice(0, 160);
@@ -39,7 +51,7 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
   const post = await fetchPost(id);
   if (!post) notFound();
 
-  const author = (post as any).author_id as { name?: string; avatar?: string } | null;
+  const author = post.author_id;
   const authorName = author?.name || "Musa Creative";
   const authorAvatar = author?.avatar || "";
   const time = post.created_at ? new Date(post.created_at).toLocaleDateString() : "recently";
