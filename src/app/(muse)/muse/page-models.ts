@@ -246,6 +246,12 @@ export type FeedStory = {
   time: string;
 };
 
+// The story slot's owned row (useFeedData's `stories` state). Same fields as
+// FeedStory but `img` is always present, because the shared slots that render
+// it (FeedScreen's row, the StoryViewer) read `img` unconditionally, while the
+// raw moments endpoint can omit it.
+export type MomentStory = Omit<FeedStory, "img"> & { img: string };
+
 // Settings (role-adaptive) view models. MuseTheme is the persisted theme union
 // (page.tsx's theme state); BlockedProfileRow is the enriched blocked-users row
 // the Settings blocked-users sub-page fetches by id and falls back from to the

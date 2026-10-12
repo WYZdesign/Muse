@@ -1,6 +1,7 @@
 "use client";
 import { useState, useCallback, useRef } from "react";
-import type { Screen } from "../components/types";
+import type { Screen, Profile, LikeAnchor } from "../components/types";
+import type { FeedPostRow } from "../page-models";
 import { useModalVisibility } from "./useModalVisibility";
 
 export function useAppState() {
@@ -19,8 +20,8 @@ export function useAppState() {
   const [showUnlimitedBadge, setShowUnlimitedBadge] = useState(true);
   const [showLikeNote, setShowLikeNote] = useState(false);
   const [likeNoteText, setLikeNoteText] = useState("");
-  const [noteTargetProfile, setNoteTargetProfile] = useState<any>(null);
-  const [likeNoteAnchor, setLikeNoteAnchor] = useState<any>(null);
+  const [noteTargetProfile, setNoteTargetProfile] = useState<Profile | null>(null);
+  const [likeNoteAnchor, setLikeNoteAnchor] = useState<LikeAnchor | null>(null);
   const [currentPhotoIdx, setCurrentPhotoIdx] = useState(0);
   const [cardScrolled, setCardScrolled] = useState(false);
   const [connTab, setConnTab] = useState<"community" | "events" | "sessions" | "forum" | "feed" | "professional">("community");
@@ -37,7 +38,7 @@ export function useAppState() {
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
   const [feedText, setFeedText] = useState("");
   const [feedMedia, setFeedMedia] = useState<string[]>([]);
-  const [feedPostsStatic, setFeedPostsStatic] = useState<any[]>([]);
+  const [feedPostsStatic, setFeedPostsStatic] = useState<FeedPostRow[]>([]);
   const [feedFilter, setFeedFilter] = useState<"all" | "photos" | "videos" | "text" | "bts">("all");
   const [museCat, setMuseCat] = useState<"all" | "tfp" | "paid" | "opencall" | "concept">("all");
   const [toastMsg, setToastMsg] = useState<{ msg: string; onTap?: () => void; type?: "info" | "success" | "error" } | null>(null);
@@ -45,7 +46,7 @@ export function useAppState() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [_obStep10Known, _setObStep10Known] = useState<"yes" | "no" | "test" | null>(null);
   const [matchesView, setMatchesView] = useState<"list" | "grid">("list");
-  const [messageRequests, setMessageRequests] = useState<any[]>([]);
+  const [messageRequests, setMessageRequests] = useState<unknown[]>([]);
   const [profileViews, setProfileViews] = useState(0);
   const [profileViewers, setProfileViewers] = useState<{ name: string; avatar: string; time: string }[]>([]);
   const [showStory, setShowStory] = useState<number | null>(null);
@@ -53,7 +54,7 @@ export function useAppState() {
   const [activityFeed, setActivityFeed] = useState<{ id: number; type: string; from: string; avatar: string; text: string; time: string; read: boolean }[]>([]);
   const [serverNotifCount, setServerNotifCount] = useState(0);
   const [discoveryPrefs, setDiscoveryPrefs] = useState<{ ageMin: number; ageMax: number; distance: number; gender: string }>({ ageMin: 18, ageMax: 50, distance: 50, gender: "all" });
-  const [savedSearches, setSavedSearches] = useState<{ id: string; name: string; query?: string; filters?: any }[]>([]);
+  const [savedSearches, setSavedSearches] = useState<{ id: string; name: string; query?: string; filters?: Record<string, unknown> }[]>([]);
   const [myGeo, setMyGeo] = useState<{ lat: number; long: number; city: string; state: string; requiresIdVerification: boolean } | null>(null);
   const [supportOpen, setSupportOpen] = useState(false);
 

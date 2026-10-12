@@ -26,6 +26,19 @@ export type ActiveCall = {
   startedAt: number;
 } | null;
 
+// Shape of the `payload` carried on the shared `muse-calls` broadcast channel
+// (ring / accept / decline / end / recording). Every field is read defensively
+// off the wire, so all are optional.
+type CallSignal = {
+  to?: string | number;
+  from?: string | number;
+  fromName?: string;
+  room?: string;
+  kind?: string;
+  callId?: string;
+  on?: unknown;
+};
+
 /**
  * Musa calls — LiveKit rooms + ringing over a shared Supabase broadcast channel.
  *
@@ -57,7 +70,7 @@ export function useCall(myId: string | null | undefined) {
     if (!myId) return;
     const ch = supabase.channel("muse-calls", { config: { broadcast: { self: false } } });
 
-    ch.on("broadcast", { event: "ring" }, ({ payload }: { payload: any }) => {
+    ch.on("broadcast", { event: "ring" }, ({ payload }: { payload: CallSignal }) => {
       if (!payload || String(payload.to) !== String(myId)) return;
       // Don't stack a second ring over an active call.
       if (activeRef.current) return;
@@ -70,18 +83,18 @@ export function useCall(myId: string | null | undefined) {
       });
     });
 
-    ch.on("broadcast", { event: "accept" }, ({ payload }: { payload: any }) => {
+    ch.on("broadcast", { event: "accept" }, ({ payload }: { payload: CallSignal }) => {
       if (!payload || String(payload.to) !== String(myId)) return;
       setError(null);
     });
 
-    ch.on("broadcast", { event: "decline" }, ({ payload }: { payload: any }) => {
+    ch.on("broadcast", { event: "decline" }, ({ payload }: { payload: CallSignal }) => {
       if (!payload || String(payload.to) !== String(myId)) return;
       setActive((a) => (a && a.outgoing ? null : a));
       setError("Call declined");
     });
 
-    ch.on("broadcast", { event: "end" }, ({ payload }: { payload: any }) => {
+    ch.on("broadcast", { event: "end" }, ({ payload }: { payload: CallSignal }) => {
       if (!payload || String(payload.to) !== String(myId)) return;
       setActive(null);
       setIncoming(null);
@@ -89,7 +102,7 @@ export function useCall(myId: string | null | undefined) {
     });
 
     // Both sides always see that a recording is happening.
-    ch.on("broadcast", { event: "recording" }, ({ payload }: { payload: any }) => {
+    ch.on("broadcast", { event: "recording" }, ({ payload }: { payload: CallSignal }) => {
       if (!payload || String(payload.to) !== String(myId)) return;
       setPeerRecording(Boolean(payload.on));
     });

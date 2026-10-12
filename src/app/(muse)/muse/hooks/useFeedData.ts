@@ -1,21 +1,43 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import type { SetStateAction } from "react";
+import type { FeedPostRow, FeedStory, MomentStory, NetworkForumPost } from "../page-models";
 import { trackError } from "@/lib/errorTracker";
 import { normalizeForumPost, normalizeFeedPost } from "./normalizers";
+
+// Normalized row shapes the two normalizers above emit. The exposed setters are
+// widened to accept them (see the casts below) because useBootstrapData's
+// bootstrap pass writes the same endpoints with the raw normalized arrays,
+// while the rendered value keeps the flat page-models row type.
+type NormalizedFeed = ReturnType<typeof normalizeFeedPost>;
+type NormalizedForum = ReturnType<typeof normalizeForumPost>;
+
+// Raw /api/muse?type=moments row (joined author, embedded counts) before the
+// story slot flattens it.
+type RawMoment = {
+  id: number | string;
+  author_id?: { name?: string; avatar?: string } | null;
+  text?: string;
+  img?: string;
+  type?: string;
+  created_at?: string;
+  likes?: number;
+  comments?: number;
+};
 
 export type UseFeedDataArgs = {
   authFetch: (url: string, init?: RequestInit) => Promise<Response>;
   profileId: string | null;
-  initialStories: any[];
+  initialStories: MomentStory[];
 };
 
 export function useFeedData({ authFetch, profileId, initialStories }: UseFeedDataArgs) {
-  const [liveFeed, setLiveFeed] = useState<any[] | null>(null);
-  const [feedPosts, setFeedPosts] = useState<{id:number;author:string;avatar:string;type:string;text:string;likes:number;comments:number;shares:number;time:string;liked:boolean;saved:boolean;img?:string;media?:string[];reactions?:Record<string,number>}[]>([]);
-  const [stories, setStories] = useState<any[]>(initialStories);
-  const [liveForum, setLiveForum] = useState<any[] | null>(null);
-  const [forumPosts, setForumPosts] = useState<{id:number;title:string;body:string;author:string;avatar:string;votes:number;comments:{author:string;text:string}[];cat:string;time:string;pinned:boolean}[]>([]);
+  const [liveFeed, setLiveFeed] = useState<FeedPostRow[] | null>(null);
+  const [feedPosts, setFeedPosts] = useState<FeedPostRow[]>([]);
+  const [stories, setStories] = useState<MomentStory[]>(initialStories);
+  const [liveForum, setLiveForum] = useState<NetworkForumPost[] | null>(null);
+  const [forumPosts, setForumPosts] = useState<NetworkForumPost[]>([]);
 
   // ═══ FEED: fetch real feed posts from API ═══
   useEffect(() => {
@@ -23,7 +45,7 @@ export function useFeedData({ authFetch, profileId, initialStories }: UseFeedDat
     let cancelled = false;
     authFetch("/api/muse?type=feed")
       .then(r => r.json())
-      .then(d => { if (!cancelled && Array.isArray(d.posts)) setLiveFeed(d.posts.map((p: any) => normalizeFeedPost(p, profileId))); })
+      .then(d => { if (!cancelled && Array.isArray(d.posts)) setLiveFeed(d.posts.map((p: Parameters<typeof normalizeFeedPost>[0]) => normalizeFeedPost(p, profileId))); })
       .catch((err) => { trackError("fetch_feed", { err: String(err) }); });
     return () => { cancelled = true; };
   }, [profileId]);
@@ -36,7 +58,7 @@ export function useFeedData({ authFetch, profileId, initialStories }: UseFeedDat
       .then(r => r.json())
       .then(d => {
         if (cancelled || !Array.isArray(d.moments)) return;
-        const mapped = d.moments.map((m: any) => ({
+        const mapped = d.moments.map((m: RawMoment) => ({
           id: m.id,
           author: m.author_id?.name || "Musa",
           avatar: m.author_id?.avatar || "",
@@ -66,10 +88,10 @@ export function useFeedData({ authFetch, profileId, initialStories }: UseFeedDat
   }, [profileId]);
 
   return {
-    liveFeed, setLiveFeed,
+    liveFeed, setLiveFeed: setLiveFeed as (value: SetStateAction<FeedPostRow[] | null> | NormalizedFeed[]) => void,
     feedPosts, setFeedPosts,
-    stories, setStories,
-    liveForum, setLiveForum,
+    stories, setStories: setStories as (value: SetStateAction<MomentStory[]> | SetStateAction<FeedStory[]> | unknown[]) => void,
+    liveForum, setLiveForum: setLiveForum as (value: SetStateAction<NetworkForumPost[] | null> | SetStateAction<unknown[] | null> | NormalizedForum[]) => void,
     forumPosts, setForumPosts,
   };
 }

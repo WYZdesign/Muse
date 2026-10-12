@@ -4,11 +4,26 @@ import { FiX, FiCheck, FiStar } from "react-icons/fi";
 import StreakWidget from "../components/StreakWidget";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import { rotateQuests } from "@/lib/questEngine";
+import type { Quest } from "../page-models";
+
+// A quest board row. Mirrors the get-quests payload (page-models Quest) plus the
+// reward/description fields the card renders. `reward_amount` is part of the
+// real `select("*")` payload (the claim path reads it); the demo board omits it,
+// so that literal is asserted below. `quest_tier` stays optional and the demo
+// board's own `tier` is declared, so the demo literal still assigns without a
+// runtime change.
+type QuestRow = Omit<Quest, "quest_tier"> & {
+  quest_tier?: string;
+  tier?: string;
+  reward_amount: number;
+  reward_label?: string;
+  description?: string;
+};
 
 interface QuestPanelProps {
   show: boolean;
   onClose: () => void;
-  apiFetch: (url: string, opts?: any) => Promise<any>;
+  apiFetch: (url: string, opts?: RequestInit) => Promise<Response>;
   showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
   onRewardGranted?: (rewardType: string, amount: number) => void;
   onClaimablesChange?: (count: number) => void;
@@ -51,13 +66,13 @@ const DEMO_QUESTS = [
   { id: "s1", icon: "🎬", title: "Behind-the-scenes streak: 6 of 14 days", tier: "season", completed: false, claimed: false, progress: 6, target: 14, description: "Post a BTS moment on 14 different days this season." },
   { id: "l1", icon: "👑", title: "Refer 3 friends", tier: "legendary", completed: false, claimed: false, progress: 1, target: 3, description: "Invite friends and unlock a free month of Pro." },
   { id: "st1", icon: "🚀", title: "Finish onboarding", tier: "starter", completed: true, claimed: true, progress: 1, target: 1, description: "Set up your profile and first portfolio pieces." },
-];
+] as QuestRow[];
 const DEMO_XP = { total_xp: 1480, level: 5 };
 
 // Concise one-line objective shown when a quest is expanded. Prefers the
 // backend description; when that's empty, derives a short sentence from the
 // quest title/type so the card never reads "No description available."
-function deriveQuestDescription(q: any): string {
+function deriveQuestDescription(q: QuestRow): string {
   const desc = typeof q?.description === "string" ? q.description.trim() : "";
   if (desc) return desc;
   const t = String(q?.title || "").toLowerCase();
@@ -76,21 +91,21 @@ function deriveQuestDescription(q: any): string {
 }
 
 export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewardGranted, onClaimablesChange, onQuestsChange, loginStreak = 0, weeklyLogins = [false,false,false,false,false,false,false] }: QuestPanelProps) {
-  const [allQuests, setAllQuests] = useState<any[]>([]);
+  const [allQuests, setAllQuests] = useState<QuestRow[]>([]);
   const [xp, setXp] = useState({ total_xp: 0, level: 1 });
   const [filter, setFilter] = useState<string>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const [streakOpen, setStreakOpen] = useState(true);
 
-  const quests = rotateQuests(allQuests);
+  const quests = rotateQuests(allQuests as (QuestRow & { quest_tier: string })[]);
 
   const fetchQuests = useCallback(async () => {
     if (DEMO_MODE) {
       // Populated demo board (see DEMO_QUESTS) rather than an empty panel.
       setAllQuests(DEMO_QUESTS);
       setXp(DEMO_XP);
-      onClaimablesChange?.(DEMO_QUESTS.filter((q: any) => q.completed && !q.claimed).length);
+      onClaimablesChange?.(DEMO_QUESTS.filter((q) => q.completed && !q.claimed).length);
       onQuestsChange?.();
       return;
     }
@@ -99,7 +114,7 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
       const data = await res.json();
       setAllQuests(data.quests || []);
       setXp(data.xp || { total_xp: 0, level: 1 });
-      onClaimablesChange?.((data.quests || []).filter((q: any) => q.completed && !q.claimed).length);
+      onClaimablesChange?.((data.quests || []).filter((q: QuestRow) => q.completed && !q.claimed).length);
       onQuestsChange?.();
     } catch (e) { console.warn("[Quests] fetch failed:", e); }
   }, [apiFetch, onClaimablesChange, onQuestsChange]);
@@ -285,7 +300,7 @@ export default function QuestPanel({ show, onClose, apiFetch, showToast, onRewar
               <div style={{ fontSize: 13, color: "var(--text2)", maxWidth: 280 }}>Switch to a different filter or check back later.</div>
             </div>
           )}
-          {visible.map((q: any) => {
+          {visible.map((q) => {
             const tier = TIER_CONFIG[q.quest_tier] || TIER_CONFIG.weekly;
             const pct = q.target > 0 ? Math.min(100, (q.progress / q.target) * 100) : 0;
             const isClaimable = q.completed && !q.claimed;

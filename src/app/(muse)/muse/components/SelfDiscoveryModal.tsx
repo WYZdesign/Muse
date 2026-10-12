@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { FiArrowLeft, FiX } from "react-icons/fi";
 import { ZE, CE, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti } from "./types";
+import type { OnboardingData } from "../hooks/useAuthOnboardingState";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 
 type TestKey = "zodiac" | "chinese" | "mbti" | "lifepath";
@@ -10,9 +11,9 @@ type TestKey = "zodiac" | "chinese" | "mbti" | "lifepath";
 interface SelfDiscoveryModalProps {
   open: boolean;
   onClose: () => void;
-  obData: any;
-  onSaved: (key: string, value: any) => void;
-  apiFetch: (url: string, opts?: any) => Promise<any>;
+  obData: OnboardingData;
+  onSaved: (key: string, value: string | number) => void;
+  apiFetch: (url: string, opts?: RequestInit) => Promise<Response>;
   showToast: (m: string) => void;
 }
 
@@ -42,7 +43,7 @@ export default function SelfDiscoveryModal({ open, onClose, obData, onSaved, api
     setView("menu");
   };
 
-  const save = async (apiKey: string, localKey: string, value: any, toast: string) => {
+  const save = async (apiKey: string, localKey: string, value: string | number, toast: string) => {
     if (saving) return;
     setSaving(true);
     try {
@@ -57,7 +58,7 @@ export default function SelfDiscoveryModal({ open, onClose, obData, onSaved, api
     }
   };
 
-  const menuItems: { key: TestKey; label: string; value: any }[] = [
+  const menuItems: { key: TestKey; label: string; value: string | number | undefined }[] = [
     { key: "zodiac", label: "Zodiac", value: obData?.zodiac },
     { key: "chinese", label: "Chinese Zodiac", value: obData?.chinese },
     { key: "mbti", label: "MBTI", value: obData?.mbti },
