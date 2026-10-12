@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { useDiscoveryData } from "./useDiscoveryData";
 
-const json = (o: unknown) => new Response(JSON.stringify(o), { status: 200 });
+const json = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status });
 
 function makeAuthFetch() {
   return vi.fn(async (url: string) => {
@@ -38,6 +38,17 @@ describe("useDiscoveryData", () => {
   // verified checkmark and online dot could never show for a real profile).
   // This locks in that the hook derives `online` from last_seen_at the same
   // way the matches list already does (5-minute threshold).
+  it("surfaces a ranked-discovery failure instead of silently leaving an empty deck", async () => {
+    const authFetch = vi.fn(async (url: string) => {
+      if (url.includes("type=discover-ranked")) return json({ error: "Unknown type" }, 400);
+      return json({ matches: [] });
+    });
+    const apiFetch = vi.fn(async () => json({}));
+    const { result } = renderHook(() => useDiscoveryData({ authFetch, apiFetch, profileId: "u1" }));
+    await waitFor(() => expect(result.current.discoverError).toContain("temporarily unavailable"));
+    expect(result.current.liveProfiles).toBeNull();
+  });
+
   it("derives online from a recent last_seen_at, and passes through verified/showOnline", async () => {
     const recentSeen = new Date(Date.now() - 60000).toISOString();
     const staleSeen = new Date(Date.now() - 20 * 60000).toISOString();
