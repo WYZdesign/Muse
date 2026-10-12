@@ -97,7 +97,7 @@ export function useChatActions({
     trackQuest("send_message", "first_message");
     if (pendingRequest) {
       showToast({ msg: "Sent as a message request — they'll see it in Requests." });
-      const mark = (list: any[]) => list.map(m => m === userMsg ? { ...m, pending: true } : m);
+      const mark = (list: Match["messages"]) => list.map(m => m === userMsg ? { ...m, pending: true } : m);
       setChatTarget(prev => prev ? { ...prev, messages: mark(prev.messages) } : prev);
       setMatches(prev => prev.map(m => String(m.id) === targetId ? { ...m, messages: mark(m.messages) } : m));
     }

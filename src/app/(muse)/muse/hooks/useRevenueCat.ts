@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { Capacitor } from "@capacitor/core";
-import { Purchases, CustomerInfo, PurchasesOffering, LOG_LEVEL } from "@revenuecat/purchases-capacitor";
+import { Purchases, CustomerInfo, PurchasesOffering, LOG_LEVEL, type PurchasesPackage } from "@revenuecat/purchases-capacitor";
 
 interface MuseEntitlements {
   pro: boolean;
@@ -60,7 +60,7 @@ export function useRevenueCat() {
     init();
   }, [init]);
 
-  const purchasePackage = useCallback(async (pkg: any) => {
+  const purchasePackage = useCallback(async (pkg: PurchasesPackage) => {
     try {
       const { customerInfo: newInfo } = await Purchases.purchasePackage({ aPackage: pkg });
       setCustomerInfo(newInfo);

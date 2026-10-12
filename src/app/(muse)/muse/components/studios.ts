@@ -30,6 +30,10 @@ export interface StudioBuilding {
   // replaces in MuseMap.tsx.
   address?: string;
   geo?: { lat: number; long: number };
+  // Primary stage image, derived from studios[0].img when the building has one
+  // (see the FD_IMG_MAP pass below); optional so buildings without an image
+  // simply render nothing.
+  img?: string;
 }
 
 export interface StudioProfile {
@@ -188,7 +192,7 @@ for (const b of FD_STUDIO.buildings) {
     const stage = cfg.stages[s.id];
     if (stage) { s.img = `/studio/${cfg.folder}/${stage}.webp`; }
   }
-  if (b.studios[0]?.img) (b as any).img = b.studios[0].img;
+  if (b.studios[0]?.img) b.img = b.studios[0].img;
 }
 
 export const ALL_STUDIOS = [FD_STUDIO, ...OTHER_STUDIOS];

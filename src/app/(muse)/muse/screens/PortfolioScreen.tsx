@@ -53,7 +53,7 @@ export const PortfolioScreen = memo(function PortfolioScreen({
           authToken={getAccessToken() || ""}
           uploadImage={uploadImage}
           showToast={showToast}
-          matchOptions={matches.map((m: any) => ({ id: m.id, name: m.name, avatar: m.img || m.avatar }))}
+          matchOptions={matches.map((m) => ({ id: m.id, name: m.name, avatar: m.img || m.avatar }))}
         />
       </div>
       <Nav active="portfolio" onNavigate={showScreen} onHamburgerToggle={openHamburger} unreadCount={unreadNotificationCount} />

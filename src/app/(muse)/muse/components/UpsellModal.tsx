@@ -5,6 +5,7 @@ import type { Screen } from "./types";
 import { TIERS, TIERS_BY_SIDE } from "./types";
 import { viewerSideOf } from "@/lib/role";
 import { useFocusTrap } from "../hooks/useFocusTrap";
+import type { CurrentUser } from "../page-models";
 
 // Reusable contextual upsell modal — shown at the moment a free-tier user
 // hits a Pro-gated limit (Rewind, Boost, daily/super likes, viewing "Likes
@@ -22,7 +23,7 @@ export interface UpsellModalProps {
   reason: string;
   /** Optional emoji shown above the headline. Defaults to a sparkle. */
   icon?: string;
-  currentUser: any;
+  currentUser: CurrentUser;
   showScreen: (screen: Screen) => void;
 }
 

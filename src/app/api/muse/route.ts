@@ -317,7 +317,7 @@ export async function POST(req: NextRequest) {
     if (!user || !profile) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
     // Enforcement: suspended accounts are locked out of all mutating actions.
-    if ((profile as any).suspended) {
+    if ((profile as { suspended?: boolean | null }).suspended) {
       return NextResponse.json({ error: "Account suspended", code: "ACCOUNT_SUSPENDED" }, { status: 403 });
     }
 

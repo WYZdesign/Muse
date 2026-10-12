@@ -74,7 +74,7 @@ export default function ConnectPanel({ onClose }: Props) {
       } else {
         alert("Unexpected response — try again");
       }
-    } catch (e: any) { alert("Could not start onboarding — " + (e?.message || "try again")); }
+    } catch (e) { alert("Could not start onboarding — " + ((e as { message?: string } | null)?.message || "try again")); }
     setConnecting(false);
   };
 

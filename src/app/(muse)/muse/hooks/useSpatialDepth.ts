@@ -37,6 +37,7 @@
 
 import { authFetch } from "../lib/api";
 import { getDeviceTilt } from "./useDeviceTilt";
+import type { BodyPix } from "@tensorflow-models/body-pix";
 
 const DOWNSCALE_MAX = 640; // px — plenty sharp for a card-sized image, keeps the per-pixel masking loop cheap
 
@@ -45,7 +46,7 @@ const depthUrlCache = new Map<string, string | null>();
 // imageUrl -> built band layers, or null if we already tried and failed (either path).
 const layerCache = new Map<string, HTMLCanvasElement[] | null>();
 
-let segmenterPromise: Promise<any> | null = null;
+let segmenterPromise: Promise<BodyPix> | null = null;
 
 /**
  * Proves the main thread survived a long, frame-starving pass. The layout
