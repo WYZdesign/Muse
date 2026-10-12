@@ -27,7 +27,11 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `312876c0`
+## Confirmed merged, last verified at: `5d74e92b`
+
+### Reconciliation — 2026-10-12 (Codex): `312876c0` → `5d74e92b`
+
+- **`5d74e92b docs(status)`** — reconciled this delivery record after the XL-1 completion commit. This is documentation only; it records that main remains deployed and the type-safety sweep was already verified at `312876c0`.
 
 ### Reconciliation — 2026-10-10 (opencode/WYZMIND): `d086110c` → `312876c0`, 40 commits + 1 merge
 
