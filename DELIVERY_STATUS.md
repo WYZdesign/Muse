@@ -27,7 +27,14 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `5d74e92b`
+## Confirmed merged, last verified at: `f1db03c7`
+
+### Reconciliation — 2026-10-12 (opencode/WYZMIND): `5d74e92b` → `f1db03c7`
+
+- **`5a98dace docs(agents)`** — assigned all remaining tasks: new `CODEX_TASKS.md` (DB/ops large-to-massive: schema-dump reconciliation, `unused_index` triage, advisor maintenance, Pro-plan-gated items marked BLOCKED) plus `CLAUDE_TASKS.md` rescoped to the large code refactors (XL-2 screen splits, XL-3 REST schema completion, L-1 handler tests). Both packets carry a standing directive: keep an ongoing task list, do not stop until every assigned task is done or blocked-with-evidence, and independently double-check each. `HANDOVER.md` points at both.
+- **`f1db03c7 docs(comments)`** — L-2 closed: a leading purpose header added to 78 undocumented files (comments only, zero behavior change). The 3 size-ratcheted files (`page.tsx`, `NetworkScreen.tsx`, `SettingsScreen.tsx`) are excluded because a header line would break their frozen budget.
+- Closed with evidence this session: **M-3** (0 route dirs lack a test), **S-1** (`supabase/` is untracked and already gitignored), **S-2** (e2e snapshots already gitignored), **S-3** (the ~60 `console.debug` are a reviewed "ignorable ops" pattern, deliberately kept).
+- **XL-1** is done (see the 2026-10-10 block): the repo now has 0 real `any` annotations.
 
 ### Reconciliation — 2026-10-12 (Codex): `312876c0` → `5d74e92b`
 
