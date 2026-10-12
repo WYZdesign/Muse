@@ -26,6 +26,9 @@ const LK_URL = process.env.LIVEKIT_URL || "";
 const LK_KEY = process.env.LIVEKIT_API_KEY || "";
 const LK_SECRET = process.env.LIVEKIT_API_SECRET || "";
 
+/** A muse_call_recording_consents row, narrowed to the id the consent set reads. */
+type RecordingConsentRow = { user_id?: unknown };
+
 function configured() { return Boolean(LK_URL && LK_KEY && LK_SECRET); }
 /** Server SDK needs an HTTP(S) URL; LIVEKIT_URL is the wss:// form. */
 function httpUrl() { return LK_URL.replace(/^wss:/i, "https:").replace(/^ws:/i, "http:"); }
@@ -76,7 +79,7 @@ export async function POST(req: NextRequest) {
 
     // ═══ COMMUNITY VOICE ROOM (group call) ═══
     // Handled BEFORE the peer-id validation below — a room has no single peer.
-    // One shared room per community: any member can join, age-gated, up to 20.
+    // One shared room per community. Every member can join, age-gated, up to 20.
     if (action === "start-room") {
       const communityId = String(body.communityId || body.community_id || "");
       if (!UUID_RE.test(communityId)) return NextResponse.json({ error: "Invalid community" }, { status: 400 });
@@ -328,7 +331,7 @@ export async function POST(req: NextRequest) {
         if (error) return safeServerError(error, "recording consent");
         const { data: consents } = await sb.from("muse_call_recording_consents")
           .select("user_id").eq("call_id", recId);
-        const agreed = new Set((consents || []).map((row: any) => String(row.user_id)));
+        const agreed = new Set((consents || []).map((row: RecordingConsentRow) => String(row.user_id)));
         return NextResponse.json({ success: true, waitingForPeer: !agreed.has(String(call.caller_id)) || !agreed.has(String(call.callee_id)) });
       }
 
@@ -353,7 +356,7 @@ export async function POST(req: NextRequest) {
 
       const { data: consents, error: consentError } = await sb.from("muse_call_recording_consents")
         .select("user_id").eq("call_id", recId);
-      const agreed = new Set((consents || []).map((row: any) => String(row.user_id)));
+      const agreed = new Set((consents || []).map((row: RecordingConsentRow) => String(row.user_id)));
       if (consentError || !agreed.has(String(call.caller_id)) || !agreed.has(String(call.callee_id))) {
         return NextResponse.json({ error: "Both call participants must explicitly consent before recording", code: "RECORDING_CONSENT_REQUIRED" }, { status: 403 });
       }

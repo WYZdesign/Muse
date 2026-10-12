@@ -5,22 +5,23 @@ import { FiArrowLeft } from "react-icons/fi";
 import Nav from "../components/Nav";
 import type { Screen } from "../components/types";
 import { TIERS, TIERS_BY_SIDE } from "../components/types";
+import type { CurrentUser, AuthUser } from "../page-models";
 import { viewerSideOf } from "@/lib/role";
 import { startSubscriptionCheckout, startBoostCheckout } from "../lib/api";
 import { safeSetItem } from "../lib/safe-storage";
 
 export interface SubscriptionScreenProps {
   screen: Screen;
-  currentUser: any;
+  currentUser: CurrentUser;
   userTier: string;
   setUserTier?: (t: string) => void;
-  authUser: any;
+  authUser: AuthUser;
   showScreen: (s: Screen) => void;
   goBack?: () => void;
   openHamburger: () => void;
   unreadNotificationCount: number;
   showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
-  apiFetch?: (url: string, opts?: any) => Promise<Response>;
+  apiFetch?: (url: string, opts?: RequestInit) => Promise<Response>;
 }
 
 const BOOST_PRICE_MAP: Record<string, string> = { "24h": "3.99", "72h": "9.99", "7d": "19.99" };

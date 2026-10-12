@@ -20,6 +20,9 @@ const isPrivateAlbumObjectForOwner = (value: unknown, profileId: unknown): value
 type OwnedStorageObject = { bucket: "muse-private" | "muse-uploads"; path: string };
 type StorageCleanupFailure = OwnedStorageObject & { error: string };
 
+/** A muse_albums row read by the update gate: ownership plus cover/access columns. */
+type AlbumCoverRow = { profile_id?: string | number | null; cover_url?: string | null; access_level?: string | null };
+
 function isSafeStoragePath(path: string): boolean {
   if (!path || path.startsWith("/") || path.includes("..") || path.includes("\\") || path.includes("\0")) return false;
   return path.split("/").every((seg) => seg.length > 0);
@@ -177,7 +180,7 @@ export async function albumCreate({ sb, profile, rest, ip }: ActionContext) {
 export async function albumUpdate({ sb, profile, rest }: ActionContext) {
   const { albumId, title, description, cover_url, access_level, tags } = rest;
   if (!albumId) return NextResponse.json({ error: "albumId required" }, { status: 400 });
-  const { data: existing } = await sb.from("muse_albums").select("profile_id, cover_url, access_level").eq("id", albumId).maybeSingle();
+  const { data: existing }: { data: AlbumCoverRow | null } = await sb.from("muse_albums").select("profile_id, cover_url, access_level").eq("id", albumId).maybeSingle();
   if (!existing || String(existing.profile_id) !== String(profile.id)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (title !== undefined) updates.title = String(title).slice(0, 200);
@@ -193,9 +196,9 @@ export async function albumUpdate({ sb, profile, rest }: ActionContext) {
   }
   if (access_level !== undefined && ["public", "private", "invite"].includes(access_level as string)) {
     if (access_level !== "public") {
-      const { data: photos } = await sb.from("muse_album_photos").select("img_url").eq("album_id", albumId);
-      const nextCoverUrl = cover_url !== undefined ? cover_url : (existing as any).cover_url;
-      const hasPublicMedia = (photos || []).some((photo: any) => !isPrivateAlbumObjectForOwner(photo.img_url, profile.id));
+      const { data: photos }: { data: { img_url?: unknown }[] | null } = await sb.from("muse_album_photos").select("img_url").eq("album_id", albumId);
+      const nextCoverUrl = cover_url !== undefined ? cover_url : existing.cover_url;
+      const hasPublicMedia = (photos || []).some((photo) => !isPrivateAlbumObjectForOwner(photo.img_url, profile.id));
       if (hasPublicMedia || (nextCoverUrl && !isPrivateAlbumObjectForOwner(nextCoverUrl, profile.id))) {
         return NextResponse.json({ error: "Re-upload existing album media before making this album private" }, { status: 409 });
       }

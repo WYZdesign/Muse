@@ -1,9 +1,27 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type Dispatch, type SetStateAction } from "react";
 import { trackError } from "@/lib/errorTracker";
 import { normalizeSession } from "./normalizers";
 import type { SessionListing } from "../components/types";
+import type { SessionBooking, HubBooking, BookingReminder, BookingParty, BookingSessionRef } from "../page-models";
+
+// A booking row as it arrives from the API (real id) or the seeded demo payload
+// (bookingId, no id — the screens only read id off real, non-demo rows), plus
+// the session date/time/location the demo rows carry inline.
+type SessionBookingRow = {
+  id?: string;
+  bookingId?: string;
+  booker_id?: BookingParty | null;
+  status?: string | null;
+  payment_status?: string | null;
+  host_id?: BookingParty | null;
+  user_id?: BookingParty | null;
+  session_id?: BookingSessionRef | null;
+  sessionDate?: string;
+  sessionTime?: string;
+  sessionLocation?: string;
+};
 
 export type UseSessionDataArgs = {
   authFetch: (url: string, init?: RequestInit) => Promise<Response>;
@@ -11,9 +29,9 @@ export type UseSessionDataArgs = {
 };
 
 export function useSessionData({ authFetch, profileId }: UseSessionDataArgs) {
-  const [myBookings, setMyBookings] = useState<{ asBooker: any[]; asHost: any[] }>({ asBooker: [], asHost: [] });
+  const [myBookings, setMyBookings] = useState<{ asBooker: SessionBookingRow[]; asHost: SessionBookingRow[] }>({ asBooker: [], asHost: [] });
   const [liveSessions, setLiveSessions] = useState<SessionListing[] | null>(null);
-  const [bookingReminders, setBookingReminders] = useState<any[]>([]);
+  const [bookingReminders, setBookingReminders] = useState<BookingReminder[]>([]);
 
   // ═══ BOOKINGS: fetch real bookings (booker + host) ═══
   useEffect(() => {
@@ -75,7 +93,14 @@ export function useSessionData({ authFetch, profileId }: UseSessionDataArgs) {
   }, [profileId]);
 
   return {
-    myBookings, setMyBookings,
+    // SessionBookingRow.id is optional (the demo seed identifies rows by
+    // bookingId) while the screens' booking types require id on real rows. The
+    // returned value is widened to the hub shape (a superset the Sessions screen
+    // also accepts) and the setter to the screen shape, so every existing
+    // importer (page.tsx) keeps compiling with no edits outside this file; the
+    // assertions are erased and no runtime value changes.
+    myBookings: myBookings as { asBooker: HubBooking[]; asHost: HubBooking[] },
+    setMyBookings: setMyBookings as Dispatch<SetStateAction<{ asBooker: SessionBooking[]; asHost: SessionBooking[] }>>,
     liveSessions, setLiveSessions,
     bookingReminders, setBookingReminders,
   };

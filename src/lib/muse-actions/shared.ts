@@ -53,8 +53,8 @@ export function getAuthUser() {
  *  for transactional/safety notices that must always deliver. */
 export async function emailProfile(sb: ReturnType<typeof getServiceClient>, profileId: string, subject: string, title: string, body: string, ctaLabel?: string, ctaUrl?: string, prefKey?: "match" | "message" | "brief" | "like" | "call") {
   try {
-    const { data } = await sb.from("muse_profiles").select("email, preferences").eq("id", profileId).maybeSingle();
-    const prefs = (data as any)?.preferences?.notifications;
+    const { data }: { data: { email?: string | null; preferences?: { notifications?: Record<string, boolean | undefined> } | null } | null } = await sb.from("muse_profiles").select("email, preferences").eq("id", profileId).maybeSingle();
+    const prefs = data?.preferences?.notifications;
     const optedOut = !!prefKey && prefs && prefs[prefKey] === false;
     if (optedOut) return;
     if (data?.email) sendEmail(notify(data.email, subject, title, body, ctaLabel, ctaUrl)).catch(() => {});
@@ -197,8 +197,8 @@ export function isConvoParticipant(matchId: string, profileId: string): boolean 
  */
 export async function getBlockedIds(sb: ReturnType<typeof getServiceClient>, profileId: string | null | undefined): Promise<Set<string>> {
   if (!profileId) return new Set();
-  const { data: blocks } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
-  return new Set((blocks || []).map((b: any) => (String(b.user_id) === String(profileId) ? String(b.target_id) : String(b.user_id))));
+  const { data: blocks }: { data: { user_id?: unknown; target_id?: unknown }[] | null } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
+  return new Set((blocks || []).map((b) => (String(b.user_id) === String(profileId) ? String(b.target_id) : String(b.user_id))));
 }
 
 // Typed action registry used by the monolith and every per-domain route.

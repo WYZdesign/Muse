@@ -16,13 +16,13 @@ export default function KeyboardDelegate() {
       if (target.getAttribute("role") !== "button") return;
       if (target.getAttribute("tabIndex") === null) return;
       if (typeof target.getAttribute("onkeydown") === "string" && target.getAttribute("onkeydown") !== "") return;
-      if ((target as any).onkeydown) return;
+      if (target.onkeydown) return;
       e.preventDefault();
       e.stopPropagation();
       target.click();
     }
     document.addEventListener("keydown", handleKeyDown, { capture: true, passive: false });
-    return () => document.removeEventListener("keydown", handleKeyDown, { capture: true } as any);
+    return () => document.removeEventListener("keydown", handleKeyDown, { capture: true });
   }, []);
   return null;
 }

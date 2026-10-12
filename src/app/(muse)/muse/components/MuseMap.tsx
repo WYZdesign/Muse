@@ -3,6 +3,45 @@
 import { useRef, useEffect, useState } from "react";
 import { CITY_GEO } from "./types";
 import { ALL_STUDIOS } from "./studios";
+import type { DiscoveryProfile } from "../lib/discover-deck";
+
+// Mapbox GL is loaded at runtime from a CDN script (see the script-injection
+// branch below), so there is no bundled type for it. These narrow shapes
+// describe exactly the surface this component touches; the global itself is
+// read through the window cast.
+type MapboxLngLat = [number, number];
+type MapboxPopup = {
+  setText: (text: string) => MapboxPopup;
+  setHTML: (html: string) => MapboxPopup;
+};
+type MapboxMarker = {
+  setLngLat: (coords: MapboxLngLat) => MapboxMarker;
+  setPopup: (popup: MapboxPopup) => MapboxMarker;
+  addTo: (map: MapboxMap) => MapboxMarker;
+};
+type MapboxBounds = {
+  extend: (coord: MapboxLngLat) => MapboxBounds;
+};
+type MapboxCenter = { lat: number; lng: number };
+type MapboxFitOptions = { padding?: number; maxZoom?: number; duration?: number };
+type MapboxMap = {
+  addControl: (control: unknown, position?: string) => void;
+  on: (event: string, handler: () => void) => void;
+  getCenter: () => MapboxCenter;
+  getZoom: () => number;
+  resize: () => void;
+  fitBounds: (bounds: MapboxBounds, options?: MapboxFitOptions) => void;
+  remove: () => void;
+};
+type MapboxGL = {
+  accessToken: string;
+  Map: new (options: { container: HTMLElement; style: string; center: MapboxLngLat; zoom: number; attributionControl: boolean }) => MapboxMap;
+  NavigationControl: new (options: { showCompass: boolean; visualizePitch: boolean }) => unknown;
+  AttributionControl: new (options: { compact: boolean }) => unknown;
+  Marker: new (options: { element: HTMLElement }) => MapboxMarker;
+  Popup: new (options: { offset: number }) => MapboxPopup;
+  LngLatBounds: new (sw: MapboxLngLat, ne: MapboxLngLat) => MapboxBounds;
+};
 
 // Mapbox zoom levels run roughly 0 (whole world) to 22 (building-level);
 // there's no native "percentage" concept, but a 0-22 -> 0-100% mapping
@@ -13,9 +52,9 @@ function zoomToPercent(z: number): number {
   return Math.round((z / MAX_ZOOM_LEVEL) * 100);
 }
 
-export default function MuseMap({ filteredProfiles, myGeo, onClose }: { filteredProfiles: any[], myGeo?: {lat:number,lng:number}, onClose: () => void }) {
+export default function MuseMap({ filteredProfiles, myGeo, onClose }: { filteredProfiles: DiscoveryProfile[], myGeo?: {lat:number,lng:number}, onClose: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<any>(null);
+  const mapRef = useRef<MapboxMap | null>(null);
   const [loadError, setLoadError] = useState(false);
   // Debug readout (Torreé's ask, 2026-09-16): a live zoom% + lat/lng overlay
   // so she can pinpoint exactly where/at what zoom the off-screen studio
@@ -24,7 +63,7 @@ export default function MuseMap({ filteredProfiles, myGeo, onClose }: { filtered
 
   useEffect(() => {
     if (!containerRef.current) return;
-    const w = window as any;
+    const w = window as unknown as { mapboxgl: MapboxGL };
     const init = () => {
       try {
       w.mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";

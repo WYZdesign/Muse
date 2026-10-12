@@ -274,3 +274,30 @@ export type PortfolioSelection = {
 };
 
 export type PortfolioStats = { [key: string]: unknown };
+
+// Booking view models shared by useSessionData, the Sessions screen and the
+// Menu hub. get.ts's "bookings" handler returns id + status + payment_status
+// plus the embedded session/host/user join objects; the hub also reads
+// created_at, and the reminder readout returns the flattened bookingId/session
+// fields. SessionBooking mirrors the screen's row (accepts a null status);
+// HubBooking is the wider row the hub reads (a non-null status plus created_at)
+// and is still assignable to SessionBooking.
+export type BookingParty = { id?: string; name?: string; avatar?: string; verified?: boolean; type?: string };
+export type BookingSessionRef = { id?: string; title?: string; rate?: string; img?: string; type?: string; duration?: string };
+export type SessionBooking = {
+  id: string;
+  status?: string | null;
+  payment_status?: string | null;
+  host_id?: BookingParty | null;
+  user_id?: BookingParty | null;
+  session_id?: BookingSessionRef | null;
+};
+export type HubBooking = SessionBooking & { status?: string; created_at: string };
+export type BookingReminder = {
+  bookingId?: string;
+  isHost?: boolean;
+  sessionTitle?: string;
+  sessionDate?: string;
+  sessionTime?: string;
+  sessionLocation?: string;
+};

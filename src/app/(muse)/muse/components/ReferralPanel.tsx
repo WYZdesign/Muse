@@ -6,6 +6,20 @@ import { FiX } from "react-icons/fi";
 import { authFetch } from "../lib/auth-client";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 
+// A muse_referrals row as the status handler returns it (referee embedded).
+type ReferralRow = {
+  id?: string | number;
+  status?: string;
+  created_at: string;
+  referee_id?: { name?: string; avatar?: string } | null;
+};
+// A muse_referral_rewards row (reward_type/amount only; no paid-vs-pending
+// status server-side).
+type ReferralRewardRow = {
+  reward_type?: string;
+  amount_cents?: number;
+};
+
 type ReferralData = {
   code: string;
   referralUrl: string;
@@ -13,8 +27,8 @@ type ReferralData = {
   signedUp: number;
   subscribed: number;
   freeMonthsEarned: number;
-  referrals: any[];
-  rewards: any[];
+  referrals: ReferralRow[];
+  rewards: ReferralRewardRow[];
 };
 
 type Props = {
@@ -127,7 +141,7 @@ export default function ReferralPanel({ onClose }: Props) {
         {data?.referrals && data.referrals.length > 0 && (
           <div>
             <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginBottom: 8 }}>Recent Referrals</div>
-            {data.referrals.slice(0, 5).map((r: any) => (
+            {data.referrals.slice(0, 5).map((r) => (
               <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
                 <div style={{ width: 32, height: 32, borderRadius: 16, background: "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>
                   {r.referee_id?.avatar ? <Image src={r.referee_id.avatar} alt="Avatar" width={32} height={32} style={{ width: 32, height: 32, borderRadius: 16, objectFit: "cover" }} /> : "👤"}
