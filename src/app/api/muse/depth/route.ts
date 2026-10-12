@@ -27,7 +27,7 @@ import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 //                                   the near-universal convention, but some
 //                                   models differ; check the model's schema).
 //
-// This route fails soft everywhere: any missing config, network error, or
+// This route fails soft everywhere: a missing config, network error, or
 // unrecognized response shape returns a JSON { error } with a non-200
 // status, and the client (useSpatialDepth.ts) treats ANY non-success
 // response as "no depth available" and falls back to segmentation, then
@@ -61,7 +61,7 @@ async function isAuthed(req: NextRequest): Promise<boolean> {
 function normalizeOutput(out: unknown): string | null {
   if (typeof out === "string") return out;
   if (Array.isArray(out) && typeof out[0] === "string") return out[0];
-  if (out && typeof out === "object" && typeof (out as any).url === "string") return (out as any).url;
+  if (out && typeof out === "object" && typeof (out as { url?: unknown }).url === "string") return (out as { url: string }).url;
   return null;
 }
 

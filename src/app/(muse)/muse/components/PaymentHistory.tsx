@@ -4,6 +4,15 @@ import { useState, useEffect, useId } from "react";
 import { authFetch } from "../lib/auth-client";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 
+// A payment party is either a populated profile object (id/name/avatar) or a
+// raw user-id string, depending on how the row joined.
+type PaymentUser = {
+  id: string;
+  name: string;
+  avatar: string;
+};
+type PaymentParty = PaymentUser | string;
+
 type Payment = {
   id: string;
   amount_cents: number;
@@ -11,8 +20,8 @@ type Payment = {
   net_amount_cents: number;
   status: string;
   created_at: string;
-  payer_id?: { name: string; avatar: string };
-  payee_id?: { name: string; avatar: string };
+  payer_id?: PaymentParty;
+  payee_id?: PaymentParty;
   booking_id?: { session_id: string; status: string };
 };
 
@@ -74,8 +83,8 @@ export default function PaymentHistory({ userId, onClose }: Props) {
 
   const fmt = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
-  const received = payments.filter(p => p.payee_id && (p.payee_id as any).id === userId || (typeof p.payee_id === "string" && p.payee_id === userId));
-  const sent = payments.filter(p => p.payer_id && (p.payer_id as any).id === userId || (typeof p.payer_id === "string" && p.payer_id === userId));
+  const received = payments.filter(p => p.payee_id && (p.payee_id as PaymentUser).id === userId || (typeof p.payee_id === "string" && p.payee_id === userId));
+  const sent = payments.filter(p => p.payer_id && (p.payer_id as PaymentUser).id === userId || (typeof p.payer_id === "string" && p.payer_id === userId));
 
   const activeList = tab === "received" ? received : sent;
   const totalReceived = received.filter(p => p.status === "succeeded").reduce((s, p) => s + p.net_amount_cents, 0);
@@ -147,7 +156,7 @@ export default function PaymentHistory({ userId, onClose }: Props) {
                     </span>
                   </div>
                   <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
-                    {tab === "received" ? `From: ${(p.payer_id as any)?.name || "Client"}` : `To: ${(p.payee_id as any)?.name || "Creative"}`}
+                    {tab === "received" ? `From: ${(p.payer_id as PaymentUser)?.name || "Client"}` : `To: ${(p.payee_id as PaymentUser)?.name || "Creative"}`}
                     {" · "}{new Date(p.created_at).toLocaleDateString()}
                   </div>
                   {tab === "received" && p.commission_cents > 0 && (

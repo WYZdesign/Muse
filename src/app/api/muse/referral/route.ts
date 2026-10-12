@@ -9,6 +9,22 @@ import Stripe from "stripe";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 import { parseWith, ReferralSchema } from "@/lib/validate";
 
+/** A muse_referrals row as read by the status handler (referee embedded). */
+type ReferralRow = {
+  id?: string;
+  status?: string | null;
+  referee_id?: { name?: string; avatar?: string } | null;
+  created_at?: string;
+};
+
+/** A muse_referral_rewards row as read by the status handler. */
+type ReferralRewardRow = {
+  id?: string;
+  reward_type?: string | null;
+  amount_cents?: number | null;
+  created_at?: string;
+};
+
 /**
  * Musa Referral System — double-sided referral codes.
  * POST /api/muse/referral
@@ -118,20 +134,23 @@ export async function POST(req: NextRequest) {
       }
 
       // Count referrals
-      const { data: referrals } = await sb.from("muse_referrals")
+      // Supabase's select parser infers the embedded referee_id to-one join as
+      // an array; the runtime row carries an object (same pattern as get.ts).
+      // Cast the awaited response to the row shape read below, erased at runtime.
+      const { data: referrals }: { data: ReferralRow[] | null } = (await sb.from("muse_referrals")
         .select("id, status, referee_id(name, avatar), created_at")
         .eq("referrer_id", profile.id)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })) as unknown as { data: ReferralRow[] | null };
 
-      const { data: rewards } = await sb.from("muse_referral_rewards")
+      const { data: rewards }: { data: ReferralRewardRow[] | null } = await sb.from("muse_referral_rewards")
         .select("id, reward_type, amount_cents, created_at")
         .eq("recipient_id", profile.id)
         .order("created_at", { ascending: false });
 
       const totalReferrals = (referrals || []).length;
-      const signedUp = (referrals || []).filter((r: any) => r.status !== "pending").length;
-      const subscribed = (referrals || []).filter((r: any) => r.status === "subscribed" || r.status === "reward_issued").length;
-      const freeMonthsEarned = (rewards || []).filter((r: any) => r.reward_type === "free_month").length;
+      const signedUp = (referrals || []).filter((r) => r.status !== "pending").length;
+      const subscribed = (referrals || []).filter((r) => r.status === "subscribed" || r.status === "reward_issued").length;
+      const freeMonthsEarned = (rewards || []).filter((r) => r.reward_type === "free_month").length;
 
       return NextResponse.json({
         code,

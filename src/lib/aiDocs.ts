@@ -16,6 +16,14 @@ export interface MuseDoc {
   content: string;
 }
 
+/** A cached muse_ai_docs row as selected by retrieveContext. */
+type AiDocRow = {
+  section: string;
+  title: string;
+  content: string;
+  embedding: number[];
+};
+
 // Single source of truth for what the Musa AI knows about the product.
 // Keep this accurate to the live app's features.
 export const MUSE_KNOWLEDGE_BASE: MuseDoc[] = [
@@ -98,7 +106,7 @@ function keywordRetrieve(query: string, limit = 5): { context: string; sources: 
 /** Retrieve the most relevant KB chunks for a query as a single context string. */
 export async function retrieveContext(query: string, limit = 5): Promise<{ context: string; sources: string[] }> {
   const sb = getServiceClient();
-  const { data: docs } = await sb.from("muse_ai_docs").select("section, title, content, embedding");
+  const { data: docs }: { data: AiDocRow[] | null } = await sb.from("muse_ai_docs").select("section, title, content, embedding");
 
   if (!docs || docs.length === 0) {
     // Knowledge base not seeded — keyword retrieval over the in-memory KB.
@@ -109,10 +117,10 @@ export async function retrieveContext(query: string, limit = 5): Promise<{ conte
   if (!qv) {
     // No AI — return a few generic docs as context.
     const top = docs.slice(0, limit);
-    return { context: top.map((d: any) => `${d.title}: ${d.content}`).join("\n\n"), sources: top.map((d: any) => d.title) };
+    return { context: top.map((d) => `${d.title}: ${d.content}`).join("\n\n"), sources: top.map((d) => d.title) };
   }
 
-  const ranked = (docs as any[])
+  const ranked = docs
     .filter((d) => Array.isArray(d.embedding) && d.embedding.length === qv.length)
     .map((d) => ({ ...d, score: cosineSimilarity(qv, d.embedding) }))
     .sort((a, b) => b.score - a.score)

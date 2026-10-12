@@ -7,6 +7,24 @@ import { seedKnowledgeBase } from "@/lib/aiDocs";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 import { parseWith, EmbedSchema } from "@/lib/validate";
 
+/** A muse_profiles row as read for embedding (buildProfileText). */
+type EmbedProfileRow = {
+  name?: string | null;
+  type?: string | null;
+  bio?: string | null;
+  loc?: string | null;
+  styles?: string[] | null;
+  looking?: string[] | null;
+  zodiac?: string | null;
+  mbti?: string | null;
+};
+
+/** A muse_prompt_responses row as read for embedding (prompt text embedded). */
+type PromptResponseRow = {
+  response_text?: string | null;
+  prompt_id?: { prompt_text?: string | null } | null;
+};
+
 /**
  * Musa Embedding Pipeline — OpenRouter + Supabase (replaces Ollama + Qdrant).
  * Embeddings are stored on muse_profiles.embedding (JSONB) so matching is a
@@ -38,8 +56,8 @@ export async function POST(req: NextRequest) {
     if (!parsedE.ok) return NextResponse.json({ error: parsedE.error }, { status: 400 });
     const { action } = parsedE.data;
 
-    async function buildProfileText(profId: string): Promise<{ text: string; prof: any }> {
-      const { data: prof } = await sb.from("muse_profiles").select("*").eq("id", profId).maybeSingle();
+    async function buildProfileText(profId: string): Promise<{ text: string; prof: EmbedProfileRow | null }> {
+      const { data: prof }: { data: EmbedProfileRow | null } = await sb.from("muse_profiles").select("*").eq("id", profId).maybeSingle();
       if (!prof) return { text: "", prof: null };
       const parts: string[] = [];
       if (prof.name) parts.push(`Name: ${prof.name}`);
@@ -51,14 +69,17 @@ export async function POST(req: NextRequest) {
       if (prof.zodiac) parts.push(`Zodiac: ${prof.zodiac}`);
       if (prof.mbti) parts.push(`MBTI: ${prof.mbti}`);
 
-      const { data: responses } = await sb.from("muse_prompt_responses")
+      // Supabase's select parser infers the embedded prompt_id to-one join as
+      // an array; the runtime row carries an object (same pattern as get.ts).
+      // Cast the awaited response to the row shape read below, erased at runtime.
+      const { data: responses }: { data: PromptResponseRow[] | null } = (await sb.from("muse_prompt_responses")
         .select("response_text, prompt_id(prompt_text)")
         .eq("user_id", profId)
-        .limit(20);
+        .limit(20)) as unknown as { data: PromptResponseRow[] | null };
       if (responses?.length) {
         const qTexts = responses
-          .filter((r: any) => r.response_text)
-          .map((r: any) => `${r.prompt_id?.prompt_text || ""} ${r.response_text}`);
+          .filter((r) => r.response_text)
+          .map((r) => `${r.prompt_id?.prompt_text || ""} ${r.response_text}`);
         if (qTexts.length) parts.push(`Prompt answers: ${qTexts.join(" | ")}`);
       }
       return { text: parts.join(". ").trim(), prof };

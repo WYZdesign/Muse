@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import type { CheckinData, SafetyProfile } from "../components/SafetyCheckinModal";
+import type { Prompt, Response as PromptResponse } from "../components/PromptBankModal";
 
 export type UseProfileDataArgs = {
   apiFetch: (url: string, init?: RequestInit) => Promise<Response>;
@@ -10,10 +12,10 @@ export type UseProfileDataArgs = {
 
 export function useProfileData({ apiFetch, authFetch, profileId }: UseProfileDataArgs) {
   const [myStats, setMyStats] = useState<{ views: number; likes: number } | null>(null);
-  const [safetyCheckins, setSafetyCheckins] = useState<any[]>([]);
-  const [safetyProfile, setSafetyProfile] = useState<any>(null);
-  const [promptBankData, setPromptBankData] = useState<any[]>([]);
-  const [promptResponses, setPromptResponses] = useState<any[]>([]);
+  const [safetyCheckins, setSafetyCheckins] = useState<CheckinData[]>([]);
+  const [safetyProfile, setSafetyProfile] = useState<SafetyProfile | null>(null);
+  const [promptBankData, setPromptBankData] = useState<Prompt[]>([]);
+  const [promptResponses, setPromptResponses] = useState<PromptResponse[]>([]);
 
   // ═══ SAFETY: fetch check-ins and safety profile on mount ═══
   useEffect(() => {
@@ -47,7 +49,12 @@ export function useProfileData({ apiFetch, authFetch, profileId }: UseProfileDat
   return {
     myStats, setMyStats,
     safetyCheckins, setSafetyCheckins,
-    safetyProfile, setSafetyProfile,
+    // The state is null until the safety-profile fetch resolves. Consumers and
+    // the hook's test read row fields straight off the loaded value, so the
+    // returned shape is widened to its non-null API-row form (null at runtime
+    // before load); the assertion is erased and no runtime value changes.
+    safetyProfile: safetyProfile as SafetyProfile & { city?: string },
+    setSafetyProfile,
     promptBankData, setPromptBankData,
     promptResponses, setPromptResponses,
   };
