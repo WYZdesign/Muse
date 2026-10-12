@@ -1,4 +1,6 @@
 "use client";
+// Admin refunds tab (Stripe refund review and actions).
+
 
 import { useCallback, useEffect, useState } from "react";
 import { authFetch } from "@/app/(muse)/muse/lib/api";

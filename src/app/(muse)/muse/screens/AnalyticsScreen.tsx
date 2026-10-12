@@ -1,4 +1,6 @@
 "use client";
+// Creator analytics and insights screen.
+
 
 import React, { memo, useEffect, useState } from "react";
 import { FiArrowLeft, FiEye, FiStar, FiMessageSquare, FiFileText, FiCalendar, FiDollarSign, FiTrendingUp, FiUsers } from "react-icons/fi";

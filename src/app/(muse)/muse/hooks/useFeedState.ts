@@ -1,4 +1,6 @@
 "use client";
+// Feed screen local state (composer, filters, reactions).
+
 import { useState, useCallback, useRef } from "react";
 import type { FeedPost } from "../components/types";
 

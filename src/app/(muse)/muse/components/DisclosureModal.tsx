@@ -1,4 +1,6 @@
 "use client";
+// Shoot disclosure and consent form for bookings.
+
 
 import { useState } from "react";
 import { STRINGS } from "@/lib/strings";

@@ -1,4 +1,6 @@
 "use client";
+// Bottom navigation bar with unread badge.
+
 import React from "react";
 import { FiCompass, FiUsers, FiZap, FiCamera, FiEye, FiMenu, FiStar } from "react-icons/fi";
 import type { Screen } from "./types";

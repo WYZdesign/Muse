@@ -1,4 +1,6 @@
 "use client";
+// FD Photo Studio availability widget.
+
 
 import React, { memo, useState } from "react";
 

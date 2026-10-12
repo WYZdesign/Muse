@@ -1,4 +1,6 @@
 "use client";
+// Service-worker registration and PWA install helpers.
+
 
 export function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);

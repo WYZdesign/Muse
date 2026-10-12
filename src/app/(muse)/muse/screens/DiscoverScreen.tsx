@@ -1,4 +1,6 @@
 "use client";
+// Swipe discovery deck screen.
+
 
 import React, { memo, useState, useEffect, useRef, useMemo } from "react";
 import Image from "next/image";

@@ -1,4 +1,6 @@
 "use client";
+// Stripe Connect onboarding panel for payouts.
+
 
 import { useState, useEffect, useCallback } from "react";
 import { authFetch } from "../lib/auth-client";

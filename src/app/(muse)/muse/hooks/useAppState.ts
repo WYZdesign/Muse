@@ -1,4 +1,6 @@
 "use client";
+// Standalone UI state slice (screen, modals, toasts) lifted out of page.tsx.
+
 import { useState, useCallback, useRef } from "react";
 import type { Screen, Profile, LikeAnchor } from "../components/types";
 import type { FeedPostRow } from "../page-models";

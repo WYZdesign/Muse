@@ -1,4 +1,6 @@
 "use client";
+// Aggregator that renders the Muse modal set.
+
 
 import React from "react";
 import type { Match } from "../components/types";

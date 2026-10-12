@@ -1,4 +1,6 @@
 "use client";
+// Share-a-feed-post modal.
+
 
 import { STRINGS } from "@/lib/strings";
 import { getPostShareUrl } from "@/lib/urls";

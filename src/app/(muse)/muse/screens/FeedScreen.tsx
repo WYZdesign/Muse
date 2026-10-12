@@ -1,4 +1,6 @@
 "use client";
+// Social feed screen.
+
 
 import React, { memo, useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";

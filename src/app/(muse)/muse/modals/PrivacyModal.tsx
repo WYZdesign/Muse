@@ -1,4 +1,6 @@
 "use client";
+// Privacy policy modal.
+
 
 import { FiArrowLeft, FiX } from "react-icons/fi";
 import { SUPPORT_EMAIL } from "../page-constants";

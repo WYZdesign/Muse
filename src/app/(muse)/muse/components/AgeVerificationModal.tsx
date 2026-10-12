@@ -1,4 +1,6 @@
 "use client";
+// NSFW age-gate modal shown before adult content or toggles.
+
 
 import { useEffect, useState } from "react";
 import { useFocusTrap } from "../hooks/useFocusTrap";

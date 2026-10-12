@@ -1,4 +1,6 @@
 "use client";
+// Account deletion confirmation flow modal.
+
 
 import { FiArrowLeft, FiX } from "react-icons/fi";
 import { STRINGS } from "@/lib/strings";

@@ -1,4 +1,6 @@
 "use client";
+// Fetches the signed-in user's profile, reviews and portfolio.
+
 
 import { useState, useEffect } from "react";
 import type { CheckinData, SafetyProfile } from "../components/SafetyCheckinModal";

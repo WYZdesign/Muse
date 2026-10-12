@@ -1,4 +1,6 @@
 "use client";
+// Zodiac/MBTI/Chinese/Life-Path self-discovery questionnaire.
+
 
 import { useState } from "react";
 import { FiArrowLeft, FiX } from "react-icons/fi";

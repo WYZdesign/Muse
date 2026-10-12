@@ -1,4 +1,6 @@
 "use client";
+// Admin moderation queue (reports, strikes, content actions).
+
 
 import { useEffect, useState } from "react";
 import { authFetch } from "@/app/(muse)/muse/lib/api";

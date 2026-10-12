@@ -1,4 +1,6 @@
 "use client";
+// Identity and age verification landing page.
+
 
 import { useEffect, useState } from "react";
 import { authFetch, getAccessToken } from "@/app/(muse)/muse/lib/auth-client";

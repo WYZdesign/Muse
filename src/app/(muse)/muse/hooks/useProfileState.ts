@@ -1,4 +1,6 @@
 "use client";
+// Profile screen edit and draft state.
+
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { Profile } from "../components/types";
 import type { BadgeInfo } from "../components/badgeInfo";

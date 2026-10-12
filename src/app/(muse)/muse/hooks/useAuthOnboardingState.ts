@@ -1,4 +1,6 @@
 "use client";
+// Onboarding questionnaire state (answers, selects, test results) for the auth/onboarding flow.
+
 import { useState, useEffect } from "react";
 
 export type OnboardingData = {

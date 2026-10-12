@@ -1,4 +1,6 @@
 "use client";
+// Fetches and normalizes Collab briefs for the board.
+
 
 import { useState, useEffect } from "react";
 import { trackError } from "@/lib/errorTracker";

@@ -1,4 +1,6 @@
 "use client";
+// Bookable sessions browse and manage screen.
+
 
 import React, { memo, useState, useEffect } from "react";
 import Image from "next/image";

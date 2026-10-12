@@ -1,4 +1,6 @@
 "use client";
+// Root error boundary for unhandled app-level errors.
+
 
 import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";

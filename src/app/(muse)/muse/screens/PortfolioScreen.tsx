@@ -1,4 +1,6 @@
 "use client";
+// Portfolio and albums screen for the signed-in user.
+
 
 import React, { memo } from "react";
 import { FiArrowLeft } from "react-icons/fi";

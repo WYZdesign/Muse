@@ -1,4 +1,6 @@
 "use client";
+// Connect and Sessions directory screen (Musa pros).
+
 
 import React, { memo, useEffect, useState, useRef } from "react";
 import { ensureDeviceTiltActive, getDeviceTilt, createSpatialScene } from "../hooks/useDeviceTilt";

@@ -1,4 +1,6 @@
 "use client";
+// Voice/video call signaling state (incoming, active, mute).
+
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";

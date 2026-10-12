@@ -1,4 +1,6 @@
 "use client";
+// Subscription and plan management screen.
+
 
 import React, { memo, useState, useEffect } from "react";
 import { FiArrowLeft } from "react-icons/fi";

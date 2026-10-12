@@ -1,4 +1,6 @@
 "use client";
+// Community form and detail state (group/event drafts, join requests).
+
 import { useState, useCallback } from "react";
 import type { CommunityGroup, CommunityEvent, ForumPost, CommunityMember } from "../components/types";
 

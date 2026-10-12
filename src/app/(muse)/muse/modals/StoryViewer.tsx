@@ -1,4 +1,6 @@
 "use client";
+// Full-screen BTS story viewer with auto-advance.
+
 
 import Image from "next/image";
 import type { MuseModalsProps } from "./types";

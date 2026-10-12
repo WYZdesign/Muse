@@ -1,4 +1,6 @@
 "use client";
+// Prompt-bank picker for profile prompts.
+
 
 import { useState } from "react";
 

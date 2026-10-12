@@ -1,4 +1,6 @@
 "use client";
+// One-shot initial data fetch that hydrates the app on first load.
+
 
 import { useCallback } from "react";
 import type { RawApiProfile, RawFeedPost, RawForumPost, Professional } from "../page-models";

@@ -1,4 +1,6 @@
 "use client";
+// Intent and role picker used in onboarding.
+
 
 import Image from "next/image";
 import { getMuseRole } from "@/lib/role";

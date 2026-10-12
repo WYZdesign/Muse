@@ -1,4 +1,6 @@
 "use client";
+// First-visit guided coach-mark tour.
+
 
 import React, { useEffect, useRef, useState } from "react";
 import { FiX, FiArrowRight, FiArrowLeft } from "react-icons/fi";

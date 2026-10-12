@@ -1,4 +1,6 @@
 "use client";
+// Offline fallback page for the PWA.
+
 
 import { useEffect, useState } from "react";
 

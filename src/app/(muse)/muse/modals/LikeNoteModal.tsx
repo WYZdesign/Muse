@@ -1,4 +1,6 @@
 "use client";
+// Attach-a-note-to-your-like composer.
+
 
 import Image from "next/image";
 import { FiArrowLeft, FiX } from "react-icons/fi";

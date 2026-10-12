@@ -1,4 +1,6 @@
 "use client";
+// Animated ambient background layer for the Muse shell.
+
 import { useEffect, useRef, useMemo } from "react";
 import { ensureDeviceTiltActive, getDeviceTilt } from "../hooks/useDeviceTilt";
 import { hexToRgba } from "@/lib/color";

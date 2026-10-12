@@ -1,4 +1,6 @@
 "use client";
+// Fetches communities, events and members for the Community screen.
+
 
 import { useState, useEffect } from "react";
 import { trackError } from "@/lib/errorTracker";

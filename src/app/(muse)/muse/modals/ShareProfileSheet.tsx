@@ -1,4 +1,6 @@
 "use client";
+// Shareable profile invite sheet.
+
 
 import { FiLink, FiTwitter, FiInstagram } from "react-icons/fi";
 import { STRINGS } from "@/lib/strings";

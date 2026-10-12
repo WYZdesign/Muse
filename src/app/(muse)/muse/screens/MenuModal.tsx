@@ -1,4 +1,6 @@
 "use client";
+// Slide-out menu / hub screen (notifications, reports, bookings).
+
 
 import React, { memo, useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";

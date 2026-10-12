@@ -1,4 +1,6 @@
 "use client";
+// Discovery filter preferences modal.
+
 
 import { FiArrowLeft } from "react-icons/fi";
 import { STRINGS } from "@/lib/strings";

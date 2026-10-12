@@ -1,4 +1,6 @@
 "use client";
+// Safety check-in and disclosure modal state.
+
 import { useState, useCallback } from "react";
 
 export function useSafetyState() {

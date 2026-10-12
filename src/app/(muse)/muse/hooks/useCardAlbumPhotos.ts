@@ -1,4 +1,6 @@
 "use client";
+// Lazy-loads a swipe card's album photos for the deck.
+
 
 import { useEffect, useState } from "react";
 import { trackError } from "@/lib/errorTracker";

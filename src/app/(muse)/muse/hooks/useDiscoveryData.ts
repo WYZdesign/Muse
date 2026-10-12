@@ -1,4 +1,6 @@
 "use client";
+// Fetches and normalizes ranked discovery profiles.
+
 
 import { useState, useEffect } from "react";
 import { trackError } from "@/lib/errorTracker";

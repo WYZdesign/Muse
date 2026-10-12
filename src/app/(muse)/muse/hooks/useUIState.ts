@@ -1,4 +1,6 @@
 "use client";
+// Theme, motion and layout UI state for the shell.
+
 import { useState, useRef } from "react";
 
 export function useUIState() {

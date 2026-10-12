@@ -1,4 +1,6 @@
 "use client";
+// RevenueCat in-app purchase and entitlement bridge for Capacitor.
+
 
 import { useEffect, useState, useCallback } from "react";
 import { Capacitor } from "@capacitor/core";

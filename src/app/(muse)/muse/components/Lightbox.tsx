@@ -1,4 +1,6 @@
 "use client";
+// Full-screen photo lightbox with swipe and arrow navigation.
+
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";

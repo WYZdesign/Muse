@@ -1,4 +1,6 @@
 "use client";
+// In-app support chat panel.
+
 
 import { useState, useRef, useEffect } from "react";
 import { fetchWithTimeout } from "../lib/api";

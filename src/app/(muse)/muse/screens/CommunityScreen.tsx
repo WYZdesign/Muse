@@ -1,4 +1,6 @@
 "use client";
+// Communities and events browse/detail screen.
+
 
 import React, { memo, useState, useEffect } from "react";
 import Image from "next/image";

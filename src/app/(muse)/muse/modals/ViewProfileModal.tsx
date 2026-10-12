@@ -1,4 +1,6 @@
 "use client";
+// Quick profile preview modal from the deck.
+
 
 import Image from "next/image";
 import { BadgeInfoModal, ZODIAC_FULL, MBTI_FULL, LIFE_PATH_FULL, STYLE_FULL } from "../components/badgeInfo";

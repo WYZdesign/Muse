@@ -1,4 +1,6 @@
 "use client";
+// Full-screen voice/video call UI over the app.
+
 
 import { useEffect, useRef, useState } from "react";
 import {

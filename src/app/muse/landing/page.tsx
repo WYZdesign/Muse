@@ -1,4 +1,6 @@
 "use client";
+// Public landing and waitlist page with referral attribution.
+
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";

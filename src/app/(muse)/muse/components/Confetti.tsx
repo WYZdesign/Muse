@@ -1,4 +1,6 @@
 "use client";
+// Lightweight canvas confetti for match and success moments.
+
 import { useEffect, useState } from "react";
 
 const COLORS = ["#FFD700","#FF8A80","#D4A5FF","#FFBF00","#FFDAB9","#87CEEB","#98FB98","#FF69B4","#FF6B6B","#FFE4B5"];

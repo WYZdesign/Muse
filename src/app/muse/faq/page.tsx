@@ -1,4 +1,6 @@
 "use client";
+// Public FAQ page.
+
 import { useState } from "react";
 
 const faqs = [

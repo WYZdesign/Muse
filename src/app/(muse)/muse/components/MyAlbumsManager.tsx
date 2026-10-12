@@ -1,4 +1,6 @@
 "use client";
+// Portfolio album create, upload and manage UI.
+
 import { useEffect, useState, useCallback, useRef } from "react";
 import Image from "next/image";
 import { FiPlus, FiLock, FiGlobe, FiUsers, FiTrash2, FiX, FiStar } from "react-icons/fi";

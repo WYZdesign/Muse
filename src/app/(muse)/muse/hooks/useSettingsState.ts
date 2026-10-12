@@ -1,4 +1,6 @@
 "use client";
+// Settings screen state (preferences, blocked users, saved searches).
+
 import { useState } from "react";
 
 export function useSettingsState() {

@@ -1,4 +1,6 @@
 "use client";
+// Weekly login-streak pips widget.
+
 
 import React, { useId } from "react";
 

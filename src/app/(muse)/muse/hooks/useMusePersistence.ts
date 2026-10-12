@@ -1,4 +1,6 @@
 "use client";
+// Persists and rehydrates Muse state to safe storage.
+
 
 import { useCallback, useRef } from "react";
 import { DEMO_MODE } from "../page-constants";

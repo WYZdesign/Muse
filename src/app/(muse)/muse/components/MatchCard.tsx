@@ -1,4 +1,6 @@
 "use client";
+// Connect/Sessions directory card with actions.
+
 
 import React, { memo, useState } from "react";
 import Image from "next/image";

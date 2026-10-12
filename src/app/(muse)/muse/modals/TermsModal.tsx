@@ -1,4 +1,6 @@
 "use client";
+// Terms of service modal.
+
 
 import { FiArrowLeft, FiX } from "react-icons/fi";
 import type { MuseModalsProps } from "./types";

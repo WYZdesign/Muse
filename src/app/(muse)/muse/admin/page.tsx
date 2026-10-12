@@ -1,4 +1,6 @@
 "use client";
+// Admin console entry (moderation, refunds, analytics tabs).
+
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";

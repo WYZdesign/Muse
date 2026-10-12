@@ -1,4 +1,6 @@
 "use client";
+// Collab briefs board screen.
+
 
 import React, { memo, useEffect, useState } from "react";
 import Image from "next/image";

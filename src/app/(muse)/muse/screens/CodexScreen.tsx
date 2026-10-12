@@ -1,4 +1,6 @@
 "use client";
+// In-app codex and command reference screen.
+
 
 import React, { memo, useState } from "react";
 import type { IconType } from "react-icons";

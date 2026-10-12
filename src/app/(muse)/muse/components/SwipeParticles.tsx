@@ -1,4 +1,6 @@
 "use client";
+// Swipe gesture particle effect for the deck.
+
 import { useEffect, useState } from "react";
 
 const COLORS = ["#FFD700","#FF8A80","#D4A5FF","#98FB98","#FF69B4"];

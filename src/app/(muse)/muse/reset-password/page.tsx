@@ -1,4 +1,6 @@
 "use client";
+// Password reset form (uses the shared password policy).
+
 
 import { useState, useEffect } from "react";
 import { fetchWithTimeout } from "../lib/api";

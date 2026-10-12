@@ -1,4 +1,6 @@
 "use client";
+// Syncs unread notification counts across the shell.
+
 
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { uid } from "../lib/uid";
