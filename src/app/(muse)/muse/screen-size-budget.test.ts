@@ -17,7 +17,12 @@ const BUDGETS: Record<string, number> = {
   // NetworkForumTab.tsx, NetworkThreadModal.tsx, NetworkProDetailModal.tsx.
   // 1759 -> 670; keep this ratcheted down, never raised.
   "screens/NetworkScreen.tsx": 675,
-  "screens/SettingsScreen.tsx": 1601,
+  // XL-2 (2026-10-12): extracted into components/SettingsSubPage.tsx,
+  // SettingsToggleRow.tsx, SettingsMFAPanel.tsx,
+  // SettingsPersonalityCreativePanels.tsx, SettingsBusinessPanels.tsx,
+  // SettingsPricingPanels.tsx, SettingsHelpSupportSection.tsx.
+  // 1600 -> 843; keep this ratcheted down, never raised.
+  "screens/SettingsScreen.tsx": 850,
 };
 
 describe("oversized screens size ratchet", () => {
