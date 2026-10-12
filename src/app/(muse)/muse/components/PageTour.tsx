@@ -112,7 +112,7 @@ export default function PageTour({
         className="tour-card"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
-        style={{ ["--tour-a" as any]: from, ["--tour-b" as any]: to }}
+        style={{ "--tour-a": from, "--tour-b": to } as React.CSSProperties}
       >
         <div className="tour-card-wash" />
         <button className="tour-close" onClick={onClose} aria-label="Close tutorial"><FiX size={18} /></button>

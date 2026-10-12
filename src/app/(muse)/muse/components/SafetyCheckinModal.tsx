@@ -42,6 +42,8 @@ type DisclosureData = {
   responder_id?: { name?: string } | null;
 };
 
+type SafetyTab = "checkins" | "safety" | "share" | "account";
+
 type Props = {
   checkins: CheckinData[];
   safetyProfile: SafetyProfile | null;
@@ -55,7 +57,7 @@ type Props = {
 };
 
 export default function SafetyCheckinModal({ checkins, safetyProfile, onRespond, onSaveSafetyProfile, onShareDetails, onFetchStrikes, onFetchDisclosures, onAppealStrike, onClose }: Props) {
-  const [tab, setTab] = useState<"checkins" | "safety" | "share" | "account">("checkins");
+  const [tab, setTab] = useState<SafetyTab>("checkins");
   const [strikes, setStrikes] = useState<StrikeData[]>([]);
   const [disclosures, setDisclosures] = useState<DisclosureData[]>([]);
   const [accountLoaded, setAccountLoaded] = useState(false);
@@ -110,6 +112,12 @@ export default function SafetyCheckinModal({ checkins, safetyProfile, onRespond,
 
   const inputStyle: React.CSSProperties = { width: "100%", padding: "8px 12px", borderRadius: 8, background: "var(--surface)", border: "1px solid var(--border-med)", color: "var(--text)", fontSize: 13 };
   const labelStyle: React.CSSProperties = { fontSize: 12, color: "var(--text2)", marginBottom: 4, display: "block" };
+  const tabs: [SafetyTab, string][] = [
+    ["checkins", `Check-ins (${pending.length})`],
+    ["safety", "Safety Profile"],
+    ["share", "Share Details"],
+    ["account", "Strikes & Disclosures"],
+  ];
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.85)" }}>
@@ -121,8 +129,8 @@ export default function SafetyCheckinModal({ checkins, safetyProfile, onRespond,
 
         {/* Tabs */}
         <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "var(--surface)", borderRadius: 10, padding: 3 }}>
-          {[["checkins", `Check-ins (${pending.length})`], ["safety", "Safety Profile"], ["share", "Share Details"], ["account", "Strikes & Disclosures"]].map(([key, label]) => (
-            <button key={key} onClick={() => { setTab(key as any); if (key === "account") loadAccount(); }} style={{ flex: 1, padding: "8px 0", borderRadius: 8, background: tab === key ? "rgba(255,215,0,0.15)" : "transparent", border: "none", color: tab === key ? "var(--gold)" : "var(--muted)", fontSize: 11, fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}>
+          {tabs.map(([key, label]) => (
+            <button key={key} onClick={() => { setTab(key); if (key === "account") loadAccount(); }} style={{ flex: 1, padding: "8px 0", borderRadius: 8, background: tab === key ? "rgba(255,215,0,0.15)" : "transparent", border: "none", color: tab === key ? "var(--gold)" : "var(--muted)", fontSize: 11, fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}>
               {label}
             </button>
           ))}

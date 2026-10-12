@@ -7,9 +7,11 @@ import { useEffect, useRef } from "react";
  * Uses <link rel="preload"> to hint the browser to fetch images early,
  * reducing visible pop-in on fast swipes.
  */
+type PreloadableProfile = { img?: string };
+
 export function CardPreloader({ currentIdx, profiles }: {
   currentIdx: number;
-  profiles: any[];
+  profiles: PreloadableProfile[];
 }) {
   const preloaded = useRef(new Set<string>());
   const links = useRef(new Map<string, HTMLLinkElement>());

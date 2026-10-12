@@ -226,8 +226,8 @@ export const unblockUser = async ({ sb, profile, rest }: ActionContext) => {
 };
 
 export const blockedUsers = async ({ sb, profile }: ActionContext) => {
-  const { data } = await sb.from("muse_blocks").select("id, target_id, created_at").eq("user_id", profile.id);
-  const blockedIds = (data || []).map((r: any) => r.target_id);
+  const { data }: { data: { target_id?: unknown }[] | null } = await sb.from("muse_blocks").select("id, target_id, created_at").eq("user_id", profile.id);
+  const blockedIds = (data || []).map((r) => r.target_id);
   if (blockedIds.length === 0) return NextResponse.json({ success: true, blocked: [] });
   const { data: profiles } = await sb.from("muse_profiles").select("id, name, avatar").in("id", blockedIds);
   return NextResponse.json({ success: true, blocked: profiles || [] });

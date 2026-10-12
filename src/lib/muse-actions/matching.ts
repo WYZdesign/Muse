@@ -100,8 +100,8 @@ export const profileViewTrack = async ({ sb, profile, rest }: ActionContext) => 
   const { target_id } = rest;
   if (!target_id || target_id === profile.id) return NextResponse.json({ success: true });
   if (!UUID_RE.test(String(target_id))) return NextResponse.json({ success: true, demo: true });
-  const { data: cur } = await sb.from("muse_profiles").select("views_count").eq("id", target_id).maybeSingle();
-  const next = ((cur as any)?.views_count || 0) + 1;
+  const { data: cur }: { data: { views_count?: number | null } | null } = await sb.from("muse_profiles").select("views_count").eq("id", target_id).maybeSingle();
+  const next = (cur?.views_count || 0) + 1;
   const { error } = await sb.from("muse_profiles").update({ views_count: next }).eq("id", target_id);
   if (error) return safeServerError(error, "db op");
   // Record the view so the "viewed your profile" surface can read it back.

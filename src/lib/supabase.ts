@@ -22,7 +22,7 @@ function getSupabase(): SupabaseClient {
 // Lazy proxy — no client created until first property access
 export const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
   get(_, prop) {
-    return (getSupabase() as any)[prop];
+    return getSupabase()[prop as keyof SupabaseClient];
   },
 });
 

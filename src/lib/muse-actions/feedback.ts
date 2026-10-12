@@ -12,6 +12,14 @@ import { sanitizeText } from "@/lib/request-safety";
 import { sendEmail } from "@/lib/email";
 import type { ActionContext } from "./shared";
 
+/** A muse_notifications row as read for the inbox, joined with its sender's
+ *  name/avatar when one exists (system notifications carry no from_id). */
+type NotificationRow = {
+  type?: string;
+  from_id?: { name?: string | null; avatar?: string | null } | null;
+  [key: string]: unknown;
+};
+
 export async function feedbackGetNotifications({ sb, profile, rest }: ActionContext) {
   const { limit = 50, offset = 0, unreadOnly = false, type } = rest;
   // Join from_id -> the sender's real name/avatar. The table only stores from_id
@@ -22,7 +30,7 @@ export async function feedbackGetNotifications({ sb, profile, rest }: ActionCont
   let query = sb.from("muse_notifications").select("*, from_id(name, avatar)").eq("user_id", profile.id).order("created_at", { ascending: false }).range(offset, offset + limit - 1);
   if (unreadOnly) query = query.eq("read", false);
   if (type) query = query.eq("type", type);
-  const { data, error } = await query;
+  const { data, error }: { data: NotificationRow[] | null; error: unknown } = await query;
   if (error) return safeServerError(error, "notifications fetch");
   // System notifications have no from_id (quest rewards, welcome, admin, etc).
   // Previously every one of those fell back to `name: "Musa by WYZ", avatar: ""`, so the
@@ -40,7 +48,7 @@ export async function feedbackGetNotifications({ sb, profile, rest }: ActionCont
     boost: { label: "Musa Boost", letter: "⚡" },
     pro: { label: "Musa Pro", letter: "P" },
   };
-  const notifications = (data || []).map((n: any) => {
+  const notifications = (data || []).map((n) => {
     const meta = SYSTEM_META[n.type as string] || { label: "Musa", letter: "M" };
     return {
       ...n,

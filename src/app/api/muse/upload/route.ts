@@ -45,9 +45,9 @@ async function authedProfileId(req: NextRequest): Promise<string | null> {
   if (!bearer) return null;
   const { data, error } = await supabase.auth.getUser(bearer);
   if (error || !data.user) return null;
-  const { data: profile } = await getServiceClient().from("muse_profiles").select("id, suspended").eq("auth_id", data.user.id).maybeSingle();
+  const { data: profile }: { data: { id?: string | null; suspended?: boolean | null } | null } = await getServiceClient().from("muse_profiles").select("id, suspended").eq("auth_id", data.user.id).maybeSingle();
   if (!profile) return null;
-  if ((profile as any).suspended) return "__SUSPENDED__";
+  if (profile.suspended) return "__SUSPENDED__";
   return profile?.id ?? null;
 }
 

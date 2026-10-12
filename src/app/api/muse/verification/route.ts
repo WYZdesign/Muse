@@ -110,8 +110,8 @@ export async function POST(req: NextRequest) {
       // "Already verified" only holds while that verification is still
       // current — a verification older than the re-verification window
       // (isAgeVerificationCurrent) is treated the same as never-verified.
-      const { data: profileData } = await sb.from("muse_profiles").select("age_verified, age_verified_at").eq("id", profile.id).maybeSingle();
-      if (isAgeVerificationCurrent(profileData as any)) {
+      const { data: profileData }: { data: { age_verified?: boolean | null; age_verified_at?: string | null } | null } = await sb.from("muse_profiles").select("age_verified, age_verified_at").eq("id", profile.id).maybeSingle();
+      if (isAgeVerificationCurrent(profileData)) {
         return NextResponse.json({ required: false, message: "Already age verified" });
       }
 

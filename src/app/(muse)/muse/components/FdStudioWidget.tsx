@@ -118,7 +118,7 @@ const BUILDINGS: FdBuilding[] = [
 ];
 
 interface FdStudioWidgetProps {
-  apiFetch: (url: string, opts?: any) => Promise<any>;
+  apiFetch: (url: string, opts?: RequestInit) => Promise<Response>;
 }
 
 export const FdStudioWidget = memo(function FdStudioWidget({ apiFetch }: FdStudioWidgetProps) {

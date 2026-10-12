@@ -70,10 +70,10 @@ export async function GET(req: NextRequest) {
     // Status is read-only and remains available for accurate demo display.
     if (action === "status") {
       const sb = getServiceClient();
-      const { data: conns } = await sb.from("muse_social_connections").select("provider").eq("user_id", profileId);
+      const { data: conns }: { data: { provider?: string | null }[] | null } = await sb.from("muse_social_connections").select("provider").eq("user_id", profileId);
       const connected: Record<string, boolean> = {};
       for (const p of ["instagram", "facebook", "spotify", "soundcloud"]) {
-        connected[p] = !!(conns || []).some((c: any) => c.provider === p);
+        connected[p] = !!(conns || []).some((c) => c.provider === p);
       }
       return NextResponse.json({ connected });
     }
