@@ -116,10 +116,19 @@ descriptions and landed the stranded ChatGPT docs/audit branches.
    `src/lib/muse-actions/*.ts` have route-level tests but not unit tests of the handler
    functions themselves. Mock the service client and assert each handler's happy path
    plus its guard branches.
+4. **XL-1 tail · Purge `any` from the test fixtures (large).** The source is done
+   (opencode purged all of it). What remains is **736 `any` across 51 `*.test.ts`/`.spec`
+   files** (eslint `@typescript-eslint/no-explicit-any`). Worst-first:
+   `lib/muse-actions/get.test.ts` (100), then the 33s (`contentScan.test.ts`,
+   `muse-actions/admin.test.ts`, `misc.test.ts`, `questEngine.test.ts`), then the
+   17-28 cluster. Type the mock rows/handlers with the real shared types where they fit,
+   `unknown` + narrowing otherwise; never loosen a test's assertion to satisfy types.
+   Regenerate the list with `npx eslint src --ext .ts,.tsx -f json` filtered to
+   `@typescript-eslint/no-explicit-any`.
 
-**Handled by opencode (do NOT pick these up):** L-2 (file purpose headers), M-3 (route
-acceptance tests), S-1/S-2/S-3 (supabase scaffolding, e2e snapshots, console sweep), the
-XS cleanup, and XL-1 (done).
+**Handled by opencode (do NOT pick these up):** L-2 (file purpose headers - done, 78 files),
+M-3 (route acceptance tests - already 0 gaps), S-1/S-2/S-3 (already satisfied/reviewed),
+the XS cleanup, and the source half of XL-1 (done).
 
 **`next` is patched, not to be re-bumped casually.** next + eslint-config-next
 went `16.3.6 → 16.3.8`, which cleared the whole advisory cluster (the fixed range
