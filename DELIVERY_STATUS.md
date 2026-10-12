@@ -27,9 +27,9 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `bca89ee9`
+## Confirmed merged, last verified at: `312876c0`
 
-### Reconciliation — 2026-10-10 (opencode/WYZMIND): `d086110c` → `bca89ee9`, 34 commits + 1 merge
+### Reconciliation — 2026-10-10 (opencode/WYZMIND): `d086110c` → `312876c0`, 40 commits + 1 merge
 
 - **`2cea4719 fix(discover)`** — unblocked live Discover card photos: the hero is `<Image unoptimized>`, so profile photos load straight from `*.supabase.co`, which CSP `img-src` did not allow (demo mode uses unsplash, which hid it). Added `*.supabase.co` + `replicate.delivery` to `img-src` and `storage.googleapis.com` to `connect-src` (BodyPix model). Also: pointerdown on `.card-info-scroll` (z-index 2 over the hero, so the target for nearly every drag point) now arms the swipe, with pointer capture only once the axis locks to x so vertical scroll still works. And the layout watchdog `STALE_MS` 12s -> 30s plus a `window.__museAlive` heartbeat stamped after the heavy segmentation pass, so a finished pass is not mistaken for a freeze and no longer reloads away the user's deck position.
 - **`f75ba78b refactor(types)`** — purged all 107 `any` from `muse-actions/get.ts` (local row types + a `blockedIdSet` helper for the block-filter expression that repeated at nine sites). Types-only, no runtime change.
@@ -53,10 +53,13 @@ same way.
 - **`1b5208d5 refactor(types)`** — purged all 26 `any` from `lib/contentScan.ts`, `lib/questEngine.ts`, `lib/push.ts`, `lib/muse-actions/sessions.ts`. Types-only, no exported signature loses assignability.
 - **`e5edc8a4 refactor(types)`** — purged all 29 `any` from `QuestPanel.tsx`, `SelfDiscoveryModal.tsx`, `useFeedData.ts`, `useCall.ts`, `useAppState.ts`; added `MomentStory` to page-models; returned setters widened with erased union casts so every importer compiles unchanged. Types-only, DOM unchanged.
 - **`bca89ee9 refactor(types)`** — purged all 28 `any` from `api/muse/match/route.ts`, `api/muse/auth/route.ts`, `lib/muse-actions/quests.ts`, `hooks/useCommunityState.ts`, `StudiosScreen.tsx`, `AnalyticsScreen.tsx`; local row types, `pubProfile` is `Record<string,unknown>|null`, one erased embedded-join cast (sessions/get precedent). Types-only, DOM/response unchanged.
+- **`0d8eb9fb refactor(types)`** — purged all 20 `any` from `BackgroundScene`, `landing/page`, `muse-realtime`, `mfa/route`, `embeddings/route`, `connect/route`, `purge-deleted-accounts/route`, `CodexScreen`, `profile/[id]/page`, `post/[id]/page`. Types-only.
+- **`79b2e0b9 refactor(types)`** — purged 16 `any` from 13 files (`useSettingsState`, `SafetyCheckinModal`, `PageTour`, `FdStudioWidget`, `supabase`, `messaging`, `matching`, `feedback`, `CardPreloader`, `muse-pwa`, `verification/route`, `upload/route`, `social/route`). Types-only.
+- **`312876c0 refactor(types)`** — purged the last 9 `any` (`route.ts` suspended check, `studios.ts` img field, `professionalSearch` mapper, `UpsellModal` currentUser, `ConnectPanel` catch, `useChatActions`, `useRevenueCat`, `useSpatialDepth`, `PortfolioScreen`). **XL-1 done: `src` is now free of `any` type annotations** except the deliberately-retained `ActionContext.rest: Record<string, any>` in `shared.ts` (tightening it errors across 6 out-of-lane modules). Types-only, DOM/response unchanged.
 
 Deploy ops notes for whoever pushes next: (1) a Vercel build can fail with `git_info_fail` = GitHub secondary rate limit while Vercel fetches commit info; it is not a code problem, fix by redeploying the same SHA (`POST /v13/deployments` with `deploymentId`). (2) A docs-only push can CANCEL the previous commit's still-in-flight build, so push the code commit first, confirm its deploy is READY, then push the docs commit; if the tip deploy shows CANCELED, check the previous code SHA is READY rather than assuming failure.
 
-Verification at this tip: `tsc` 0, `vitest` 169 files / 1320 tests, `next build` clean, `audit-gate` PASS. Repo-wide `any` now 87 across 47 files (was 760/82 before this batch; count excludes `*.test.*`).
+Verification at this tip: `tsc` 0, `vitest` 169 files / 1320 tests, `next build` clean, `audit-gate` PASS. Repo-wide `any` annotations: **0 real remaining** (was 760/82 at the start of this batch). The scan's final 4 hits are 3 comments/DOM prose (PublicProfileScreen, lib/api, SafetyCheckinModal) plus the retained shared.ts line.
 
 ### Reconciliation — 2026-10-10 (Claude): `a017543a` → `d086110c`, 12 commits
 
