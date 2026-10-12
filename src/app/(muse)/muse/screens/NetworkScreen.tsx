@@ -1,20 +1,21 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useRef, memo } from "react";
+import React, { useState, useMemo, useEffect, memo } from "react";
 import { createPortal } from "react-dom";
-import Image from "next/image";
 import { createSpatialScene } from "../hooks/useDeviceTilt";
 import { useFocusTrap } from "../hooks/useFocusTrap";
-import { FiArrowLeft, FiShare2, FiMapPin, FiBriefcase, FiStar, FiFlag, FiMessageCircle, FiChevronDown, FiChevronUp, FiUserPlus, FiSearch, FiTarget, FiZap, FiArrowUpRight, FiDollarSign, FiBookmark } from "react-icons/fi";
+import { FiArrowLeft } from "react-icons/fi";
 import type { Screen, Match, Professional } from "../components/types";
 import { PROFESSIONALS, FORUM_POSTS } from "../components/types";
 import { toProfessionalRow } from "../components/professionalSearch";
-import HScroll from "../components/HScroll";
-import { buildProfessionalBadges } from "../components/badgeColors";
-import { BadgeInfoModal, STYLE_FULL, type BadgeInfo } from "../components/badgeInfo";
+import { BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
 import { viewerSide } from "@/lib/role";
 import { MUSE_CLOSED_BETA_HIDE_SOCIAL } from "@/lib/config";
 import Nav from "../components/Nav"; import type { CurrentUser, ViewProfile, NetworkForumPost, ThreadReply, ThreadReplyNode, ChatLaunchTarget } from "../page-models";
+import { NetworkProsTab, type ProExp, type ProSort, type ProRateBand } from "../components/NetworkProsTab";
+import { NetworkForumTab } from "../components/NetworkForumTab";
+import { NetworkThreadModal } from "../components/NetworkThreadModal";
+import { NetworkProDetailModal } from "../components/NetworkProDetailModal";
 
 export interface NetworkScreenProps {
   screen: Screen;
@@ -61,29 +62,6 @@ export interface NetworkScreenProps {
   onTabChange?: (tab: "pros" | "forum") => void;
 }
 
-const SKILL_COLORS = [
-  { bg: "rgba(212,165,255,0.18)", border: "rgba(212,165,255,0.35)", color: "#e6d3ff" },
-  { bg: "rgba(100,181,246,0.18)", border: "rgba(100,181,246,0.35)", color: "#90caf9" },
-  { bg: "rgba(0,188,212,0.18)", border: "rgba(0,188,212,0.35)", color: "#4dd0e1" },
-  { bg: "rgba(255,215,0,0.18)", border: "rgba(255,215,0,0.35)", color: "#ffd54f" },
-  { bg: "rgba(129,199,132,0.18)", border: "rgba(129,199,132,0.35)", color: "#a5d6a7" },
-  { bg: "rgba(255,138,128,0.18)", border: "rgba(255,138,128,0.35)", color: "#ffab91" },
-];
-
-function getSkillColor(i: number) {
-  return SKILL_COLORS[i % SKILL_COLORS.length];
-}
-
-function generateBio(exp: string, skills: string[]): string {
-  const years = parseInt(exp, 10) || 0;
-  const main = skills[0] || "creative work";
-  if (years >= 10)
-    return `A seasoned professional with ${years}+ years in ${main}. Deep expertise across ${skills.join(", ")}. Passionate about pushing creative boundaries.`;
-  if (years >= 5)
-    return `Experienced in ${main} with ${years} years of hands-on work. Skilled in ${skills.join(", ")}. Always looking for the next challenge.`;
-  return `Rising talent in ${main} with ${years} years of practice. Exploring ${skills.join(", ")} and eager to collaborate.`;
-}
-
 export const NetworkScreen = memo(function NetworkScreen({
   screen,
   showScreen,
@@ -91,10 +69,10 @@ export const NetworkScreen = memo(function NetworkScreen({
   showNsfw,
   openHamburger,
   unreadNotificationCount,
-  matches,
+  matches: _matches,
   apiFetch,
   showToast,
-  setViewProfile,
+  setViewProfile: _setViewProfile,
   currentUser,
   handleImgError,
   openChat,
@@ -156,24 +134,15 @@ export const NetworkScreen = memo(function NetworkScreen({
   const [expandedPostId, setExpandedPostId] = useState<number | null>(null);
   const [commentTexts, setCommentTexts] = useState<Record<number, string>>({});
   const [votedPosts, setVotedPosts] = useState<Record<number, "up" | "down" | null>>({});
-  const [proExp, setProExp] = useState<"all" | "rising" | "established" | "veteran">("all");
-  const [proSort, setProSort] = useState<"match" | "expDesc" | "expAsc" | "rateDesc" | "rateAsc" | "openings">("match");
+  const [proExp, setProExp] = useState<ProExp>("all");
+  const [proSort, setProSort] = useState<ProSort>("match");
   const [proHiringOnly, setProHiringOnly] = useState(false);
   const [proSearch, setProSearch] = useState("");
   const [forumSearch, setForumSearch] = useState("");
   const [forumSearchOpen, setForumSearchOpen] = useState(false);
 
-  // Depth map URLs for spatial effect — collect from current professionals list
-  const proImageUrls = useMemo(() => {
-    const urls: string[] = [];
-    [...liveProfessionals?.length ? liveProfessionals.map((p) => p.img).filter(Boolean) : []]
-      .slice(0, 50)
-      .forEach((u) => { if (!urls.includes(u)) urls.push(u); });
-    return urls;
-  }, [liveProfessionals]);
-
   const [proSkill, setProSkill] = useState<string[]>([]);
-  const [proRateBand, setProRateBand] = useState<"all" | "tfp" | "50to100" | "100to150" | "gt150">("all");
+  const [proRateBand, setProRateBand] = useState<ProRateBand>("all");
   const [proLooking, setProLooking] = useState<string>("all");
   const [proSearchServer, setProSearchServer] = useState("");
   const [proServerResults, setProServerResults] = useState<Professional[]>([]);
@@ -234,6 +203,14 @@ export const NetworkScreen = memo(function NetworkScreen({
     return arr;
   })();
 
+  const { allSkills, allLooking } = useMemo(() => {
+    const proSource = liveProfessionals?.length ? liveProfessionals : PROFESSIONALS;
+    return {
+      allSkills: [...new Set(proSource.flatMap((p) => p.skills))],
+      allLooking: [...new Set(proSource.flatMap((p) => p.looking || []))],
+    };
+  }, [liveProfessionals]);
+
   const filteredForum = useMemo(() => {
     return [...(liveForum?.length ? liveForum : (demo ? FORUM_POSTS : []))]
       .filter((p) => forumCategory === "all" || p.cat === forumCategory)
@@ -290,17 +267,17 @@ export const NetworkScreen = memo(function NetworkScreen({
           n.add(p.id);
           return n;
         });
-        showToast(`Request sent \u2014 ${p.name} will be notified`);
+        showToast(`Request sent — ${p.name} will be notified`);
       })
       .catch(() => {
         // Was masking every failure with the same success toast.
-        showToast(`Couldn't send request \u2014 try again`);
+        showToast(`Couldn't send request — try again`);
       })
       .finally(() => setConnectLoading(null));
   }
 
   function handleShare(p: Professional) {
-    const text = `Check out ${p.name} \u2014 ${p.type} on Musa`;
+    const text = `Check out ${p.name} — ${p.type} on Musa`;
     if (navigator.share) {
       navigator.share({ title: p.name, text }).catch(() => {});
     } else {
@@ -309,7 +286,7 @@ export const NetworkScreen = memo(function NetworkScreen({
   }
 
   function handlePostShare(post: NetworkForumPost) {
-    const text = `${post.title} \u2014 by ${post.author} on Musa Forum`;
+    const text = `${post.title} — by ${post.author} on Musa Forum`;
     if (navigator.share) {
       navigator.share({ title: post.title, text }).catch(() => {});
     } else {
@@ -448,6 +425,76 @@ export const NetworkScreen = memo(function NetworkScreen({
     });
   }
 
+  async function submitNewPost() {
+    if (demo) { showToast("Forum posts are unavailable in this demo."); return; }
+    if (!newPostTitle.trim()) return;
+    const title = newPostTitle.trim();
+    const body = newPostBody.trim();
+    try {
+      const r = await apiFetch("/api/muse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "forum", title, body, userId: currentUser.id }),
+      });
+      if (!r.ok) {
+        const d: { code?: string } = await r.json().catch(() => ({}));
+        showToast(d.code === "SAFETY_BLOCK" ? "Post blocked by safety policy" : "Failed to post");
+        return;
+      }
+      apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_keys: ["forum_post"] }) }).catch(() => {});
+      // Create response doesn't echo the new row's real id —
+      // re-fetch so filteredForum renders it and votes/comments
+      // on it can match.
+      try {
+        const rf = await apiFetch("/api/muse?type=forum");
+        const df: { posts?: NetworkForumPost[] } = await rf.json();
+        if (df.posts) setLiveForum?.(df.posts);
+      } catch { /* live forum refresh is best-effort */ }
+      setForumPosts((prev) => [
+        {
+          id: uid(),
+          title,
+          body,
+          author: currentUser.name,
+          avatar: currentUser.avatar,
+          votes: 1,
+          comments: [],
+          cat: "General",
+          time: "Just now",
+          pinned: false,
+        },
+        ...prev,
+      ]);
+      setNewPostTitle("");
+      setNewPostBody("");
+      setShowNewPost(false);
+      showToast("Posted!");
+    } catch {
+      showToast("Failed to post");
+    }
+  }
+
+  function togglePostPin(post: NetworkForumPost) {
+    if (demo) { showToast("Forum moderation is unavailable in this demo."); return; }
+    (async () => {
+      try {
+        const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "forum-post-pin", postId: post.id }) });
+        const d: { success?: boolean; pinned: boolean; error?: string } = await r.json();
+        if (d.success) {
+          setForumPosts((prev) => prev.map((p) => p.id === post.id ? { ...p, pinned: d.pinned } : p));
+          showToast(d.pinned ? "Post pinned" : "Post unpinned");
+        } else {
+          showToast(d.error || "Couldn't update pin");
+        }
+      } catch { showToast("Couldn't update pin"); }
+    })();
+  }
+
+  function reportTarget(t: { id: number | string; type: string; name: string }) {
+    setReportTarget(t);
+    setShowReport(true);
+  }
+
   return (
     <div className={"screen-el" + (screen === "network" ? " active" : "")} data-screen="network">
       <h1 className="sr-only">Network</h1>
@@ -514,1240 +561,106 @@ export const NetworkScreen = memo(function NetworkScreen({
           id/aria-labelledby swaps to whichever tab is active. */}
       <div id="network-panel" role="tabpanel" aria-labelledby={`network-tab-${netTab}`} style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "0 16px 80px" }}>
         {netTab === "pros" && (
-          <>
-            {/* Audit fix (2026-09-08, wyzmind's Torreé batch item 6): centered under
-                the "Network" title (was left-aligned) and shortened both variants —
-                Torreé asked for it "more concise". */}
-            <div style={{ margin: "0 0 10px", fontSize: 12, color: "var(--muted)", lineHeight: 1.5, textAlign: "center" }}>
-              {iAmIndustry
-                ? "Your peers — network, co-hire, and trade talent."
-                : "Pros who can book, pay, and launch your career."}
-            </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 44, margin: "0 0 10px", padding: "0 13px", background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 12, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)" }}>
-                <FiSearch size={16} aria-hidden="true" color="var(--muted)" style={{ flexShrink: 0 }} />
-                <input
-                  className="inp search-input"
-                  aria-label="Search professionals"
-                  placeholder="Search pros — name, craft, skills, who they're looking for…"
-                  value={proSearch}
-                  onChange={(e) => setProSearch(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") handleProSearch(e.currentTarget.value); }}
-                  style={{ minWidth: 0, margin: 0, padding: 0, border: "none", background: "transparent", boxShadow: "none", fontSize: 13, color: "var(--text)" }}
-                />
-              </div>
-            {/* Filter bubbles row - horizontally scrollable.
-                Audit fix (2026-09-08, wyzmind's Torreé batch item 6): every category
-                pill used the same gold gradient when active, while each category's
-                expanded sub-options below used an unrelated grab-bag of colors
-                (e.g. Experience's "Rising"/"Established"/"Veteran" were blue/gold/
-                lavender — three different hues under one category). Torreé asked
-                for sub-filter buttons to read as shades of their own category's
-                color so the group reads as one family at a glance. Gave each
-                category a base gradient here and reused that same hue (just
-                lighter/darker shades) for its sub-options below — Skills (pink)
-                and Looking (teal) already used one consistent hue for their
-                sub-options, so their pill gradient now matches that hue too. */}
-            <div style={{ display: "flex", gap: 6, marginBottom: 10, alignItems: "center", overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", paddingBottom: 2, position: "relative", maskImage: "linear-gradient(to right,transparent 0,#000 12px,#000 calc(100% - 28px),transparent 100%)", WebkitMaskImage: "linear-gradient(to right,transparent 0,#000 12px,#000 calc(100% - 28px),transparent 100%)" }} aria-label="Filter professionals">
-              {([
-                { key: "experience", label: "Experience", active: proExp !== "all", grad: "linear-gradient(135deg,#90CAF9,#42A5F5)" },
-                { key: "sort", label: "Sort", active: proSort !== "match", grad: "linear-gradient(135deg,var(--gold),var(--amber))" },
-                { key: "rate", label: "Rate", active: proRateBand !== "all", grad: "linear-gradient(135deg,#81C784,#43A047)" },
-                { key: "skills", label: "Skills", active: proSkill.length > 0, grad: "linear-gradient(135deg,#FF9EC7,#FF69B4)" },
-                { key: "looking", label: "Looking", active: proLooking !== "all", grad: "linear-gradient(135deg,#4DD0C4,#20B2AA)" },
-              ]).map(f => (
-                <button
-                  key={f.key}
-                  type="button"
-                  aria-label={`${f.label} filter${f.active ? " (active)" : ""}`}
-                  onClick={() => setFilterSections(s => ({ ...s, [f.key]: !s[f.key] }))}
-                  style={{ cursor: "pointer", fontSize: 11, fontWeight: 700, color: f.active ? "#0a0612" : "var(--text)", background: f.active ? f.grad : "rgba(255,255,255,0.06)", border: f.active ? "none" : "1px solid rgba(255,255,255,0.1)", borderRadius: 99, padding: "10px 14px", minHeight: 44, display: "flex", alignItems: "center", transition: "all .2s", whiteSpace: "nowrap", flexShrink: 0 }}
-                >
-                  {f.label}{f.active ? " ✓" : ""}
-                </button>
-              ))}
-              <button
-                type="button"
-                aria-pressed={proHiringOnly}
-                aria-label={`Hiring filter${proHiringOnly ? " (active)" : ""}`}
-                tabIndex={0}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setProHiringOnly(!proHiringOnly); } }}
-                onClick={() => setProHiringOnly(!proHiringOnly)}
-                style={{ cursor: "pointer", fontSize: 11, fontWeight: 700, color: proHiringOnly ? "var(--text)" : "var(--text)", background: proHiringOnly ? "#4cdd88" : "rgba(255,255,255,0.06)", border: proHiringOnly ? "none" : "1px solid rgba(255,255,255,0.1)", borderRadius: 99, padding: "10px 14px", minHeight: 44, display: "flex", alignItems: "center", transition: "all .2s", whiteSpace: "nowrap", flexShrink: 0 }}
-              >
-                Hiring{proHiringOnly ? " ✓" : ""}
-              </button>
-            </div>
-            {/* Expanded filter panels — single-line horizontal scroll, color-coded per category */}
-            {filterSections.experience && (
-              <div className="filter-scroll-row" role="tablist" aria-label="Experience level filter" style={{ marginBottom: 10 }}>
-                {([
-                  { k: "all", label: "All levels", color: "var(--muted)", accent: "rgba(255,255,255,0.1)" },
-                  { k: "rising", label: "Rising", color: "#BBDEFB", accent: "rgba(187,222,251,0.3)" },
-                  { k: "established", label: "Established", color: "#64B5F6", accent: "rgba(100,181,246,0.3)" },
-                  { k: "veteran", label: "Veteran", color: "#1E88E5", accent: "rgba(30,136,229,0.3)" },
-                ] as const).map((b) => (
-                  <button type="button" key={b.k} role="tab" aria-selected={proExp === b.k} tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setProExp(b.k); } }}
-                    onClick={() => setProExp(b.k)}
-                    style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proExp === b.k ? "var(--text)" : b.color, background: proExp === b.k ? b.accent : "rgba(255,255,255,0.06)", border: proExp === b.k ? `1.5px solid ${b.accent}` : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "10px 14px", minHeight: 44, display: "flex", alignItems: "center", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}
-                  >{b.label}</button>
-                ))}
-              </div>
-            )}
-            {filterSections.sort && (
-              <div className="filter-scroll-row" style={{ marginBottom: 10 }}>
-                {([
-                  { k: "match", label: "Featured", color: "#FFD700", accent: "rgba(255,215,0,0.25)" },
-                  { k: "expDesc", label: "Most exp", color: "#FFCA28", accent: "rgba(255,202,40,0.25)" },
-                  { k: "expAsc", label: "Least exp", color: "#FFE082", accent: "rgba(255,224,130,0.25)" },
-                  { k: "rateDesc", label: "Rate ↓", color: "#FFB300", accent: "rgba(255,179,0,0.25)" },
-                  { k: "rateAsc", label: "Rate ↑", color: "#FFA000", accent: "rgba(255,160,0,0.25)" },
-                  { k: "openings", label: "Most openings", color: "#FF8F00", accent: "rgba(255,143,0,0.25)" },
-                ] as const).map((b) => (
-                  <button type="button" key={b.k}
-                    onClick={() => setProSort(b.k)}
-                    style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proSort === b.k ? "var(--text)" : b.color, background: proSort === b.k ? b.accent : "rgba(255,255,255,0.06)", border: proSort === b.k ? `1.5px solid ${b.accent}` : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "10px 14px", minHeight: 44, display: "flex", alignItems: "center", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}
-                  >{b.label}</button>
-                ))}
-              </div>
-            )}
-            {filterSections.rate && (
-              <div className="filter-scroll-row" style={{ marginBottom: 10 }}>
-                {([
-                  { k: "all", label: "Any rate", color: "var(--muted)", accent: "rgba(255,255,255,0.1)" },
-                  { k: "tfp", label: "TFP", color: "#A5D6A7", accent: "rgba(165,214,167,0.3)" },
-                  { k: "50to100", label: "$50-100", color: "#81C784", accent: "rgba(129,199,132,0.3)" },
-                  { k: "100to150", label: "$100-150", color: "#4CDD88", accent: "rgba(76,221,136,0.3)" },
-                  { k: "gt150", label: "$150+", color: "#2E7D32", accent: "rgba(46,125,50,0.3)" },
-                ] as const).map((b) => (
-                  <button type="button" key={b.k}
-                    onClick={() => setProRateBand(b.k)}
-                    style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proRateBand === b.k ? "var(--text)" : b.color, background: proRateBand === b.k ? b.accent : "rgba(255,255,255,0.06)", border: proRateBand === b.k ? `1.5px solid ${b.accent}` : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "10px 14px", minHeight: 44, display: "flex", alignItems: "center", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}
-                  >{b.label}</button>
-                ))}
-              </div>
-            )}
-            {(() => {
-              const proSource = liveProfessionals?.length ? liveProfessionals : PROFESSIONALS;
-              const allSkills = [...new Set(proSource.flatMap((p) => p.skills))];
-              const allLooking = [...new Set(proSource.flatMap((p) => p.looking || []))];
-              return (
-                <>
-                {filterSections.skills && (
-                  <div className="filter-scroll-row" style={{ marginBottom: 10 }}>
-                    <button type="button" aria-pressed={!proSkill.length} onClick={() => setProSkill([])}
-                      className="filter-chip" style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: !proSkill.length ? "var(--text)" : "#FF69B4", background: !proSkill.length ? "rgba(255,105,180,0.3)" : "rgba(255,255,255,0.06)", border: !proSkill.length ? "1.5px solid rgba(255,105,180,0.4)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "10px 14px", minHeight: 44, display: "flex", alignItems: "center", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}>All skills</button>
-                    {allSkills.map((s) => (
-                      <button key={s} type="button" aria-pressed={proSkill.includes(s)}
-                        onClick={() => setProSkill(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])}
-                        style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proSkill.includes(s) ? "var(--text)" : "#FF69B4", background: proSkill.includes(s) ? "rgba(255,105,180,0.3)" : "rgba(255,255,255,0.06)", border: proSkill.includes(s) ? "1.5px solid rgba(255,105,180,0.4)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "10px 14px", minHeight: 44, display: "flex", alignItems: "center", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}>{s}</button>
-                    ))}
-                  </div>
-                )}
-                {filterSections.looking && allLooking.length > 0 && (
-                  <div className="filter-scroll-row" style={{ marginBottom: 10 }}>
-                    <button type="button" onClick={() => setProLooking("all")}
-                      style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proLooking === "all" ? "var(--text)" : "#20B2AA", background: proLooking === "all" ? "rgba(32,178,170,0.25)" : "rgba(255,255,255,0.06)", border: proLooking === "all" ? "1.5px solid rgba(32,178,170,0.35)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "10px 14px", minHeight: 44, display: "flex", alignItems: "center", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}>Anyone</button>
-                    {allLooking.map((l) => (
-                      <button key={l} type="button" onClick={() => setProLooking(l)}
-                        style={{ cursor: "pointer", fontSize: 11, fontWeight: 600, color: proLooking === l ? "var(--text)" : "#20B2AA", background: proLooking === l ? "rgba(32,178,170,0.25)" : "rgba(255,255,255,0.06)", border: proLooking === l ? "1.5px solid rgba(32,178,170,0.35)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "10px 14px", minHeight: 44, display: "flex", alignItems: "center", transition: "all .15s", flexShrink: 0, whiteSpace: "nowrap" }}>{l}</button>
-                    ))}
-                  </div>
-                )}
-                </>
-              );
-            })()}
-            {proList.length === 0 && (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48, textAlign: "center", gap: 12 }}>
-                <div style={{ fontSize: 36 }}>👥</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>No professionals match those filters</div>
-                <div style={{ fontSize: 13, color: "var(--text2)", maxWidth: 280 }}>Try clearing filters or adjust your search — new pros join weekly.</div>
-              </div>
-            )}
-            {proList.map((p) => (
-            <div
-              key={p.id}
-                className="pro-card"
-                style={{
-                  marginBottom: 14,
-                  borderRadius: 16,
-                  overflow: "hidden",
-                  position: "relative",
-                  height: 570,
-                }}
-              >
-                {/* Full-card target as a real <button> that is a SIBLING of the
-                    Save control below (which sits at zIndex 2), never an
-                    ancestor of it — a clickable div wrapping a button is an axe
-                    `nested-interactive` violation, and the div had no keyboard
-                    access at all (pointer-only). */}
-                <button
-                  type="button"
-                  className="pro-card-open"
-                  aria-label={`View ${p.name}'s profile`}
-                  onClick={() => openProProfile(p)}
-                  style={{ position: "absolute", inset: 0, zIndex: 1, padding: 0, border: "none", background: "transparent", cursor: "pointer" }}
-                />
-              <Image
-                loading="lazy"
-                src={p.img}
-                alt={p.name}
-                fill
-                sizes="(max-width: 600px) 100vw, 500px"
-                style={{
-                  objectFit: "cover",
-                  objectPosition: "center top",
-                }}
-                onError={handleImgError}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  background:
-                    "linear-gradient(to top,rgba(10,6,18,0.88) 0%,rgba(10,6,18,0.25) 55%,rgba(10,6,18,0.1) 100%)",
-                }}
-              />
-              <button
-                type="button"
-                aria-label={savedProfileIds.includes(p.id) ? "Unsave professional" : "Save professional"}
-                title={savedProfileIds.includes(p.id) ? "Saved" : "Save"}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); e.preventDefault(); toggleSaveProfessional(p.id); } }}
-                onClick={(e) => { e.stopPropagation(); toggleSaveProfessional(p.id); }}
-                style={{
-                  position: "absolute",
-                  top: 12,
-                  right: 12,
-                  width: 44,
-                  height: 44,
-                  borderRadius: 10,
-                  background: savedProfileIds.includes(p.id) ? "rgba(255,215,0,0.22)" : "rgba(0,0,0,0.45)",
-                  border: savedProfileIds.includes(p.id) ? "1px solid rgba(255,215,0,0.4)" : "1px solid var(--border-subtle)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  color: savedProfileIds.includes(p.id) ? "var(--gold)" : "#fff",
-                  zIndex: 2,
-                }}
-              >
-                <FiBookmark size={16} fill={savedProfileIds.includes(p.id) ? "currentColor" : "none"} />
-              </button>
-              <div
-                className="pro-card-content"
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  padding: 20,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 8,
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    fontSize: 22,
-                    fontWeight: 800,
-                    color: "#fff",
-                    textShadow: "0 2px 8px rgba(0,0,0,0.8)",
-                  }}
-                >
-                  {p.name}
-                  {p.verified && <span className="card-verified-mark" title="Identity verified" style={{ fontSize: 12 }}>✓</span>}
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: "var(--gold)",
-                    textShadow: "0 1px 4px rgba(0,0,0,0.8)",
-                  }}
-                >
-                  <FiBriefcase size={13} /> {p.type}
-                </div>
-                {!!p.reviewCount && (
-                  <div
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: "var(--text2)",
-                      textShadow: "0 1px 4px rgba(0,0,0,0.8)",
-                    }}
-                  >
-                    <FiStar size={12} style={{ marginRight: 4, verticalAlign: -1, color: "var(--gold)" }} />
-                    {p.reviewRating}★ ({p.reviewCount} review{p.reviewCount === 1 ? "" : "s"})
-                  </div>
-                )}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    fontSize: 13,
-                    color: "rgba(255,255,255,0.7)",
-                  }}
-                >
-                  <FiMapPin size={13} /> {p.loc}
-                </div>
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {p.exp && (
-                    <span
-                      style={{
-                        fontSize: 11,
-                        padding: "4px 12px",
-                        borderRadius: 99,
-                        background: "rgba(255,215,0,0.22)",
-                        border: "1px solid rgba(255,215,0,0.4)",
-                        color: "var(--gold)",
-                        fontWeight: 700,
-                      }}
-                    >
-                      {p.exp}
-                    </span>
-                  )}
-                  {p.openings > 0 && (
-                    <span
-                      style={{
-                        fontSize: 11,
-                        padding: "4px 12px",
-                        borderRadius: 99,
-                        background: "rgba(135,206,235,0.2)",
-                        border: "1px solid rgba(135,206,235,0.35)",
-                        color: "#b7e4f7",
-                        fontWeight: 700,
-                      }}
-                    >
-                      {p.openings} openings
-                    </span>
-                  )}
-                  {p.rate && (
-                    <span
-                      style={{
-                        fontSize: 11,
-                        padding: "4px 12px",
-                        borderRadius: 99,
-                        background: "rgba(76,221,136,0.15)",
-                        border: "1px solid rgba(76,221,136,0.35)",
-                        color: "#4cdd88",
-                        fontWeight: 700,
-                      }}
-                    >
-                      {p.rate}
-                    </span>
-                  )}
-                </div>
-                {(p.looking || []).length > 0 && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap", fontSize: 11, color: "rgba(255,255,255,0.65)" }}>
-                    <FiUserPlus size={12} style={{ color: "var(--lavender)" }} />
-                    <span>Seeking:</span>
-                    {p.looking.map((l: string) => (
-                      <span key={l} style={{ padding: "2px 8px", borderRadius: 99, background: "rgba(212,165,255,0.14)", border: "1px solid rgba(212,165,255,0.3)", color: "#e6d3ff", fontWeight: 600 }}>{l}</span>
-                    ))}
-                  </div>
-                )}
-                {/* BADGES ROW */}
-                <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                  {(() => {
-                    const badges = buildProfessionalBadges(p);
-                    return badges.slice(0, 5).map((b) => (
-                      <span key={b.label} style={{ fontSize: 10, padding: "3px 9px", borderRadius: 99, background: b.bg, border: `1px solid ${b.bd}`, color: b.c, fontWeight: 700, display: "flex", alignItems: "center", gap: 3 }}>
-                        {b.icon} {b.label}
-                      </span>
-                    ));
-                  })()}
-                </div>
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: "rgba(255,255,255,0.6)",
-                    marginTop: 4,
-                  }}
-                >
-                  Tap to see details ›
-                </div>
-              </div>
-            </div>
-          ))}
-          </>
+          <NetworkProsTab
+            iAmIndustry={iAmIndustry}
+            proSearch={proSearch}
+            setProSearch={setProSearch}
+            onSearchSubmit={handleProSearch}
+            filterSections={filterSections}
+            setFilterSections={setFilterSections}
+            proExp={proExp}
+            setProExp={setProExp}
+            proSort={proSort}
+            setProSort={setProSort}
+            proHiringOnly={proHiringOnly}
+            setProHiringOnly={setProHiringOnly}
+            proRateBand={proRateBand}
+            setProRateBand={setProRateBand}
+            proSkill={proSkill}
+            setProSkill={setProSkill}
+            proLooking={proLooking}
+            setProLooking={setProLooking}
+            allSkills={allSkills}
+            allLooking={allLooking}
+            proList={proList}
+            savedProfileIds={savedProfileIds}
+            onToggleSave={toggleSaveProfessional}
+            handleImgError={handleImgError}
+            onOpenProfile={openProProfile}
+          />
         )}
 
         {netTab === "forum" && (
-          <>
-            {showNewPost && (
-              <div ref={newPostTrap} className="modal-overlay" role="dialog" aria-modal="true" aria-label="New forum post" style={{ position: "fixed", zIndex: 400 }}>
-                <div className="modal-header">
-                  <button className="modal-back" onClick={() => setShowNewPost(false)} aria-label="Back">
-                    <FiArrowLeft size={20} />
-                  </button>
-                  <div className="modal-title">New Post</div>
-                  <div style={{ width: 42 }} />
-                </div>
-                <div
-                  className="modal-body"
-                  style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}
-                >
-                  <input
-                    className="inp"
-                    aria-label="Forum post title"
-                    placeholder="Title"
-                    value={newPostTitle}
-                    onChange={(e) => setNewPostTitle(e.target.value)}
-                    style={{ marginBottom: 8 }}
-                  />
-                  <textarea
-                    className="inp"
-                    placeholder="What's on your mind?"
-                    rows={4}
-                    value={newPostBody}
-                    onChange={(e) => setNewPostBody(e.target.value)}
-                    style={{ marginBottom: 10, resize: "none" }}
-                  />
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <button
-                      className="btn btn-gold"
-                      style={{ flex: 1, padding: "14px 0", fontSize: 14, fontWeight: 700, borderRadius: 12 }}
-                      onClick={async () => {
-                        if (demo) { showToast("Forum posts are unavailable in this demo."); return; }
-                        if (!newPostTitle.trim()) return;
-                        const title = newPostTitle.trim();
-                        const body = newPostBody.trim();
-                        try {
-                          const r = await apiFetch("/api/muse", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ action: "forum", title, body, userId: currentUser.id }),
-                          });
-                          if (!r.ok) {
-                            const d: { code?: string } = await r.json().catch(() => ({}));
-                            showToast(d.code === "SAFETY_BLOCK" ? "Post blocked by safety policy" : "Failed to post");
-                            return;
-                          }
-                          apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_keys: ["forum_post"] }) }).catch(() => {});
-                          // Create response doesn't echo the new row's real id —
-                          // re-fetch so filteredForum renders it and votes/comments
-                          // on it can match.
-                          try {
-                            const rf = await apiFetch("/api/muse?type=forum");
-                            const df: { posts?: NetworkForumPost[] } = await rf.json();
-                            if (df.posts) setLiveForum?.(df.posts);
-                          } catch { /* live forum refresh is best-effort */ }
-                          setForumPosts((prev) => [
-                            {
-                              id: uid(),
-                              title,
-                              body,
-                              author: currentUser.name,
-                              avatar: currentUser.avatar,
-                              votes: 1,
-                              comments: [],
-                              cat: "General",
-                              time: "Just now",
-                              pinned: false,
-                            },
-                            ...prev,
-                          ]);
-                          setNewPostTitle("");
-                          setNewPostBody("");
-                          setShowNewPost(false);
-                          showToast("Posted!");
-                        } catch {
-                          showToast("Failed to post");
-                        }
-                      }}
-                    >
-                      Post
-                    </button>
-                    <button
-                      className="btn btn-outline"
-                      style={{ flex: 1, padding: "14px 0", fontSize: 14, fontWeight: 600, borderRadius: 12 }}
-                      onClick={() => setShowNewPost(false)}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="conn-tab-sub-scroll" role="tablist" aria-label="Forum sort" style={{ display: "flex", gap: 6, alignItems: "center", margin: "0 20px 10px", flexWrap: "nowrap", overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch", paddingTop: 10 }}>
-              {!forumSearchOpen && (
-                <>
-                  {(["hot", "new", "top"] as const).map((s) => (
-                    <div
-                      key={s}
-                      role="tab"
-                      aria-selected={forumSort === s}
-                      tabIndex={0}
-                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setForumSort(s); } }}
-                      className={"conn-tab-sub" + (forumSort === s ? " active" : "")}
-                      onClick={() => setForumSort(s)}
-                      style={{ flexShrink: 0 }}
-                    >
-                      {s.charAt(0).toUpperCase() + s.slice(1)}
-                    </div>
-                  ))}
-                </>
-              )}
-              {forumSearchOpen && (
-                <input
-                  className="inp search-input"
-                  aria-label="Search the forum"
-                  placeholder="Search the forum…"
-                  value={forumSearch}
-                  onChange={(e) => setForumSearch(e.target.value)}
-                  onBlur={() => { if (!forumSearch.trim()) setForumSearchOpen(false); }}
-                  autoFocus
-                  style={{ flex: 1, fontSize: 13, margin: 0 }}
-                />
-              )}
-              <div style={{ marginLeft: "auto", display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
-                <FiSearch
-                  size={18}
-                  style={{ cursor: "pointer", color: forumSearchOpen ? "var(--gold)" : "var(--muted)", flexShrink: 0 }}
-                  onClick={() => {
-                    if (forumSearchOpen) {
-                      if (!forumSearch.trim()) setForumSearch("");
-                      setForumSearchOpen(false);
-                    } else {
-                      setForumSearchOpen(true);
-                    }
-                  }}
-                />
-                <button
-                  className="conn-btn conn-btn-primary"
-                  style={{ fontSize: 12, padding: "6px 14px" }}
-                  onClick={() => setShowNewPost(!showNewPost)}
-                >
-                  + Post
-                </button>
-              </div>
-            </div>
-            {filteredForum
-              .filter((post) => {
-                const q = forumSearch.trim().toLowerCase();
-                if (!q) return true;
-                return (
-                  post.title.toLowerCase().includes(q) ||
-                  post.body.toLowerCase().includes(q) ||
-                  post.author.toLowerCase().includes(q)
-                );
-              })
-              .map((post) => (
-              <div
-                key={post.id}
-                className="conn-card"
-                style={{ flexDirection: "column", marginBottom: 8, padding: 14 }}
-              >
-                {post.pinned && (
-                  <div style={{ fontSize: 10, color: "var(--gold)", fontWeight: 700, marginBottom: 4 }}>
-                    {"\uD83D\uDCCC"} Pinned
-                  </div>
-                )}
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, minWidth: 44 }}>
-                    <button
-                      type="button"
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: votedPosts[post.id] === "up" ? "#FFD700" : "var(--muted)",
-                        cursor: "pointer",
-                        fontSize: 18,
-                        width: 44,
-                        height: 44,
-                        padding: 0,
-                        transition: "color 0.2s",
-                      }}
-                      onClick={() => handleVote(post.id, "up")}
-                    >
-                      {"\u25B2"}
-                    </button>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{post.votes}</span>
-                    <button
-                      type="button"
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: votedPosts[post.id] === "down" ? "#ff6b6b" : "var(--muted)",
-                        cursor: "pointer",
-                        fontSize: 18,
-                        width: 44,
-                        height: 44,
-                        padding: 0,
-                        transition: "color 0.2s",
-                      }}
-                      onClick={() => handleVote(post.id, "down")}
-                    >
-                      {"\u25BC"}
-                    </button>
-                  </div>
-
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <button
-                      type="button"
-                      style={{ display: "block", width: "100%", minHeight: 44, padding: "4px 0", background: "none", border: "none", textAlign: "left", fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 4, cursor: "pointer" }}
-                      onClick={() => { openThread(post.id); }}
-                    >
-                      {post.title}
-                    </button>
-                    <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 6 }}>
-                      {post.author} · {post.time}
-                    </div>
-                    <div style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.4 }}>
-                      {post.body.slice(0, 120)}
-                      {post.body.length > 120 ? "..." : ""}
-                    </div>
-
-                    <div style={{ display: "flex", gap: 12, marginTop: 8, alignItems: "center" }}>
-                      <button
-                        style={{
-                          background: "none",
-                          border: "none",
-                          color: "var(--text2)",
-                          fontSize: 11,
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 4,
-                          cursor: "pointer",
-                        }}
-                        onClick={() =>
-                          setExpandedPostId((prev) => (prev === post.id ? null : post.id))
-                        }
-                      >
-                        <FiMessageCircle size={13} />
-                        {post.comments.length} {post.comments.length === 1 ? "reply" : "replies"}
-                        {expandedPostId === post.id ? (
-                          <FiChevronUp size={12} />
-                        ) : (
-                          <FiChevronDown size={12} />
-                        )}
-                      </button>
-                      <button
-                        style={{
-                          background: "none",
-                          border: "1px solid var(--border-subtle)",
-                          color: "var(--text2)",
-                          fontSize: 11,
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 4,
-                          cursor: "pointer",
-                          padding: "3px 10px",
-                          borderRadius: 99,
-                        }}
-                        onClick={() => handlePostShare(post)}
-                      >
-                        <FiShare2 size={12} /> Share
-                      </button>
-                      <button
-                        style={{
-                          background: "none",
-                          border: "none",
-                          color: "#ff6b6b",
-                          fontSize: 11,
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 4,
-                          cursor: "pointer",
-                        }}
-                        onClick={() => { setReportTarget({ id: post.id, type: "forum_post", name: post.author }); setShowReport(true); }}
-                      >
-                        <FiFlag size={12} /> Report
-                      </button>
-                      {/* Torreé audit (2026-09-16): forum-post-pin was already built and
-                          registered server-side (author-or-admin, toggles) but had no
-                          caller anywhere — the "📌 Pinned" badge above could never
-                          actually appear. Author-gated here client-side to match the
-                          server's own check (isAuthor || isAdmin) — an admin pinning
-                          someone else's post is a moderation action that belongs in the
-                          admin panel, not inline in the public feed, so that half is left
-                          for a future ModerationPanel pass rather than exposing a button
-                          here that 403s for everyone but the post's own author. */}
-                      {post.author === currentUser?.name && (
-                        <button
-                          style={{
-                            background: "none",
-                            border: "none",
-                            color: post.pinned ? "var(--gold)" : "var(--text2)",
-                            fontSize: 11,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 4,
-                            cursor: "pointer",
-                          }}
-                          onClick={async () => {
-                            if (demo) { showToast("Forum moderation is unavailable in this demo."); return; }
-                            try {
-                              const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "forum-post-pin", postId: post.id }) });
-                              const d: { success?: boolean; pinned: boolean; error?: string } = await r.json();
-                              if (d.success) {
-                                setForumPosts((prev) => prev.map((p) => p.id === post.id ? { ...p, pinned: d.pinned } : p));
-                                showToast(d.pinned ? "Post pinned" : "Post unpinned");
-                              } else {
-                                showToast(d.error || "Couldn't update pin");
-                              }
-                            } catch { showToast("Couldn't update pin"); }
-                          }}
-                        >
-                          📌 {post.pinned ? "Unpin" : "Pin"}
-                        </button>
-                      )}
-                    </div>
-
-                    {expandedPostId === post.id && (
-                      <div
-                        style={{
-                          marginTop: 10,
-                          borderTop: "1px solid var(--border-subtle)",
-                          paddingTop: 10,
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 8,
-                        }}
-                      >
-                        {post.comments.length === 0 && (
-                          <div style={{ fontSize: 11, color: "var(--muted)", fontStyle: "italic" }}>
-                            No comments yet. Be the first to reply.
-                          </div>
-                        )}
-                        {post.comments.map((c, i) => (
-                          <div
-                            key={i}
-                            style={{
-                              background: "rgba(255,255,255,0.04)",
-                              borderRadius: 10,
-                              padding: "8px 12px",
-                            }}
-                          >
-                            <div
-                              style={{
-                                fontSize: 11,
-                                fontWeight: 700,
-                                color: "var(--text2)",
-                                marginBottom: 2,
-                              }}
-                            >
-                              {c.author}
-                            </div>
-                            <div style={{ fontSize: 12, color: "var(--text)", lineHeight: 1.4 }}>
-                              {c.text}
-                            </div>
-                          </div>
-                        ))}
-                        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
-                          <input
-                            className="inp"
-                            placeholder="Write a reply..."
-                            aria-label="Write a reply"
-                            value={commentTexts[post.id] || ""}
-                            onChange={(e) =>
-                              setCommentTexts((prev) => ({ ...prev, [post.id]: e.target.value }))
-                            }
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") addComment(post.id);
-                            }}
-                            style={{ width: "100%", fontSize: 12, padding: "9px 12px", background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 10, color: "var(--text)" }}
-                          />
-                          <button
-                            className="btn btn-gold"
-                            style={{
-                              width: "100%",
-                              padding: "10px 0",
-                              fontSize: 11,
-                              fontWeight: 700,
-                              borderRadius: 10,
-                            }}
-                            onClick={() => addComment(post.id)}
-                          >
-                            Reply
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </>
+          <NetworkForumTab
+            showNewPost={showNewPost}
+            setShowNewPost={setShowNewPost}
+            newPostTrapRef={newPostTrap}
+            newPostTitle={newPostTitle}
+            setNewPostTitle={setNewPostTitle}
+            newPostBody={newPostBody}
+            setNewPostBody={setNewPostBody}
+            onSubmitPost={submitNewPost}
+            forumSort={forumSort}
+            setForumSort={setForumSort}
+            forumSearch={forumSearch}
+            setForumSearch={setForumSearch}
+            forumSearchOpen={forumSearchOpen}
+            setForumSearchOpen={setForumSearchOpen}
+            filteredForum={filteredForum}
+            expandedPostId={expandedPostId}
+            setExpandedPostId={setExpandedPostId}
+            votedPosts={votedPosts}
+            commentTexts={commentTexts}
+            setCommentTexts={setCommentTexts}
+            currentUser={currentUser}
+            onVote={handleVote}
+            onShare={handlePostShare}
+            onReport={reportTarget}
+            onOpenThread={openThread}
+            onAddComment={addComment}
+            onTogglePin={togglePostPin}
+          />
         )}
 
         {/* ─── THREAD DETAIL (Reddit-style) ─── */}
         {threadPost && createPortal(
-          <div ref={threadModalRef} className="modal-overlay" role="dialog" aria-modal="true" aria-label="Forum thread" style={{ position: "fixed", zIndex: 500 }}>
-            <div className="modal-header">
-              <button className="modal-back" onClick={() => { setThreadId(null); setReplyTo(null); setReplyToId(null); }} aria-label="Back">
-                <FiArrowLeft size={20} />
-              </button>
-              <div className="modal-title">Thread</div>
-              <div style={{ width: 42 }} />
-            </div>
-            <div className="modal-body">
-              {/* FULL POST */}
-              <div style={{ display: "flex", gap: 14, marginBottom: 14 }}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, minWidth: 40, paddingTop: 2 }}>
-                  <button
-                    style={{ background: "none", border: "none", color: votedPosts[threadPost.id] === "up" ? "#FFD700" : "var(--muted)", cursor: "pointer", fontSize: 20, padding: 0 }}
-                    onClick={() => handleVote(threadPost.id, "up")}
-                  >
-                    ▲
-                  </button>
-                  <span style={{ fontSize: 15, fontWeight: 800, color: "var(--text)" }}>{threadPost.votes}</span>
-                  <button
-                    style={{ background: "none", border: "none", color: votedPosts[threadPost.id] === "down" ? "#ff6b6b" : "var(--muted)", cursor: "pointer", fontSize: 20, padding: 0 }}
-                    onClick={() => handleVote(threadPost.id, "down")}
-                  >
-                    ▼
-                  </button>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  {threadPost.cat && (
-                    <button type="button" onClick={() => setBadgeInfo({ name: threadPost.cat, desc: "The topic category this forum post belongs to.", icon: "🏷", color: "#FFD700" })} style={{ display: "inline-block", minHeight: 44, fontSize: 10, padding: "3px 10px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.25)", color: "var(--gold)", fontWeight: 700, marginBottom: 8, cursor: "pointer" }}>{threadPost.cat}</button>
-                  )}
-                  <div style={{ fontSize: 18, fontWeight: 800, color: "var(--text)", lineHeight: 1.3, marginBottom: 6 }}>{threadPost.title}</div>
-                  <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 10 }}>{threadPost.author} · {threadPost.time}</div>
-                  <div style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{threadPost.body}</div>
-                  <div style={{ display: "flex", gap: 16, marginTop: 14 }}>
-                    <button style={{ background: "none", border: "none", color: "var(--text2)", fontSize: 12, display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }} onClick={() => handlePostShare(threadPost)}>
-                      <FiShare2 size={13} /> Share
-                    </button>
-                    <button style={{ background: "none", border: "none", color: "#ff6b6b", fontSize: 12, display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }} onClick={() => { setReportTarget({ id: threadPost.id, type: "forum_post", name: threadPost.author }); setShowReport(true); }}>
-                      <FiFlag size={13} /> Report
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* COMMENTS */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--border-subtle)", paddingTop: 12, marginBottom: 10 }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: "var(--text)" }}>{(() => { const n = threadReplies[String(threadPost.id)]?.length || threadPost.comments.length; return `${n} ${n === 1 ? "comment" : "comments"}`; })()}</div>
-                <div style={{ display: "flex", gap: 6 }}>
-                  {(["best", "new"] as const).map((s) => (
-                    <div key={s} role="tab" aria-selected={threadSort === s} tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setThreadSort(s); } }} className={"conn-tab-sub" + (threadSort === s ? " active" : "")} onClick={() => setThreadSort(s)} style={{ cursor: "pointer", fontSize: 11, padding: "4px 10px" }}>
-                      {s === "best" ? "Best" : "New"}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {(() => {
-                const tKey = String(threadPost.id);
-                const source: ThreadReply[] = threadReplies[tKey]?.length ? threadReplies[tKey] : (threadPost.comments || []);
-                if (source.length === 0) {
-                  return (
-                    <div style={{ textAlign: "center", padding: "20px 0", color: "var(--muted)", fontSize: 12, fontStyle: "italic" }}>
-                      No comments yet — start the conversation.
-                    </div>
-                  );
-                }
-                // Nest by parentReplyId (data stays flat/correct server-side; only
-                // presentation is indented). Level is derived from the tree so it
-                // stays right even if `depth` is missing, capped at 3 levels.
-                const nodes = new Map<string, ThreadReplyNode>();
-                source.forEach((r: ThreadReply, i: number) => {
-                  const rk = r.id != null ? String(r.id) : `idx-${i}`;
-                  nodes.set(rk, { ...r, __key: rk, children: [] });
-                });
-                const roots: ThreadReplyNode[] = [];
-                nodes.forEach((node) => {
-                  const pid = node.parentReplyId != null ? String(node.parentReplyId) : null;
-                  if (pid && nodes.has(pid) && pid !== node.__key) (nodes.get(pid) as ThreadReplyNode).children.push(node);
-                  else roots.push(node);
-                });
-                if (threadSort === "new") roots.reverse();
-                const renderReply = (node: ThreadReplyNode, level: number): React.ReactNode => {
-                  const cvKey = `${threadPost.id}:${node.__key}`;
-                  const cv = commentVotes[cvKey];
-                  return (
-                    <div key={node.__key} style={{ marginLeft: Math.min(level, 3) * 16 }}>
-                      <div style={{ background: "var(--card-bg)", borderRadius: 12, padding: "10px 12px", marginBottom: 8 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                          <div style={{ width: 22, height: 22, borderRadius: "50%", background: "linear-gradient(135deg,var(--gold),var(--lavender))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, color: "var(--text)" }}>
-                            {(node.author || "?").charAt(0).toUpperCase()}
-                          </div>
-                          <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text2)" }}>{node.author}</span>
-                          <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: "auto" }}>
-                            <button aria-label="Upvote" style={{ background: "none", border: "none", color: cv === "up" ? "#FFD700" : "var(--muted)", cursor: "pointer", fontSize: 12, padding: 0 }} onClick={() => setCommentVotes((p) => ({ ...p, [cvKey]: p[cvKey] === "up" ? null : "up" }))}>▲</button>
-                            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text)" }}>{cv === "up" ? 1 : cv === "down" ? -1 : 0}</span>
-                            <button aria-label="Downvote" style={{ background: "none", border: "none", color: cv === "down" ? "#ff6b6b" : "var(--muted)", cursor: "pointer", fontSize: 12, padding: 0 }} onClick={() => setCommentVotes((p) => ({ ...p, [cvKey]: p[cvKey] === "down" ? null : "down" }))}>▼</button>
-                          </div>
-                        </div>
-                        <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.5, marginBottom: 6 }}>{node.text}</div>
-                        <button
-                          aria-label={`Reply to ${node.author}`}
-                          style={{ background: "none", border: "none", color: "var(--gold)", fontSize: 11, fontWeight: 700, cursor: "pointer", padding: 0 }}
-                          onClick={() => {
-                            setReplyTo(node.author);
-                            setReplyToId(node.id != null ? String(node.id) : null);
-                            setCommentTexts((prev) => ({ ...prev, [threadPost.id]: prev[threadPost.id] || `@${node.author} ` }));
-                          }}
-                        >
-                          Reply
-                        </button>
-                      </div>
-                      {node.children.length > 0 && node.children.map((child) => renderReply(child, level + 1))}
-                    </div>
-                  );
-                };
-                return roots.map((r) => renderReply(r, 0));
-              })()}
-
-              {/* COMPOSER */}
-              <div style={{ marginTop: 14 }}>
-                {replyTo && (
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)", borderRadius: 8, padding: "6px 10px", marginBottom: 8 }}>
-                    <span style={{ fontSize: 11, color: "var(--gold)" }}>Replying to @{replyTo}</span>
-                    <button aria-label="Cancel reply" style={{ background: "none", border: "none", color: "var(--text2)", cursor: "pointer", fontSize: 12 }} onClick={() => { setReplyTo(null); setReplyToId(null); }}>✕</button>
-                  </div>
-                )}
-                <input
-                  className="inp"
-                  placeholder="Add a comment…"
-                  aria-label="Add a comment"
-                  value={commentTexts[threadPost.id] || ""}
-                  onChange={(e) => setCommentTexts((prev) => ({ ...prev, [threadPost.id]: e.target.value }))}
-                  onKeyDown={(e) => { if (e.key === "Enter") addComment(threadPost.id, replyToId); }}
-                  style={{ width: "100%", fontSize: 13, padding: "10px 12px", marginBottom: 8 }}
-                />
-                <button className="btn btn-gold" style={{ width: "100%", padding: "12px 0", fontSize: 13, fontWeight: 700, borderRadius: 10 }} onClick={() => addComment(threadPost.id, replyToId)}>
-                  {replyToId ? "Reply" : "Comment"}
-                </button>
-              </div>
-            </div>
-          </div>, document.body)
+          <NetworkThreadModal
+            ref={threadModalRef}
+            threadPost={threadPost}
+            threadReplies={threadReplies}
+            threadSort={threadSort}
+            setThreadSort={setThreadSort}
+            votedPosts={votedPosts}
+            commentVotes={commentVotes}
+            setCommentVotes={setCommentVotes}
+            commentTexts={commentTexts}
+            setCommentTexts={setCommentTexts}
+            replyTo={replyTo}
+            replyToId={replyToId}
+            setReplyTo={setReplyTo}
+            setReplyToId={setReplyToId}
+            onClose={() => { setThreadId(null); setReplyTo(null); setReplyToId(null); }}
+            onVote={handleVote}
+            onShare={handlePostShare}
+            onReport={reportTarget}
+            onAddComment={addComment}
+            onBadgeInfo={setBadgeInfo}
+          />, document.body)
         }
       </div>
       {proDetail && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 500,
-            display: "flex",
-            alignItems: "flex-start",
-            justifyContent: "center",
-            overflowY: "auto",
-          }}
-          role="presentation"
-          aria-hidden="true"
-          onClick={() => setProDetail(null)}
-        >
-          <div
-            role="presentation"
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(0,0,0,0.6)",
-              backdropFilter: "blur(8px)",
-            }}
-          />
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              position: "relative",
-              width: "100%",
-              maxWidth: 480,
-              marginTop: "env(safe-area-inset-top, 0px)",
-              background: "linear-gradient(135deg,#0d0520,#1a0a2e,#0d0520)",
-              borderRadius: "0 0 24px 24px",
-              overflow: "hidden",
-              display: "flex",
-              flexDirection: "column",
-              marginBottom: 16,
-            }}
-          >
-            <button
-              onClick={() => setProDetail(null)}
-              style={{
-                position: "absolute",
-                top: 12,
-                right: 12,
-                zIndex: 10,
-                background: "transparent",
-                border: "none",
-                color: "#fff",
-                fontSize: 20,
-                lineHeight: 1,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 42,
-                height: 42,
-                textShadow: "0 1px 6px rgba(0,0,0,0.7)",
-              }}
-            >
-              {"\u2715"}
-            </button>
-
-            <div style={{ position: "relative", height: 420, flexShrink: 0 }}>
-              <Image
-                src={proDetail.img}
-                alt={proDetail.name}
-                fill
-                sizes="(max-width: 600px) 100vw, 500px"
-                style={{ objectFit: "cover" }}
-                onError={handleImgError}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  background:
-                    "linear-gradient(to top,rgba(13,5,32,1) 0%,rgba(13,5,32,0.7) 40%,rgba(13,5,32,0.2) 70%,transparent 100%)",
-                }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  bottom: 20,
-                  left: 24,
-                  right: 24,
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 26,
-                    fontWeight: 800,
-                    color: "#fff",
-                    marginBottom: 6,
-                    textShadow: "0 2px 12px rgba(0,0,0,0.6)",
-                  }}
-                >
-                  {proDetail.name}
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: "var(--gold)",
-                    marginBottom: 4,
-                  }}
-                >
-                  <FiBriefcase size={14} /> {proDetail.type}
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    fontSize: 13,
-                    color: "rgba(255,255,255,0.7)",
-                  }}
-                >
-                  <FiMapPin size={13} /> {proDetail.loc}
-                </div>
-              </div>
-            </div>
-            <div
-              style={{
-                flex: 1,
-                overflowY: "auto",
-                padding: "0 24px 24px",
-                display: "flex",
-                flexDirection: "column",
-                gap: 16,
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 13,
-                  color: "rgba(255,255,255,0.75)",
-                  lineHeight: 1.6,
-                }}
-              >
-                {generateBio(proDetail.exp, proDetail.skills || [])}
-              </div>
-
-              <div>
-                <div
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: 1,
-                    color: "var(--muted)",
-                    marginBottom: 8,
-                  }}
-                >
-                  Skills
-                </div>
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {(proDetail.skills || []).map((s: string, i: number) => {
-                    const sc = getSkillColor(i);
-                    return (
-                      <button
-                        type="button"
-                        key={s}
-                        onClick={() => setBadgeInfo({ name: s, desc: STYLE_FULL[s] || `A skill this professional brings to a project.`, icon: "🛠", color: sc.color })}
-                        style={{
-                          minHeight: 44,
-                          fontSize: 12,
-                          padding: "5px 14px",
-                          borderRadius: 99,
-                          background: sc.bg,
-                          border: `1px solid ${sc.border}`,
-                          color: sc.color,
-                          fontWeight: 600,
-                          cursor: "pointer",
-                        }}
-                      >
-                        {s}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* BADGES SECTION IN DETAIL MODAL */}
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "var(--muted)", marginBottom: 8 }}>
-                  Badges
-                </div>
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {(() => {
-                    const badges = buildProfessionalBadges(proDetail, { connected: connectedIds.has(proDetail.id) });
-                    return badges.map((b) => (
-                      <button type="button" key={b.label} onClick={() => setBadgeInfo({ name: b.label, desc: STYLE_FULL[b.label] || `A signal about this pro: ${b.label}.`, icon: b.icon, color: b.c })} style={{ minHeight: 44, fontSize: 11, padding: "4px 11px", borderRadius: 99, background: b.bg, border: `1px solid ${b.bd}`, color: b.c, fontWeight: 700, display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
-                        {b.icon} {b.label}
-                      </button>
-                    ));
-                  })()}
-                </div>
-              </div>
-
-              <div style={{ display: "flex", gap: 10 }}>
-                <div
-                  style={{
-                    flex: 1,
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    borderRadius: 12,
-                    padding: "12px",
-                    textAlign: "center",
-                  }}
-                >
-                  <div style={{ fontSize: 18, fontWeight: 800, color: "var(--gold)" }}>
-                    {proDetail.exp}
-                  </div>
-                  <div style={{ fontSize: 10, color: "var(--text2)" }}>Experience</div>
-                </div>
-                <div
-                  style={{
-                    flex: 1,
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    borderRadius: 12,
-                    padding: "12px",
-                    textAlign: "center",
-                  }}
-                >
-                  <div style={{ fontSize: 18, fontWeight: 800, color: "var(--gold)" }}>
-                    {proDetail.openings}
-                  </div>
-                  <div style={{ fontSize: 10, color: "var(--text2)" }}>Openings</div>
-                </div>
-                <div
-                  style={{
-                    flex: 1,
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    borderRadius: 12,
-                    padding: "12px",
-                    textAlign: "center",
-                  }}
-                >
-                  <div style={{ fontSize: 18, fontWeight: 800, color: "var(--gold)" }}>
-                    {connectedIds.has(proDetail.id) ? 1 : 0}
-                  </div>
-                  <div style={{ fontSize: 10, color: "var(--text2)" }}>Connected</div>
-                </div>
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
-                <div style={{ display: "flex", gap: 10 }}>
-                  <button
-                    disabled={connectedIds.has(proDetail.id) || connectLoading === proDetail.id}
-                    style={{
-                      flex: 1,
-                      padding: "14px 0",
-                      fontSize: 14,
-                      fontWeight: 700,
-                      borderRadius: 12,
-                      border: "none",
-                      cursor: connectedIds.has(proDetail.id) || connectLoading === proDetail.id ? "default" : "pointer",
-                      background: connectedIds.has(proDetail.id)
-                        ? "rgba(255,255,255,0.08)"
-                        : "linear-gradient(135deg,var(--coral),var(--gold))",
-                      color: connectedIds.has(proDetail.id) ? "var(--text2)" : "#fff",
-                      opacity: connectLoading === proDetail.id ? 0.7 : 1,
-                      transition: "all 0.3s",
-                    }}
-                    onClick={() => handleConnect(proDetail)}
-                  >
-                    {connectedIds.has(proDetail.id)
-                      ? "\u2713 Requested"
-                      : connectLoading === proDetail.id
-                        ? "Sending..."
-                        : iAmIndustry
-                          ? "Network"
-                          : "Connect"}
-                  </button>
-                  <button
-                    style={{
-                      flex: 1,
-                      padding: "14px 0",
-                      fontSize: 14,
-                      fontWeight: 600,
-                      borderRadius: 12,
-                      border: "1px solid rgba(0,188,212,0.3)",
-                      background: "transparent",
-                      color: "#00BCD4",
-                      cursor: "pointer",
-                    }}
-                    onClick={() => {
-                      // Was a dead-end stub — never actually opened a conversation.
-                      openChat({ id: proDetail.profileId || proDetail.id, name: proDetail.name, type: proDetail.type || "Creative", img: proDetail.img, messages: [] });
-                      setProDetail(null);
-                    }}
-                  >
-                    Message
-                  </button>
-                </div>
-                <button
-                  style={{
-                    width: "100%",
-                    padding: "12px 0",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    borderRadius: 12,
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    background: "transparent",
-                    color: "var(--text2)",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 6,
-                  }}
-                  onClick={() => handleShare(proDetail)}
-                >
-                  <FiShare2 size={14} /> Share Profile
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <NetworkProDetailModal
+          proDetail={proDetail}
+          onClose={() => setProDetail(null)}
+          handleImgError={handleImgError}
+          connectedIds={connectedIds}
+          connectLoading={connectLoading}
+          onConnect={handleConnect}
+          onShare={handleShare}
+          onOpenChat={openChat}
+          iAmIndustry={iAmIndustry}
+          onBadgeInfo={setBadgeInfo}
+        />
       )}
 
       <BadgeInfoModal info={badgeInfo} onClose={() => setBadgeInfo(null)} />
@@ -1755,5 +668,3 @@ export const NetworkScreen = memo(function NetworkScreen({
     </div>
   );
 });
-
-export default NetworkScreen;

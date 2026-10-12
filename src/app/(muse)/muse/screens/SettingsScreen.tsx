@@ -1,33 +1,22 @@
 "use client";
 
 import React, { memo, useState, useEffect, useRef } from "react";
-import { FiArrowLeft, FiUser, FiLink, FiStar, FiUsers, FiShield, FiInstagram, FiTwitter, FiMusic, FiHeadphones, FiEye, FiMoreHorizontal, FiZap, FiDollarSign, FiGift, FiFile, FiX, FiLock, FiBell, FiHelpCircle, FiDownload, FiAlertTriangle, FiCompass, FiFacebook, FiBriefcase } from "react-icons/fi";
-import { mfaStatus, mfaEnroll, mfaVerify, mfaUnenroll } from "../lib/api";
-import { useFocusTrap } from "../hooks/useFocusTrap";
+import { FiArrowLeft, FiUser, FiLink, FiStar, FiUsers, FiShield, FiInstagram, FiMusic, FiHeadphones, FiEye, FiMoreHorizontal, FiZap, FiDollarSign, FiGift, FiFile, FiX, FiLock, FiBell, FiCompass, FiFacebook, FiBriefcase } from "react-icons/fi";
 // Push subscribe/unsubscribe arrive as PROPS (page.tsx owns the real impls) —
 // importing the module fns here too shadowed them and invited drift.
 import type { Screen } from "../components/types"; import type { CurrentUser, AuthUser, AuthFetchFn, MuseTheme, BlockedProfileRow } from "../page-models"; import type { OnboardingData } from "../hooks/useAuthOnboardingState";
-import { BEHIND_CAMERA, IN_FRONT_CAMERA, AESTHETICS, lookingForOptions } from "../components/types";
-import { STRINGS } from "@/lib/strings";
-import { clearAllPageTourFlags } from "../components/pageTourContent";
 import { getMuseRole, roleBadgeText, type MuseRole } from "@/lib/role";
 import { validatePassword, PASSWORD_RULES_LABEL } from "@/lib/password-policy";
 import { isPaidTier } from "../components/subscriptionTiers";
 import { BoostAnalyticsPanel } from "../components/BoostAnalyticsPanel";
-import {
-  sanitizeAvailabilityStatus,
-  sanitizeBudgetRange,
-  sanitizeTravelDates,
-  sanitizeTravelDestinations,
-  MAX_TRAVEL_DATES,
-  type TravelDateRange,
-} from "@/lib/muse-availability";
+import { SettingsSubPage } from "../components/SettingsSubPage";
+import { ToggleRow, OpacitySlider } from "../components/SettingsToggleRow";
+import { SettingsMFAPanel } from "../components/SettingsMFAPanel";
+import { SettingsPersonalityPanel, SettingsCreativeProfilePanel } from "../components/SettingsPersonalityCreativePanels";
+import { SettingsBriefTemplatesPanel, SettingsTeamPanel, SettingsHiringPanel } from "../components/SettingsBusinessPanels";
+import { SettingsRateSettingsPanel, SettingsPortfolioPanel, SettingsAvailabilityPanel } from "../components/SettingsPricingPanels";
+import { SettingsHelpSupportSection } from "../components/SettingsHelpSupportSection";
 
-const SUPPORT_EMAIL = "info@wyzdesign.com";
-const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
-
-// See the theme-grid audit-fix comment below — unique 3-letter labels so no
-// two theme swatches read the same.
 const THEME_ABBR: Record<string, string> = { lasunset: "SUNSET", deepspace: "SPACE", nebula: "NEBULA", deepsea: "DEEPSEA", cinder: "CINDER", boreal: "BOREAL", sunrise: "SUNRISE", daylight: "DAY", sky: "SKY", rose: "ROSE", meadow: "MEADOW", frost: "FROST" };
 const DARK_THEMES = ["lasunset", "deepspace", "nebula", "deepsea", "cinder", "boreal"] as const;
 const LIGHT_THEMES = ["sunrise", "daylight", "sky", "rose", "meadow", "frost"] as const;
@@ -122,115 +111,6 @@ export interface SettingsScreenProps {
   setSupportOpen?: (v: boolean) => void;
 }
 
-// Shared bottom-sheet wrapper for every Settings sub-page (Notifications,
-// Connected Accounts, Change Password, Blocked Users). Matches the app's
-// existing slide-up panel convention (quest-panel, hamburger sub-screens)
-// instead of the old pattern of pushing an accordion open inline in the
-// middle of the settings list — that kept growing the list's scroll height
-// every time someone opened a section, and buried short rows in a long
-// column. A sub-page keeps the main list a fixed, scannable length and
-// gives each section its own focused screen with one clear way back.
-function SettingsSubPage({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
-  // Buttery slide: mount -> slide up; close -> slide back down, THEN unmount.
-  // The parent still renders us conditionally, so we hold ourselves on screen
-  // for the exit animation before calling the real onClose.
-  const [closing, setClosing] = React.useState(false);
-  const requestClose = React.useCallback(() => {
-    setClosing((c) => {
-      if (c) return c;
-      window.setTimeout(onClose, 280);
-      return true;
-    });
-  }, [onClose]);
-  const trapRef = useFocusTrap(true, requestClose);
-
-  return (
-    <div
-      ref={trapRef}
-      className={"sheet-overlay" + (closing ? " closing" : "")}
-      role="dialog"
-      aria-modal="true"
-      aria-label={title}
-      onClick={requestClose}
-    >
-      <div className={"sheet-panel" + (closing ? " closing" : "")} onClick={(e) => e.stopPropagation()}>
-        <div className="sheet-head">
-          <div className="sheet-title">{title}</div>
-          <button onClick={requestClose} aria-label={`Close ${title}`} className="sheet-close"><FiX size={20} /></button>
-        </div>
-        <div className="sheet-body">{children}</div>
-      </div>
-    </div>
-  );
-}
-
-function ToggleRow({ label, desc, checked, onToggle }: { label: string; desc?: string; checked: boolean; onToggle: () => void }) {
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-      <span style={{ fontSize: 14, color: "var(--text)" }}>{label}{desc && <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 700, color: "var(--gold)", background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.3)", borderRadius: 99, padding: "2px 7px", verticalAlign: "middle" }}>{desc}</span>}</span>
-      <div
-        role="switch"
-        aria-checked={checked}
-        aria-label={label}
-        tabIndex={0}
-        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } }}
-        onClick={onToggle}
-        className={"toggle-track" + (checked ? " active" : "")}
-        style={{ width: 44, height: 24, borderRadius: 12, cursor: "pointer", position: "relative", transition: "all .3s", background: checked ? "linear-gradient(135deg,var(--coral),var(--pink))" : "rgba(255,255,255,0.1)" }}
-      >
-        <div style={{ width: 20, height: 20, borderRadius: 10, background: "#fff", position: "absolute", top: 2, left: checked ? 22 : 2, transition: "all .3s" }} />
-      </div>
-    </div>
-  );
-}
-
-// Reusable 5-stop opacity slider (Background section). Note: stop labels are
-// 20% → 100% (the lowest stop is 20%, fully transparent is excluded so the
-// backdrop/sprites never vanish entirely). Value maps stop N → opacity where
-// 100% = opacity 1. Persisted to localStorage per-slider; the CSS variable is
-// applied straight to the root so BackgroundScene picks it up live.
-function OpacitySlider({ label, storageKey, cssVar }: { label: string; storageKey: string; cssVar: string }) {
-  const STEPS = [0, 0.25, 0.5, 0.75, 1.0];
-  const LABELS = ["0%", "25%", "50%", "75%", "100%"];
-  const [idx, setIdx] = useState<number>(() => {
-    try {
-      const v = parseFloat(localStorage.getItem(storageKey) || "1");
-      return Math.max(0, Math.min(4, Math.round((isNaN(v) ? 1 : v) * 4)));
-    } catch { return 4; }
-  });
-  useEffect(() => {
-    try { document.documentElement.style.setProperty(cssVar, String(STEPS[idx])); } catch { /* CSSOM may be unavailable */ }
-  }, [cssVar, idx]);
-  const handleSlide = (i: number) => {
-    setIdx(i);
-    try { localStorage.setItem(storageKey, String(STEPS[i])); } catch { /* storage may be unavailable */ }
-    try { document.documentElement.style.setProperty(cssVar, String(STEPS[i])); } catch { /* CSSOM may be unavailable */ }
-  };
-  return (
-    <div style={{ padding: "10px 0" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{label}</span>
-        <span style={{ fontSize: 12, fontWeight: 700, color: "var(--gold)" }}>{LABELS[idx]}</span>
-      </div>
-      <input
-        type="range"
-        aria-label={label}
-        min={0}
-        max={4}
-        step={1}
-        value={idx}
-        onChange={e => handleSlide(Number(e.target.value))}
-        style={{ width: "100%", accentColor: "var(--gold)" }}
-      />
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-        {LABELS.map((l, i) => (
-          <span key={i} style={{ fontSize: 10, color: "var(--muted)" }}>{l}</span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export const SettingsScreen = memo(function SettingsScreen({
   screen,
   showScreen,
@@ -278,8 +158,8 @@ export const SettingsScreen = memo(function SettingsScreen({
   setShowAgeVerification,
   showBlockedUsers = false,
   setShowBlockedUsers = () => {},
-  setScreen = () => {},
-  setObStep = () => {},
+  setScreen: _setScreen = () => {},
+  setObStep: _setObStep = () => {},
   apiFetch,
   setShowQuests = () => {},
   questClaimables = 0,
@@ -313,99 +193,23 @@ export const SettingsScreen = memo(function SettingsScreen({
   const [showBoostAnalytics, setShowBoostAnalytics] = useState(false);
   const [showPortfolioSettings, setShowPortfolioSettings] = useState(false);
   const [showAvailability, setShowAvailability] = useState(false);
-  const [portfolioVisibility, setPortfolioVisibility] = useState<string>(String(preferences.portfolioVisibility ?? "everyone"));
-  const [portfolioFeatured, setPortfolioFeatured] = useState<boolean>(preferences.portfolioFeatured !== false);
-  const [portfolioShowOnProfile, setPortfolioShowOnProfile] = useState<boolean>(preferences.portfolioShowOnProfile !== false);
-  const [availabilityStatus, setAvailabilityStatus] = useState<string>(String(preferences.availabilityStatus ?? "available"));
-  const [availabilityNote, setAvailabilityNote] = useState<string>(String(preferences.availabilityNote ?? ""));
-  const [bookingLeadDays, setBookingLeadDays] = useState<number>(Number(preferences.bookingLeadDays ?? 3));
-  const [travelDates, setTravelDates] = useState<TravelDateRange[]>(() => sanitizeTravelDates(preferences.travelDates));
-  const [travelDestinations, setTravelDestinations] = useState<string>(() => sanitizeTravelDestinations(preferences.travelDestinations).join(", "));
-  const [budgetRange, setBudgetRange] = useState<string>(String(preferences.budgetRange ?? ""));
   const [showRateSettings, setShowRateSettings] = useState(false);
-  const [rateHourly, setRateHourly] = useState<string>(String(preferences.rateHourly ?? ""));
-  const [rateHalfDay, setRateHalfDay] = useState<string>(String(preferences.rateHalfDay ?? ""));
-  const [rateFullDay, setRateFullDay] = useState<string>(String(preferences.rateFullDay ?? ""));
-  const [rateCurrency, setRateCurrency] = useState<string>(String(preferences.rateCurrency ?? "USD"));
-  const [rateNotes, setRateNotes] = useState<string>(String(preferences.rateNotes ?? ""));
   // Brand/business tools (were "coming soon" stubs).
   const [showBriefTemplates, setShowBriefTemplates] = useState(false);
   const [showTeam, setShowTeam] = useState(false);
   const [showHiring, setShowHiring] = useState(false);
-  const [briefTemplates, setBriefTemplates] = useState<{ title: string; desc: string; budget: string }[]>(
-    Array.isArray(preferences.briefTemplates) && (preferences.briefTemplates as unknown[]).length
-      ? (preferences.briefTemplates as { title: string; desc: string; budget: string }[])
-      // Demo fallback so the panel isn't an empty "No templates yet" state.
-      : (process.env.NEXT_PUBLIC_DEMO_MODE !== "false"
-        ? [
-            { title: "Editorial shoot", desc: "Half-day editorial shoot, 3 looks, 25+ edited images delivered in 48 hours.", budget: "$800-$1,500" },
-            { title: "Brand campaign", desc: "Concept, shot list and full-day capture for a product or brand campaign.", budget: "$3,000-$5,000" },
-            { title: "Test shoot (TFP)", desc: "Mutually beneficial test shoot for portfolio pieces. No fee either way.", budget: "TFP" },
-          ]
-        : []),
-  );
-  const [teamMembers, setTeamMembers] = useState<{ name: string; email: string; role: string }[]>(
-    Array.isArray(preferences.teamMembers) && (preferences.teamMembers as unknown[]).length
-      ? (preferences.teamMembers as { name: string; email: string; role: string }[])
-      // Demo fallback so the panel isn't an empty "No team members yet." state.
-      : (process.env.NEXT_PUBLIC_DEMO_MODE !== "false"
-        ? [
-            { name: "Maya Chen", email: "maya@studio.example", role: "Producer" },
-            { name: "Sam Taylor", email: "sam@studio.example", role: "Editor" },
-            { name: "Riley Patel", email: "riley@studio.example", role: "Designer" },
-          ]
-        : []),
-  );
-  const [hireMinRate, setHireMinRate] = useState<string>(String(preferences.hireMinRate ?? ""));
-  const [hireAvailability, setHireAvailability] = useState<string>(String(preferences.hireAvailability ?? ""));
-  const [hireTypes, setHireTypes] = useState<string>(String(preferences.hireTypes ?? ""));
-  const [hireNotes, setHireNotes] = useState<string>(String(preferences.hireNotes ?? ""));
   const [showPersonality, setShowPersonality] = useState(false);
   const [showCreativeProfile, setShowCreativeProfile] = useState(false);
-  const [cpType, setCpType] = useState((obData)?.type || "");
-  const [cpCustomTypePending, setCpCustomTypePending] = useState(false);
-  const [cpLooking, setCpLooking] = useState<string[]>((obData)?.looking || []);
-  const [cpStyles, setCpStyles] = useState<string[]>((obData)?.styles || []);
-  const [cpShowCustomStyleInput, setCpShowCustomStyleInput] = useState(false);
-  const [cpCustomStyleDraft, setCpCustomStyleDraft] = useState("");
-  const [cpCustomStylePending, setCpCustomStylePending] = useState(false);
-  const [persZodiac, setPersZodiac] = useState((obData)?.zodiac || "");
-  const [persChinese, setPersChinese] = useState((obData)?.chinese || "");
-  const [persMbti, setPersMbti] = useState((obData)?.mbti || "");
-  const [persLifePath, setPersLifePath] = useState<string | number>((obData)?.lifePath || "");
   const [pwCurrent, setPwCurrent] = useState("");
   const [pwNew, setPwNew] = useState("");
   const [pwConfirm, setPwConfirm] = useState("");
   const [pwBusy, setPwBusy] = useState(false);
 
-  // Audit fix (2026-09-08): Report a Bug, Have an Idea, Export My Data, App
-  // Walkthrough, Help Guide, Email Support and the FAQ list used to exist
-  // ONLY in the old inline hamburger Settings tab (MenuModal.tsx) — porting
-  // them here too so switching the Menu's "Settings" card to open this full
-  // page (see MenuModal.tsx) doesn't silently drop them.
-  const [showBugForm, setShowBugForm] = useState(false);
-  const [bugCategory, setBugCategory] = useState("ui");
-  const [bugDescription, setBugDescription] = useState("");
-  const [bugSteps, setBugSteps] = useState("");
-  const [bugExpected, setBugExpected] = useState("");
-  const [bugActual, setBugActual] = useState("");
-  const [bugSubmitting, setBugSubmitting] = useState(false);
-  const [showIdeaForm, setShowIdeaForm] = useState(false);
-  const [ideaCategory, setIdeaCategory] = useState("feature");
-  const [ideaTitle, setIdeaTitle] = useState("");
-  const [ideaDescription, setIdeaDescription] = useState("");
-  const [ideaSubmitting, setIdeaSubmitting] = useState(false);
-
-  // 2FA / MFA state
+  // 2FA / MFA — only `mfaEnabled` needs to live here (shown in the Privacy &
+  // Safety row description below); the rest of the enrollment flow's state
+  // is owned by SettingsMFAPanel itself.
   const [showMFA, setShowMFA] = useState(false);
   const [mfaEnabled, setMfaEnabled] = useState(false);
-  const [mfaFactors, setMfaFactors] = useState<{ id: string; status: string; friendlyName?: string }[]>([]);
-  const [mfaLoading, setMfaLoading] = useState(false);
-  const [mfaEnrolling, setMfaEnrolling] = useState(false);
-  const [mfaQrUri, setMfaQrUri] = useState("");
-  const [mfaSecret, setMfaSecret] = useState("");
-  const [mfaVerifyCode, setMfaVerifyCode] = useState("");
-  const [mfaError, setMfaError] = useState("");
 
   // Role detection — determines which settings variant to render
   const userRole: MuseRole = getMuseRole({ audience: currentUser?.audience, type: currentUser?.type || obData?.type });
@@ -433,17 +237,6 @@ export const SettingsScreen = memo(function SettingsScreen({
       if (d.breakdown) setCompletionBreakdown(d.breakdown);
     }).catch(() => {});
   }, [screen, authFetch]);
-
-  // Load MFA status when the sub-page opens
-  useEffect(() => {
-    if (!showMFA) return;
-    setMfaLoading(true);
-    mfaStatus().then(d => {
-      setMfaEnabled(!!d.enabled);
-      setMfaFactors(d.factors || []);
-      setMfaLoading(false);
-    }).catch(() => setMfaLoading(false));
-  }, [showMFA]);
 
   // Notification prefs: hydrate from the server when the sub-page opens, then
   // persist each toggle back (debounced) so they stick across devices.
@@ -591,14 +384,6 @@ export const SettingsScreen = memo(function SettingsScreen({
     { icon: <FiFile size={18} />, label: "Community Guidelines", desc: "Standards & expectations", action: () => setShowGuidelines(true) },
     { icon: <FiFile size={18} />, label: "DMCA / Copyright", desc: "Copyright infringement claims", action: () => window.open("/dmca", "_self") },
     { icon: <FiX size={18} />, label: "Delete Account", desc: "Remove account access and associated content", action: () => setShowDeleteConfirm(true) },
-  ];
-
-  const faqItems = [
-    { q: "How does matching work?", a: "Swipe right on creators you'd like to connect with. If they swipe right back, it's a connection! You can then message each other." },
-    { q: "What are Quests?", a: "Quests are small challenges that reward you for using Musa — like swiping on profiles, posting, or messaging someone. They refresh daily, weekly and monthly. Finishing one earns XP plus a reward such as free likes or a profile boost. Open Quests (Menu → Quests, or Settings → Rewards → Quests) to see your progress and claim anything that’s ready." },
-    { q: "How do I upgrade to Premium?", a: "Go to Settings → Payments & Subscription → Subscription to see plan options." },
-    { q: "How do I report someone?", a: "Tap the ⚑ Report button on any feed or forum post, the ••• menu on a match, or Report inside a chat conversation. Choose a reason and we'll review it — track your reports in Menu → Your Activity → Reports." },
-    { q: "How do I delete my account?", a: "Go to Settings → Legal → Delete Account. Access is removed immediately and your account data is permanently deleted after 30 days, except records required for legal, safety, fraud, dispute, or recordkeeping obligations; see the Privacy Policy for details." },
   ];
 
   const renderRow = (item: { icon: React.ReactNode; label: string; desc: string; action: () => void; dot?: boolean }) => (
@@ -909,69 +694,7 @@ export const SettingsScreen = memo(function SettingsScreen({
             </div>
           )}
 
-          <div className="settings-group">
-            <div className="settings-group-title">Help &amp; Support</div>
-            {faqItems.map((faq, i) => (
-              <div key={i} style={{ marginBottom: 10, padding: "12px 14px", borderRadius: 12, background: "var(--card-bg)", border: "1px solid var(--border-subtle)" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>{faq.q}</div>
-                <div style={{ fontSize: 12, color: "var(--text2)", lineHeight: 1.5 }}>{faq.a}</div>
-              </div>
-            ))}
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 6 }}>
-              <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => { clearAllPageTourFlags(); showToast("Tutorials reset — you'll see them again as you explore"); }}>Replay Tutorials</button>
-              <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => showScreen("codex")}>Glossary + Codex</button>
-              <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => setSupportOpen?.(true)}>Help Guide</button>
-              {!showIdeaForm ? (
-                <button className="btn" style={{ width: "100%", fontSize: 13, background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)" }} onClick={() => setShowIdeaForm(true)}>Have an Idea?</button>
-              ) : (
-                <div style={{ padding: 14, background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 12 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)", marginBottom: 10 }}>Share Your Idea</div>
-                  <select aria-label="Idea category" value={ideaCategory} onChange={e => setIdeaCategory(e.target.value)} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }}>
-                    <option value="feature">New Feature</option>
-                    <option value="improvement">Improvement</option>
-                    <option value="new-category">New Category</option>
-                    <option value="partnership">Partnership Idea</option>
-                    <option value="other">Other</option>
-                  </select>
-                  <input aria-label="Idea title" value={ideaTitle} onChange={e => setIdeaTitle(e.target.value)} placeholder="Give it a name*" style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }} />
-                  <textarea aria-label="Idea description" value={ideaDescription} onChange={e => setIdeaDescription(e.target.value)} placeholder="Describe your idea — what should it do? What problem does it solve?*" rows={3} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13, resize: "vertical" }} />
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <button className="btn" style={{ flex: 1, fontSize: 12, padding: "8px 0", background: "rgba(255,215,0,0.15)", border: "1px solid rgba(255,215,0,0.3)", color: "var(--gold)" }} disabled={ideaSubmitting || !ideaTitle.trim() || !ideaDescription.trim() || !authFetch} onClick={async () => { if (!authFetch) return; setIdeaSubmitting(true); try { const r = await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "submit-idea", title: ideaTitle, description: ideaDescription, category: ideaCategory }) }); if (!r.ok) throw new Error("failed");
-      showToast("Idea submitted — we appreciate it!"); setShowIdeaForm(false); setIdeaTitle(""); setIdeaDescription(""); } catch { showToast("Failed to submit idea"); } setIdeaSubmitting(false); }}>{ideaSubmitting ? "Sending…" : "Submit Idea"}</button>
-                    <button className="btn btn-outline" style={{ fontSize: 12, padding: "8px 16px" }} onClick={() => setShowIdeaForm(false)}>{STRINGS.cancel}</button>
-                  </div>
-                </div>
-              )}
-              {!showBugForm ? (
-                <button className="btn" style={{ width: "100%", background: "rgba(255,107,107,0.08)", border: "1px solid var(--border-subtle)", color: "var(--coral)", fontSize: 13 }} onClick={() => setShowBugForm(true)}><FiAlertTriangle size={14} style={{ marginRight: 6 }} />Report a Bug</button>
-              ) : (
-                <div style={{ padding: 14, background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 12 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--coral)", marginBottom: 10 }}>Report a Bug</div>
-                  <select aria-label="Bug category" value={bugCategory} onChange={e => setBugCategory(e.target.value)} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }}>
-                    <option value="ui">UI / Visual Issue</option>
-                    <option value="crash">App Crash</option>
-                    <option value="payment">Payment Problem</option>
-                    <option value="matching">Matching Not Working</option>
-                    <option value="notification">Notification Issue</option>
-                    <option value="upload">Upload / Media Issue</option>
-                    <option value="other">Other</option>
-                  </select>
-                  <textarea aria-label="Bug description" value={bugDescription} onChange={e => setBugDescription(e.target.value)} placeholder="What happened?*" rows={3} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13, resize: "vertical" }} />
-                  <textarea aria-label="Steps to reproduce" value={bugSteps} onChange={e => setBugSteps(e.target.value)} placeholder="Steps to reproduce (optional)" rows={2} style={{ width: "100%", padding: "8px 10px", marginBottom: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13, resize: "vertical" }} />
-                  <div style={{ display: "flex", gap: 8, marginBottom: 8, minWidth: 0 }}>
-                    <input aria-label="Expected behavior" value={bugExpected} onChange={e => setBugExpected(e.target.value)} placeholder="Expected behavior" style={{ flex: 1, minWidth: 0, boxSizing: "border-box", padding: "8px 10px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }} />
-                    <input aria-label="Actual behavior" value={bugActual} onChange={e => setBugActual(e.target.value)} placeholder="Actual behavior" style={{ flex: 1, minWidth: 0, boxSizing: "border-box", padding: "8px 10px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "var(--text)", fontSize: 13 }} />
-                  </div>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <button className="btn" style={{ flex: 1, fontSize: 12, padding: "8px 0", background: "rgba(255,107,107,0.15)", border: "1px solid var(--border-subtle)", color: "var(--coral)" }} disabled={bugSubmitting || !bugDescription.trim() || !authFetch} onClick={async () => { if (!authFetch) return; setBugSubmitting(true); try { const r = await authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "report-bug", category: bugCategory, description: bugDescription, steps: bugSteps, expected: bugExpected, actual: bugActual }) }); if (!r.ok) throw new Error("failed"); showToast("Bug report sent — thank you!"); setShowBugForm(false); setBugDescription(""); setBugSteps(""); setBugExpected(""); setBugActual(""); } catch { showToast("Failed to send bug report"); } setBugSubmitting(false); }}>{bugSubmitting ? "Sending…" : "Submit Bug"}</button>
-                    <button className="btn btn-outline" style={{ fontSize: 12, padding: "8px 16px" }} onClick={() => setShowBugForm(false)}>{STRINGS.cancel}</button>
-                  </div>
-                </div>
-              )}
-              <button className="btn" style={{ width: "100%", background: "var(--card-bg)", border: "1px solid var(--border-subtle)", color: "var(--text)", fontSize: 13 }} onClick={async () => { if (!authFetch) { showToast("Can't export right now"); return; } try { const res = await authFetch("/api/muse?type=export"); if (!res.ok) { showToast("Export failed"); return; } const j = await res.json(); const blob = new Blob([JSON.stringify(j, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "muse-my-data.json"; a.click(); URL.revokeObjectURL(url); showToast("Data exported"); } catch { showToast("Export failed"); } }}><FiDownload size={14} style={{ marginRight: 6 }} />Export My Data</button>
-              <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => { try { window.location.href = "mailto:" + SUPPORT_EMAIL + "?subject=" + encodeURIComponent("Musa Support Request") + "&body=" + encodeURIComponent("Describe your issue here:\n\n"); } catch { showToast?.("Email us at " + SUPPORT_EMAIL); } }}><FiHelpCircle size={14} style={{ marginRight: 6 }} />Email Support</button>
-            </div>
-          </div>
+          <SettingsHelpSupportSection showScreen={showScreen} showToast={showToast} authFetch={authFetch} setSupportOpen={setSupportOpen} />
 
           <button className="btn btn-outline" style={{ width: "100%", marginBottom: 20 }} onClick={() => doLogout()}>Log Out</button>
         </div>
@@ -1079,519 +802,39 @@ export const SettingsScreen = memo(function SettingsScreen({
       )}
 
       {showPersonality && (
-        <SettingsSubPage title="Personality Profile" onClose={() => setShowPersonality(false)}>
-          {(() => {
-            const ZODIAC = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
-            const CHINESE = ["Rat","Ox","Tiger","Rabbit","Dragon","Snake","Horse","Goat","Monkey","Rooster","Dog","Pig"];
-            const MBTI = ["INTJ","INTP","ENTJ","ENTP","INFJ","INFP","ENFJ","ENFP","ISTJ","ISFJ","ESTJ","ESFJ","ISTP","ISFP","ESTP","ESFP"];
-            const LIFE_PATHS = [1,2,3,4,5,6,7,8,9,11,22,33];
-            const chipRow = <T extends string | number>(label: string, options: T[], value: T, setValue: (v: T) => void) => (
-              <div style={{ marginBottom: 18 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 8, textAlign: "center" }}>{label}</div>
-                <div className="chips" style={{ marginBottom: 0 }}>
-                  {options.map(o => (
-                    <button type="button" key={String(o)} aria-pressed={value === o} className={"chip" + (value === o ? " sel" : "")}
-                      onClick={() => setValue(o)}><span>{o}</span></button>
-                  ))}
-                </div>
-              </div>
-            );
-            return (
-              <div>
-                {chipRow("Zodiac", ZODIAC, persZodiac, setPersZodiac)}
-                {chipRow("Chinese Zodiac", CHINESE, persChinese, setPersChinese)}
-                {chipRow("MBTI", MBTI, persMbti, setPersMbti)}
-                {chipRow<string | number>("Life Path", LIFE_PATHS, persLifePath, setPersLifePath)}
-                <button className="btn btn-gold" style={{ width: "100%", marginTop: 8 }} onClick={async () => {
-                  try {
-                    await apiFetch?.("/api/muse/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update-profile", zodiac: persZodiac, chinese: persChinese, mbti: persMbti, life_path: persLifePath }) });
-                    showToast("Personality profile saved!");
-                    setShowPersonality(false);
-                  } catch { showToast("Couldn't save — try again"); }
-                }}>Save</button>
-              </div>
-            );
-          })()}
-        </SettingsSubPage>
+        <SettingsPersonalityPanel obData={obData} apiFetch={apiFetch} showToast={showToast} onClose={() => setShowPersonality(false)} />
       )}
 
       {showCreativeProfile && (
-        <SettingsSubPage title="Creative Profile" onClose={() => setShowCreativeProfile(false)}>
-          {(() => {
-            const toggle = (arr: string[], v: string, set: (x: string[]) => void, max = 6) => {
-              if (arr.includes(v)) set(arr.filter(x => x !== v));
-              else if (arr.length < max) set([...arr, v]);
-              else showToast(`Max ${max} selected`);
-            };
-            const row = (label: string, options: string[], value: string | string[], onPick: (v: string) => void, multi = false) => (
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 8, textAlign: "center" }}>{label}</div>
-                <div className="chips" style={{ marginBottom: 0 }}>
-                  {options.map(o => {
-                    const sel = multi ? (value as string[]).includes(o) : value === o;
-                    return (
-                      <button type="button" key={o} aria-pressed={sel} className={"chip" + (sel ? " sel" : "")}
-                        onClick={() => onPick(o)}><span>{o}</span></button>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-            return (
-              <div>
-                {row("Behind the Camera", BEHIND_CAMERA, cpType, (v) => { setCpType(v); setCpCustomTypePending(false); })}
-                {row("In Front of the Camera", IN_FRONT_CAMERA, cpType, (v) => { setCpType(v); setCpCustomTypePending(false); })}
-                {/* Torreé audit item 6: not every creative role fits the preset
-                    list — "Other" lets someone type their own, saved as a real
-                    `type` value immediately and flagged custom_type_pending
-                    for admin review at /muse/admin/moderation. */}
-                <div style={{ marginBottom: 16 }}>
-                  <div className="chips" style={{ marginBottom: 0 }}>
-                    <button type="button" aria-pressed={cpCustomTypePending} className={"chip" + (cpCustomTypePending ? " sel" : "")}
-                      onClick={() => { setCpType(""); setCpCustomTypePending(true); }}><span>Add New +</span></button>
-                  </div>
-                  {cpCustomTypePending && (
-                    <input className="inp" aria-label="Creative role" placeholder="Type your creative role..." value={cpType} onChange={e => setCpType(e.target.value)} style={{ marginTop: 10 }} autoFocus />
-                  )}
-                </div>
-                {row("Looking For", lookingForOptions(cpType), cpLooking, (v) => toggle(cpLooking, v, setCpLooking, 4), true)}
-                {row("Aesthetic", AESTHETICS, cpStyles, (v) => toggle(cpStyles, v, setCpStyles, 6), true)}
-                <div style={{ marginBottom: 16 }}>
-                  <div className="chips" style={{ marginBottom: 0 }}>
-                    <button type="button" aria-pressed={cpShowCustomStyleInput} className={"chip" + (cpShowCustomStyleInput ? " sel" : "")}
-                      onClick={() => setCpShowCustomStyleInput(v => !v)}><span>Add New +</span></button>
-                    {cpStyles.filter(s => !AESTHETICS.includes(s)).map(s => (
-                      <button type="button" key={s} className="chip sel" title="Tap to remove"
-                        onClick={() => setCpStyles(cs => cs.filter(x => x !== s))}><span>✎ {s} ✕</span></button>
-                    ))}
-                  </div>
-                  {cpShowCustomStyleInput && (
-                    <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                      <input className="inp" aria-label="Custom aesthetic" placeholder="Type your own aesthetic..." value={cpCustomStyleDraft} onChange={e => setCpCustomStyleDraft(e.target.value)} style={{ margin: 0, flex: 1 }} autoFocus />
-                      <button className="btn btn-outline" style={{ padding: "0 16px" }} onClick={() => {
-                        const v = cpCustomStyleDraft.trim();
-                        if (!v) return;
-                        if (cpStyles.includes(v)) return;
-                        if (cpStyles.length >= 6) { showToast("Max 6 selected"); return; }
-                        setCpStyles(cs => [...cs, v]);
-                        setCpCustomStylePending(true);
-                        setCpCustomStyleDraft("");
-                      }}>Add</button>
-                    </div>
-                  )}
-                </div>
-                <button className="btn btn-gold" style={{ width: "100%", marginTop: 8 }} onClick={async () => {
-                  try {
-                    await apiFetch?.("/api/muse/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
-                      action: "update-profile", type: cpType, looking: cpLooking, styles: cpStyles,
-                      ...(cpCustomTypePending ? { custom_type_pending: true } : {}),
-                      ...(cpCustomStylePending ? { custom_style_pending: true } : {}),
-                    }) });
-                    showToast("Creative profile saved!");
-                    setShowCreativeProfile(false);
-                  } catch { showToast("Couldn't save — try again"); }
-                }}>Save</button>
-              </div>
-            );
-          })()}
-        </SettingsSubPage>
+        <SettingsCreativeProfilePanel obData={obData} apiFetch={apiFetch} showToast={showToast} onClose={() => setShowCreativeProfile(false)} />
       )}
 
       {showMFA && (
-        <SettingsSubPage title="Two-Factor Authentication" onClose={() => {
-          // Abandoning setup (X / back) must also drop the factor we just created,
-          // otherwise a stale unverified factor blocks the next attempt.
-          const pendingId = mfaFactors[0]?.id;
-          if (mfaEnrolling && pendingId) { mfaUnenroll(pendingId).catch(() => { /* best effort */ }); }
-          setShowMFA(false); setMfaEnrolling(false); setMfaQrUri(""); setMfaSecret(""); setMfaVerifyCode(""); setMfaError(""); setMfaFactors([]);
-        }}>
-          {mfaLoading ? (
-            <div style={{ textAlign: "center", padding: 20, color: "var(--text2)", fontSize: 13 }}>Loading...</div>
-          ) : mfaEnrolling ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>
-                Scan this QR code with your authenticator app (Google Authenticator, Authy, 1Password, etc.), then enter the 6-digit code below.
-              </div>
-              {mfaQrUri && (
-                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", padding: 16, background: "rgba(255,255,255,0.95)", borderRadius: 12, margin: "0 auto" }}>
-                  {/* Local /api/qr (same-origin) — the old api.qrserver.com URL was
-                      blocked by the site CSP img-src, so the QR never rendered. */}
-                  <img src={`/api/qr?url=${encodeURIComponent(mfaQrUri)}&source=mfa`} alt="MFA QR Code" width={200} height={200} style={{ width: 200, height: 200, display: "block", margin: "0 auto" }} />
-                </div>
-              )}
-              {mfaSecret && (
-                <div style={{ textAlign: "center", padding: "8px 12px", background: "var(--card-bg)", borderRadius: 8, border: "1px solid var(--border-subtle)" }}>
-                  <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>Manual entry key:</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", fontFamily: "monospace", letterSpacing: 1 }}>{mfaSecret}</div>
-                </div>
-              )}
-              <input
-                className="inp"
-                type="text"
-                inputMode="numeric"
-                aria-label="Two-factor authentication code"
-                placeholder="Enter 6-digit code"
-                value={mfaVerifyCode}
-                onChange={e => setMfaVerifyCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                style={{ margin: 0, textAlign: "center", fontSize: 18, letterSpacing: 4 }}
-              />
-              {mfaError && <div style={{ fontSize: 12, color: "var(--coral)", textAlign: "center" }}>{mfaError}</div>}
-              <div style={{ display: "flex", gap: 8 }}>
-                <button className="btn btn-outline" style={{ flex: 1, fontSize: 13 }} onClick={async () => {
-                  // Unenroll the factor we just created so abandoning setup doesn't
-                  // leave a stale unverified factor blocking the next attempt.
-                  const pendingId = mfaFactors[0]?.id;
-                  if (pendingId) { try { await mfaUnenroll(pendingId); } catch { /* best effort */ } }
-                  setMfaFactors([]);
-                  setMfaEnrolling(false); setMfaQrUri(""); setMfaSecret(""); setMfaVerifyCode(""); setMfaError("");
-                }}>Cancel</button>
-                <button
-                  className="btn btn-gold"
-                  style={{ flex: 1, fontSize: 13 }}
-                  disabled={mfaVerifyCode.length !== 6}
-                  onClick={async () => {
-                    if (!mfaFactors.length) return;
-                    setMfaError("");
-                    try {
-                      const res = await mfaVerify(mfaFactors[0].id, mfaVerifyCode);
-                      if (res.success) {
-                        setMfaEnabled(true);
-                        setMfaEnrolling(false);
-                        setMfaQrUri("");
-                        setMfaSecret("");
-                        setMfaVerifyCode("");
-                        showToast("✓ Two-factor authentication enabled");
-                        // Refresh factors
-                        const status = await mfaStatus();
-                        setMfaFactors(status.factors || []);
-                      } else {
-                        setMfaError(res.error || "Invalid code — try again");
-                      }
-                    } catch { setMfaError("Verification failed — try again"); }
-                  }}
-                >Verify & Enable</button>
-              </div>
-            </div>
-          ) : mfaEnabled ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "var(--card-bg)", borderRadius: 12, border: "1px solid var(--border-subtle)" }}>
-                <FiShield size={20} style={{ color: "var(--text)" }} />
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Two-factor is active</div>
-                  <div style={{ fontSize: 12, color: "var(--text2)" }}>Your account is protected with TOTP verification.</div>
-                </div>
-              </div>
-              {mfaFactors.filter(f => f.status === "verified").map(f => (
-                  <div key={f.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: "var(--card-bg)", borderRadius: 10, border: "1px solid var(--border-subtle)" }}>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{f.friendlyName || "Authenticator"}</div>
-                    <div style={{ fontSize: 11, color: "var(--text2)" }}>Verified</div>
-                  </div>
-                  <button
-                    className="btn btn-outline"
-                    style={{ padding: "4px 12px", fontSize: 12, color: "var(--coral)", borderColor: "var(--border-subtle)" }}
-                    onClick={async () => {
-                      try {
-                        const res = await mfaUnenroll(f.id);
-                        if (res.success) {
-                          setMfaEnabled(false);
-                          setMfaFactors([]);
-                          showToast("Two-factor authentication disabled");
-                        } else {
-                          showToast(res.error || "Could not disable");
-                        }
-                      } catch { showToast("Could not disable two-factor"); }
-                    }}
-                  >Disable</button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>
-                Two-factor authentication adds an extra layer of security to your account. When enabled, you'll enter a code from your authenticator app each time you sign in.
-              </div>
-              <button
-                className="btn btn-gold"
-                style={{ width: "100%", fontSize: 13 }}
-                onClick={async () => {
-                  setMfaLoading(true);
-                  setMfaError("");
-                  try {
-                    // Self-heal: drop any stale unverified factor(s) left by a previous
-                    // abandoned setup before enrolling, so we never stack factors or
-                    // trip over a half-finished one.
-                    const status = await mfaStatus().catch(() => null);
-                    const stale = (status?.factors || []).filter(f => f.status !== "verified");
-                    for (const f of stale) {
-                      try { await mfaUnenroll(f.id); } catch { /* best effort */ }
-                    }
-                    const res = await mfaEnroll();
-                    if (res.id) {
-                      setMfaQrUri(res.qr_uri || res.totp?.qr_code || "");
-                      setMfaSecret(res.secret || res.totp?.secret || "");
-                      setMfaFactors([{ id: res.id, status: "unverified" }]);
-                      setMfaEnrolling(true);
-                    } else {
-                      showToast(res.error || "Could not start setup");
-                    }
-                  } catch { showToast("Could not start setup"); }
-                  setMfaLoading(false);
-                }}
-              >Set Up Two-Factor</button>
-            </div>
-          )}
-        </SettingsSubPage>
+        <SettingsMFAPanel mfaEnabled={mfaEnabled} setMfaEnabled={setMfaEnabled} showToast={showToast} onClose={() => setShowMFA(false)} />
       )}
 
       {showBriefTemplates && (
-        <SettingsSubPage title="Brief Templates" onClose={() => setShowBriefTemplates(false)}>
-          <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>
-            Reusable formats so you don&apos;t retype the same brief every time.
-          </div>
-          {briefTemplates.length === 0 && (
-            <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 12 }}>No templates yet — add your first below.</div>
-          )}
-          {briefTemplates.map((t, i) => (
-            <div key={i} style={{ marginBottom: 12, padding: 12, borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)" }}>
-              <input aria-label="Template name" value={t.title} placeholder="Template name" onChange={(e) => setBriefTemplates((prev) => prev.map((x, j) => j === i ? { ...x, title: e.target.value } : x))}
-                style={{ width: "100%", marginBottom: 8, padding: "10px 12px", borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--surface)", color: "var(--text)", fontSize: 13, fontFamily: "inherit", boxSizing: "border-box" }} />
-              <textarea aria-label="Template description" value={t.desc} placeholder="What you're looking for" rows={2} onChange={(e) => setBriefTemplates((prev) => prev.map((x, j) => j === i ? { ...x, desc: e.target.value } : x))}
-                style={{ width: "100%", marginBottom: 8, padding: "10px 12px", borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--surface)", color: "var(--text)", fontSize: 13, fontFamily: "inherit", boxSizing: "border-box", resize: "vertical" }} />
-              <div style={{ display: "flex", gap: 8 }}>
-                <input aria-label="Template budget" value={t.budget} placeholder="Budget (e.g. $500)" onChange={(e) => setBriefTemplates((prev) => prev.map((x, j) => j === i ? { ...x, budget: e.target.value } : x))}
-                  style={{ flex: 1, padding: "10px 12px", borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--surface)", color: "var(--text)", fontSize: 13, fontFamily: "inherit", boxSizing: "border-box" }} />
-                <button onClick={() => setBriefTemplates((prev) => prev.filter((_, j) => j !== i))} aria-label="Delete template"
-                  style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid rgba(255,138,128,0.4)", background: "transparent", color: "#ff8a80", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Delete</button>
-              </div>
-            </div>
-          ))}
-          <button className="btn btn-outline" style={{ width: "100%", marginBottom: 12 }}
-            onClick={() => setBriefTemplates((prev) => [...prev, { title: "", desc: "", budget: "" }])}>+ Add template</button>
-          <button className="btn btn-gold" style={{ width: "100%" }} onClick={async () => {
-            try {
-              await apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { briefTemplates } }) });
-              showToast("Brief templates saved!");
-            } catch { showToast("Couldn't save — try again"); }
-          }}>Save Templates</button>
-        </SettingsSubPage>
+        <SettingsBriefTemplatesPanel preferences={preferences} apiFetch={apiFetch} showToast={showToast} onClose={() => setShowBriefTemplates(false)} />
       )}
 
       {showTeam && (
-        <SettingsSubPage title="Team Management" onClose={() => setShowTeam(false)}>
-          <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>
-            Who works with you. Roles are for your own reference.
-          </div>
-          {teamMembers.length === 0 && (
-            <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 12 }}>No team members yet.</div>
-          )}
-          {teamMembers.map((m, i) => (
-            <div key={i} style={{ marginBottom: 10, padding: 12, borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)" }}>
-              {[
-                { k: "name" as const, ph: "Name" },
-                { k: "email" as const, ph: "Email" },
-              ].map((f) => (
-                <input key={f.k} aria-label={f.ph} value={m[f.k]} placeholder={f.ph} onChange={(e) => setTeamMembers((prev) => prev.map((x, j) => j === i ? { ...x, [f.k]: e.target.value } : x))}
-                  style={{ width: "100%", marginBottom: 8, padding: "10px 12px", borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--surface)", color: "var(--text)", fontSize: 13, fontFamily: "inherit", boxSizing: "border-box" }} />
-              ))}
-              <div style={{ display: "flex", gap: 8 }}>
-                <select aria-label="Member role" value={m.role} onChange={(e) => setTeamMembers((prev) => prev.map((x, j) => j === i ? { ...x, role: e.target.value } : x))}
-                  style={{ flex: 1, padding: "10px 12px", borderRadius: 10, border: "1px solid var(--border-subtle)", background: "var(--surface)", color: "var(--text)", fontSize: 13, fontFamily: "inherit" }}>
-                  {["Owner", "Manager", "Editor", "Assistant", "Viewer"].map((r) => <option key={r} value={r}>{r}</option>)}
-                </select>
-                <button onClick={() => setTeamMembers((prev) => prev.filter((_, j) => j !== i))} aria-label="Remove member"
-                  style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid rgba(255,138,128,0.4)", background: "transparent", color: "#ff8a80", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Remove</button>
-              </div>
-            </div>
-          ))}
-          <button className="btn btn-outline" style={{ width: "100%", marginBottom: 12 }}
-            onClick={() => setTeamMembers((prev) => [...prev, { name: "", email: "", role: "Editor" }])}>+ Add member</button>
-          <button className="btn btn-gold" style={{ width: "100%" }} onClick={async () => {
-            try {
-              await apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { teamMembers } }) });
-              showToast("Team saved!");
-            } catch { showToast("Couldn't save — try again"); }
-          }}>Save Team</button>
-        </SettingsSubPage>
+        <SettingsTeamPanel preferences={preferences} apiFetch={apiFetch} showToast={showToast} onClose={() => setShowTeam(false)} />
       )}
 
       {showHiring && (
-        <SettingsSubPage title="Hiring Preferences" onClose={() => setShowHiring(false)}>
-          <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>
-            What you look for when hiring — used to filter who you see and to auto-decline mismatches.
-          </div>
-          {[
-            { label: "Minimum rate", value: hireMinRate, set: setHireMinRate, ph: "e.g. $300/day" },
-            { label: "Availability needed", value: hireAvailability, set: setHireAvailability, ph: "e.g. Weekends, 2 weeks notice" },
-            { label: "Preferred creative types", value: hireTypes, set: setHireTypes, ph: "e.g. Photographer, MUA, Stylist" },
-            { label: "Notes", value: hireNotes, set: setHireNotes, ph: "Anything else you need" },
-          ].map((f) => (
-            <div key={f.label} style={{ marginTop: 12 }}>
-              <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>{f.label}</div>
-              <input aria-label={f.label} value={f.value} placeholder={f.ph} onChange={(e) => f.set(e.target.value)}
-                style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)", color: "var(--text)", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" }} />
-            </div>
-          ))}
-          <button className="btn btn-gold" style={{ width: "100%", marginTop: 16 }} onClick={async () => {
-            try {
-              await apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { hireMinRate, hireAvailability, hireTypes, hireNotes } }) });
-              showToast("Hiring preferences saved!");
-            } catch { showToast("Couldn't save — try again"); }
-          }}>Save Hiring Preferences</button>
-        </SettingsSubPage>
+        <SettingsHiringPanel preferences={preferences} apiFetch={apiFetch} showToast={showToast} onClose={() => setShowHiring(false)} />
       )}
 
       {showRateSettings && (
-        <SettingsSubPage title="Rate Settings" onClose={() => setShowRateSettings(false)}>
-          <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>
-            Your standard pricing. Clients see this on your profile and it pre-fills booking requests.
-          </div>
-
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>Currency</div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {["USD", "EUR", "GBP", "CAD", "AUD"].map((cur) => (
-                      <button key={cur} aria-pressed={rateCurrency === cur} onClick={() => setRateCurrency(cur)}
-                  style={{ padding: "8px 16px", borderRadius: 10, border: "1px solid var(--border-subtle)", background: rateCurrency === cur ? "var(--gold)" : "var(--glass)", color: rateCurrency === cur ? "#0a0612" : "var(--text)", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-                  {cur}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {[
-            { label: "Hourly rate", value: rateHourly, set: setRateHourly, ph: "150" },
-            { label: "Half-day rate", value: rateHalfDay, set: setRateHalfDay, ph: "600" },
-            { label: "Full-day rate", value: rateFullDay, set: setRateFullDay, ph: "1100" },
-          ].map((f) => (
-            <div key={f.label} style={{ marginTop: 12 }}>
-              <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>{f.label}</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 13, color: "var(--muted)", fontWeight: 700 }}>{rateCurrency}</span>
-                <input type="number" min={0} aria-label={f.label} placeholder={f.ph} value={f.value} onChange={(e) => f.set(e.target.value)}
-                  style={{ flex: 1, padding: "12px 14px", borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)", color: "var(--text)", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" }} />
-              </div>
-            </div>
-          ))}
-
-          <div style={{ marginTop: 12 }}>
-            <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>Notes shown to clients (optional)</div>
-            <input type="text" aria-label="Rate notes" placeholder="e.g. Travel billed separately" value={rateNotes} onChange={(e) => setRateNotes(e.target.value)}
-              style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)", color: "var(--text)", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" }} />
-          </div>
-
-          <button className="btn btn-gold" style={{ width: "100%", marginTop: 16 }} onClick={async () => {
-            try {
-              await apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { rateHourly, rateHalfDay, rateFullDay, rateCurrency, rateNotes } }) });
-              showToast("Rate settings saved!");
-            } catch { showToast("Couldn't save — try again"); }
-          }}>Save Rate Settings</button>
-        </SettingsSubPage>
+        <SettingsRateSettingsPanel preferences={preferences} apiFetch={apiFetch} showToast={showToast} onClose={() => setShowRateSettings(false)} />
       )}
 
       {showPortfolioSettings && (
-        <SettingsSubPage title="Portfolio Settings" onClose={() => setShowPortfolioSettings(false)}>
-          <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>
-            Control who can see your portfolio and how your work is presented.
-          </div>
-          <div id="portfolio-visibility-label" style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", margin: "4px 0 8px" }}>Who can see your portfolio</div>
-          <div aria-labelledby="portfolio-visibility-label">
-          {[
-            { k: "everyone", l: "Musa members", d: "Any signed-in Musa member can view your work" },
-            { k: "matches", l: "Matches only", d: "Only people you've matched with" },
-            { k: "private", l: "Private", d: "Visible only to you" },
-          ].map(o => (
-            <button key={o.k} type="button" aria-pressed={portfolioVisibility === o.k} onClick={() => setPortfolioVisibility(o.k)}
-              style={{ display: "block", width: "100%", textAlign: "left", padding: "12px 16px", marginBottom: 8, border: "1px solid var(--border-subtle)", borderRadius: 14, background: portfolioVisibility === o.k ? "var(--gold)" : "var(--glass)", color: portfolioVisibility === o.k ? "#0a0612" : "var(--text)", cursor: "pointer" }}>
-              <div style={{ fontSize: 14, fontWeight: 700 }}>{o.l}</div>
-              <div style={{ fontSize: 11, opacity: .75, marginTop: 2 }}>{o.d}</div>
-            </button>
-          ))}
-          </div>
-          <ToggleRow label="Featured work" desc="Highlight your best pieces first" checked={portfolioFeatured} onToggle={() => setPortfolioFeatured(v => !v)} />
-          <ToggleRow label="Show portfolio on my profile" checked={portfolioShowOnProfile} onToggle={() => setPortfolioShowOnProfile(v => !v)} />
-          <button className="btn btn-gold" style={{ width: "100%", marginTop: 16 }} onClick={async () => {
-            if (DEMO_MODE) {
-              showToast("Portfolio settings saved for this demo session.");
-              return;
-            }
-            try {
-              await apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { portfolioVisibility, portfolioFeatured, portfolioShowOnProfile } }) });
-              showToast("Portfolio settings saved!");
-            } catch { showToast("Couldn't save — try again"); }
-          }}>Save Portfolio Settings</button>
-        </SettingsSubPage>
+        <SettingsPortfolioPanel preferences={preferences} apiFetch={apiFetch} showToast={showToast} onClose={() => setShowPortfolioSettings(false)} />
       )}
 
       {showAvailability && (
-        <SettingsSubPage title="Availability Calendar" onClose={() => setShowAvailability(false)}>
-          <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>
-            Tell clients when you&apos;re bookable. This drives your Discover badge and booking requests.
-          </div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", margin: "4px 0 8px" }}>Current status</div>
-          {[
-            { k: "available", l: "Available", d: "Open to booking requests" },
-            { k: "busy", l: "Busy", d: "Working — limited availability" },
-            { k: "unavailable", l: "Not accepting", d: "Paused all new bookings" },
-          ].map(o => (
-            <button key={o.k} aria-pressed={availabilityStatus === o.k} onClick={() => setAvailabilityStatus(o.k)}
-              style={{ display: "block", width: "100%", textAlign: "left", padding: "12px 16px", marginBottom: 8, border: "1px solid var(--border-subtle)", borderRadius: 14, background: availabilityStatus === o.k ? "var(--gold)" : "var(--glass)", color: availabilityStatus === o.k ? "#0a0612" : "var(--text)", cursor: "pointer" }}>
-              <div style={{ fontSize: 14, fontWeight: 700 }}>{o.l}</div>
-              <div style={{ fontSize: 11, opacity: .75, marginTop: 2 }}>{o.d}</div>
-            </button>
-          ))}
-          <div style={{ marginTop: 12 }}>
-            <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>Booking lead time (days)</div>
-            <input type="number" aria-label="Booking lead time (days)" placeholder="3" value={String(bookingLeadDays)} onChange={e => setBookingLeadDays(Math.max(0, Math.min(90, Number(e.target.value) || 0)))}
-              style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)", color: "var(--text)", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" }} />
-          </div>
-          <div style={{ marginTop: 12 }}>
-            <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>Away / travel dates</div>
-            {travelDates.map((r, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                <input type="date" aria-label={`Travel from ${i + 1}`} value={r.from} onChange={e => setTravelDates(ds => ds.map((x, j) => j === i ? { ...x, from: e.target.value } : x))}
-                  style={{ flex: 1, minWidth: 0, padding: "10px 12px", borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)", color: "var(--text)", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" }} />
-                <span aria-hidden="true" style={{ color: "var(--muted)" }}>&ndash;</span>
-                <input type="date" aria-label={`Travel to ${i + 1}`} value={r.to} onChange={e => setTravelDates(ds => ds.map((x, j) => j === i ? { ...x, to: e.target.value } : x))}
-                  style={{ flex: 1, minWidth: 0, padding: "10px 12px", borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)", color: "var(--text)", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" }} />
-                <button type="button" aria-label={`Remove travel date range ${i + 1}`} onClick={() => setTravelDates(ds => ds.filter((_, j) => j !== i))}
-                  style={{ padding: "10px 12px", borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)", color: "var(--text)", cursor: "pointer", fontSize: 14 }}>&#10005;</button>
-              </div>
-            ))}
-            {travelDates.length < MAX_TRAVEL_DATES && (
-              <button type="button" className="btn btn-outline" aria-label="Add travel date range" style={{ width: "100%" }} onClick={() => setTravelDates(ds => [...ds, { from: "", to: "" }])}>+ Add date range</button>
-            )}
-          </div>
-          <div style={{ marginTop: 12 }}>
-            <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>Travel destinations</div>
-            <input type="text" aria-label="Travel destinations" placeholder="e.g. New York, Los Angeles" value={travelDestinations} onChange={e => setTravelDestinations(e.target.value)}
-              style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)", color: "var(--text)", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" }} />
-          </div>
-          <div style={{ marginTop: 12 }}>
-            <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>Typical budget range</div>
-            <input type="text" aria-label="Typical budget range" placeholder="e.g. $500&ndash;$2,000" value={budgetRange} onChange={e => setBudgetRange(e.target.value)}
-              style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)", color: "var(--text)", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" }} />
-          </div>
-          <div style={{ marginTop: 12 }}>
-            <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>Note shown to clients (optional)</div>
-            <input type="text" aria-label="Note shown to clients (optional)" placeholder="e.g. Booking 2 weeks out" value={availabilityNote} onChange={e => setAvailabilityNote(e.target.value)}
-              style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1px solid var(--border-subtle)", background: "var(--glass)", color: "var(--text)", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" }} />
-          </div>
-          <button className="btn btn-gold" style={{ width: "100%", marginTop: 16 }} onClick={async () => {
-            // Persist both: the structured profile COLUMNS (what Discover/search
-            // filters actually read) and the preferences blob (display
-            // back-compat). Values are sanitised identically on both paths.
-            const cleanStatus = sanitizeAvailabilityStatus(availabilityStatus) ?? "available";
-            const cleanDates = sanitizeTravelDates(travelDates);
-            const cleanDests = sanitizeTravelDestinations(travelDestinations);
-            const cleanBudget = sanitizeBudgetRange(budgetRange) ?? "";
-            try {
-              await apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { availabilityStatus: cleanStatus, availabilityNote, bookingLeadDays, travelDates: cleanDates, travelDestinations: cleanDests, budgetRange: cleanBudget } }) });
-              await apiFetch?.("/api/muse/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update-profile", availability_status: cleanStatus, travel_dates: cleanDates, travel_destinations: cleanDests, budget_range: cleanBudget }) });
-              showToast("Availability saved!");
-            } catch { showToast("Couldn't save — try again"); }
-          }}>Save Availability</button>
-        </SettingsSubPage>
+        <SettingsAvailabilityPanel preferences={preferences} apiFetch={apiFetch} showToast={showToast} onClose={() => setShowAvailability(false)} />
       )}
     </div>
   );
