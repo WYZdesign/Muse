@@ -13,7 +13,10 @@ import path from "node:path";
  * need room, extract a component or hook first.
  */
 const BUDGETS: Record<string, number> = {
-  "screens/NetworkScreen.tsx": 1760,
+  // XL-2 (2026-10-12): extracted into components/NetworkProsTab.tsx,
+  // NetworkForumTab.tsx, NetworkThreadModal.tsx, NetworkProDetailModal.tsx.
+  // 1759 -> 670; keep this ratcheted down, never raised.
+  "screens/NetworkScreen.tsx": 675,
   "screens/SettingsScreen.tsx": 1601,
 };
 
