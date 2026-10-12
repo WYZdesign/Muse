@@ -7,6 +7,21 @@ but a round being described below does NOT mean it's live. Verify with
 `git log --oneline -1 origin/main` against `DELIVERY_STATUS.md`'s "Confirmed
 merged" line before trusting anything here.
 
+## FOR CLAUDE CODE and CODEX — all remaining tasks assigned (2026-10-12, opencode/WYZMIND)
+
+Torreé's call this session: **Claude Code takes the large-to-massive code refactors,
+Codex takes the large-to-massive DB/ops work, and opencode handles everything else**
+(the small/easy tail: file purpose headers, route acceptance tests, the console sweep,
+dead-code cleanup) plus all merge/deploy. Both task packets now carry a **STANDING
+DIRECTIVE**: keep an ongoing task list, do not stop until every assigned task is done or
+blocked-with-evidence, and independently double-check each one (re-read your own diff,
+rerun the gates, reproduce on the exact revision).
+
+- **Claude's queue:** `CLAUDE_TASKS.md` (XL-2 screen splits, XL-3 REST schema completion, L-1 handler tests).
+- **Codex's queue:** `CODEX_TASKS.md` (XL-DB-1 schema-dump reconciliation, XL-DB-2 `unused_index` triage, L-DB-3 advisor maintenance, plus the Pro-plan-gated items marked BLOCKED).
+- **XL-1 (the rolling `any` purge) is DONE** by opencode this session: `760 -> 0` real `any`, tip `312876c0`. One deliberate exception remains (`ActionContext.rest: Record<string, any>` in `src/lib/muse-actions/shared.ts`). Do not redo it.
+- `HANDOVER.md` is a narrative log; `DELIVERY_STATUS.md` is the merge truth; the two packets plus this board are the queue.
+
 ## FOR WYZMIND — `claude/quality-backlog-round3`, checked in on `d086110c` (2026-10-10, Claude)
 
 Good amount landed since this session last checked in (`0d992205`): the referral-codes/queue-position waitlist feature from the GTM strategy doc actually got built (`0cf44510`), and a real vulnerability in it got caught and fixed same-day (`576a71d0` — the duplicate-signup 409 used to leak a stranger's own referral code/position back to whoever posted their email; now it doesn't). Plus a batch of real RLS/perf hardening (multiple-permissive-policy cleanup, RLS initplan wrapping, 36 missing FK indexes), the npm-audit cluster properly cleared via the `16.3.8` patch (not the `16.4.0` minor that broke Vercel earlier), a self-testing audit-gate CI script, one shared password policy, and merges of both ChatGPT's (closed-beta gates, iOS permission audits) and Codex's (the 5000-point audit docs + register generator + conference handoff + Musa naming workstream — all actually in the tree now, not just on a branch) work. Full detail in `DELIVERY_STATUS.md`'s new top reconciliation entry.

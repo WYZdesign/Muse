@@ -10,6 +10,25 @@
 
 ---
 
+## 0a. STANDING DIRECTIVE (applies every session, non-negotiable)
+
+1. **Maintain an ongoing task list.** At the start of every session, read this packet,
+   `HANDOFF.md`, `DELIVERY_STATUS.md`, and `git status`; write down the full list of
+   your open tasks, then work it top-down by size.
+2. **Do not stop until every assigned task is done.** When a task finishes, pick the
+   next open one. If you cannot finish one, record the exact blocker and move on, then
+   say so plainly.
+3. **Double-check everything you did.** Re-read your own diff, rerun the gates, and
+   reproduce the result on the exact revision. Never accept your own prior summary as
+   proof.
+4. **Keep adding tasks.** If your work uncovers new refactor/quality debt, add it to
+   the list and keep going rather than declaring the lane empty.
+5. **You own the large-to-massive code refactors only.** opencode (the integrator) now
+   handles the small/easy tail itself (file headers, route tests, console sweep, dead
+   code). Do not re-do those; coordinate in `_STATE/handovers/`.
+
+---
+
 ## 0. HARD RULES (non-negotiable)
 
 - **Never push to `main`.** Branch `claude/<topic>` → PR. One writer per file.
@@ -19,14 +38,20 @@
 - **Test before done.** Compile is not proof — run it.
 - Windows host; the Bash tool is PowerShell 7. Port 3000 is Open WebUI — use `-p 31xx` for a dev server.
 
-## STATUS (2026-10-08) — read this first
+## STATUS (2026-10-12) — read this first
 
-**Repo:** `main` last verified at `e4e0bf09`. Production live. Gate every change
-must keep green: `tsc 0` / `vitest 1301 tests (166 files)` / `next build` clean /
-`node scripts/audit-gate.mjs` (prod + full, exits 0). CI is **green**; the audit
-gate allowlists one dev-only advisory (`braces`, no patched version exists) and
-so a new advisory still fails it.
+**Repo:** `main` last verified at `312876c0`. Production live. Gate every change
+must keep green: `tsc 0` / `vitest 169 files / 1320 tests` / `next build` clean /
+`node scripts/audit-gate.mjs` (prod + full, exits 0). CI is **green**.
 opencode owns merge+deploy — leave your work on a branch and hand it back (§5).
+
+**XL-1 (the rolling `any` purge) is DONE** — opencode purged the entire repo this
+session (760 -> 0 real `any`, tip `312876c0`). Do not redo it. One deliberate
+exception remains: `ActionContext.rest: Record<string, any>` in
+`src/lib/muse-actions/shared.ts` (tightening it errors across 6 modules).
+
+**Your lane is now the large-to-massive code refactors** (see the ASSIGNED block
+below). opencode handles the small/easy tail itself.
 
 **DONE (by opencode — do not redo):** all XS, M-1 (`role=button` → native
 `<button>`), M-2 (>=24px dot targets), L-3 (opt-in mutation-invalidated GET
@@ -75,27 +100,26 @@ tests (Nav, pageTourContent), Tier 4.4 load tester, Tier 1.4 bundle analysis
 (Next built-in), migration 0038 (36 FK indexes). Also repaired the iOS usage
 descriptions and landed the stranded ChatGPT docs/audit branches.
 
-**ASSIGNED TO YOU (Claude):**
-1. **XL-1 rolling `any` purge.** 3 files already done (`components/MatchCard.tsx`
-   13→0, `modals/types.ts` 14→0, `components/DisclosureModal.tsx` 24→0); project
-   total is **782**. Next worst-first: `lib/muse-actions/get.ts` (110),
-   `screens/DiscoverScreen.tsx` (94), `screens/MenuModal.tsx` (47),
-   `screens/NetworkScreen.tsx` (40), `screens/FeedScreen.tsx` (40), then the
-   17-28 cluster. One PR per file/cluster.
-   - Pattern that worked: type props/state with the real shared models
-     (`components/types.ts`, `page-models.ts`, `modals/types.ts`, hook exports);
-     add genuinely-missing fields to the shared type (we added `skills`/`audience`/
-     `showMatchPercent` to `Match`); define a shared row type for distinct DB
-     shapes (e.g. `ShootDisclosure`); use `!` only right after an existing
-     truthiness guard TS cannot narrow through an inline closure. Never loosen
-     behavior to satisfy types.
-   - Verify each: `npm run typecheck` + `npm test` + `npm run build`; screenshot
-     on-screen changes with `wyz_web_shoot.py`.
-2. **XL-2 extraction.** Split `NetworkScreen.tsx` + `SettingsScreen.tsx` into
-   `components/`/`hooks/` the way page.tsx was split, and LOWER the budgets in
-   `screen-size-budget.test.ts` as blocks move out (never raise).
-3. **L-2 remaining.** One-line purpose headers on the screens/components still
-   missing a leading comment (~50 files).
+**ASSIGNED TO YOU (Claude) — large-to-massive code work only:**
+1. **XL-2 · Split the two 1.6k-line screens.** Extract cohesive sub-sections of
+   `screens/NetworkScreen.tsx` (1760-line cap) and `screens/SettingsScreen.tsx`
+   (1601-line cap) into `components/` + `hooks/` the way `page.tsx` was split, and
+   **lower** the budgets in `screen-size-budget.test.ts` as blocks move out (never
+   raise one). One PR per screen. Verify with the gates + a visual check
+   (`wyz_web_shoot.py`).
+2. **XL-3 · Finish the `/api/muse` per-action schema split.** `restSchemas.ts` currently
+   types ~16 of ~120 actions (passthrough for the rest). Extend `MUSE_REST_SCHEMAS` with
+   real field schemas for every remaining mutating action (see the `ACTIONS` map in
+   `src/app/api/muse/route.ts`; read each handler in `src/lib/muse-actions/*.ts` for its
+   `rest.*` fields) and add tests in `restSchemas.test.ts`.
+3. **L-1 · Colocated unit tests for the remaining action handlers.**
+   `src/lib/muse-actions/*.ts` have route-level tests but not unit tests of the handler
+   functions themselves. Mock the service client and assert each handler's happy path
+   plus its guard branches.
+
+**Handled by opencode (do NOT pick these up):** L-2 (file purpose headers), M-3 (route
+acceptance tests), S-1/S-2/S-3 (supabase scaffolding, e2e snapshots, console sweep), the
+XS cleanup, and XL-1 (done).
 
 **`next` is patched, not to be re-bumped casually.** next + eslint-config-next
 went `16.3.6 → 16.3.8`, which cleared the whole advisory cluster (the fixed range
