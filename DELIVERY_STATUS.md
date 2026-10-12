@@ -27,7 +27,15 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `f1db03c7`
+## Confirmed merged, last verified at: `4d89ff33`
+
+### Reconciliation — 2026-10-12 (opencode/WYZMIND, integrator): `f1db03c7` → `4d89ff33`
+
+- **`1f24952c docs(agents)`** — assigned the XL-1 test-fixture `any` purge (736 `any` across 51 `*.test.*` files) to Claude; source `any` was already 0.
+- **`b7d4a6f4 merge(claude): XL-2`** — landed Claude's `claude/xl2-screen-split` bundle (`44a068ef`, `fa385d27`): NetworkScreen 1759 -> 671 and SettingsScreen 1600 -> 844 lines, split into 11 new presentational components (NetworkProsTab/NetworkForumTab/NetworkThreadModal/NetworkProDetailModal, Settings*Panel/SubPage/ToggleRow). Ratchet lowered 1760->675 and 1601->850 (never raised). MFA abandon-cleanup verified preserved in `SettingsMFAPanel`. Gates green at merge: tsc 0, 1320 tests, build clean.
+- **`4d89ff33 merge(codex)`** — landed Codex's `codex/discover-ranked-production-guard` (`32f3ec87`..`49fb8c93`): `useDiscoveryData` now throws on a non-OK or invalid `discover-ranked` response and surfaces a "Discover is temporarily unavailable" error toast; +1 test. `page.tsx` 1220 -> 1221, still under its 1224 budget.
+- Verification at this tip: `tsc` 0, 169 files / **1321 tests**, `next build` clean; deploy LIVE.
+- **Open follow-up (Wyzmind-owned, from Codex's DB handover):** the production migration history is behind the repo (`0031` only, repo has `0000`-`0038`), so do NOT replay `0032`-`0038` or treat a fresh reset as production-equivalent. It needs a disposable-DB built from the chain plus a normalized schema diff before any migration apply. Local `supabase` CLI is present but there is no `config.toml` / linked project in this checkout.
 
 ### Reconciliation — 2026-10-12 (opencode/WYZMIND): `5d74e92b` → `f1db03c7`
 
