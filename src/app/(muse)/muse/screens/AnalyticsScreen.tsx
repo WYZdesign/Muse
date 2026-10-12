@@ -4,12 +4,13 @@ import React, { memo, useEffect, useState } from "react";
 import { FiArrowLeft, FiEye, FiStar, FiMessageSquare, FiFileText, FiCalendar, FiDollarSign, FiTrendingUp, FiUsers } from "react-icons/fi";
 import Nav from "../components/Nav";
 import type { Screen } from "../components/types";
+import type { AuthFetchFn, CurrentUser } from "../page-models";
 
 interface AnalyticsScreenProps {
   screen: Screen;
   showScreen: (s: Screen) => void;
-  currentUser: any;
-  apiFetch: (url: string, opts?: any) => Promise<any>;
+  currentUser: CurrentUser;
+  apiFetch: AuthFetchFn;
   showToast: (msg: string) => void;
   openHamburger: () => void;
   unreadNotificationCount?: number;
@@ -49,7 +50,7 @@ export const AnalyticsScreen = memo(function AnalyticsScreen({
           matchesReceived: 138, messagesSent: 96, briefApplications: 24,
           bookingsAsHost: 17, bookingsAsBooker: 9,
           totalEarningsCents: 486000, totalEarningsUsd: "4,860.00",
-        } as any);
+        });
         setLoading(false);
         return;
       }

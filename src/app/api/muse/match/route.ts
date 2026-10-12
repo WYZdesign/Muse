@@ -16,7 +16,57 @@ import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
  * GET /api/muse/match?limit=20&offset=0
  */
 
-function profileEmbedText(p: Record<string, unknown>): string {
+/** Per-field visibility preferences stored on a profile row. */
+type MatchPreferences = {
+  showZodiac?: boolean;
+  showMbti?: boolean;
+  showLifePath?: boolean;
+  showChinese?: boolean;
+  showAge?: boolean;
+  showMatchPercent?: boolean;
+  showDistance?: boolean;
+  showOnline?: boolean;
+};
+
+/** A muse_profiles row narrowed to the columns this handler selects: the
+ *  viewer's own row and the shared columns of a candidate row. */
+type ViewerProfileRow = {
+  id: string;
+  name?: string | null;
+  type?: string | null;
+  bio?: string | null;
+  styles?: string[] | null;
+  looking?: string[] | null;
+  zodiac?: string | null;
+  chinese?: string | null;
+  mbti?: string | null;
+  life_path?: number | string | null;
+  avatar?: string | null;
+  loc?: string | null;
+  tier?: string | null;
+  embedding?: number[] | null;
+};
+
+/** A candidate row: the viewer columns plus the extra discovery columns. */
+type CandidateProfileRow = ViewerProfileRow & {
+  photos?: string[] | null;
+  collabs: number;
+  verified?: boolean | null;
+  profile_completion_pct?: number | null;
+  preferences?: MatchPreferences | null;
+  birthdate?: string | null;
+  last_seen_at?: string | null;
+  nsfw?: boolean | null;
+  suspended?: boolean | null;
+};
+
+/** A muse_blocks row, read only for its two participant ids. */
+type BlockRow = { user_id?: unknown; target_id?: unknown };
+
+/** A muse_matches row, read only for the target it points at. */
+type MatchRow = { target_id?: unknown };
+
+function profileEmbedText(p: ViewerProfileRow): string {
   const parts: string[] = [];
   if (p.name) parts.push(`Name: ${p.name}`);
   if (p.type) parts.push(`Creative type: ${p.type}`);
@@ -40,7 +90,7 @@ export async function GET(req: NextRequest) {
     if (!authData.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const sb = getServiceClient();
-    const { data: profile } = await sb.from("muse_profiles")
+    const { data: profile }: { data: ViewerProfileRow | null } = await sb.from("muse_profiles")
       .select("id, name, type, bio, styles, looking, zodiac, chinese, mbti, life_path, avatar, loc, tier, embedding")
       .eq("auth_id", authData.user.id).maybeSingle();
     if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
@@ -49,24 +99,24 @@ export async function GET(req: NextRequest) {
     const offset = parseInt(req.nextUrl.searchParams.get("offset") || "0");
 
     // Fetch candidates WITH their stored embeddings (single read, no token cost).
-    const { data: allProfiles } = await sb.from("muse_profiles")
+    const { data: allProfiles }: { data: CandidateProfileRow[] | null } = await sb.from("muse_profiles")
       .select("id, name, type, bio, styles, looking, zodiac, chinese, mbti, life_path, avatar, loc, photos, collabs, verified, tier, profile_completion_pct, embedding, preferences, birthdate, last_seen_at, nsfw, suspended")
       .limit(200);
 
     // Blocks (either direction) were never consulted here — the swipe deck could
     // surface a profile that blocked the viewer or vice versa. Mirrors the same
     // lookup used for the generic type=profiles listing in route.ts.
-    const { data: blocks } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profile.id},target_id.eq.${profile.id}`);
-    const blockedIds = new Set((blocks || []).map((b: any) => (String(b.user_id) === String(profile.id) ? String(b.target_id) : String(b.user_id))));
+    const { data: blocks }: { data: BlockRow[] | null } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profile.id},target_id.eq.${profile.id}`);
+    const blockedIds = new Set((blocks || []).map((b) => (String(b.user_id) === String(profile.id) ? String(b.target_id) : String(b.user_id))));
 
     // Same gap fixed in get.ts's discover-ranked handler: a profile the viewer
     // already liked/matched (a muse_matches row with user_id = profile.id)
     // kept resurfacing here indefinitely since this endpoint never consulted
     // muse_matches. Only the viewer's own outgoing rows count.
-    const { data: ownMatches } = await sb.from("muse_matches").select("target_id").eq("user_id", profile.id);
-    const alreadyMatchedIds = new Set((ownMatches || []).map((m: any) => String(m.target_id)));
+    const { data: ownMatches }: { data: MatchRow[] | null } = await sb.from("muse_matches").select("target_id").eq("user_id", profile.id);
+    const alreadyMatchedIds = new Set((ownMatches || []).map((m) => String(m.target_id)));
 
-    const candidates = (allProfiles || []).filter((p: any) => {
+    const candidates = (allProfiles || []).filter((p) => {
       if (String(p.id) === String(profile.id)) return false;
       if (blockedIds.has(String(p.id))) return false;
       if (alreadyMatchedIds.has(String(p.id))) return false;
@@ -77,12 +127,12 @@ export async function GET(req: NextRequest) {
     });
 
     // ── User embedding: use cached, else lazily embed once and persist ──
-    let userVector: number[] | null = Array.isArray(profile.embedding) && (profile.embedding as number[]).length > 0
-      ? (profile.embedding as number[])
+    let userVector: number[] | null = Array.isArray(profile.embedding) && profile.embedding.length > 0
+      ? profile.embedding
       : null;
 
     if (!userVector && aiEnabled()) {
-      const text = profileEmbedText(profile as Record<string, unknown>);
+      const text = profileEmbedText(profile);
       userVector = await embedText(text);
       if (userVector) {
         // Persist so future requests are free (read-only).
@@ -94,7 +144,7 @@ export async function GET(req: NextRequest) {
     const cosineScores: Record<string, number> = {};
     if (userVector) {
       for (const c of candidates) {
-        const cv: number[] | null = Array.isArray(c.embedding) ? (c.embedding as number[]) : null;
+        const cv: number[] | null = Array.isArray(c.embedding) ? c.embedding : null;
         if (cv && cv.length === userVector.length) {
           cosineScores[c.id] = cosineSimilarity(userVector, cv);
         }
@@ -117,12 +167,12 @@ export async function GET(req: NextRequest) {
       "ISTP":["ESFJ","ESTJ"],"ISFP":["ESFJ","ESTJ"],"ESTP":["ISTJ","ISFJ"],"ESFP":["ISTJ","ISFJ"],
     };
 
-    const scored = candidates.map((c: any) => {
+    const scored = candidates.map((c) => {
       let rules = 40;
-      const shared = (profile.styles || []).filter((s: string) => c.styles?.includes(s));
+      const shared = (profile.styles || []).filter((s) => c.styles?.includes(s));
       rules += Math.min(shared.length * 7, 21);
-      if ((profile.looking || []).some((l: string) => c.looking?.some((bl: string) => bl.toLowerCase().includes(l.toLowerCase()) || l.toLowerCase().includes(bl.toLowerCase())))) rules += 15;
-      if ((profile.looking || []).some((l: string) => c.type?.toLowerCase().includes(l.toLowerCase()))) rules += 8;
+      if ((profile.looking || []).some((l) => c.looking?.some((bl) => bl.toLowerCase().includes(l.toLowerCase()) || l.toLowerCase().includes(bl.toLowerCase())))) rules += 15;
+      if ((profile.looking || []).some((l) => c.type?.toLowerCase().includes(l.toLowerCase()))) rules += 8;
       if (profile.zodiac && c.zodiac) { if (profile.zodiac === c.zodiac) rules += 6; else if (zCompat[profile.zodiac]?.includes(c.zodiac)) rules += 4; }
       if (profile.chinese && c.chinese && profile.chinese === c.chinese) rules += 6;
       if (profile.mbti && c.mbti) { if (profile.mbti === c.mbti) rules += 5; else if (mCompat[profile.mbti]?.includes(c.mbti)) rules += 4; }
@@ -189,7 +239,7 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    scored.sort((a: any, b: any) => b.matchScore - a.matchScore);
+    scored.sort((a, b) => b.matchScore - a.matchScore);
     const paginated = scored.slice(offset, offset + limit);
 
     return NextResponse.json({

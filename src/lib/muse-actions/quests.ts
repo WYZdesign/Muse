@@ -11,22 +11,74 @@ import { questPeriodKey, bumpLoginStreak, bumpQuest, awardQuestXp, refreshMetaQu
 import { UUID_RE, type ActionContext } from "./shared";
 import { pushToProfile } from "@/lib/push";
 
+/** A muse_quests row, narrowed to the columns the quest verbs read. */
+type QuestRow = {
+  id: string;
+  title?: string | null;
+  icon?: string | null;
+  frequency: string;
+  target_count: number;
+  action_key?: string | null;
+  xp_reward: number;
+  reward_type?: string | null;
+  reward_amount: number;
+  reward_label?: string | null;
+};
+
+/** A muse_quests row read by the claim verb (reward columns only). */
+type QuestRewardRow = {
+  id: string;
+  reward_type?: string | null;
+  reward_amount: number;
+  reward_label?: string | null;
+  frequency: string;
+};
+
+/** A muse_user_quests row read for per-period progress lookup. */
+type UserQuestRow = {
+  id?: string;
+  quest_id?: string | null;
+  progress?: number | null;
+  target?: number | null;
+  completed?: boolean | null;
+  claimed?: boolean | null;
+  period_key?: string | null;
+};
+
+/** A user-quest row joined with its quest definition (notify readout). */
+type ClaimableQuestRow = {
+  quest_id?: string | null;
+  muse_quests?: { title?: string | null; reward_label?: string | null } | null;
+};
+
+/** One per-quest result line returned by the track verb. */
+type QuestTrackResult = {
+  action_key?: string | null;
+  alreadyCompleted?: boolean;
+  progress?: number;
+  target?: number;
+  completed?: boolean;
+  newlyCompleted?: boolean;
+  quest?: { title?: string | null; icon?: string | null; reward_label?: string | null };
+  leveledUp?: boolean;
+};
+
 export async function questGetQuests({ sb, profile }: ActionContext) {
-  const { data: quests } = await sb.from("muse_quests").select("*").eq("active", true).order("sort_order");
+  const { data: quests }: { data: QuestRow[] | null } = await sb.from("muse_quests").select("*").eq("active", true).order("sort_order");
   if (!quests) return NextResponse.json({ quests: [], xp: { total_xp: 0, level: 1 } });
 
-  const { data: userQuests } = await sb.from("muse_user_quests")
+  const { data: userQuests }: { data: UserQuestRow[] | null } = await sb.from("muse_user_quests")
     .select("quest_id, progress, target, completed, claimed, period_key")
     .eq("user_id", profile.id);
 
-  const { data: xpData } = await sb.from("muse_user_xp").select("total_xp, level").eq("user_id", profile.id).maybeSingle();
+  const { data: xpData }: { data: { total_xp?: number | null; level?: number | null } | null } = await sb.from("muse_user_xp").select("total_xp, level").eq("user_id", profile.id).maybeSingle();
 
-  const progressMap: Record<string, any> = {};
+  const progressMap: Record<string, UserQuestRow> = {};
   for (const uq of userQuests || []) {
     progressMap[`${uq.quest_id}:${uq.period_key}`] = uq;
   }
 
-  const enriched = quests.map((q: any) => {
+  const enriched = quests.map((q) => {
     const periodKey = questPeriodKey(q.frequency);
     const userProg = progressMap[`${q.id}:${periodKey}`];
     return {
@@ -41,7 +93,7 @@ export async function questGetQuests({ sb, profile }: ActionContext) {
 
   const streak = await bumpLoginStreak(sb, profile.id);
   await bumpQuest(sb, profile.id, "login");
-  const unclaimedCount = (userQuests || []).filter((uq: any) => uq.completed && !uq.claimed).length;
+  const unclaimedCount = (userQuests || []).filter((uq) => uq.completed && !uq.claimed).length;
   if (unclaimedCount > 0) {
     pushToProfile(profile.id, "Rewards waiting!", `You have ${unclaimedCount} completed quest${unclaimedCount > 1 ? "s" : ""} ready to claim`, "/muse/quests").catch(() => {});
   }
@@ -60,16 +112,16 @@ export async function questTrackQuest({ sb, profile, rest, ip }: ActionContext) 
   const clientKeys = rawKeys.filter(k => !SERVER_ONLY_KEYS.has(k));
   if (!clientKeys.length) return NextResponse.json({ success: true, results: [] });
 
-  const { data: questDefs } = await sb.from("muse_quests")
+  const { data: questDefs }: { data: QuestRow[] | null } = await sb.from("muse_quests")
     .select("*").eq("active", true).in("action_key", clientKeys);
   if (!questDefs?.length) return NextResponse.json({ success: true, noQuest: true });
 
-  const results: any[] = [];
+  const results: QuestTrackResult[] = [];
   let leveledUp = false;
   for (const quest of questDefs) {
     const periodKey = questPeriodKey(quest.frequency);
 
-    const { data: existing } = await sb.from("muse_user_quests")
+    const { data: existing }: { data: { id?: string; progress?: number | null; completed?: boolean | null } | null } = await sb.from("muse_user_quests")
       .select("id, progress, completed")
       .eq("user_id", profile.id).eq("quest_id", quest.id).eq("period_key", periodKey)
       .maybeSingle();
@@ -123,11 +175,11 @@ export async function questClaimQuest({ sb, profile, rest }: ActionContext) {
   const { quest_id } = rest;
   if (!quest_id || !UUID_RE.test(String(quest_id))) return NextResponse.json({ error: "quest_id required" }, { status: 400 });
 
-  const { data: questDef } = await sb.from("muse_quests").select("id, reward_type, reward_amount, reward_label, frequency").eq("id", quest_id).maybeSingle();
+  const { data: questDef }: { data: QuestRewardRow | null } = await sb.from("muse_quests").select("id, reward_type, reward_amount, reward_label, frequency").eq("id", quest_id).maybeSingle();
   if (!questDef) return NextResponse.json({ error: "Quest not found" }, { status: 404 });
 
   const periodKey = questPeriodKey(questDef.frequency);
-  const { data: uq } = await sb.from("muse_user_quests")
+  const { data: uq }: { data: { id: string; completed?: boolean | null; claimed?: boolean | null } | null } = await sb.from("muse_user_quests")
     .select("id, completed, claimed")
     .eq("user_id", profile.id).eq("quest_id", quest_id).eq("period_key", periodKey)
     .maybeSingle();
@@ -149,7 +201,7 @@ export async function questClaimQuest({ sb, profile, rest }: ActionContext) {
     const months = questDef.reward_type === "pro_day"
       ? Math.max(1, Math.ceil(questDef.reward_amount / 30))
       : Math.max(1, questDef.reward_amount);
-    const { data: prof } = await sb.from("muse_profiles").select("tier, pro_expires_at").eq("id", profile.id).maybeSingle();
+    const { data: prof }: { data: { tier?: string | null; pro_expires_at?: string | null } | null } = await sb.from("muse_profiles").select("tier, pro_expires_at").eq("id", profile.id).maybeSingle();
     const cur = prof?.pro_expires_at ? new Date(prof.pro_expires_at).getTime() : 0;
     const base = Math.max(Date.now(), cur);
     grantedUntil = new Date(base + months * 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -158,7 +210,7 @@ export async function questClaimQuest({ sb, profile, rest }: ActionContext) {
     // Earned boost credits go into the user's boost inventory (spendable via
     // "boost" action; consumed by boost_expires_at on activation).
     const count = Math.max(1, Number(questDef.reward_amount || 1));
-    const { data: prof } = await sb.from("muse_profiles").select("boost_inventory").eq("id", profile.id).maybeSingle();
+    const { data: prof }: { data: { boost_inventory?: number | null } | null } = await sb.from("muse_profiles").select("boost_inventory").eq("id", profile.id).maybeSingle();
     const cur = Number(prof?.boost_inventory || 0);
     await sb.from("muse_profiles").update({ boost_inventory: cur + count }).eq("id", profile.id);
   }
@@ -175,16 +227,19 @@ export async function questClaimQuest({ sb, profile, rest }: ActionContext) {
 // monolith registry still assigns it to ActionHandler; a full context is
 // structurally assignable to this narrower parameter).
 export async function questNotifyClaimable({ sb, profile }: Pick<ActionContext, "sb" | "profile">) {
-  const { data: claimable } = await sb.from("muse_user_quests")
+  // Supabase's select parser infers the embedded muse_quests to-one join as an
+  // array; the runtime rows carry an object (same pattern as get.ts/sessions).
+  // Cast the awaited response to the row shape the loop reads, erased at runtime.
+  const { data: claimable }: { data: ClaimableQuestRow[] | null } = (await sb.from("muse_user_quests")
     .select("quest_id, muse_quests(title, reward_label)")
     .eq("user_id", profile.id)
     .eq("completed", true)
-    .eq("claimed", false);
+    .eq("claimed", false)) as unknown as { data: ClaimableQuestRow[] | null };
   if (!claimable?.length) return NextResponse.json({ notified: 0 });
   let notified = 0;
   for (const uq of claimable) {
-    const questTitle = (uq as any).muse_quests?.title || "Quest";
-    const rewardLabel = (uq as any).muse_quests?.reward_label || "reward";
+    const questTitle = uq.muse_quests?.title || "Quest";
+    const rewardLabel = uq.muse_quests?.reward_label || "reward";
     pushToProfile(profile.id, "Quest Complete!", `${questTitle} — claim your ${rewardLabel}`, "/muse/quests").catch(() => {});
     notified++;
   }

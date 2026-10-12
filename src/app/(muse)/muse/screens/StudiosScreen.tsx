@@ -7,6 +7,11 @@ import Nav from "../components/Nav";
 import { ALL_STUDIOS, type StudioProfile } from "../components/studios";
 import type { Screen } from "../components/types";
 import { BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
+import type { AuthFetchFn } from "../page-models";
+
+// A studio profile as rendered here: the registry type plus the optional hero
+// image studios.ts attaches at module load.
+type StudioWithImage = StudioProfile & { img?: string };
 
 interface StudiosScreenProps {
   screen: Screen;
@@ -14,7 +19,7 @@ interface StudiosScreenProps {
   goBack?: () => void;
   openHamburger?: () => void;
   unreadNotificationCount?: number;
-  apiFetch: (url: string, opts?: any) => Promise<any>;
+  apiFetch: AuthFetchFn;
 }
 
 export const StudiosScreen = memo(function StudiosScreen({
@@ -32,7 +37,7 @@ export const StudiosScreen = memo(function StudiosScreen({
   const [rulesOpen, setRulesOpen] = useState(false);
   const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
 
-  const studio: StudioProfile = ALL_STUDIOS.find((s) => s.id === activeStudio) || ALL_STUDIOS[0];
+  const studio: StudioWithImage = ALL_STUDIOS.find((s) => s.id === activeStudio) || ALL_STUDIOS[0];
   const building = studio.buildings.find((b) => b.id === activeBuilding) || studio.buildings[0];
 
   const selectStudio = (id: string) => {
@@ -71,9 +76,9 @@ export const StudiosScreen = memo(function StudiosScreen({
 
         {/* Studio hero */}
         <div style={{ padding: 16, borderRadius: 16, background: `linear-gradient(135deg, ${studio.color[0]}18, ${studio.color[1]}18)`, border: `1px solid ${studio.color[0]}30`, marginBottom: 14 }}>
-          {(studio as any).img && (
+          {studio.img && (
             <div style={{ width: "100%", height: 150, borderRadius: 12, overflow: "hidden", marginBottom: 12, position: "relative" }}>
-              <Image src={(studio as any).img} alt={studio.name} fill sizes="(max-width: 600px) 100vw, 400px" unoptimized style={{ objectFit: "cover" }} />
+              <Image src={studio.img} alt={studio.name} fill sizes="(max-width: 600px) 100vw, 400px" unoptimized style={{ objectFit: "cover" }} />
             </div>
           )}
           <div style={{ fontSize: 18, fontWeight: 800 }}>{studio.name}</div>

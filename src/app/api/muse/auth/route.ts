@@ -24,7 +24,7 @@ function deletionPurgeAt(now = new Date()): string {
 // Never leak internal/account rows wholesale to the client. Strip auth_id, email
 // (the client reads email from the Supabase user object, not the profile), and
 // internal/enforcement flags; keep only what the app's screens/normalizers read.
-function pubProfile(p: any): any {
+function pubProfile(p: Record<string, unknown> | null): Record<string, unknown> | null {
   if (!p) return p;
   // Note: this only ever wraps the caller's own profile (login/session/
   // update-profile all fetch by the authed user's own auth_id), so `email`
@@ -142,14 +142,14 @@ export async function POST(req: NextRequest) {
       }
 
       const sb = getServiceClient();
-      const { data: profile } = await sb.from("muse_profiles").select("*").eq("auth_id", authData.user.id).maybeSingle();
+      const { data: profile }: { data: { suspended?: boolean | null; deletion_requested_at?: string | null } | null } = await sb.from("muse_profiles").select("*").eq("auth_id", authData.user.id).maybeSingle();
 
       // Supabase can still authenticate an account during the retention
       // window. Do not issue an application session while deletion is pending.
       if (profile?.suspended) {
         return NextResponse.json({
-          error: (profile as any).deletion_requested_at ? "Account deletion is pending" : "Account suspended",
-          code: (profile as any).deletion_requested_at ? "ACCOUNT_DELETION_PENDING" : "ACCOUNT_SUSPENDED",
+          error: profile.deletion_requested_at ? "Account deletion is pending" : "Account suspended",
+          code: profile.deletion_requested_at ? "ACCOUNT_DELETION_PENDING" : "ACCOUNT_SUSPENDED",
         }, { status: 403 });
       }
 
@@ -304,11 +304,11 @@ export async function POST(req: NextRequest) {
       const { data: { user }, error: authErr } = await supabase.auth.getUser(accessToken);
       if (authErr || !user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
       const sb = getServiceClient();
-      const { data: profile } = await sb.from("muse_profiles").select("id, suspended").eq("auth_id", user.id).maybeSingle();
+      const { data: profile }: { data: { id?: string; suspended?: boolean | null } | null } = await sb.from("muse_profiles").select("id, suspended").eq("auth_id", user.id).maybeSingle();
       if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
       // Suspended accounts cannot self-delete — this preserves the evidence
       // trail for moderation investigation.
-      if ((profile as any).suspended) return NextResponse.json({ error: "Account suspended — cannot delete", code: "ACCOUNT_SUSPENDED" }, { status: 403 });
+      if (profile.suspended) return NextResponse.json({ error: "Account suspended — cannot delete", code: "ACCOUNT_SUSPENDED" }, { status: 403 });
       const requestedAt = new Date().toISOString();
       const purgeAt = deletionPurgeAt();
       const { error: scheduleError } = await sb.from("muse_profiles").update({

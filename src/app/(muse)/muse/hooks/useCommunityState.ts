@@ -1,6 +1,6 @@
 "use client";
 import { useState, useCallback } from "react";
-import type { CommunityGroup, CommunityEvent, ForumPost } from "../components/types";
+import type { CommunityGroup, CommunityEvent, ForumPost, CommunityMember } from "../components/types";
 
 export function useCommunityState() {
   const [commTab, setCommTab] = useState<"groups" | "events">("groups");
@@ -16,8 +16,8 @@ export function useCommunityState() {
   const [eventForm, setEventForm] = useState({ title: "", description: "", date: "", location: "" });
   const [selectedGroup, setSelectedGroup] = useState<CommunityGroup | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<CommunityEvent | null>(null);
-  const [groupMembers, setGroupMembers] = useState<any[]>([]);
-  const [eventAttendees, setEventAttendees] = useState<any[]>([]);
+  const [groupMembers, setGroupMembers] = useState<CommunityMember[]>([]);
+  const [eventAttendees, setEventAttendees] = useState<CommunityMember[]>([]);
   const [forumPosts, setForumPosts] = useState<ForumPost[]>([]);
   const [forumLoading, setForumLoading] = useState(false);
   const [forumPage, setForumPage] = useState(1);
@@ -30,11 +30,11 @@ export function useCommunityState() {
   const [commentText, setCommentText] = useState("");
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
 
-  const setGroupFormField = useCallback((field: string, value: any) => {
+  const setGroupFormField = useCallback((field: string, value: string | boolean) => {
     setGroupForm(prev => ({ ...prev, [field]: value }));
   }, []);
 
-  const setEventFormField = useCallback((field: string, value: any) => {
+  const setEventFormField = useCallback((field: string, value: string) => {
     setEventForm(prev => ({ ...prev, [field]: value }));
   }, []);
 
