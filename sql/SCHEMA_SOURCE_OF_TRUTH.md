@@ -80,6 +80,9 @@ performs **no schema DDL**. It was validated locally in a rolled-back transactio
 (no-op when the rows exist; correctly re-inserts a deleted row; `statements` is nullable
 so the two-column insert is valid).
 
-**Status: the file is ready and unapplied. Writing the production ledger is a production
-change and waits on an explicit go-ahead.** Do NOT replay `0032`-`0038` as migrations.
+**Status: APPLIED to production 2026-10-12 (owner-authorized).** The ledger went from
+1 row to 40 (`0000`-`0038` plus the pre-existing stray `20261004005723` row, left in place
+as harmless). Verification after apply: `missing 0000-0038 = []`. No schema change was made
+(DML only, on `supabase_migrations.schema_migrations`). Future `db push`/migrate will no
+longer try to re-apply an existing change. Do NOT replay `0032`-`0038` as migrations.
 
