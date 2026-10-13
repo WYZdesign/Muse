@@ -46,21 +46,40 @@ supabase stop
 
 A snapshot of the last run is at `_STATE/canonical_schema_from_chain.sql` (gitignored).
 
-## The open reconciliation: production drift
+## Production reconciliation result (2026-10-12, owner-authorized read)
 
-The production migration ledger (`supabase_migrations.schema_migrations`) records only
-`20261004005723 0031_harden_internal_function_privileges`, while the repo has `0000`-`0038`
-and production already contains objects from the later source migrations. Consequences:
+A read-only introspection of production was run and normalized-diffed against the same
+introspection of the local chain build:
 
-- **Do NOT replay `0032`-`0038`** against production; they are likely already applied but
-  unrecorded, so a blind apply can error or double-apply.
-- **A fresh reset is not production-equivalent** until this is reconciled.
+| Object | Production | Local chain build |
+|--------|-----------|-------------------|
+| tables | 68 | 68 |
+| columns | 690 | 690 |
+| constraints | 210 | 210 |
+| indexes | 235 | 235 |
+| policies | 81 | 81 |
+| functions | 128 | 128 |
+| triggers | 1 | 1 |
 
-### Required next step (owner-gated)
+The **only** differences were 6 lines of Postgres deparse-formatting on three CHECK
+constraints (`muse_booking_payments_status_check`, `muse_referral_rewards_reward_type_check`,
+`muse_referrals_status_check`): production renders `ANY ((ARRAY[...])::text[])`, the local
+build renders `ANY (ARRAY[(...)::text, ...])`. Same constraints, different Postgres
+version text. **The production schema is structurally identical to the chain build.**
 
-Introspect production schema-only and normalized-diff it against the local canonical dump,
-then classify every delta (already-applied-but-unrecorded vs genuinely missing) and emit
-ONE reviewed reconciliation migration (or backfill the migration ledger). This needs an
-explicit go-ahead to read the production database, which has not been given, so it is
-**PENDING**. Prod DDL stays owned by opencode/Wyzmind and only through the verified
-workflow with role probes and advisors.
+### The drift is the migration ledger, not the schema
+
+Production `supabase_migrations.schema_migrations` holds **1** row
+(`20261004005723` / `0031_harden_internal_function_privileges`); the repo chain has
+**39** rows (`0000`-`0038`). The objects are all present in production; only the ledger
+under-records them (the naming convention changed from timestamp-prefixed to zero-padded).
+
+Fix: `sql/RECONCILE_MIGRATION_LEDGER.sql` backfills the 39 zero-padded versions into the
+ledger so a future `db push` / migrate does not try to re-apply an existing change. It
+performs **no schema DDL**. It was validated locally in a rolled-back transaction
+(no-op when the rows exist; correctly re-inserts a deleted row; `statements` is nullable
+so the two-column insert is valid).
+
+**Status: the file is ready and unapplied. Writing the production ledger is a production
+change and waits on an explicit go-ahead.** Do NOT replay `0032`-`0038` as migrations.
+
