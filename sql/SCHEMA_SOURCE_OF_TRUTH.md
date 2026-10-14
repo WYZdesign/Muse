@@ -16,6 +16,11 @@ The other files directly under `sql/` (including `MUSE_SCHEMA_FULL_20260813.sql`
 2026-10-05) and drift from it. **Do not build a fresh DB from them.** They are kept for
 history only. The chain is the authority.
 
+`sql/MUSE_SCHEMA_FULL_20261012.sql` is the **regenerated, chain-accurate** public schema
+dump (69 tables / 81 policies / 131 indexes), produced with
+`supabase db dump --local --schema public`. Use this one if a single-file dump is needed;
+it supersedes all the dated dumps above.
+
 ## Local validation (2026-10-12, localhost)
 
 A fresh disposable Supabase DB built purely from the chain applied **all 38 migrations

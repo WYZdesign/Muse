@@ -29,6 +29,12 @@ same way.
 
 ## Confirmed merged, last verified at: `4d89ff33`
 
+### Reconciliation — 2026-10-12 (opencode/WYZMIND): DB maintenance (docs/sql, no code)
+
+- **XL-DB-1 done** — `sql/MUSE_SCHEMA_FULL_20261012.sql` regenerated from the chain (69 tables / 81 policies / 131 indexes) and named the canonical single-file dump; the dated `sql/*.sql` dumps are marked superseded in `sql/SCHEMA_SOURCE_OF_TRUTH.md`.
+- **XL-DB-2 done** — production index triage: 235 public indexes, 165 with zero scans, but the DB is nearly empty (1,636 rows / 27 tables), so zero scans means no traffic, not dead indexes. Decision: keep all; re-measure under real load (`sql/INDEX_MAINTENANCE.md`).
+- **L-DB-3 confirmed** — production catalog clean: 81 policies, 0 multi-permissive groups, 0 un-wrapped `auth.uid()` (no initplan issue), 8 SECURITY DEFINER functions all with a pinned `search_path`.
+
 ### Reconciliation — 2026-10-12 (opencode/WYZMIND, integrator): `f1db03c7` → `4d89ff33`
 
 - **`1f24952c docs(agents)`** — assigned the XL-1 test-fixture `any` purge (736 `any` across 51 `*.test.*` files) to Claude; source `any` was already 0.
