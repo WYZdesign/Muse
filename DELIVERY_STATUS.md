@@ -583,17 +583,22 @@ All confirmed merged — this specific SHA verified 2026-09-18 by fetching
 messages), and re-running `tsc`/`vitest`/`next build` clean after merging each
 into this session's own branch. No action needed on any of these.
 
-**⚠️ Outstanding non-git action from round 37**: `sql/MUSE_CUSTOM_ROLE_PENDING_20260916.sql`
-still needs to be run in the Supabase SQL editor (adds `custom_type_pending`/
-`custom_style_pending` columns to `muse_profiles`) — this can't be verified
-via `git log` since it's a database change, not a commit. If unsure whether
-it's been run, check directly: `SELECT column_name FROM information_schema.columns
-WHERE table_name='muse_profiles' AND column_name IN ('custom_type_pending','custom_style_pending')`.
-Until it runs, saving a custom "Other" type/style will fail.
+**RESOLVED — the round 37 non-git action is already applied.** `sql/MUSE_CUSTOM_ROLE_PENDING_20260916.sql`
+adds `custom_type_pending`/`custom_style_pending` to `muse_profiles`; a read-only production
+introspection on 2026-10-14 confirmed **both columns exist** (`boolean`, 65 columns total on
+`muse_profiles`), so custom "Other" type/style saves work. Verify again any time with:
+`SELECT column_name FROM information_schema.columns WHERE table_name='muse_profiles' AND column_name IN ('custom_type_pending','custom_style_pending')`.
+No action outstanding.
 
-## Pending delivery — NOT in the codebase yet
+## ~~Pending delivery~~ — RESOLVED 2026-10-14: nothing below this line is undelivered
 
-### Branch `claude/quality-backlog-round3` (off `origin/main`@`d086110c`) — 2026-10-10 (Claude)
+Both branches named here have been **verified as ancestors of `origin/main`** on 2026-10-14
+(`git merge-base --is-ancestor <sha> HEAD`), all 12 SHAs: `f323b998`, `5e6a929`, `500e0e7`,
+`c48009d`, `1b6aad7`, `c416ac8`, `e62bda1`, `5abd049`, `fc0a4e1`, `2d3783c`, `7397f80`,
+`15979f3`. Corroborated semantically too (`getBlockedIds` present in `shared.ts`).
+This section is retained only as history — treat it as a changelog, not as work.
+
+### Branch `claude/quality-backlog-round3` (off `origin/main`@`d086110c`) — 2026-10-10 (Claude) — LANDED
 
 Supersedes `claude/quality-backlog-round2` (same code, cherry-picked onto this tip to avoid the `DELIVERY_STATUS.md` conflict that branch would have hit — see the reconciliation entry above). 1 substantive commit plus this doc update:
 
