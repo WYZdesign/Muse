@@ -1,3 +1,4 @@
+/** Admin console entry route: loads platform analytics and renders the moderation, refunds, and metrics tabs. */
 "use client";
 // Admin console entry (moderation, refunds, analytics tabs).
 

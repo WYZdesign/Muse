@@ -1,3 +1,4 @@
+/** GET /api/cron/purge-deleted-accounts: permanently deletes accounts whose 30-day retention window has elapsed. */
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
 import { isDemoMode } from "@/lib/demo-mode";

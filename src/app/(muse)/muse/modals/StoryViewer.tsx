@@ -1,3 +1,4 @@
+/** Story viewer: full-screen BTS moments with progress bars, tap-side navigation, and timed advance. */
 "use client";
 // Full-screen BTS story viewer with auto-advance.
 

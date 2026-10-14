@@ -1,3 +1,4 @@
+/** Standalone app UI state slice lifted out of page.tsx: owns the current screen plus shell-wide flags (discover filters, tabs, search, toast, theme, discovery prefs, safety) as one state bundle. */
 "use client";
 // Standalone UI state slice (screen, modals, toasts) lifted out of page.tsx.
 

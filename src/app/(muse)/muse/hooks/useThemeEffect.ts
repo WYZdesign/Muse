@@ -1,3 +1,4 @@
+/** Theme effect: writes the persisted theme to the document root's data-theme attribute whenever it changes. */
 "use client";
 
 import { useEffect } from "react";

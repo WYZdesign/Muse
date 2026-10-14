@@ -1,3 +1,4 @@
+/** Debounced save timer: calls saveState 4s after its identity changes so app state persists without a write on every keystroke. */
 "use client";
 
 import { useEffect } from "react";

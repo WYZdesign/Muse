@@ -1,3 +1,4 @@
+/** Quests state: owns claimable and near quest counts, the top-quests list, login streak and weekly login pips read by QuestPanel and the menu. */
 "use client";
 import { useState } from "react";
 

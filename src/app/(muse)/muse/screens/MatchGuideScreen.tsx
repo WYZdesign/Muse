@@ -1,3 +1,4 @@
+/** Match guide screen: plain-language breakdown of the calcMatch() point factors that score the Discover deck. */
 "use client";
 
 import React from "react";

@@ -1,3 +1,4 @@
+/** Shared empty-state block: one icon, title, sub and CTA layout for the nothing-here state used across most screens. */
 "use client";
 
 import React from "react";

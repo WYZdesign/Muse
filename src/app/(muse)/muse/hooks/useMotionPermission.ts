@@ -1,3 +1,4 @@
+/** iOS motion-permission effect: requests DeviceOrientation access on the app's very first touch so the gyroscope tilt effects can run. */
 "use client";
 
 import { useEffect } from "react";

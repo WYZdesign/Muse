@@ -1,3 +1,4 @@
+/** Shared device-tilt engine: one smoothed gyroscope listener polled by rAF loops for parallax effects, plus the iOS motion-permission request and the flat spatial-scene helper. */
 "use client";
 
 /**

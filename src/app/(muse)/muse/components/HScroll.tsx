@@ -1,3 +1,4 @@
+/** Horizontal scroll carousel: hidden scrollbar with fixed arrow nudges for row strips on the Collab and Sessions screens. */
 "use client";
 
 // Reusable horizontal-scroll carousel that REPLACES the blocky browser

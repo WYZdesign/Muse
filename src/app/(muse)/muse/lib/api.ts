@@ -1,3 +1,4 @@
+/** Shared HTTP layer for the Muse app: apiFetch and authFetch with timeouts, GET dedupe and cache, token refresh, checkout, and MFA helpers. */
 "use client";
 
 import { safeGetItem, safeSetItem, getRefreshToken, setRefreshToken, clearRefreshToken } from "./safe-storage";

@@ -1,3 +1,4 @@
+/** Studios screen: browse the studio registry with building details, a quick lookup, and house rules. */
 "use client";
 
 import React, { memo, useState } from "react";

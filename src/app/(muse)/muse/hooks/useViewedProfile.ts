@@ -1,3 +1,4 @@
+/** Viewed profile effects: resets the photo carousel when a new profile modal opens and fetches that profile's reviews. */
 "use client";
 
 import { useEffect, useState } from "react";

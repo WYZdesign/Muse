@@ -1,3 +1,4 @@
+/** Saved searches hook: refetches the server's saved-search list whenever the Discovery Preferences modal opens and exposes it with its setter. */
 "use client";
 
 import { useEffect, useState } from "react";

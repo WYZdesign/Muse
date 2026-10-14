@@ -1,3 +1,4 @@
+/** Chat realtime effects: subscribes to the active conversation, hydrates persisted history when a chat opens, and exposes connection status plus typing indicator. */
 "use client";
 
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";

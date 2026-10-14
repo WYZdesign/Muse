@@ -1,3 +1,4 @@
+/** Behind the scenes screen: browse, record, and post voice, video, and photo moments with story viewing. */
 "use client";
 // Behind-the-scenes moments feed screen.
 

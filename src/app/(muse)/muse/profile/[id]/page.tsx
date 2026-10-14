@@ -1,3 +1,4 @@
+/** Public profile route: server-renders one muse_profiles row with Open Graph metadata for shared links. */
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";

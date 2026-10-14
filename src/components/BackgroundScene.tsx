@@ -1,3 +1,4 @@
+/** Decorative starfield, comet, and orb canvas layer behind the app shell, deterministically seeded to avoid hydration mismatches. */
 "use client";
 // Ambient starfield + comet-flash canvas layer behind the app shell — purely
 // decorative, so every value here (star count/positions, particle colors) is

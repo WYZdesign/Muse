@@ -1,3 +1,4 @@
+/** Edge proxy: origin/CORS gating, per-IP rate limits, blocked user agents, and security headers on every request. */
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 

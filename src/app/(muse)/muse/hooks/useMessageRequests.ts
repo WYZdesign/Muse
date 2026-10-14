@@ -1,3 +1,4 @@
+/** Message requests hook: fetches pending match requests when the matches screen opens, seeding demo data in demo mode, and exposes the list with its setter. */
 "use client";
 
 import { useEffect, useState } from "react";

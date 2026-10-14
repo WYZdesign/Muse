@@ -1,3 +1,4 @@
+/** RevenueCat purchase hook: configures the Capacitor billing SDK on native platforms and exposes offerings, entitlements, and the purchase and restore actions. */
 "use client";
 // RevenueCat in-app purchase and entitlement bridge for Capacitor.
 

@@ -1,3 +1,4 @@
+/** View-model type layer for page.tsx: shared auth, user, profile, and feed types consumed by the screens and hooks. */
 import type { PublicProfileUser } from "./screens/PublicProfileScreen";
 import type { Match } from "./components/types";
 import type { ToastInput } from "./modals/types";

@@ -1,3 +1,4 @@
+/** Per-screen error boundary: catches render crashes, reports them to track-error and offers a retry state around each screen in page.tsx and MuseModals. */
 "use client";
 // Per-screen error boundary with a retry state.
 

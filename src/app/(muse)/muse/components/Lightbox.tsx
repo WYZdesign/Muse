@@ -1,3 +1,4 @@
+/** Full-screen photo lightbox: swipe, arrow, keyboard and fullscreen navigation over a profile's photos on the Discover, Profile and Public Profile screens. */
 "use client";
 // Full-screen photo lightbox with swipe and arrow navigation.
 

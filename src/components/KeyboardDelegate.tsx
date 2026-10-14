@@ -1,3 +1,4 @@
+/** Global keyboard delegate: Enter or Space activates role=button elements that ship without their own onKeyDown handler. */
 "use client";
 
 import { useEffect } from "react";

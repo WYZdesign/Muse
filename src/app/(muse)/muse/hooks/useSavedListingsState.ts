@@ -1,3 +1,4 @@
+/** Saved listings state: owns the bookmarked session and professional id arrays that the Sessions and Network screens toggle. */
 "use client";
 import { useState } from "react";
 

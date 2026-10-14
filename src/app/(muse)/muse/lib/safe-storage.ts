@@ -1,3 +1,4 @@
+/** Resilient browser storage: localStorage wrappers with IndexedDB fallback, an in-memory read cache, and quota notifications. */
 const QUOTA_MSG = "Storage full — some settings may not persist. Try freeing space or exporting your data.";
 
 // IndexedDB fallback for values that exceed localStorage space

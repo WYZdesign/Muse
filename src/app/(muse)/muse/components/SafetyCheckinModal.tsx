@@ -1,3 +1,4 @@
+/** Safety check-in modal: tabs for responding to check-ins, editing the emergency-contact profile, sharing booking details and viewing account standing, opened from MuseModals. */
 "use client";
 // Safety check-in, disclosures and account-standing modal.
 

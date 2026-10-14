@@ -1,3 +1,4 @@
+/** Local id generator: uid() returns a monotonic collision-free number for React keys and optimistic rows. */
 let _idCounter = 0;
 let _lastTimestamp = 0;
 

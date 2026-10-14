@@ -1,3 +1,4 @@
+/** Notification sync hook: polls the unread server notification count, pulls the profile-viewer list, and merges profile views into the activity feed. */
 "use client";
 // Syncs unread notification counts across the shell.
 

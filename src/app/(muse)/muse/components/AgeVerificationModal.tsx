@@ -1,3 +1,4 @@
+/** Age-verification modal: starts Stripe's hosted identity/age-gate check and polls its status, shown from MuseModals before NSFW content or verification-gated actions. */
 "use client";
 // NSFW age-gate modal shown before adult content or toggles.
 

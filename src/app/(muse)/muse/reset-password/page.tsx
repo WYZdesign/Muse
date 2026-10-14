@@ -1,3 +1,4 @@
+/** Password reset page: reads the emailed access token and submits a new password through the muse auth API. */
 "use client";
 // Password reset form (uses the shared password policy).
 

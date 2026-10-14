@@ -1,3 +1,4 @@
+/** Profile data hook: fetches the signed-in user's stats, safety check-ins and safety profile, and the prompt bank with its responses. */
 "use client";
 // Fetches the signed-in user's profile, reviews and portfolio.
 

@@ -1,3 +1,4 @@
+/** Preference sync hook: snapshots onboarding step, notification prefs, discover filters, applied briefs and the NSFW toggle, then saves them to the server 2s after they change. */
 "use client";
 
 import { useEffect, useRef } from "react";

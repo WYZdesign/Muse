@@ -1,3 +1,4 @@
+/** Musa Spark like icon: four-pointed shimmer star SVG with size, color and filled props for like affordances. */
 "use client";
 
 // Unique Musa "Spark" like-button icon. A four-pointed shimmer star with a

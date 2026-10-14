@@ -1,3 +1,4 @@
+/** Auth action handlers for the login and signup screen: email and password submit, OAuth kickoff, and the full logout and logout-and-close variants, relocated from page.tsx. */
 "use client";
 
 import { useCallback, type Dispatch, type SetStateAction } from "react";

@@ -1,3 +1,4 @@
+/** Sessions data hook: fetches bookings as booker and host, booking reminders and the live session listings for the Sessions screen, with demo seeding in demo mode. */
 "use client";
 
 import { useState, useEffect, type Dispatch, type SetStateAction } from "react";

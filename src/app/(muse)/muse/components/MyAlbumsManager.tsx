@@ -1,3 +1,4 @@
+/** Album manager: creates and deletes albums, sets privacy, uploads and removes photos and manages invite access for the signed-in user's Portfolio screen. */
 "use client";
 // Portfolio album create, upload and manage UI.
 

@@ -1,3 +1,4 @@
+/** Full-screen loading spinner: gold spinner with a message while work is pending, shown while Stripe components initialize in ConnectPanel and EmbeddedConnect. */
 "use client";
 
 /**

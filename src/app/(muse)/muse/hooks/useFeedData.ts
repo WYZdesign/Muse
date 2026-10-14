@@ -1,3 +1,4 @@
+/** Feed data hook: fetches and normalizes Home feed posts, BTS moments and Network forum posts and exposes them with the feed and forum setters. */
 "use client";
 
 import { useState, useEffect } from "react";

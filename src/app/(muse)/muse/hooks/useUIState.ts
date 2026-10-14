@@ -1,3 +1,4 @@
+/** Shell UI state: owns the toast payload, search input and open flag, story viewer index, swipe drag values and labels, and the realtime connection status. */
 "use client";
 // Theme, motion and layout UI state for the shell.
 

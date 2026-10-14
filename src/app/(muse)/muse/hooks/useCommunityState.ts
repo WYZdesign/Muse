@@ -1,3 +1,4 @@
+/** Community screen state: owns the groups and events tab, the create-group and create-event forms, selected item details with members and attendees, and the forum post list with its composer. */
 "use client";
 // Community form and detail state (group/event drafts, join requests).
 

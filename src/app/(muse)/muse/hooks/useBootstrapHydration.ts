@@ -1,3 +1,4 @@
+/** One-shot app hydration: mount effect that checks the build version, loads persisted state, captures geolocation, applies checkout and referral returns, and registers the Supabase auth listener. */
 "use client";
 
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";

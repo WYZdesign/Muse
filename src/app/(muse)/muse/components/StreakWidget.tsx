@@ -1,3 +1,4 @@
+/** Weekly login-streak widget: fire icon plus seven day pips, compact in the menu header and full in the daily-login, quest and profile views. */
 "use client";
 // Weekly login-streak pips widget.
 

@@ -1,3 +1,4 @@
+/** Discovery preferences modal: age range, style filters, match score floor, and saved searches for the Discover deck. */
 "use client";
 // Discovery filter preferences modal.
 

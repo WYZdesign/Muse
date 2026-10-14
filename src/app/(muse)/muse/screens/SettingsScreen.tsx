@@ -1,3 +1,4 @@
+/** Settings screen: profile, privacy, notifications, theme, MFA, boost, pricing, and hiring sub-pages for the account. */
 "use client";
 
 import React, { memo, useState, useEffect, useRef } from "react";

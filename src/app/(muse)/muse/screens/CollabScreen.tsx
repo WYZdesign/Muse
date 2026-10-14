@@ -1,3 +1,4 @@
+/** Collab briefs board: browse, search, save, and post briefs across TFP, paid, open call, and concept categories. */
 "use client";
 // Collab briefs board screen.
 

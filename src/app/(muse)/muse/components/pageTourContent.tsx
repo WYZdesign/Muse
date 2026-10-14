@@ -1,3 +1,4 @@
+/** Tour content registry: slide copy, icons, colors and seen-flag helpers for the 11 screens that get a first-visit tutorial, consumed by usePageTour and MuseModals. */
 "use client";
 
 import React from "react";

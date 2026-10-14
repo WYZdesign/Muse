@@ -1,3 +1,4 @@
+/** PWA client helpers: service-worker registration, notification permission, and Web Push subscription used by the app shell. */
 "use client";
 // Service-worker registration and PWA install helpers.
 

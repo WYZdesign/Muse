@@ -1,3 +1,4 @@
+/** Like with note modal: attaches a short message to a like and persists it through muse-realtime. */
 "use client";
 // Attach-a-note-to-your-like composer.
 

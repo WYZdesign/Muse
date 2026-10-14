@@ -1,3 +1,4 @@
+/** Share post modal: grid of network share targets plus copy and native share for a feed post. */
 "use client";
 // Share-a-feed-post modal.
 

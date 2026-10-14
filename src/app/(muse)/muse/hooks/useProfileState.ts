@@ -1,3 +1,4 @@
+/** Profile screen state: owns the edit-form fields, share and report targets, notification prefs, the view-profile carousel and reviews, and the portfolio modal slices. */
 "use client";
 // Profile screen edit and draft state.
 

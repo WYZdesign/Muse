@@ -1,3 +1,4 @@
+/** Spatial depth module: splits a hero photo into depth bands from a server depth map or in-browser segmentation and moves each band on tilt for the Discover top card. */
 "use client";
 
 /**

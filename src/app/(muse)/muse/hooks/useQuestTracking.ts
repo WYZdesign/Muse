@@ -1,3 +1,4 @@
+/** Quest tracking hook: runs the authed bootstrap that claims the daily login, fetches streak and claimable counts, and derives the weekly pips from the server streak. */
 "use client";
 
 import { useEffect, useRef, type Dispatch, type SetStateAction } from "react";

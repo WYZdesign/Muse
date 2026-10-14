@@ -1,3 +1,4 @@
+/** Payment history dialog: received and sent tabs over the user's payout and charge ledger with a demo-mode sample, opened from MuseModals. */
 "use client";
 
 import { useState, useEffect, useId } from "react";

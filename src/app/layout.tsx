@@ -1,3 +1,4 @@
+/** Root app layout: viewport and metadata, JSON-LD, fonts, and the inline blank-screen watchdog script in head. */
 import type { Viewport, Metadata } from "next";
 import "./globals.css";
 import { getMuseUrl, getTermsUrl, getPrivacyUrl } from "@/lib/urls";

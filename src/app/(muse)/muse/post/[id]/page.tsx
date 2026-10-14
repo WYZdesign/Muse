@@ -1,3 +1,4 @@
+/** Public post route: server-renders one muse_feed_posts row with Open Graph metadata for shared links. */
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";

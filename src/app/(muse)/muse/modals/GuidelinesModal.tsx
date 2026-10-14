@@ -1,3 +1,4 @@
+/** Community guidelines modal: renders the Musa by WYZ conduct rules with an acknowledge button. */
 "use client";
 // Community guidelines modal.
 

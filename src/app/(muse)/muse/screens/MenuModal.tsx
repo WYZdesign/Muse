@@ -1,3 +1,4 @@
+/** Menu hub screen: notifications bell, reports, bookings, streak widget, and quick links for the signed-in user. */
 "use client";
 // Slide-out menu / hub screen (notifications, reports, bookings).
 

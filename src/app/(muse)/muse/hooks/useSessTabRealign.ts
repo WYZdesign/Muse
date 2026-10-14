@@ -1,3 +1,4 @@
+/** Session tab realignment: switches the Sessions screen's default tab to bookings or sessions once the viewer's real role arrives from the server. */
 "use client";
 
 import { useEffect, useRef, useState } from "react";

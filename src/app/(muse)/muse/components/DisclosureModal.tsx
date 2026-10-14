@@ -1,3 +1,4 @@
+/** Shoot disclosure and consent form: captures compensation, content type, boundaries, location, usage rights and NDA choices for a booking, opened from MuseModals. */
 "use client";
 // Shoot disclosure and consent form for bookings.
 

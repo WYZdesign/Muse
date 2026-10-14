@@ -1,3 +1,4 @@
+/** Onboarding birthdate field: controlled date input that supplies the derived age for the Show age privacy toggle, used inside the OnboardingFlow. */
 "use client";
 
 /**

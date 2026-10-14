@@ -1,3 +1,4 @@
+/** Modal focus trap: keeps Tab and Escape handling inside an open modal or sheet, marks background branches inert, and restores focus on close. */
 "use client";
 
 import { useEffect, useRef } from "react";

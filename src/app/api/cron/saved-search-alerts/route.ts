@@ -1,3 +1,4 @@
+/** GET /api/cron/saved-search-alerts: bulk sweep that runs the saved-search alert handler once per search owner. */
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
 import { isDemoMode } from "@/lib/demo-mode";

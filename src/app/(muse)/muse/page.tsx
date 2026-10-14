@@ -1,3 +1,4 @@
+/** Muse app root: the client page that owns global state, screen routing, and the modal and overlay stack for /muse. */
 "use client";
 import "./muse.css";
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";

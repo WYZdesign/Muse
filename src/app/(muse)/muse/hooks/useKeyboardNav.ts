@@ -1,3 +1,4 @@
+/** Discover keyboard navigation: maps the left and right arrow keys to swipes while the Discover screen is active. */
 "use client";
 
 import { useEffect } from "react";

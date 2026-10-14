@@ -1,3 +1,4 @@
+/** Session apply callback: restores a Supabase access token into the whole user state (profile, tier, prefs, verification, saved lists) and writes the persisted session. */
 "use client";
 
 import { useCallback, type Dispatch, type SetStateAction } from "react";

@@ -1,3 +1,4 @@
+/** Intent picker modal: lets a user pick up to two intents such as hire, collab, scout, or connect before a swipe. */
 "use client";
 // Intent and role picker used in onboarding.
 

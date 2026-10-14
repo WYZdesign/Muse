@@ -1,3 +1,4 @@
+/** Animated ambient background layer: stars, comets and tilt-reactive orbs behind the Muse app shell, rendered by page.tsx and the landing page. */
 "use client";
 // Animated ambient background layer for the Muse shell.
 

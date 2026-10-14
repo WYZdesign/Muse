@@ -1,3 +1,4 @@
+/** Swipe-stack preloader that injects image preload link tags for the next 2 cards to cut visible pop-in on fast swipes. */
 "use client";
 
 import { useEffect, useRef } from "react";

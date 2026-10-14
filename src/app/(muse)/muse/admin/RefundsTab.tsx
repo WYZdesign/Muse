@@ -1,3 +1,4 @@
+/** Admin refunds tab: loads refund requests through the muse API and resolves each one as approve or decline. */
 "use client";
 // Admin refunds tab (Stripe refund review and actions).
 

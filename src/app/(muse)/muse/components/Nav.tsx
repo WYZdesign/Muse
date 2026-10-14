@@ -1,3 +1,4 @@
+/** Bottom navigation bar: five role-aware tabs with per-tab active colors, lava-gradient labels and an unread badge, rendered by page.tsx. */
 "use client";
 // Bottom navigation bar with unread badge.
 

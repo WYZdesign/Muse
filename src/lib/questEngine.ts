@@ -1,3 +1,4 @@
+/** Shared quest system helpers: period bucketing for quest progress plus bell notifications for server-side completions. */
 import { getServiceClient } from "@/lib/supabase";
 
 // Shared helpers for the daily/weekly/monthly/lifetime quest system: the

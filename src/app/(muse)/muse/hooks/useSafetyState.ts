@@ -1,3 +1,4 @@
+/** Safety and verification state: owns the disclosure modal target and booking id, the age-verification flags, and the verification banner's dismiss state. */
 "use client";
 // Safety check-in and disclosure modal state.
 

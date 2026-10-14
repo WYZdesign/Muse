@@ -1,3 +1,4 @@
+/** Discover screen: the swipe deck of ranked profiles with filters, map, lightbox, and match overlay. */
 "use client";
 // Swipe discovery deck screen.
 

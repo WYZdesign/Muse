@@ -1,3 +1,4 @@
+/** Subscription screen: plan tiers, promo codes, and boost checkout for upgrading the signed-in account. */
 "use client";
 // Subscription and plan management screen.
 

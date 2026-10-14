@@ -1,3 +1,4 @@
+/** Edit profile modal: avatar, name, bio, location, type, looking-for, and NSFW fields saved through saveProfileEdits. */
 "use client";
 // Edit-profile form modal.
 

@@ -1,3 +1,4 @@
+/** Top-level React error boundary for the Musa app shell: recovery UI plus best-effort server-side error reporting. */
 "use client";
 
 // Top-level React error boundary for the Musa app shell. Catches render

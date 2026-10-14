@@ -1,3 +1,4 @@
+/** Block confirmation modal: warns that blocking is permanent, drops the match, and posts the block to /api/muse. */
 "use client";
 // Block-user confirmation modal.
 

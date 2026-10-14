@@ -1,3 +1,4 @@
+/** Auth and onboarding state: owns the login form fields, the onboarding step and answers, and the personality-test flow used by the auth screen and OnboardingFlow. */
 "use client";
 // Onboarding questionnaire state (answers, selects, test results) for the auth/onboarding flow.
 

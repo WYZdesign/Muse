@@ -1,3 +1,4 @@
+/** Core page actions: quest bookkeeping, navigation via showScreen and goBack, onboarding multi-select, social toggles, the per-page tour trigger, screen flash and upsell closer, relocated from page.tsx. */
 "use client";
 
 import { useCallback, useRef, useState, type Dispatch, type SetStateAction, type SyntheticEvent } from "react";

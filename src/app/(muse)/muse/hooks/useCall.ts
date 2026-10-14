@@ -1,3 +1,4 @@
+/** Voice and video call hook: owns LiveKit room signaling, ringing and recording state over a shared Supabase broadcast channel, returning incoming and active call plus start, accept, decline and end handlers. */
 "use client";
 // Voice/video call signaling state (incoming, active, mute).
 

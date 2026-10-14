@@ -1,3 +1,4 @@
+/** Full-screen voice and video call overlay: joins the LiveKit room with mute, camera, report and leave-voicemail controls, opened from page.tsx through MuseModals. */
 "use client";
 // Full-screen voice/video call UI over the app.
 

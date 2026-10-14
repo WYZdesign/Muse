@@ -1,3 +1,4 @@
+/** PWA offline fallback: explains the connection failure and offers a service-worker and cache reset back to /muse. */
 "use client";
 // Offline fallback page for the PWA.
 

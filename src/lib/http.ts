@@ -1,3 +1,4 @@
+/** Shared JSON error response helpers for route handlers, with a server-error form that never leaks internals to clients. */
 import { NextResponse } from "next/server";
 
 // Small shared response helpers so routes return errors in one consistent

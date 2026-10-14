@@ -1,3 +1,4 @@
+/** Connection directory card: halo and orbit rings, tappable trait badges and chat, report and unmatch actions for list and grid views on the Muses screen. */
 "use client";
 // Connect/Sessions directory card with actions.
 

@@ -1,3 +1,4 @@
+/** Profile action handlers: the edit-profile save with NSFW bio auto-detect, plus the avatar and portfolio image upload and voice and video media upload helpers. */
 "use client";
 
 import { useCallback, useState, type Dispatch, type SetStateAction } from "react";

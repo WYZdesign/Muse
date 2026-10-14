@@ -1,3 +1,4 @@
+/** Centralised zod schemas and the parse helper routes use to validate their JSON request bodies. */
 import { z } from "zod";
 
 /**

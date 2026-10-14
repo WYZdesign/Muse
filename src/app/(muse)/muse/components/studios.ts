@@ -1,3 +1,4 @@
+/** LA studio registry: FD Photo Studio plus two comparable LA studios with spaces, addresses, FAQs and booking links for the Studios screen and MuseMap pins. */
 "use client";
 
 // LA studio showcase registry. Tabs let users browse whole studios (FD + 2 others

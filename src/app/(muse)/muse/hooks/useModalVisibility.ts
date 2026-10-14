@@ -1,3 +1,4 @@
+/** Modal visibility flags: owns the independent open and close booleans for the shell's modals and sheets, returned as show and setShow pairs. */
 "use client";
 import { useState } from "react";
 

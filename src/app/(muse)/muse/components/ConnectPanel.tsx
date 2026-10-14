@@ -1,3 +1,4 @@
+/** Stripe Connect payout panel: checks onboarding status and launches embedded or hosted account onboarding, opened from MuseModals. */
 "use client";
 // Stripe Connect onboarding panel for payouts.
 

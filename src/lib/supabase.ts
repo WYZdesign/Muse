@@ -1,3 +1,4 @@
+/** Supabase client bootstrap: browser anon client plus service-role helper and a token-scoped per-request client. */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 // The two Supabase client flavors the app uses: `supabase` (lazy, anon-key,

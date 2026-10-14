@@ -1,3 +1,4 @@
+/** Feed screen state: owns the composer text and media, the post list with pagination flags, the content filter, and the optimistic-post helpers. */
 "use client";
 // Feed screen local state (composer, filters, reactions).
 

@@ -1,3 +1,4 @@
+/** Public profile screen: viewer-facing profile with photo gallery, badges, social links, and a role-aware call to action. */
 "use client";
 // Public viewer-facing profile screen.
 

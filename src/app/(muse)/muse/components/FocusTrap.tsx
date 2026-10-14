@@ -1,3 +1,4 @@
+/** Accessible modal primitive: traps Tab focus, closes on Escape, restores focus to the opener and marks background siblings inert, used by the app's overlays. */
 "use client";
 import React, { useEffect, useRef, useCallback } from "react";
 

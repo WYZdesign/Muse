@@ -1,3 +1,4 @@
+/** Trait icon lookups: distinct glyphs and React icon components for zodiac, MBTI, life path and Chinese zodiac, shared by profile, match and discover screens. */
 "use client";
 
 /**

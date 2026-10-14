@@ -1,3 +1,4 @@
+/** Initial loading splash: static starfield, meteors, ocean and logo shell shown while the Muse app boots, rendered by page.tsx. */
 import Image from "next/image";
 
 /** Initial loading shell, kept independent from the stateful Musa controller. */

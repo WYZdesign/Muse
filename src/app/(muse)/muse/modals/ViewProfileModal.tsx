@@ -1,3 +1,4 @@
+/** Profile preview modal: photo gallery, NSFW reveal gate, and badge detail popups opened from the swipe deck. */
 "use client";
 // Quick profile preview modal from the deck.
 

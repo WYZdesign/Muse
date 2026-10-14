@@ -1,3 +1,4 @@
+/** Admin moderation console body: tabs for reports, refunds, strikes, content scans, custom-value review, and audit log. */
 "use client";
 // Admin moderation queue (reports, strikes, content actions).
 

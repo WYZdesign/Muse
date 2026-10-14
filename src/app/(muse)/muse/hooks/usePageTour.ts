@@ -1,3 +1,4 @@
+/** Per-page tour trigger: fires the first-visit page tour 600ms after a tour-eligible screen opens for an authed, bootstrapped user. */
 "use client";
 
 import { useEffect } from "react";

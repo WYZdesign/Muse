@@ -1,3 +1,4 @@
+/** Shared guards for state-changing routes: Content-Type and body-size checks plus a light stored-XSS text sanitizer. */
 import { NextRequest, NextResponse } from "next/server";
 
 // Shared Content-Type/body-size guard called at the top of state-changing

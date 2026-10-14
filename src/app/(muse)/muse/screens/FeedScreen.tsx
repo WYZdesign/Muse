@@ -1,3 +1,4 @@
+/** Feed screen: compose posts with media, filter by content type, and render live feed rows with replies. */
 "use client";
 // Social feed screen.
 

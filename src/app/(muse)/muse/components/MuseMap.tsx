@@ -1,3 +1,4 @@
+/** Mapbox map overlay: plots discovery profiles and studio pins with a live zoom readout, opened from the Discover screen's map view. */
 "use client";
 
 import { useRef, useEffect, useState } from "react";

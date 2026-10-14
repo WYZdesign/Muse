@@ -1,3 +1,4 @@
+/** Public DMCA takedown policy page at /dmca: notice requirements, designated agent, and counter-notification rules. */
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

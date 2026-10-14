@@ -1,3 +1,4 @@
+/** Discover swipe handlers: doSwipe's metered like, pass and super-like pipeline, doRewind, doLikeWithNote, and the four pointer handlers that drive the card drag. */
 "use client";
 
 import { useCallback, type Dispatch, type PointerEvent as ReactPointerEvent, type SetStateAction } from "react";

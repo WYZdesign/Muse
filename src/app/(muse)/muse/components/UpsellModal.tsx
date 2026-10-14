@@ -1,3 +1,4 @@
+/** Contextual paywall modal: names the Pro-gated feature and lists the tiers that unlock it when a free user hits a limit, opened from MuseModals and several screens. */
 "use client";
 
 import React from "react";

@@ -1,3 +1,4 @@
+/** Discovery data hook: fetches server-ranked Discover profiles, matches, the likes-you list, blocked users and match streak, and exposes them with setters. */
 "use client";
 // Fetches and normalizes ranked discovery profiles.
 

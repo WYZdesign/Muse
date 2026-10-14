@@ -1,3 +1,4 @@
+/** Profile prompt bank: category-filtered prompt picker that saves text or choice answers, opened from MuseModals on the Profile screen. */
 "use client";
 // Prompt-bank picker for profile prompts.
 

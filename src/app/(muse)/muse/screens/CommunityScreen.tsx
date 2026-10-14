@@ -1,3 +1,4 @@
+/** Communities screen: browse groups and events, then open details with members, rules, RSVPs, and moderation. */
 "use client";
 // Communities and events browse/detail screen.
 

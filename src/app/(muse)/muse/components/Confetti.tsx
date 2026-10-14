@@ -1,3 +1,4 @@
+/** Match confetti burst: temporary fixed-layer falling pieces driven by the active prop, fired from page.tsx on match and success moments. */
 "use client";
 // Lightweight canvas confetti for match and success moments.
 

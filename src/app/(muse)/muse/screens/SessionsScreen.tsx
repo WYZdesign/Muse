@@ -1,3 +1,4 @@
+/** Sessions screen: browse bookable listings and manage bookings and requests across three tabs. */
 "use client";
 // Bookable sessions browse and manage screen.
 

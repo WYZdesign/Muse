@@ -1,3 +1,4 @@
+/** Swipe gesture particles: directional burst fired from page.tsx when a Discover deck card is swiped left or right. */
 "use client";
 // Swipe gesture particle effect for the deck.
 

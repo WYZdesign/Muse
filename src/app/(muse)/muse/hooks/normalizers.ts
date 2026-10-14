@@ -1,3 +1,4 @@
+/** Raw API normalizers: converts PostgREST rows for profiles, communities, events, briefs, sessions, feed posts and forum posts into the flat render shapes the screens consume. */
 "use client";
 
 import { viewerSide } from "@/lib/role";

@@ -1,3 +1,4 @@
+/** Chat action handlers for the Chat screen: opens a thread and sends text, image and voice or video messages, including the payment plus NSFW disclosure intercept, relocated from page.tsx. */
 "use client";
 
 import { useCallback, type Dispatch, type SetStateAction } from "react";

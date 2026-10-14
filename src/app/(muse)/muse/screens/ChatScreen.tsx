@@ -1,3 +1,4 @@
+/** Chat screen: direct message thread with image, voice, and video notes plus the LiveKit call history. */
 "use client";
 // Direct-message conversation screen.
 

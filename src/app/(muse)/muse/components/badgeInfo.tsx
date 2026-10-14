@@ -1,3 +1,4 @@
+/** Shared trait-badge content and popover: zodiac, MBTI, Chinese-zodiac and life-path description maps plus the tap-to-detail BadgeInfoModal reused across profile, match and network screens. */
 "use client";
 
 // ── Shared badge/trait description maps + tap-to-detail popover ────────────

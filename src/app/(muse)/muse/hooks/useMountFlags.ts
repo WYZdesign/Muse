@@ -1,3 +1,4 @@
+/** Mount-time flags: restores the persisted verification-banner dismissal and bumps the app open counter on first mount. */
 "use client";
 
 import { useEffect, useState } from "react";

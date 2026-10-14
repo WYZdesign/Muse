@@ -1,3 +1,4 @@
+/** Incoming call modal: full-screen voice or video accept and decline prompt driven by useCall state. */
 "use client";
 // Incoming voice/video call prompt.
 

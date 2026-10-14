@@ -1,3 +1,4 @@
+/** Embedded Stripe Connect onboarding: themed ConnectJS account-session component that ConnectPanel renders in place of a hosted redirect. */
 "use client";
 
 import { useState } from "react";

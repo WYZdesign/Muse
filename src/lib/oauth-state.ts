@@ -1,3 +1,4 @@
+/** HMAC-signed, time-boxed state payloads for OAuth redirect flows: signState and verifyState, with a hard import-time secret check. */
 import crypto from "crypto";
 
 // HMAC-signed, time-boxed `state` payloads for OAuth redirect flows (social

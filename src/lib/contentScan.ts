@@ -1,3 +1,4 @@
+/** Media moderation: AWS Rekognition and Sightengine image scans, async video checks, incident logging, and NCMEC escalation. */
 import { getServiceClient } from "@/lib/supabase";
 
 // ═══ AWS Rekognition moderation (lazy-load SDK to avoid build-time cost) ═══

@@ -1,3 +1,4 @@
+/** Voice and video recorder: MediaRecorder capture with consent gate, 60s cap and upload, shared by the Chat, Feed and call composers. */
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";

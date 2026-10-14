@@ -1,3 +1,4 @@
+/** Referral program panel: referral code, share URL, sign-up counts and rewards with a demo-mode guard, opened from MuseModals and the Profile screen. */
 "use client";
 
 import { useState, useEffect } from "react";

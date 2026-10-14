@@ -1,3 +1,4 @@
+/** Public FAQ page at /muse/faq: accordion of launch questions with FAQPage JSON-LD for search. */
 "use client";
 // Public FAQ page.
 

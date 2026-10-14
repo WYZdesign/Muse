@@ -1,3 +1,4 @@
+/** Collab briefs data hook: fetches and normalizes briefs from the API for the Collab board and exposes liveBriefs with its setter. */
 "use client";
 // Fetches and normalizes Collab briefs for the board.
 

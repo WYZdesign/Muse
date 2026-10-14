@@ -1,3 +1,4 @@
+/** App data bootstrap: one-shot fetch of profiles, briefs, feed, forum, events, communities, sessions and professionals that hydrates the live-state setters on first load. */
 "use client";
 // One-shot initial data fetch that hydrates the app on first load.
 

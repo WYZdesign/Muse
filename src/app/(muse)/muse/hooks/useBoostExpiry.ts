@@ -1,3 +1,4 @@
+/** Boost-expiry ticker: polls the active Discover boost every 5s and clears it, plus its persisted flag, once boostEnd passes. */
 "use client";
 
 import { useEffect, type Dispatch, type SetStateAction } from "react";

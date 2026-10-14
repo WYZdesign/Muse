@@ -1,3 +1,4 @@
+/** Verification expiry banner: slides over the bottom nav to prompt verify or dismiss while identity verification is missing or expiring, rendered by page.tsx. */
 "use client";
 
 import { FiX } from "react-icons/fi";

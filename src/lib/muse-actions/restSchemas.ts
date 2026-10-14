@@ -1,3 +1,4 @@
+/** Per-action validation for the /api/muse REST dispatch: pollution guard, payload-size cap, and field-level zod schemas. */
 import { z } from "zod";
 
 /**

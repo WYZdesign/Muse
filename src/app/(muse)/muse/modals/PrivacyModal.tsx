@@ -1,3 +1,4 @@
+/** Privacy policy modal: renders the full privacy text with support contact and an acknowledge button. */
 "use client";
 // Privacy policy modal.
 

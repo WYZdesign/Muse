@@ -1,3 +1,4 @@
+/** Signed-in user state: owns the current profile (demo persona in demo mode), auth user, portfolio and album slices, edit-form fields, view profile and tier. */
 "use client";
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { Profile } from "../components/types";

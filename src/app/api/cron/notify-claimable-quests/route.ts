@@ -1,3 +1,4 @@
+/** GET /api/cron/notify-claimable-quests: weekly bulk sweep that reminds each user holding an unclaimed quest reward. */
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/supabase";
 import { isDemoMode } from "@/lib/demo-mode";

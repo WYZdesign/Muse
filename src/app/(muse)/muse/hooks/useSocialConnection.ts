@@ -1,3 +1,4 @@
+/** Social connection hook: fetches the connected-accounts status on mount and handles the OAuth return query parameter with a success toast. */
 "use client";
 
 import { useEffect, type Dispatch, type SetStateAction } from "react";

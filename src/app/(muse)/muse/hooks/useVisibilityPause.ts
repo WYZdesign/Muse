@@ -1,3 +1,4 @@
+/** Visibility pause: toggles the body's animations-paused class when the tab is hidden to save battery and CPU. */
 "use client";
 
 import { useEffect } from "react";

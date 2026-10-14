@@ -1,3 +1,4 @@
+/** Verification return page at /muse/verify: polls the verification API until identity checks confirm, then redirects back to the app. */
 "use client";
 // Identity and age verification landing page.
 

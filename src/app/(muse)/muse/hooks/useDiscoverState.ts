@@ -1,3 +1,4 @@
+/** Discover screen state: owns the card index, match overlay and confetti, boost timers, swipe direction and rewind stack, daily like limits, search and style filters. */
 "use client";
 import { useState } from "react";
 import type { Match } from "../components/types";

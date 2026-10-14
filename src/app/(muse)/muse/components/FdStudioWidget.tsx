@@ -1,3 +1,4 @@
+/** FD Photo Studio booking widget: accordion of FD's LA buildings and stages with direct booking links and fd_studio_click tracking, built for the Sessions screen. */
 "use client";
 // FD Photo Studio availability widget.
 

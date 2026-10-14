@@ -1,3 +1,4 @@
+/** Boost analytics panel: fetches and renders the caller's own boost status and profile-view, match and like counts on the Settings boost sub-page. */
 "use client";
 
 import { useCallback, useEffect, useState } from "react";

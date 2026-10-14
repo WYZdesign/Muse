@@ -1,3 +1,4 @@
+/** Settings and shell state: owns the connection and session tabs, forum and feed composer fields, discovery prefs, saved searches, theme, activity feed and notification counts. */
 "use client";
 // Settings screen state (preferences, blocked users, saved searches).
 

@@ -1,3 +1,4 @@
+/** Voice and video recorder sheet: record with live preview, review the clip, then upload, opened from the Chat screen's composer. */
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";

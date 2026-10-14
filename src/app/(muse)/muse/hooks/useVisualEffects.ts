@@ -1,3 +1,4 @@
+/** Ambient visual effects: global broken-image fallback sweep, background transparency restore, tide-wave scroll listener, scroll-to-top on navigation, and the Discover waves observer. */
 "use client";
 
 import { useEffect, useRef } from "react";

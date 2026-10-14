@@ -1,3 +1,4 @@
+/** Collab brief state: owns the post-brief composer fields, the saved and applied brief id lists, and the user's own posted briefs. */
 "use client";
 import { useState } from "react";
 

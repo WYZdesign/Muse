@@ -1,3 +1,4 @@
+/** Chat screen state: owns the active conversation target, draft input, image attachments, typing indicators, and the match-menu and unmatch targets. */
 "use client";
 import { useState } from "react";
 import type { Match } from "../components/types";

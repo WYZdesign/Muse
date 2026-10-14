@@ -1,3 +1,4 @@
+/** Server-side Web Push (VAPID) wiring: keypair access and sendPushNotification for browser push subscriptions. */
 import webPush from "web-push";
 
 // Web Push (VAPID) wiring for browser push notifications — generates/holds

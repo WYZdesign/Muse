@@ -1,3 +1,4 @@
+/** Toast bridge effects: routes the storage-quota event and the muse:toast window event into showToast for code that runs before it exists. */
 "use client";
 
 import { useEffect } from "react";

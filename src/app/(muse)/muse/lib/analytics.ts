@@ -1,3 +1,4 @@
+/** Event instrumentation for the Muse app: track() posts user actions to /api/muse with screen, user, and session context. */
 "use client";
 
 /**

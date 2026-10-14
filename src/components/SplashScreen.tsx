@@ -1,3 +1,4 @@
+/** First-paint splash over the app shell, dismissed on the muse:ready event or a 3s timeout, whichever lands first. */
 "use client";
 
 // First-paint splash shown over the app shell while bootstrap data loads.

@@ -1,3 +1,4 @@
+/** Visited-screens set: records screens as they become active so page.tsx mounts each screen only after its first visit and keeps it mounted afterwards. */
 "use client";
 
 import { useRef } from "react";

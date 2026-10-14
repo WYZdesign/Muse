@@ -1,3 +1,4 @@
+/** Share profile sheet: copy link, Twitter, and Instagram options for inviting people to your profile. */
 "use client";
 // Shareable profile invite sheet.
 

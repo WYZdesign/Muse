@@ -1,3 +1,4 @@
+/** Story viewer auto-advance: moves to the next story every 5s and closes the viewer at the end, returning the open index with its setter. */
 "use client";
 
 import { useEffect, useState } from "react";

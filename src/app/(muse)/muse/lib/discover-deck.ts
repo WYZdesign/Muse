@@ -1,3 +1,4 @@
+/** Discover deck builder: buildFilteredProfiles() merges ranked live profiles with the seeded demo deck for page.tsx. */
 import { PROFILES, CITY_GEO, calcMatch, matchReasons, type Profile } from "../components/types";
 import { DEMO_MODE } from "../page-constants";
 import { distanceMiles } from "@/app/muse-realtime";

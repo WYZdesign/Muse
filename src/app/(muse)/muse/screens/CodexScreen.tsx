@@ -1,3 +1,4 @@
+/** Codex screen: in-app glossary of badges, zodiac, MBTI, life path, and aesthetic traits used across the app. */
 "use client";
 // In-app codex and command reference screen.
 

@@ -1,3 +1,4 @@
+/** GET /api/cron/capture-bookings: safety net that captures manual-capture Stripe PaymentIntents before the card hold expires. */
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getServiceClient } from "@/lib/supabase";

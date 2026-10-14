@@ -1,3 +1,4 @@
+/** Muses screen: list or grid directory of your connections with search, likes-you, and chat shortcuts. */
 "use client";
 // Connect and Sessions directory screen (Musa pros).
 

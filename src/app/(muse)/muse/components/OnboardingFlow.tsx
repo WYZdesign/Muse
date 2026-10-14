@@ -1,3 +1,4 @@
+/** Multi-step onboarding flow: presentational steps for profile info, creative type, traits, portfolio and preferences, driven entirely by page.tsx state. */
 "use client";
 
 import { AESTHETICS, ZODIAC, CHINESE, CE, ZE, MBTI, LIFE_PATHS, lookingForOptions, BEHIND_CAMERA, IN_FRONT_CAMERA, calcZodiac, calcChineseZodiac, calcLifePath, calcMbti, type Screen } from "../components/types";

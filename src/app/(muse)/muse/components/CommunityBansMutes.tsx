@@ -1,3 +1,4 @@
+/** Community moderation panel: loads a group's bans and mutes and lifts them for admins, shown in the Community screen's group detail view. */
 "use client";
 
 import { useEffect, useState } from "react";

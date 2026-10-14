@@ -1,3 +1,4 @@
+/** AES-256-GCM encryption for OAuth tokens stored at rest, with a plaintext dev fallback and legacy-row compatibility. */
 import crypto from "crypto";
 
 // AES-256-GCM encryption for OAuth tokens stored at rest (social-connect

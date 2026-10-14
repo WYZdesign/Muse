@@ -1,3 +1,4 @@
+/** Generic pulsing loading skeleton shown while a screen still loads its real data, shaped by the rows and image props. */
 "use client";
 
 // Generic pulsing-placeholder skeleton shown while a screen's real data is

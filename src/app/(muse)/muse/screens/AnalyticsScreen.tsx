@@ -1,3 +1,4 @@
+/** Analytics screen: profile views, matches, messages, briefs, bookings, and earnings for the signed-in creator. */
 "use client";
 // Creator analytics and insights screen.
 

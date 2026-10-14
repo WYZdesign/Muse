@@ -1,3 +1,4 @@
+/** Quest panel: tiered daily, weekly, and monthly quest board with streak widget and reward claiming. */
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { FiX, FiCheck, FiStar } from "react-icons/fi";

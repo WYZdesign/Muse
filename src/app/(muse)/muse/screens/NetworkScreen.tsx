@@ -1,3 +1,4 @@
+/** Network screen: industry professionals directory and forum tabs with thread and pro detail modals. */
 "use client";
 
 import React, { useState, useMemo, useEffect, memo } from "react";

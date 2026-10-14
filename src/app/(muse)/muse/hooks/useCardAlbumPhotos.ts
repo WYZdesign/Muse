@@ -1,3 +1,4 @@
+/** Discover card album hook: lazy-loads the active swipe card's albums and the selected album's photos and exposes the album index with its setters. */
 "use client";
 // Lazy-loads a swipe card's album photos for the deck.
 

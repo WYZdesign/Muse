@@ -1,3 +1,4 @@
+/** Client persistence layer: serializes app state to the muse_v1 storage key with a debounced server sync, and rehydrates it back into the state setters. */
 "use client";
 // Persists and rehydrates Muse state to safe storage.
 

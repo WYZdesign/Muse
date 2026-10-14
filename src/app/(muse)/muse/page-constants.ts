@@ -1,3 +1,4 @@
+/** Page constants for the /muse route: support and owner emails, demo-mode and age-verification flags, and the match celebration variants used by page.tsx. */
 export const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "info@wyzdesign.com";
 export const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL || "torree.marcel@gmail.com";
 

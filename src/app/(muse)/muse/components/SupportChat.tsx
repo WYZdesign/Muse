@@ -1,3 +1,4 @@
+/** In-app support chat: bottom-sheet assistant with quick topics and a scrolling message log, opened from page.tsx. */
 "use client";
 // In-app support chat panel.
 

@@ -1,3 +1,4 @@
+/** Log in and sign up screen: presentational email, password, remember-me and OAuth form extracted from the app root, rendered by page.tsx before onboarding. */
 "use client";
 
 import type { AuthMode, FormErrors, OAuthProvider, AuthFetchFn, ShowToastFn } from "../page-models";

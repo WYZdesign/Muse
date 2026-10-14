@@ -1,3 +1,4 @@
+/** Daily like quota reset: refills the Discover screen's daily likes and super-likes once the 24 hour window in storage has elapsed. */
 "use client";
 
 import { useEffect, type Dispatch, type SetStateAction } from "react";

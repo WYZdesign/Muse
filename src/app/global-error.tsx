@@ -1,3 +1,4 @@
+/** Root error boundary for unhandled app-level errors: captures to Sentry and renders the full-page recovery UI. */
 "use client";
 // Root error boundary for unhandled app-level errors.
 

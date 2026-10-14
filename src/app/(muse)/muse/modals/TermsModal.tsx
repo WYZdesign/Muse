@@ -1,3 +1,4 @@
+/** Terms of service modal: renders the Musa by WYZ terms text with an acknowledge button. */
 "use client";
 // Terms of service modal.
 

@@ -1,3 +1,4 @@
+/** Account deletion modal: schedules deletion through the auth API, clears local storage, and signs the user out. */
 "use client";
 // Account deletion confirmation flow modal.
 

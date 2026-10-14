@@ -1,3 +1,4 @@
+/** Community rules editor: drafts, adds and removes group rule rows and saves them via update-community-rules in the Community screen's group detail view. */
 "use client";
 
 import { useState } from "react";

@@ -1,3 +1,4 @@
+/** Community data hook: fetches and normalizes communities, events and the user's event RSVPs for the Community screen and exposes them with setters. */
 "use client";
 // Fetches communities, events and members for the Community screen.
 

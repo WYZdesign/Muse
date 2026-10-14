@@ -1,3 +1,4 @@
+/** Session refresh listeners: cross-tab token adoption, the session-expired logout handler, and re-arming that guard on each fresh login. */
 "use client";
 
 import { useEffect, useRef } from "react";

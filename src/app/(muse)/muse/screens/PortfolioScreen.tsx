@@ -1,3 +1,4 @@
+/** Portfolio screen: the signed-in user's album manager, lazy loaded by page.tsx. */
 "use client";
 // Portfolio and albums screen for the signed-in user.
 

@@ -1,3 +1,4 @@
+/** Modal aggregator: renders the full Muse modal stack (terms, privacy, block, unmatch, story, profile, upsell, call) from page.tsx. */
 "use client";
 // Aggregator that renders the Muse modal set.
 

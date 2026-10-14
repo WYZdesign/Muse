@@ -1,3 +1,4 @@
+/** Self-discovery questionnaire modal: runs zodiac, Chinese-zodiac, MBTI and life-path tests from the profile's Self Discovery section and saves each result to the profile. */
 "use client";
 // Zodiac/MBTI/Chinese/Life-Path self-discovery questionnaire.
 

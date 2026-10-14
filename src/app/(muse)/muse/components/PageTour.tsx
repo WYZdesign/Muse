@@ -1,3 +1,4 @@
+/** First-visit coach-mark tour dialog: sprite badge with orbit dots and sparks that steps through one screen's tutorial slides inside a focus trap. */
 "use client";
 // First-visit guided coach-mark tour.
 
