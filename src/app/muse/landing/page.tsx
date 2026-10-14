@@ -1,3 +1,4 @@
+/** Public landing and waitlist page at /muse/landing with referral attribution and share-link QR sources. */
 "use client";
 // Public landing and waitlist page with referral attribution.
 
@@ -11,6 +12,10 @@ import "./landing.css";
 
 const QR_SOURCES = {
   default: "",
+  la_founder: "?src=la_founder",
+  la_ambassador: "?src=la_ambassador",
+  la_partner: "?src=la_partner",
+  la_content: "?src=la_content",
   mixer_la: "?src=mixer_la",
   mixer_nyc: "?src=mixer_nyc",
   mixer_chi: "?src=mixer_chi",
@@ -312,7 +317,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 
 export default function MuseLandingPage() {
   const [signupCount, setSignupCount] = useState(0);
-  const [selectedSource, setSelectedSource] = useState<keyof typeof QR_SOURCES>("default");
+  const [selectedSource, setSelectedSource] = useState("default");
   const [showQrModal, setShowQrModal] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [copied, setCopied] = useState(false);
@@ -347,8 +352,11 @@ export default function MuseLandingPage() {
   // Read the invite code from the URL once. Anything not shaped like a code is
   // ignored rather than sent, so a mangled link can never fail a signup.
   useEffect(() => {
-    const p = new URLSearchParams(window.location.search).get("ref") || "";
-    if (/^[A-Za-z0-9]{3,16}$/.test(p)) setRefCode(p.toUpperCase());
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref") || "";
+    const source = params.get("src") || "";
+    if (/^[A-Za-z0-9]{3,16}$/.test(ref)) setRefCode(ref.toUpperCase());
+    if (/^[a-z0-9][a-z0-9_-]{0,63}$/i.test(source)) setSelectedSource(source.toLowerCase());
   }, []);
 
   // Runs after hydration completes, so flipping this doesn't cause a
@@ -373,8 +381,9 @@ export default function MuseLandingPage() {
     return () => removeEventListener("scroll", onScroll);
   }, []);
 
-  const generateQrCode = async (source: keyof typeof QR_SOURCES) => {
-    const url = `${window.location.origin}/muse/landing${QR_SOURCES[source] || ""}`;
+  const generateQrCode = async (source: string) => {
+    const query = source === "default" ? "" : `?src=${encodeURIComponent(source)}`;
+    const url = `${window.location.origin}/muse/landing${query}`;
     try {
       const res = await fetch(`/api/qr?url=${encodeURIComponent(url)}&source=${encodeURIComponent(source)}`);
       if (!res.ok) throw new Error("QR generation failed");
@@ -410,7 +419,8 @@ export default function MuseLandingPage() {
   };
 
   const copyLink = () => {
-    navigator.clipboard?.writeText(`${window.location.origin}/muse/landing${QR_SOURCES[selectedSource] || ""}`);
+    const query = selectedSource === "default" ? "" : `?src=${encodeURIComponent(selectedSource)}`;
+    navigator.clipboard?.writeText(`${window.location.origin}/muse/landing${query}`);
     setCopied(true); setTimeout(() => setCopied(false), 2000);
   };
 
@@ -523,7 +533,7 @@ export default function MuseLandingPage() {
       <section className="muse-stats">
         <Reveal>
           <div className="muse-stats-grid">
-            <div className="muse-stat"><span className="num"><CountUp end={signupCount} />+</span><span className="lbl">Creatives on the waitlist</span></div>
+            <div className="muse-stat">{signupCount > 0 ? <><span className="num"><CountUp end={signupCount} />+</span><span className="lbl">Creatives on the waitlist</span></> : <><span className="num">LA</span><span className="lbl">Founding cohort</span></>}</div>
             <div className="muse-stat"><span className="num">150</span><span className="lbl">Founding members</span></div>
             <div className="muse-stat"><span className="num">100%</span><span className="lbl">Verified at booking</span></div>
           </div>
@@ -668,7 +678,7 @@ export default function MuseLandingPage() {
           <Reveal>
             <div className="muse-cta-card">
               <h2>Ready to Find Your <span className="accent" style={{ color: "var(--gold)", fontStyle: "italic" }}>Musa?</span></h2>
-              <p>Join {signupCount.toLocaleString()}+ creatives on the waitlist. Founding member spots available.</p>
+              <p>{signupCount > 0 ? `Join ${signupCount.toLocaleString()}+ creatives on the waitlist.` : "Join the LA founding cohort."} Founding member spots available.</p>
               <form onSubmit={handleSubmit} className="muse-form">
                 <div className="muse-form-row">
                   <div className="muse-form-group">
@@ -689,8 +699,12 @@ export default function MuseLandingPage() {
                 <button type="button" className="muse-qr-btn" onClick={() => generateQrCode(selectedSource)}><FiLink size={16} /> Get Your Personal QR Code</button>
                 <div className="muse-qr-sources">
                   <label>Track your referrals:</label>
-                  <select value={selectedSource} onChange={e => setSelectedSource(e.target.value as keyof typeof QR_SOURCES)} className="muse-qr-select">
+                  <select value={selectedSource} onChange={e => setSelectedSource(e.target.value)} className="muse-qr-select">
                     <option value="default">General Link</option>
+                    <option value="la_founder">LA Founder Outreach</option>
+                    <option value="la_ambassador">LA Founding Ambassadors</option>
+                    <option value="la_partner">LA Community Partners</option>
+                    <option value="la_content">LA Social Content</option>
                     <option value="mixer_la">LA Photo Mixer</option>
                     <option value="mixer_nyc">NYC Photo Mixer</option>
                     <option value="mixer_chi">Chicago Photo Mixer</option>
