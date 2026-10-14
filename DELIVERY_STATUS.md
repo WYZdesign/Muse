@@ -27,7 +27,16 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `4d89ff33`
+## Confirmed merged, last verified at: `c00c847a`
+
+### Reconciliation — 2026-10-12 (opencode/WYZMIND): `4d89ff33` → `c00c847a`
+
+- **XL-1 test tail DONE (4 commits)** — every `any` purged from the 51 `*.test.*` files (736 -> 0): `872211bf` (`muse-actions/get.test.ts`, 99), `e9bffeb4` (batch 1, 13 files), `1e759e17` (batch 2, 13 files / 180), `7da510f0` (batch 3, 24 files). Repo-wide `@typescript-eslint/no-explicit-any` is now **1** — the deliberate `ActionContext.rest: Record<string, any>` in `shared.ts`. All types-only; every `expect(...)` value and test name preserved (verified by diffing the assertion lines).
+- **`ff4be3f2 feat(rest)` — XL-3 DONE** — field schemas added for the **39 remaining mutating actions** (53 -> 92 of the 116 in the `ACTIONS` map; read-only `get-*`/`view-album`/`search` intentionally unschema'd). Every schema is `.passthrough()` with all fields `.optional()` so a schema can never 400 a request the handler already tolerates; enums were used only where the handler itself 400s. +198 tests (1321 -> 1519).
+- **`c00c847a docs(comments)` — L-2 DONE** — the one-line purpose header was added to the remaining **182** files (182 insertions, byte-verified: `new == header + old` for all 182, BOM/CRLF preserved). This batch DID include the 3 size-ratcheted files, because +1 line still fits: NetworkScreen 671/675, SettingsScreen 844/850, `page.tsx` 1221/1224. Headers sit above `"use client";` where present, which is proven safe here (9 pre-existing files already do it).
+- **L-1 confirmed satisfied** — all 15 `muse-actions` handler modules already have a colocated `*.test.ts`.
+- Verification at this tip: `tsc` 0, 169 files / **1519 tests**, `next build` clean, `audit-gate` PASS, `origin/main` == `c00c847a`.
+- **Not mine, deliberately left uncommitted:** `src/app/muse/landing/page.tsx` carries a parallel session's in-flight feature (LA QR sources `la_founder`/`la_ambassador`/`la_partner`/`la_content`, `?src=` referral attribution, zero-signup fallback copy). Its purpose header is in the working tree and will ride along with whoever commits that change.
 
 ### Reconciliation — 2026-10-12 (opencode/WYZMIND): DB maintenance (docs/sql, no code)
 

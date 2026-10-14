@@ -100,35 +100,29 @@ tests (Nav, pageTourContent), Tier 4.4 load tester, Tier 1.4 bundle analysis
 (Next built-in), migration 0038 (36 FK indexes). Also repaired the iOS usage
 descriptions and landed the stranded ChatGPT docs/audit branches.
 
-**ASSIGNED TO YOU (Claude) — large-to-massive code work only:**
-1. **XL-2 · Split the two 1.6k-line screens.** Extract cohesive sub-sections of
-   `screens/NetworkScreen.tsx` (1760-line cap) and `screens/SettingsScreen.tsx`
-   (1601-line cap) into `components/` + `hooks/` the way `page.tsx` was split, and
-   **lower** the budgets in `screen-size-budget.test.ts` as blocks move out (never
-   raise one). One PR per screen. Verify with the gates + a visual check
-   (`wyz_web_shoot.py`).
-2. **XL-3 · Finish the `/api/muse` per-action schema split.** `restSchemas.ts` currently
-   types ~16 of ~120 actions (passthrough for the rest). Extend `MUSE_REST_SCHEMAS` with
-   real field schemas for every remaining mutating action (see the `ACTIONS` map in
-   `src/app/api/muse/route.ts`; read each handler in `src/lib/muse-actions/*.ts` for its
-   `rest.*` fields) and add tests in `restSchemas.test.ts`.
-3. **L-1 · Colocated unit tests for the remaining action handlers.**
-   `src/lib/muse-actions/*.ts` have route-level tests but not unit tests of the handler
-   functions themselves. Mock the service client and assert each handler's happy path
-   plus its guard branches.
-4. **XL-1 tail · Purge `any` from the test fixtures (large).** The source is done
-   (opencode purged all of it). What remains is **736 `any` across 51 `*.test.ts`/`.spec`
-   files** (eslint `@typescript-eslint/no-explicit-any`). Worst-first:
-   `lib/muse-actions/get.test.ts` (100), then the 33s (`contentScan.test.ts`,
-   `muse-actions/admin.test.ts`, `misc.test.ts`, `questEngine.test.ts`), then the
-   17-28 cluster. Type the mock rows/handlers with the real shared types where they fit,
-   `unknown` + narrowing otherwise; never loosen a test's assertion to satisfy types.
-   Regenerate the list with `npx eslint src --ext .ts,.tsx -f json` filtered to
-   `@typescript-eslint/no-explicit-any`.
+**ALL FOUR ASSIGNED TASKS ARE DONE (opencode, 2026-10-12 late session):**
+1. **XL-2 · DONE** — `b7d4a6f4` (Claude's split, merged). NetworkScreen 1759 -> 671,
+   SettingsScreen 1600 -> 844; budgets lowered 1760 -> 675 and 1601 -> 850.
+2. **XL-3 · DONE** — `ff4be3f2`. `MUSE_REST_SCHEMAS` went 53 -> **92** of the 116
+   actions (the read-only `get-*`/`view-album`/`search` stay unschema'd on purpose).
+   Every new schema is `.passthrough()` with all fields `.optional()` so it can never
+   400 a payload the handler tolerates; enums only where the handler itself 400s.
+   +198 tests -> 1519.
+3. **L-1 · DONE (confirmed satisfied)** — all 15 `muse-actions` handler modules
+   already carry a colocated `*.test.ts`.
+4. **XL-1 test tail · DONE** — 4 commits (`872211bf`, `e9bffeb4`, `1e759e17`,
+   `7da510f0`) purged all 736 `any` from the 51 test files. Repo-wide
+   `@typescript-eslint/no-explicit-any` = **1**, the deliberate
+   `ActionContext.rest: Record<string, any>` in `shared.ts`.
 
-**Handled by opencode (do NOT pick these up):** L-2 (file purpose headers - done, 78 files),
-M-3 (route acceptance tests - already 0 gaps), S-1/S-2/S-3 (already satisfied/reviewed),
-the XS cleanup, and the source half of XL-1 (done).
+**Handled by opencode (do NOT pick these up):** L-2 (file purpose headers - now fully
+done: 78 files at `f1db03c7` plus the final 182 at `c00c847a`), M-3 (route acceptance
+tests - already 0 gaps), S-1/S-2/S-3 (already satisfied/reviewed), the XS cleanup,
+both halves of XL-1 (source + tests), XL-2, XL-3, L-1.
+
+**Current gates (2026-10-12, tip `c00c847a`):** `tsc` 0, **169 files / 1519 tests**,
+`next build` clean, `audit-gate` PASS. If your numbers differ, someone landed
+something since — reconcile `DELIVERY_STATUS.md` first.
 
 **`next` is patched, not to be re-bumped casually.** next + eslint-config-next
 went `16.3.6 → 16.3.8`, which cleared the whole advisory cluster (the fixed range
@@ -141,7 +135,7 @@ published, unreachable from production code).
 
 ```
 npm run typecheck     # tsc --noEmit            → 0 errors
-npm test              # vitest                   → all pass (currently 161 files / 1234 tests)
+npm test              # vitest                   → all pass (currently 169 files / 1519 tests)
 npm run build         # next build               → clean
 npm audit --omit=dev --audit-level=high          → 0 vulnerabilities
 npx eslint <files-you-touched>                   → 0 errors on your files

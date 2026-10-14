@@ -54,27 +54,27 @@ added in `0038`.
 
 ## 3. ASSIGNED TO YOU (Codex) — large-to-massive ops work
 
-**XL-DB-1 · Reconcile the `sql/MUSE_SCHEMA_FULL_*.sql` dumps with the migration chain.**
-The dumps predate migrations `0001`-`0038`, so a fresh DB built from a dump does NOT
-match a migrated DB. Produce a dump that equals the migrated schema: introspect the
-live schema (or a disposable DB after `supabase db reset`), regenerate the dump, and
-prove equivalence (diff the normalized schemas; no drift). Evidence: the exact commands,
-the diff result, and the disposable-DB revision.
+**ALL THREE DB TASKS ARE DONE (opencode/WYZMIND, 2026-10-12 — evidence in
+`DELIVERY_STATUS.md` + `sql/`):**
 
-**XL-DB-2 · `unused_index` advisor triage (~98).**
-Most are the `0038` FK indexes with no recorded scans. Do NOT drop blind. Measure usage
-under real workload (or state that traffic is too low to decide, with the query you ran),
-then for each index either (a) keep with a documented rationale, or (b) drop via a new
-migration with rollback notes. Evidence: advisor count before/after, the usage query, and
-which indexes you dropped and why.
-
-**L-DB-3 · RLS/perf advisor maintenance.**
-Keep security / initplan / multi-permissive at 0 as the schema grows. After any new
-table or policy, re-run the advisors and add a migration that clears any new finding.
-Evidence: advisor output before/after.
+- **XL-DB-1 · DONE** — `sql/MUSE_SCHEMA_FULL_20261012.sql` regenerated from the
+  migration chain (69 tables / 81 policies / 131 indexes) and declared canonical in
+  `sql/SCHEMA_SOURCE_OF_TRUTH.md`; the older dated dumps are marked superseded.
+  Read-only production introspection showed prod and the chain build are
+  **structurally identical** (the only 6 diff lines are Postgres deparse formatting
+  on 3 CHECK constraints).
+- **XL-DB-2 · DONE (decision: keep all)** — 235 public indexes, 165 with zero scans,
+  but the DB holds 1,636 rows across 27 tables, so zero scans means no traffic, not
+  dead indexes. Rationale + re-measure query recorded in `sql/INDEX_MAINTENANCE.md`.
+- **L-DB-3 · DONE (confirmed clean)** — 81 policies, 0 multi-permissive groups,
+  0 un-wrapped `auth.uid()`, 8 SECURITY DEFINER functions all pinned `search_path`.
+- **Ledger reconciled** — `sql/RECONCILE_MIGRATION_LEDGER.sql` applied to production
+  (owner-authorized): `schema_migrations` 1 -> 40 rows (`0000`-`0038`, none missing).
+  No DDL was run against prod.
 
 **M-DB-4 · Keep PR #11 staged and applied only through the verified migration workflow**
 (disposable DB first, then the owner-approved production apply owned by opencode).
+Standing instruction, not a to-do.
 
 **BLOCKED (owner / billing-gated, do not attempt):**
 - Supabase **branching** and **leaked-password protection** (Pro-plan gated; issue #12).
@@ -90,7 +90,7 @@ external-config/database naming review (see `AGENT_CONFERENCE_HANDOFF_2026-10-07
 ```
 npx tsc --noEmit --incremental false
 npx eslint <files-you-touched>            # 0 errors on your files
-npx vitest run                            # all pass (currently 169 files / 1320)
+npx vitest run                            # all pass (currently 169 files / 1519)
 npx next build                            # clean (needs OAUTH_STATE_SECRET set to any value locally)
 # + disposable-DB integration evidence for any migration / advisor change
 ```
