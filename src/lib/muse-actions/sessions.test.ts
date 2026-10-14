@@ -1,16 +1,22 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createSb, tableCalls, eqOf, insertValue, updateValue, type SbCall } from "@/test-support/sb";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
+import type { NextRequest } from "next/server";
+import { createSb, tableCalls, eqOf, insertValue, updateValue, type SbCall, type SbMock, type SbResult } from "@/test-support/sb";
+import type { ActionContext } from "@/lib/muse-actions/shared";
+
+type StripeStub = { paymentIntents: { cancel: Mock; capture: Mock } };
+type TestGlobals = { __sbMock: unknown; __stripe?: StripeStub };
+const g = vi.hoisted(() => globalThis as unknown as TestGlobals);
 
 vi.mock("@/lib/rate-limit", () => ({ checkRate: async () => true, checkRateUser: async () => true, clientIp: () => "10.0.0.1" }));
 vi.mock("@/lib/request-safety", () => ({ sanitizeText: (s: string, n: number) => String(s).slice(0, n) }));
 vi.mock("@/lib/questEngine", () => ({ bumpQuest: async () => ({}), setQuestProgress: async () => ({}), bumpLoginStreak: async () => ({}), setReferralQuestProgress: async () => ({}), questPeriodKey: () => "daily", awardQuestXp: async () => ({}), refreshMetaQuest: async () => ({}), getQuestDefinitions: () => [], questsForPeriod: () => [], rotateQuests: () => [], seededHash: () => 0 }));
-vi.mock("@/lib/email", () => ({ sendEmail: async () => ({}), notify: (...a: any[]) => ({ subject: a[1] || "", text: a[2] || "" }) }));
+vi.mock("@/lib/email", () => ({ sendEmail: async () => ({}), notify: (...a: unknown[]) => ({ subject: a[1] || "", text: a[2] || "" }) }));
 vi.mock("@/lib/push", () => ({ pushToProfile: async () => ({}) }));
-vi.mock("stripe", () => ({ default: function () { return (globalThis as any).__stripe ?? {}; } }));
+vi.mock("stripe", () => ({ default: function () { return g.__stripe ?? {}; } }));
 
-const state: any = { rows: {}, inserts: [], updates: [], deletes: [] };
+const state: { row: unknown; rows: Record<string, unknown>; inserts: unknown[]; updates: unknown[]; deletes: unknown[] } = { row: null, rows: {}, inserts: [], updates: [], deletes: [] };
 vi.mock("@/lib/supabase", () => ({
-  getServiceClient: () => (globalThis as any).__sbMock,
+  getServiceClient: () => g.__sbMock,
   supabase: { auth: { getUser: async () => ({ data: { user: null } }) } },
 }));
 
@@ -21,33 +27,49 @@ import {
   sessionAvailabilityToggle,
 } from "@/lib/muse-actions/sessions";
 
-function install(handlers: Record<string, (calls: SbCall[]) => any>) {
-  const sb: any = createSb((table, calls) => {
+type Handler = (calls: SbCall[]) => SbResult;
+function install(handlers: Record<string, Handler>): SbMock {
+  const sb = createSb((table, calls) => {
     const h = handlers[table];
     return h ? h(calls) : { data: null, error: null };
   });
-  (globalThis as any).__sbMock = sb;
+  g.__sbMock = sb;
   return sb;
 }
-function act(rest: any) {
-  return { sb: (globalThis as any).__sbMock, profile: { id: "me1", name: "Ada", avatar: "av" }, rest, ip: "10.0.0.1", req: {} as any } as any;
+const req = {} as unknown as NextRequest;
+function act(rest: Record<string, unknown>): ActionContext {
+  return { sb: g.__sbMock as ActionContext["sb"], profile: { id: "me1", name: "Ada", avatar: "av" }, rest, ip: "10.0.0.1", req };
 }
 const UUID = "11111111-1111-4111-8111-111111111111";
 const VERIFIED = { age_verified: true, age_verified_at: new Date().toISOString() };
 
-function makeQuery() {
-  const q: any = {
+type MockQuery = {
+  select: () => MockQuery;
+  eq: () => MockQuery;
+  in: () => MockQuery;
+  limit: () => MockQuery;
+  order: () => MockQuery;
+  range: () => MockQuery;
+  insert: (value: Record<string, unknown>) => MockQuery;
+  update: (value: Record<string, unknown>) => MockQuery;
+  delete: () => MockQuery;
+  or: () => MockQuery;
+  maybeSingle: () => Promise<{ data: unknown }>;
+  single: () => Promise<{ data: unknown }>;
+};
+function makeQuery(): MockQuery {
+  const q: MockQuery = {
     select: () => q, eq: () => q, in: () => q, limit: () => q, order: () => q, range: () => q,
-    insert: (v: any) => { state.inserts.push(v); return q; },
-    update: (v: any) => { state.updates.push(v); return q; },
+    insert: (v) => { state.inserts.push(v); return q; },
+    update: (v) => { state.updates.push(v); return q; },
     delete: () => q, or: () => q, maybeSingle: async () => ({ data: state.row ?? null }),
     single: async () => ({ data: state.row ?? null }),
   };
   return q;
 }
-function ctx(rest: any, row: any) {
+function ctx(rest: Record<string, unknown>, row: unknown): ActionContext {
   state.row = row;
-  return { sb: { from: () => makeQuery() }, profile: { id: "me1", name: "Ada" }, rest, ip: "10.0.0.1", req: {} as any } as any;
+  return { sb: { from: () => makeQuery() } as unknown as ActionContext["sb"], profile: { id: "me1", name: "Ada" }, rest, ip: "10.0.0.1", req };
 }
 
 beforeEach(() => { vi.clearAllMocks(); state.row = null; state.inserts = []; state.updates = []; state.deletes = []; });
@@ -84,7 +106,7 @@ describe("sessions/booking actions (party gate)", () => {
   });
 });
 
-beforeEach(() => { (globalThis as any).__stripe = undefined; });
+beforeEach(() => { g.__stripe = undefined; });
 
 describe("sessionBook — verification + host resolution", () => {
   it("403s with VERIFICATION_REQUIRED when the booker is not verified", async () => {
@@ -154,7 +176,7 @@ describe("bookingRespond", () => {
 
 describe("bookingCancel / bookingComplete — payments", () => {
   it("cancels a pending PaymentIntent and still cancels the booking", async () => {
-    (globalThis as any).__stripe = { paymentIntents: { cancel: vi.fn(async () => ({})), capture: vi.fn(async () => ({})) } };
+    g.__stripe = { paymentIntents: { cancel: vi.fn(async () => ({})), capture: vi.fn(async () => ({})) } };
     const sb = install({
       muse_bookings: (calls) => (calls.some((c) => c.method === "update") ? { data: null } : { data: { id: "b1", user_id: "me1", host_id: "h1" } }),
       muse_booking_payments: (calls) => (calls.some((c) => c.method === "update") ? { data: null } : { data: { id: "p1", stripe_payment_intent: "pi_1", status: "held" } }),
@@ -162,7 +184,7 @@ describe("bookingCancel / bookingComplete — payments", () => {
     });
     const r = await bookingCancel(act({ bookingId: "b1", reason: "changed mind" }));
     expect((r as Response).status).toBe(200);
-    expect((globalThis as any).__stripe.paymentIntents.cancel).toHaveBeenCalledWith("pi_1");
+    expect(g.__stripe?.paymentIntents.cancel).toHaveBeenCalledWith("pi_1");
     expect(tableCalls(sb.__log, "muse_booking_payments").some((c) => c.method === "update")).toBe(true);
   });
   it("bookingComplete 400s when not confirmed and 404s when missing", async () => {
@@ -172,17 +194,17 @@ describe("bookingCancel / bookingComplete — payments", () => {
     expect((await bookingComplete(act({ bookingId: "b1" })) as Response).status).toBe(400);
   });
   it("bookingComplete captures a held payment then completes", async () => {
-    (globalThis as any).__stripe = { paymentIntents: { capture: vi.fn(async () => ({})), cancel: vi.fn() } };
+    g.__stripe = { paymentIntents: { capture: vi.fn(async () => ({})), cancel: vi.fn() } };
     const sb = install({
       muse_bookings: (calls) => (calls.some((c) => c.method === "update") ? { data: null } : { data: { id: "b1", user_id: "me1", host_id: "h1", status: "confirmed" } }),
       muse_booking_payments: (calls) => (calls.some((c) => c.method === "update") ? { data: null } : { data: [{ id: "p1", stripe_payment_intent: "pi_1", status: "held" }] }),
       muse_notifications: () => ({ data: null }),
     });
     expect((await bookingComplete(act({ bookingId: "b1" })) as Response).status).toBe(200);
-    expect((globalThis as any).__stripe.paymentIntents.capture).toHaveBeenCalledWith("pi_1");
+    expect(g.__stripe?.paymentIntents.capture).toHaveBeenCalledWith("pi_1");
   });
   it("bookingComplete returns 402 when capture fails", async () => {
-    (globalThis as any).__stripe = { paymentIntents: { capture: vi.fn(async () => { throw new Error("declined"); }), cancel: vi.fn() } };
+    g.__stripe = { paymentIntents: { capture: vi.fn(async () => { throw new Error("declined"); }), cancel: vi.fn() } };
     install({
       muse_bookings: () => ({ data: { id: "b1", user_id: "me1", host_id: "h1", status: "confirmed" } }),
       muse_booking_payments: () => ({ data: [{ id: "p1", stripe_payment_intent: "pi_1", status: "held" }] }),
@@ -234,7 +256,7 @@ describe("checkins", () => {
     expect(updateValue(tableCalls(sb.__log, "muse_safety_checkins"))).toMatchObject({ status: "ok", shared_with_contact: true });
   });
   it("cancelling a check-in also cancels the booking", async () => {
-    (globalThis as any).__stripe = { paymentIntents: { cancel: vi.fn(async () => ({})), capture: vi.fn() } };
+    g.__stripe = { paymentIntents: { cancel: vi.fn(async () => ({})), capture: vi.fn() } };
     const sb = install({
       muse_safety_checkins: (calls) => (calls.some((c) => c.method === "update") ? { data: null } : { data: { id: "c1", user_id: "me1", booking_id: "b1" } }),
       muse_booking_payments: (calls) => (calls.some((c) => c.method === "update") ? { data: null } : { data: { id: "p1", stripe_payment_intent: "pi_1", status: "held" } }),
@@ -280,7 +302,7 @@ describe("safety shares / profile / prompts", () => {
     expect(eqOf(tableCalls(sb.__log, "muse_prompt_bank"), "category")).toBe("creative");
   });
   it("promptResponseSave stores, recomputes pct and fires an embed", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, json: async () => ({}) } as any);
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, json: async () => ({}) } as unknown as Response);
     const sb = install({
       muse_prompt_responses: (calls) => (calls.some((c) => c.method === "upsert") ? { data: null } : { count: 3 }),
       muse_prompt_bank: () => ({ count: 6 }),

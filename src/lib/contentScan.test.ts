@@ -1,20 +1,36 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { type ModerationResult } from "@/lib/contentScan";
+
+type MockResult = { data?: unknown; error?: unknown };
+type MockQuery = {
+  select?: () => MockQuery;
+  insert?: (value: Record<string, unknown>) => MockQuery;
+  update?: (value: unknown) => unknown;
+  eq?: () => MockQuery;
+  limit?: () => MockQuery;
+  maybeSingle?: () => Promise<MockResult>;
+  then?: (resolve: (value: MockResult) => unknown) => unknown;
+};
+type InsertRecord = { table: string; value: Record<string, unknown> };
+type MockSb = { from: (table: string) => MockQuery; auth?: unknown };
+type TestGlobals = { __sbMock: MockSb; __inserts: InsertRecord[] };
+const g = vi.hoisted(() => globalThis as unknown as TestGlobals);
 
 vi.mock("@/lib/supabase", () => ({
-  getServiceClient: () => (globalThis as any).__sbMock,
+  getServiceClient: () => g.__sbMock,
 }));
 
-(globalThis as any).__sbMock = {
+g.__sbMock = {
   from: (tbl: string) => {
-    const q: any = {
+    const q: MockQuery = {
       select: () => q,
-      insert: (v: any) => q,
+      insert: () => q,
       update: () => q,
       eq: () => q,
       limit: () => q,
       maybeSingle: async () => ({ data: null }),
     };
-    q.then = (resolve: any) => resolve({ data: null, error: null });
+    q.then = (resolve) => resolve({ data: null, error: null });
     return q;
   },
   auth: {},
@@ -33,15 +49,15 @@ import {
   transmitPendingNcmecReports,
 } from "@/lib/contentScan";
 
-const cleanResult = {
+const cleanResult: ModerationResult = {
   safe: true,
   scanned: false,
-  flaggedCategories: [] as string[],
+  flaggedCategories: [],
   confidence: 0,
   shouldBlock: false,
   shouldReport: false,
   isCSAM: false,
-  details: [] as any[],
+  details: [],
 };
 
 beforeEach(() => {
@@ -50,12 +66,12 @@ beforeEach(() => {
   delete process.env.AWS_SECRET_ACCESS_KEY;
   delete process.env.SIGHTENGINE_API_USER;
   delete process.env.SIGHTENGINE_API_SECRET;
-  (globalThis as any).__sbMock = {
+  g.__sbMock = {
     from: (tbl: string) => {
-      const q: any = {
+      const q: MockQuery = {
         select: () => q,
-        insert: (v: any) => {
-          ((globalThis as any).__inserts ||= []).push({ table: tbl, value: v });
+        insert: (v) => {
+          g.__inserts.push({ table: tbl, value: v });
           return q;
         },
         update: () => q,
@@ -63,12 +79,12 @@ beforeEach(() => {
         limit: () => q,
         maybeSingle: async () => ({ data: null }),
       };
-      q.then = (resolve: any) => resolve({ data: null, error: null });
+      q.then = (resolve) => resolve({ data: null, error: null });
       return q;
     },
     auth: {},
   };
-  (globalThis as any).__inserts = [];
+  g.__inserts = [];
 });
 
 describe("contentScan — Rekognition", () => {
@@ -129,10 +145,10 @@ describe("contentScan — video helpers (unavailable scanner)", () => {
 
 describe("contentScan — persistence + escalation", () => {
   it("logScan does not throw on Supabase errors", async () => {
-    (globalThis as any).__sbMock = {
+    g.__sbMock = {
       from: () => {
-        const q: any = { select: () => q, insert: () => q, update: () => q, eq: () => q };
-        q.then = (resolve: any) => resolve({ error: new Error("DB down") });
+        const q: MockQuery = { select: () => q, insert: () => q, update: () => q, eq: () => q };
+        q.then = (resolve) => resolve({ error: new Error("DB down") });
         return q;
       },
     };
@@ -155,8 +171,8 @@ describe("contentScan — persistence + escalation", () => {
       context: "upload",
       result: cleanResult,
     });
-    expect((globalThis as any).__inserts.length).toBe(1);
-    expect((globalThis as any).__inserts[0].table).toBe("muse_content_scans");
+    expect(g.__inserts.length).toBe(1);
+    expect(g.__inserts[0].table).toBe("muse_content_scans");
   });
 
   it("reportIncident inserts a content_policy_violation when not CSAM", async () => {
@@ -165,7 +181,7 @@ describe("contentScan — persistence + escalation", () => {
       context: "upload",
       result: { ...cleanResult, shouldReport: true, flaggedCategories: ["Violence"] },
     });
-    const row = (globalThis as any).__inserts.find((i: any) => i.table === "muse_safety_incidents");
+    const row = g.__inserts.find((i) => i.table === "muse_safety_incidents")!;
     expect(row).toBeTruthy();
     expect(row.value.type).toBe("content_policy_violation");
     expect(row.value.status).toBe("pending_review");
@@ -177,31 +193,31 @@ describe("contentScan — persistence + escalation", () => {
       context: "upload",
       result: { ...cleanResult, isCSAM: true, shouldReport: true },
     });
-    const row = (globalThis as any).__inserts.find((i: any) => i.table === "muse_safety_incidents");
+    const row = g.__inserts.find((i) => i.table === "muse_safety_incidents")!;
     expect(row.value.type).toBe("csam");
     expect(row.value.severity).toBe("critical");
     expect(row.value.status).toBe("pending_ncmec");
   });
 
   it("escalateToNcmec suspends profile and stages pending_submission report", async () => {
-    const updates: any[] = [];
-    const from = (globalThis as any).__sbMock.from.bind((globalThis as any).__sbMock);
-    (globalThis as any).__sbMock.from = (tbl: string) => {
-      const q: any = {
+    const updates: { table: string; value: Record<string, unknown> }[] = [];
+    const from = g.__sbMock.from.bind(g.__sbMock);
+    g.__sbMock.from = (tbl: string) => {
+      const q: MockQuery = {
         select: () => q,
-        insert: (v: any) => {
-          ((globalThis as any).__inserts ||= []).push({ table: tbl, value: v });
+        insert: (v) => {
+          g.__inserts.push({ table: tbl, value: v });
           return q;
         },
-        update: (v: any) => {
-          updates.push({ table: tbl, value: v });
+        update: (v) => {
+          updates.push({ table: tbl, value: v as Record<string, unknown> });
           return { eq: async () => ({ error: null }) };
         },
         eq: () => q,
         limit: () => q,
         maybeSingle: async () => ({ data: null }),
       };
-      q.then = (resolve: any) => resolve({ data: null, error: null });
+      q.then = (resolve) => resolve({ data: null, error: null });
       return q;
     };
     await escalateToNcmec({
@@ -211,11 +227,11 @@ describe("contentScan — persistence + escalation", () => {
       result: { ...cleanResult, isCSAM: true, shouldBlock: true, shouldReport: true, flaggedCategories: ["Child Sexual Abuse"] },
     });
     expect(updates.some((u) => u.table === "muse_profiles" && u.value.suspended === true)).toBe(true);
-    const report = (globalThis as any).__inserts.find((i: any) => i.table === "muse_ncmec_reports");
+    const report = g.__inserts.find((i) => i.table === "muse_ncmec_reports")!;
     expect(report).toBeTruthy();
     expect(report.value.status).toBe("pending_submission");
     expect(report.value.report_type).toBe("child_sexual_abuse_material");
-    (globalThis as any).__sbMock.from = from;
+    g.__sbMock.from = from;
   });
 });
 

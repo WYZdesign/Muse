@@ -1,12 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createSb, tableCalls, updateValue, type SbCall } from "@/test-support/sb";
+import type { NextRequest } from "next/server";
+import { createSb, tableCalls, updateValue, type SbCall, type SbMock, type SbResult } from "@/test-support/sb";
+import type { ActionContext } from "@/lib/muse-actions/shared";
 
 vi.mock("@/lib/rate-limit", () => ({ checkRate: async () => true, checkRateUser: async () => true, clientIp: () => "10.0.0.1" }));
 vi.mock("@/lib/questEngine", () => ({ bumpQuest: async () => ({}), setQuestProgress: async () => ({}), bumpLoginStreak: async () => ({}), setReferralQuestProgress: async () => ({}), questPeriodKey: () => "daily", awardQuestXp: async () => ({}), refreshMetaQuest: async () => ({}), getQuestDefinitions: () => [{ action_key: "message", target_count: 1 }], questsForPeriod: () => [], rotateQuests: () => [], seededHash: () => 0 }));
 
-const state: any = { row: null, inserts: [], updates: [], selects: {} };
+type TestGlobals = { __sbMock: unknown };
+const g = vi.hoisted(() => globalThis as unknown as TestGlobals);
+
+const state: { row: unknown; inserts: unknown[]; updates: unknown[]; selects: Record<string, unknown> } = { row: null, inserts: [], updates: [], selects: {} };
 vi.mock("@/lib/supabase", () => ({
-  getServiceClient: () => (globalThis as any).__sbMock,
+  getServiceClient: () => g.__sbMock,
   supabase: { auth: { getUser: async () => ({ data: { user: null } }) } },
 }));
 
@@ -14,31 +19,44 @@ vi.mock("@/lib/push", () => ({ pushToProfile: vi.fn(async () => ({})) }));
 
 import { questTrackQuest, questClaimQuest, questGetQuests, questNotifyClaimable } from "@/lib/muse-actions/quests";
 
-function install(handlers: Record<string, (calls: SbCall[]) => any>) {
-  const sb: any = createSb((table, calls) => {
+type Handler = (calls: SbCall[]) => SbResult;
+function install(handlers: Record<string, Handler>): SbMock {
+  const sb = createSb((table, calls) => {
     const h = handlers[table];
     return h ? h(calls) : { data: null, error: null };
   });
-  (globalThis as any).__sbMock = sb;
+  g.__sbMock = sb;
   return sb;
 }
-function act(rest: any) {
-  return { sb: (globalThis as any).__sbMock, profile: { id: "me1", name: "Ada" }, rest, ip: "10.0.0.1", req: {} as any } as any;
+const req = {} as unknown as NextRequest;
+function act(rest: Record<string, unknown>): ActionContext {
+  return { sb: g.__sbMock as ActionContext["sb"], profile: { id: "me1", name: "Ada" }, rest, ip: "10.0.0.1", req };
 }
 
-function makeQuery() {
-  const q: any = {
+type MockQuery = {
+  select: () => MockQuery;
+  eq: () => MockQuery;
+  in: () => MockQuery;
+  order: () => MockQuery;
+  limit: () => MockQuery;
+  insert: (value: Record<string, unknown>) => MockQuery;
+  update: (value: Record<string, unknown>) => MockQuery;
+  maybeSingle: () => Promise<{ data: unknown }>;
+  single: () => Promise<{ data: unknown }>;
+};
+function makeQuery(): MockQuery {
+  const q: MockQuery = {
     select: () => q, eq: () => q, in: () => q, order: () => q, limit: () => q,
-    insert: (v: any) => { state.inserts.push(v); return q; },
-    update: (v: any) => { state.updates.push(v); return q; },
+    insert: (v) => { state.inserts.push(v); return q; },
+    update: (v) => { state.updates.push(v); return q; },
     maybeSingle: async () => ({ data: state.row ?? null }),
     single: async () => ({ data: state.row ?? null }),
   };
   return q;
 }
-function ctx(rest: any, row: any) {
+function ctx(rest: Record<string, unknown>, row: unknown): ActionContext {
   state.row = row;
-  return { sb: { from: () => makeQuery() }, profile: { id: "me1", name: "Ada" }, rest, ip: "10.0.0.1", req: {} as any } as any;
+  return { sb: { from: () => makeQuery() } as unknown as ActionContext["sb"], profile: { id: "me1", name: "Ada" }, rest, ip: "10.0.0.1", req };
 }
 
 beforeEach(() => { vi.clearAllMocks(); state.row = null; state.inserts = []; state.updates = []; });
@@ -173,10 +191,10 @@ describe("questClaimQuest — rewards", () => {
 describe("questNotifyClaimable", () => {
   it("returns 0 when nothing is claimable", async () => {
     install({ muse_user_quests: () => ({ data: [] }) });
-    expect(await (await questNotifyClaimable({ sb: (globalThis as any).__sbMock, profile: { id: "me1" } } as any) as Response).json()).toEqual({ notified: 0 });
+    expect(await (await questNotifyClaimable({ sb: g.__sbMock as ActionContext["sb"], profile: { id: "me1" } }) as Response).json()).toEqual({ notified: 0 });
   });
   it("notifies each claimable quest", async () => {
     install({ muse_user_quests: () => ({ data: [{ quest_id: "q1", muse_quests: { title: "Say hi", reward_label: "5 XP" } }] }) });
-    expect(await (await questNotifyClaimable({ sb: (globalThis as any).__sbMock, profile: { id: "me1" } } as any) as Response).json()).toEqual({ notified: 1 });
+    expect(await (await questNotifyClaimable({ sb: g.__sbMock as ActionContext["sb"], profile: { id: "me1" } }) as Response).json()).toEqual({ notified: 1 });
   });
 });

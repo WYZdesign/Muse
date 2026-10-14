@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { createSb, tableCalls, type SbCall } from "@/test-support/sb";
+import { createSb, tableCalls, type SbCall, type SbMock } from "@/test-support/sb";
+
+type TestGlobals = { __sbMock: unknown };
+const g = vi.hoisted(() => globalThis as unknown as TestGlobals);
 
 vi.mock("@/lib/supabase", () => ({
-  getServiceClient: () => (globalThis as any).__sbMock,
+  getServiceClient: () => g.__sbMock,
 }));
 
 import {
@@ -18,16 +21,21 @@ import {
   bumpLoginStreak,
 } from "./questEngine";
 
+type Row = Record<string, unknown>;
+type QuestFixture = { id: string; quest_tier?: string; frequency?: string; target_count?: number; xp_reward?: number; title?: string };
+type UserQuestFixture = { id: string; progress: number; completed: boolean };
+type XpRow = { total_xp: number; level: number };
+type ProfileRow = { login_streak: number; last_login_date: string };
 interface State {
-  quests: any[];
-  userQuest: any;
+  quests: QuestFixture[];
+  userQuest: UserQuestFixture | null;
   count: number;
-  xpRow: any;
-  profile: any;
+  xpRow: XpRow | null;
+  profile: ProfileRow | null;
   referralCount: number;
-  inserts: any[];
-  updates: any[];
-  upserts: any[];
+  inserts: Row[];
+  updates: Row[];
+  upserts: Row[];
   throwOn: string | null;
 }
 const state: State = {
@@ -35,17 +43,21 @@ const state: State = {
   inserts: [], updates: [], upserts: [], throwOn: null,
 };
 
-function eqValue(calls: SbCall[], field: string): any {
+type EngineSb = Parameters<typeof notifyQuestComplete>[0];
+type TestSb = SbMock & EngineSb;
+function engineSb(): TestSb { return g.__sbMock as TestSb; }
+
+function eqValue(calls: SbCall[], field: string): unknown {
   const c = [...calls].reverse().find((x) => x.method === "eq" && x.args[0] === field);
   return c?.args[1];
 }
-function selectArgs(calls: SbCall[]): any[] {
+function selectArgs(calls: SbCall[]): Row[] {
   const c = [...calls].reverse().find((x) => x.method === "select");
   return c?.args ?? [];
 }
 
 function installSb() {
-  (globalThis as any).__sbMock = createSb((table, calls) => {
+  g.__sbMock = createSb((table, calls) => {
     if (state.throwOn === table) throw new Error("boom");
     const mutation = calls.find((c) => ["insert", "update", "upsert"].includes(c.method));
     if (mutation?.method === "insert") { state.inserts.push(mutation.args[0]); return { data: null, error: null }; }
@@ -185,22 +197,22 @@ describe("rotateQuests", () => {
 
 describe("notifyQuestComplete", () => {
   it("inserts a quest notification", async () => {
-    await notifyQuestComplete((globalThis as any).__sbMock, "u1", "First Match");
-    const row = state.inserts.find((i) => i.type === "quest");
+    await notifyQuestComplete(engineSb(), "u1", "First Match");
+    const row = state.inserts.find((i) => i.type === "quest")!;
     expect(row).toMatchObject({ user_id: "u1", read: false });
     expect(row.body).toContain("First Match");
   });
 
   it("never throws when the insert fails", async () => {
     state.throwOn = "muse_notifications";
-    await expect(notifyQuestComplete((globalThis as any).__sbMock, "u1", "x")).resolves.toBeUndefined();
+    await expect(notifyQuestComplete(engineSb(), "u1", "x")).resolves.toBeUndefined();
   });
 });
 
 describe("setQuestProgress", () => {
   it("no-ops when no active quest matches the action_key", async () => {
     state.quests = [];
-    await setQuestProgress((globalThis as any).__sbMock, "u1", "message", 3);
+    await setQuestProgress(engineSb(), "u1", "message", 3);
     expect(state.inserts).toHaveLength(0);
     expect(state.updates).toHaveLength(0);
   });
@@ -208,7 +220,7 @@ describe("setQuestProgress", () => {
   it("inserts a fresh row with clamped progress when none exists", async () => {
     state.quests = [{ id: "q1", frequency: "lifetime", target_count: 5, xp_reward: 0, title: "Five matches" }];
     state.userQuest = null;
-    await setQuestProgress((globalThis as any).__sbMock, "u1", "message", 12);
+    await setQuestProgress(engineSb(), "u1", "message", 12);
     const row = state.inserts.find((i) => i.quest_id === "q1");
     expect(row).toMatchObject({ user_id: "u1", progress: 5, target: 5, completed: true, period_key: "lifetime:all" });
   });
@@ -216,7 +228,7 @@ describe("setQuestProgress", () => {
   it("skips an already-completed row entirely", async () => {
     state.quests = [{ id: "q1", frequency: "lifetime", target_count: 5, xp_reward: 0, title: "x" }];
     state.userQuest = { id: "uq1", progress: 5, completed: true };
-    await setQuestProgress((globalThis as any).__sbMock, "u1", "message", 9);
+    await setQuestProgress(engineSb(), "u1", "message", 9);
     expect(state.updates).toHaveLength(0);
     expect(state.inserts).toHaveLength(0);
   });
@@ -224,14 +236,14 @@ describe("setQuestProgress", () => {
   it("skips when progress is unchanged and still incomplete", async () => {
     state.quests = [{ id: "q1", frequency: "lifetime", target_count: 9, xp_reward: 0, title: "x" }];
     state.userQuest = { id: "uq1", progress: 3, completed: false };
-    await setQuestProgress((globalThis as any).__sbMock, "u1", "message", 3);
+    await setQuestProgress(engineSb(), "u1", "message", 3);
     expect(state.updates).toHaveLength(0);
   });
 
   it("updates an existing row and notifies on completion", async () => {
     state.quests = [{ id: "q1", frequency: "daily", target_count: 2, xp_reward: 0, title: "Two a day" }];
     state.userQuest = { id: "uq1", progress: 1, completed: false };
-    await setQuestProgress((globalThis as any).__sbMock, "u1", "message", 2);
+    await setQuestProgress(engineSb(), "u1", "message", 2);
     expect(state.updates.find((u) => u.progress === 2)?.completed).toBe(true);
     expect(state.inserts.some((i) => i.type === "quest")).toBe(true);
   });
@@ -240,57 +252,57 @@ describe("setQuestProgress", () => {
 describe("awardQuestXp", () => {
   it("accumulates xp without levelling and returns false", async () => {
     state.xpRow = { total_xp: 0, level: 1 };
-    const leveled = await awardQuestXp((globalThis as any).__sbMock, "u1", 10);
+    const leveled = await awardQuestXp(engineSb(), "u1", 10);
     expect(leveled).toBe(false);
-    const row = state.upserts.find((u) => u.total_xp === 10);
+    const row = state.upserts.find((u) => u.total_xp === 10)!;
     expect(row.level).toBe(1);
   });
 
   it("reports a level-up and cascades into the reach_level quest", async () => {
     state.xpRow = { total_xp: 0, level: 1 };
-    const leveled = await awardQuestXp((globalThis as any).__sbMock, "u1", 100);
+    const leveled = await awardQuestXp(engineSb(), "u1", 100);
     expect(leveled).toBe(true);
     expect(state.upserts.some((u) => u.total_xp === 100 && u.level === 2)).toBe(true);
     // reach_level cascade fetched the (empty) quest list — no crash.
-    expect(tableCalls((globalThis as any).__sbMock.__log, "muse_quests").length).toBeGreaterThan(0);
+    expect(tableCalls(engineSb().__log, "muse_quests").length).toBeGreaterThan(0);
   });
 });
 
 describe("bumpLoginStreak", () => {
   it("returns the stored streak unchanged when already logged in today", async () => {
     state.profile = { login_streak: 4, last_login_date: new Date().toISOString().slice(0, 10) };
-    expect(await bumpLoginStreak((globalThis as any).__sbMock, "u1")).toBe(4);
+    expect(await bumpLoginStreak(engineSb(), "u1")).toBe(4);
     expect(state.updates).toHaveLength(0);
   });
 
   it("increments when the previous login was yesterday", async () => {
     const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
     state.profile = { login_streak: 4, last_login_date: yesterday };
-    expect(await bumpLoginStreak((globalThis as any).__sbMock, "u1")).toBe(5);
+    expect(await bumpLoginStreak(engineSb(), "u1")).toBe(5);
     expect(state.updates[0]).toMatchObject({ login_streak: 5 });
   });
 
   it("resets to 1 after a gap of 2+ days", async () => {
     const longAgo = new Date(Date.now() - 5 * 86400000).toISOString().slice(0, 10);
     state.profile = { login_streak: 9, last_login_date: longAgo };
-    expect(await bumpLoginStreak((globalThis as any).__sbMock, "u1")).toBe(1);
+    expect(await bumpLoginStreak(engineSb(), "u1")).toBe(1);
   });
 
   it("starts at 1 for a brand new profile", async () => {
     state.profile = null;
-    expect(await bumpLoginStreak((globalThis as any).__sbMock, "u1")).toBe(1);
+    expect(await bumpLoginStreak(engineSb(), "u1")).toBe(1);
   });
 
   it("fails silently (returns 0) when the read throws", async () => {
     state.throwOn = "muse_profiles";
-    expect(await bumpLoginStreak((globalThis as any).__sbMock, "u1")).toBe(0);
+    expect(await bumpLoginStreak(engineSb(), "u1")).toBe(0);
   });
 });
 
 describe("bumpQuest", () => {
   it("does nothing when no active quest matches", async () => {
     state.quests = [];
-    await bumpQuest((globalThis as any).__sbMock, "u1", "match");
+    await bumpQuest(engineSb(), "u1", "match");
     expect(state.inserts).toHaveLength(0);
     expect(state.updates).toHaveLength(0);
   });
@@ -298,7 +310,7 @@ describe("bumpQuest", () => {
   it("inserts progress 1 for a fresh non-completing quest", async () => {
     state.quests = [{ id: "q1", frequency: "daily", target_count: 3, xp_reward: 5, title: "Message 3" }];
     state.userQuest = null;
-    await bumpQuest((globalThis as any).__sbMock, "u1", "message");
+    await bumpQuest(engineSb(), "u1", "message");
     const row = state.inserts.find((i) => i.quest_id === "q1");
     expect(row).toMatchObject({ progress: 1, completed: false });
   });
@@ -306,7 +318,7 @@ describe("bumpQuest", () => {
   it("skips a completed quest", async () => {
     state.quests = [{ id: "q1", frequency: "daily", target_count: 1, xp_reward: 0, title: "x" }];
     state.userQuest = { id: "uq1", progress: 1, completed: true };
-    await bumpQuest((globalThis as any).__sbMock, "u1", "message");
+    await bumpQuest(engineSb(), "u1", "message");
     expect(state.updates).toHaveLength(0);
     expect(state.inserts).toHaveLength(0);
   });
@@ -315,8 +327,8 @@ describe("bumpQuest", () => {
     state.quests = [{ id: "q1", frequency: "lifetime", target_count: 1, xp_reward: 20, title: "First post" }];
     state.userQuest = null;
     state.xpRow = { total_xp: 0, level: 1 };
-    await bumpQuest((globalThis as any).__sbMock, "u1", "post_feed");
-    const completed = state.inserts.find((i) => i.quest_id === "q1");
+    await bumpQuest(engineSb(), "u1", "post_feed");
+    const completed = state.inserts.find((i) => i.quest_id === "q1")!;
     expect(completed.completed).toBe(true);
     expect(state.inserts.some((i) => i.type === "quest")).toBe(true);
     expect(state.upserts.some((u) => u.total_xp === 20)).toBe(true);
@@ -324,7 +336,7 @@ describe("bumpQuest", () => {
 
   it("swallows errors so a quest failure never breaks the primary action", async () => {
     state.throwOn = "muse_quests";
-    await expect(bumpQuest((globalThis as any).__sbMock, "u1", "match")).resolves.toBeUndefined();
+    await expect(bumpQuest(engineSb(), "u1", "match")).resolves.toBeUndefined();
   });
 });
 
@@ -333,7 +345,7 @@ describe("setReferralQuestProgress", () => {
     state.referralCount = 3;
     state.quests = [{ id: "r1", target_count: 3, xp_reward: 0, title: "Refer 3" }];
     state.userQuest = null;
-    await setReferralQuestProgress((globalThis as any).__sbMock, "ref1");
+    await setReferralQuestProgress(engineSb(), "ref1");
     const row = state.inserts.find((i) => i.quest_id === "r1");
     expect(row).toMatchObject({ user_id: "ref1", progress: 3, completed: true, period_key: "lifetime:all" });
   });
@@ -342,7 +354,7 @@ describe("setReferralQuestProgress", () => {
     state.referralCount = 99;
     state.quests = [{ id: "r1", target_count: 5, xp_reward: 0, title: "Refer 5" }];
     state.userQuest = { id: "uq", progress: 5, completed: true };
-    await setReferralQuestProgress((globalThis as any).__sbMock, "ref1");
+    await setReferralQuestProgress(engineSb(), "ref1");
     expect(state.updates).toHaveLength(0);
     expect(state.inserts).toHaveLength(0);
   });

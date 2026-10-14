@@ -1,18 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createSb, tableCalls, selectArg, insertValue, updateValue, type SbCall } from "@/test-support/sb";
+import type { NextRequest } from "next/server";
+import { createSb, tableCalls, selectArg, insertValue, updateValue, type SbCall, type SbMock, type SbResult } from "@/test-support/sb";
+import type { ActionContext } from "@/lib/muse-actions/shared";
+
+type TestGlobals = { __sbMock: unknown; __scan?: (...args: unknown[]) => unknown };
+const g = vi.hoisted(() => globalThis as unknown as TestGlobals);
 
 vi.mock("@/lib/rate-limit", () => ({ checkRate: async () => true, checkRateUser: async () => true, clientIp: () => "10.0.0.1" }));
 vi.mock("@/lib/http", () => ({
   safeServerError: () => new Response(JSON.stringify({ error: "Server error" }), { status: 500, headers: { "content-type": "application/json" } }),
 }));
 vi.mock("@/lib/contentScan", () => ({
-  scanWithRekognition: async (...a: any[]) => ((globalThis as any).__scan ? (globalThis as any).__scan(...a) : { scanned: false, flaggedCategories: [] }),
+  scanWithRekognition: async (...a: unknown[]) => (g.__scan ? g.__scan(...a) : { scanned: false, flaggedCategories: [] }),
   logScan: async () => ({}),
 }));
 
-const state: any = { row: null, inserts: [], updates: [], deletes: [] };
+const state: { row: unknown; inserts: Record<string, unknown>[]; updates: Record<string, unknown>[]; deletes: unknown[] } = { row: null, inserts: [], updates: [], deletes: [] };
 vi.mock("@/lib/supabase", () => ({
-  getServiceClient: () => (globalThis as any).__sbMock,
+  getServiceClient: () => g.__sbMock,
   supabase: { auth: { getUser: async () => ({ data: { user: null } }) } },
 }));
 
@@ -22,34 +27,50 @@ import {
   adminResolveIncident, adminRefunds, adminResolveRefund,
 } from "@/lib/muse-actions/admin";
 
-function install(handlers: Record<string, (calls: SbCall[]) => any>) {
-  const sb: any = createSb((table, calls) => {
+type Handler = (calls: SbCall[]) => SbResult;
+function install(handlers: Record<string, Handler>): SbMock {
+  const sb = createSb((table, calls) => {
     const h = handlers[table];
     return h ? h(calls) : { data: null, error: null };
   });
-  (globalThis as any).__sbMock = sb;
+  g.__sbMock = sb;
   return sb;
 }
-function act(rest: any, email = "admin@wyzdesign.com") {
-  return { sb: (globalThis as any).__sbMock, profile: { id: "me1", name: "Tor", email }, rest, ip: "10.0.0.1", req: {} as any } as any;
+const req = {} as unknown as NextRequest;
+function act(rest: Record<string, unknown>, email = "admin@wyzdesign.com"): ActionContext {
+  return { sb: g.__sbMock as ActionContext["sb"], profile: { id: "me1", name: "Tor", email }, rest, ip: "10.0.0.1", req };
 }
 const UUID = "11111111-1111-4111-8111-111111111111";
 
-function makeQuery() {
-  const q: any = {
+type MockQuery = {
+  select: () => MockQuery;
+  eq: () => MockQuery;
+  in: () => MockQuery;
+  limit: () => MockQuery;
+  order: () => MockQuery;
+  or: () => MockQuery;
+  gt: () => MockQuery;
+  insert: (value: Record<string, unknown>) => MockQuery;
+  update: (value: Record<string, unknown>) => MockQuery;
+  delete: () => MockQuery;
+  maybeSingle: () => Promise<{ data: unknown }>;
+  single: () => Promise<{ data: unknown }>;
+};
+function makeQuery(): MockQuery {
+  const q: MockQuery = {
     select: () => q, eq: () => q, in: () => q, limit: () => q, order: () => q, or: () => q, gt: () => q,
-    insert: (v: any) => { state.inserts.push(v); return q; },
-    update: (v: any) => { state.updates.push(v); return q; },
+    insert: (v) => { state.inserts.push(v); return q; },
+    update: (v) => { state.updates.push(v); return q; },
     delete: () => q, maybeSingle: async () => ({ data: state.row ?? null }),
     single: async () => ({ data: state.row ?? null }),
   };
   return q;
 }
-function ctx(rest: any, email: string, row: any) {
+function ctx(rest: Record<string, unknown>, email: string, row: unknown): ActionContext {
   state.row = row;
-  return { sb: { from: () => makeQuery() }, profile: { id: "me1", email }, rest, ip: "10.0.0.1", req: {} as any } as any;
+  return { sb: { from: () => makeQuery() } as unknown as ActionContext["sb"], profile: { id: "me1", email }, rest, ip: "10.0.0.1", req };
 }
-function ctxAdmin(rest: any, row: any) { process.env.ADMIN_EMAILS = "admin@wyzdesign.com"; return ctx(rest, "admin@wyzdesign.com", row); }
+function ctxAdmin(rest: Record<string, unknown>, row: unknown): ActionContext { process.env.ADMIN_EMAILS = "admin@wyzdesign.com"; return ctx(rest, "admin@wyzdesign.com", row); }
 
 beforeEach(() => { vi.clearAllMocks(); state.row = null; state.inserts = []; state.updates = []; state.deletes = []; process.env.ADMIN_EMAILS = "admin@wyzdesign.com"; });
 
@@ -100,17 +121,17 @@ describe("adminResolveReport — closing out a report (moderation queue)", () =>
 
   it("dismisses a report: writes status=dismissed + resolved_at/by, and an audit log entry", async () => {
     const r = await adminResolveReport(ctxAdmin({ reportId: REPORT_ID, resolution: "dismissed", note: "False alarm" }, null));
-    expect((r as any).status ?? 200).not.toBe(403);
-    const reportUpdate = state.updates.find((u: any) => u.status === "dismissed");
+    expect((r as Response).status ?? 200).not.toBe(403);
+    const reportUpdate = state.updates.find((u) => u.status === "dismissed")!;
     expect(reportUpdate).toBeTruthy();
     expect(reportUpdate.resolved_by).toBe("me1");
     expect(reportUpdate.resolution_note).toBe("False alarm");
-    expect(state.inserts.some((i: any) => String(i.query_text || "").startsWith(`resolve_report:${REPORT_ID}:dismissed`))).toBe(true);
+    expect(state.inserts.some((i) => String(i.query_text || "").startsWith(`resolve_report:${REPORT_ID}:dismissed`))).toBe(true);
   });
 
   it("actions a report: writes status=actioned", async () => {
     await adminResolveReport(ctxAdmin({ reportId: REPORT_ID, resolution: "actioned" }, null));
-    expect(state.updates.some((u: any) => u.status === "actioned")).toBe(true);
+    expect(state.updates.some((u) => u.status === "actioned")).toBe(true);
   });
 });
 
@@ -119,18 +140,18 @@ describe("adminSuspendUser off a report row closes the report too", () => {
 
   it("updates the report to status=actioned when reportId is supplied", async () => {
     await adminSuspendUser(ctxAdmin({ targetUserId: "target1", reason: "spam", durationDays: 7, reportId: REPORT_ID }, null));
-    const reportUpdate = state.updates.find((u: any) => u.status === "actioned");
+    const reportUpdate = state.updates.find((u) => u.status === "actioned")!;
     expect(reportUpdate).toBeTruthy();
     expect(reportUpdate.resolved_by).toBe("me1");
   });
 
   it("does not touch muse_reports when no reportId is supplied", async () => {
     await adminSuspendUser(ctxAdmin({ targetUserId: "target2", reason: "spam", durationDays: 7 }, null));
-    expect(state.updates.some((u: any) => u.status === "actioned")).toBe(false);
+    expect(state.updates.some((u) => u.status === "actioned")).toBe(false);
   });
 });
 
-beforeEach(() => { (globalThis as any).__scan = undefined; vi.restoreAllMocks(); });
+beforeEach(() => { g.__scan = undefined; vi.restoreAllMocks(); });
 
 describe("adminResolveAppeal", () => {
   it("403s for a non-admin", async () => {
@@ -151,7 +172,13 @@ describe("adminResolveAppeal", () => {
 });
 
 describe("adminBrain", () => {
-  function handlers(over: Record<string, any> = {}) {
+  type Overrides = {
+    users?: unknown[]; signups?: unknown[]; userCount?: number; matchCount?: number;
+    reports?: unknown[]; reportCount?: number; strikes?: unknown[]; strikeCount?: number;
+    disclosures?: unknown[]; activity?: unknown[]; checkins?: unknown[];
+    promptResponses?: number; prompts?: number; extra?: Record<string, Handler>;
+  };
+  function handlers(over: Overrides = {}): Record<string, Handler> {
     return {
       muse_profiles: (calls: SbCall[]) => {
         if (calls.some((c) => c.method === "ilike")) return { data: over.users ?? [] };
@@ -312,8 +339,8 @@ describe("adminScanNsfw", () => {
     expect((await adminScanNsfw(act({})) as Response).status).toBe(400);
   });
   it("scans allowlisted avatars, flags suggestive results and counts errors", async () => {
-    (globalThis as any).__scan = async () => ({ scanned: true, flaggedCategories: ["Suggestive"] });
-    vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, arrayBuffer: async () => new ArrayBuffer(8) } as any);
+    g.__scan = async () => ({ scanned: true, flaggedCategories: ["Suggestive"] });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, arrayBuffer: async () => new ArrayBuffer(8) } as unknown as Response);
     const sb = install({
       muse_profiles: (calls) => (calls.some((c) => ["update", "insert"].includes(c.method)) ? { data: null } : { data: [
         { id: "p1", avatar: "https://x.supabase.co/a.jpg", name: "A" },
@@ -329,8 +356,8 @@ describe("adminScanNsfw", () => {
     expect(tableCalls(sb.__log, "muse_profiles").some((c) => c.method === "update")).toBe(true);
   });
   it("scans a single user by id", async () => {
-    (globalThis as any).__scan = async () => ({ scanned: true, flaggedCategories: [] });
-    vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, arrayBuffer: async () => new ArrayBuffer(4) } as any);
+    g.__scan = async () => ({ scanned: true, flaggedCategories: [] });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, arrayBuffer: async () => new ArrayBuffer(4) } as unknown as Response);
     install({ muse_profiles: () => ({ data: { id: "p1", avatar: "https://x.supabase.co/a.jpg", name: "A" } }), muse_admin_audit_log: () => ({ data: null }) });
     const body = await (await adminScanNsfw(act({ userId: "p1" })) as Response).json();
     expect(body.scanned).toBe(1);

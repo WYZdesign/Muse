@@ -1,32 +1,51 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { NextRequest } from "next/server";
 import { createSb } from "@/test-support/sb";
+import type { ActionContext } from "@/lib/muse-actions/shared";
 
 vi.mock("@/lib/rate-limit", () => ({ checkRate: async () => true, checkRateUser: async () => true, clientIp: () => "10.0.0.1" }));
 vi.mock("@/lib/request-safety", () => ({ sanitizeText: (s: string, n: number) => String(s).slice(0, n) }));
-vi.mock("@/lib/email", () => ({ sendEmail: async () => ({}), notify: (...a: any[]) => ({ subject: a[1] || "", text: a[2] || "" }) }));
+vi.mock("@/lib/email", () => ({ sendEmail: async () => ({}), notify: (...a: unknown[]) => ({ subject: a[1] || "", text: a[2] || "" }) }));
 vi.mock("@/lib/push", () => ({ pushToProfile: async () => ({}) }));
 
-const state: any = { row: null, inserts: [], updates: [] };
+type TestGlobals = { __sbMock: unknown };
+const g = vi.hoisted(() => globalThis as unknown as TestGlobals);
+
+const state: { row: unknown; inserts: Record<string, unknown>[]; updates: unknown[] } = { row: null, inserts: [], updates: [] };
 vi.mock("@/lib/supabase", () => ({
-  getServiceClient: () => (globalThis as any).__sbMock,
+  getServiceClient: () => g.__sbMock,
   supabase: { auth: { getUser: async () => ({ data: { user: null } }) } },
 }));
 
 import { messageSend, messageRequestsGet } from "@/lib/muse-actions/messaging";
 
-function makeQuery() {
-  const q: any = {
+type MockQuery = {
+  select: () => MockQuery;
+  eq: () => MockQuery;
+  in: () => MockQuery;
+  limit: () => MockQuery;
+  order: () => MockQuery;
+  or: () => MockQuery;
+  insert: (value: Record<string, unknown>) => MockQuery;
+  update: (value: Record<string, unknown>) => MockQuery;
+  delete: () => MockQuery;
+  maybeSingle: () => Promise<{ data: unknown }>;
+  single: () => Promise<{ data: unknown }>;
+};
+function makeQuery(): MockQuery {
+  const q: MockQuery = {
     select: () => q, eq: () => q, in: () => q, limit: () => q, order: () => q, or: () => q,
-    insert: (v: any) => { state.inserts.push(v); return q; },
-    update: (v: any) => { state.updates.push(v); return q; },
+    insert: (v) => { state.inserts.push(v); return q; },
+    update: (v) => { state.updates.push(v); return q; },
     delete: () => q, maybeSingle: async () => ({ data: state.row ?? null }),
     single: async () => ({ data: state.row ?? null }),
   };
   return q;
 }
-function ctx(rest: any, row: any) {
+const req = {} as unknown as NextRequest;
+function ctx(rest: Record<string, unknown>, row: unknown): ActionContext {
   state.row = row;
-  return { sb: { from: () => makeQuery() }, profile: { id: "me1", name: "Ada" }, rest, ip: "10.0.0.1", req: {} as any } as any;
+  return { sb: { from: () => makeQuery() } as unknown as ActionContext["sb"], profile: { id: "me1", name: "Ada" }, rest, ip: "10.0.0.1", req };
 }
 
 beforeEach(() => { vi.clearAllMocks(); state.row = null; state.inserts = []; state.updates = []; });
@@ -74,7 +93,7 @@ describe("messageSend — message-request path is moderated like a real message"
     expect((r as Response).status).toBe(403);
     const body = await (r as Response).json();
     expect(body.code).toBe("SAFETY_BLOCK");
-    expect(state.inserts.some((i: any) => "message_preview" in (i || {}))).toBe(false);
+    expect(state.inserts.some((i) => "message_preview" in (i || {}))).toBe(false);
     vi.doUnmock("@/lib/aiModeration");
     vi.resetModules();
   });
@@ -84,7 +103,7 @@ describe("messageSend — message-request path is moderated like a real message"
     expect((r as Response).status).toBe(409);
     const body = await (r as Response).json();
     expect(body.code).toBe("DISCLOSURE_REQUIRED");
-    expect(state.inserts.some((i: any) => "message_preview" in (i || {}))).toBe(false);
+    expect(state.inserts.some((i) => "message_preview" in (i || {}))).toBe(false);
   });
 });
 
@@ -96,7 +115,7 @@ describe("messageSend — message-request path is moderated like a real message"
 // should ever come back from this query.
 describe("messageRequestsGet — only pending requests surface in the inbox", () => {
   it("queries muse_message_requests scoped to this recipient and status=pending", async () => {
-    (globalThis as any).__sbMock = createSb((table, calls) => {
+    g.__sbMock = createSb((table, calls) => {
       if (table === "muse_message_requests") {
         const toCall = calls.find((c) => c.method === "eq" && c.args[0] === "request_to");
         const statusCall = calls.find((c) => c.method === "eq" && c.args[0] === "status");
@@ -106,7 +125,7 @@ describe("messageRequestsGet — only pending requests surface in the inbox", ()
       }
       return { data: null, error: null };
     });
-    const r = await messageRequestsGet({ sb: (globalThis as any).__sbMock, profile: { id: "me1", name: "Ada" }, rest: {}, ip: "10.0.0.1", req: {} as any } as any);
+    const r = await messageRequestsGet({ sb: g.__sbMock as ActionContext["sb"], profile: { id: "me1", name: "Ada" }, rest: {}, ip: "10.0.0.1", req });
     expect((r as Response).status).toBe(200);
     const body = await (r as Response).json();
     expect(body.requests).toEqual([{ id: "req1", status: "pending" }]);

@@ -1,34 +1,54 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { createSb } from "@/test-support/sb";
+import type { NextRequest } from "next/server";
+import { createSb, type SbCall, type SbMock, type SbResult } from "@/test-support/sb";
+import type { ActionContext } from "@/lib/muse-actions/shared";
 
 vi.mock("@/lib/rate-limit", () => ({ checkRate: async () => true, checkRateUser: async () => true, clientIp: () => "10.0.0.1" }));
 vi.mock("@/lib/request-safety", () => ({ sanitizeText: (s: string, n: number) => String(s).slice(0, n) }));
-vi.mock("@/lib/email", () => ({ sendEmail: async () => ({}), notify: (...a: any[]) => ({ subject: a[1] || "", text: a[2] || "" }) }));
+vi.mock("@/lib/email", () => ({ sendEmail: async () => ({}), notify: (...a: unknown[]) => ({ subject: a[1] || "", text: a[2] || "" }) }));
 vi.mock("@/lib/push", () => ({ pushToProfile: async () => ({}) }));
 vi.mock("@/lib/contentScan", () => ({ scanWithRekognition: async () => ({ safe: true }), logScan: async () => ({}) }));
 vi.mock("@/lib/aiDocs", () => ({ askMuseAI: async () => ({ answer: "" }) }));
 
-const state: any = { row: null, inserts: [], updates: [], deletes: [] };
+type TestGlobals = { __sbMock: unknown };
+const g = vi.hoisted(() => globalThis as unknown as TestGlobals);
+
+const state: { row: unknown; inserts: Record<string, unknown>[]; updates: unknown[]; deletes: unknown[] } = { row: null, inserts: [], updates: [], deletes: [] };
 vi.mock("@/lib/supabase", () => ({
-  getServiceClient: () => (globalThis as any).__sbMock,
+  getServiceClient: () => g.__sbMock,
   supabase: { auth: { getUser: async () => ({ data: { user: null } }) } },
 }));
 
 import { reportCreate, userBlock, forumDispatch, forumPostPin, forumPostLock } from "@/lib/muse-actions/forum";
 
-function makeQuery() {
-  const q: any = {
-    select: () => q, eq: () => q, in: () => q, limit: () => q, order: () => q, or: () => q,
-    insert: (v: any) => { state.inserts.push(v); return q; },
-    update: (v: any) => { state.updates.push(v); return q; },
+type MockQuery = {
+  select: () => MockQuery;
+  eq: () => MockQuery;
+  in: () => MockQuery;
+  limit: () => MockQuery;
+  order: () => MockQuery;
+  or: () => MockQuery;
+  gte: () => MockQuery;
+  insert: (value: Record<string, unknown>) => MockQuery;
+  update: (value: Record<string, unknown>) => MockQuery;
+  delete: () => MockQuery;
+  maybeSingle: () => Promise<{ data: unknown }>;
+  single: () => Promise<{ data: unknown }>;
+};
+function makeQuery(): MockQuery {
+  const q: MockQuery = {
+    select: () => q, eq: () => q, in: () => q, limit: () => q, order: () => q, or: () => q, gte: () => q,
+    insert: (v) => { state.inserts.push(v); return q; },
+    update: (v) => { state.updates.push(v); return q; },
     delete: () => q, maybeSingle: async () => ({ data: state.row ?? null }),
     single: async () => ({ data: state.row ?? null }),
   };
   return q;
 }
-function ctx(rest: any, row: any) {
+const req = {} as unknown as NextRequest;
+function ctx(rest: Record<string, unknown>, row: unknown): ActionContext {
   state.row = row;
-  return { sb: { from: () => makeQuery() }, profile: { id: "me1", name: "Ada" }, rest, ip: "10.0.0.1", req: {} as any } as any;
+  return { sb: { from: () => makeQuery() } as unknown as ActionContext["sb"], profile: { id: "me1", name: "Ada" }, rest, ip: "10.0.0.1", req };
 }
 
 beforeEach(() => { vi.clearAllMocks(); state.row = null; state.inserts = []; state.updates = []; state.deletes = []; });
@@ -71,7 +91,7 @@ describe("forum/safety actions", () => {
       // produce a 400 "Target not found". Success here proves the fix.
       const r = await reportCreate(ctx({ target_id: uuid, target_type, reason: "spam" }, null));
       expect((r as Response).status ?? 200).not.toBe(400);
-      expect(state.inserts.some((i: any) => i.target_type === target_type)).toBe(true);
+      expect(state.inserts.some((i) => i.target_type === target_type)).toBe(true);
     }
   );
 
@@ -96,15 +116,15 @@ describe("forum admin gate + vote dedup", () => {
 
   // Per-table row + call log so a single test can distinguish the
   // activity_log dedup lookup from the forum_posts votes lookup.
-  function tableCtx(rest: any, rows: Record<string, any>, profile: any = { id: "me1", name: "Ada", email: "someone@example.com" }) {
-    const inserts: any[] = [];
-    const updates: any[] = [];
+  function tableCtx(rest: Record<string, unknown>, rows: Record<string, unknown>, profile: { id: string; name?: string; email?: string } = { id: "me1", name: "Ada", email: "someone@example.com" }) {
+    const inserts: Record<string, unknown>[] = [];
+    const updates: Record<string, unknown>[] = [];
     const sb = {
       from: (table: string) => {
-        const q: any = {
+        const q: MockQuery = {
           select: () => q, eq: () => q, in: () => q, limit: () => q, order: () => q, or: () => q, gte: () => q,
-          insert: (v: any) => { inserts.push({ table, ...v }); return q; },
-          update: (v: any) => { updates.push({ table, ...v }); return q; },
+          insert: (v) => { inserts.push({ table, ...v }); return q; },
+          update: (v) => { updates.push({ table, ...v }); return q; },
           delete: () => q,
           maybeSingle: async () => ({ data: rows[table] ?? null }),
           single: async () => ({ data: rows[table] ?? null }),
@@ -112,7 +132,8 @@ describe("forum admin gate + vote dedup", () => {
         return q;
       },
     };
-    return { ctx: { sb, profile, rest, ip: "10.0.0.1", rawType: rest.type, req: {} as any } as any, inserts, updates };
+    const actionCtx: ActionContext = { sb: sb as unknown as ActionContext["sb"], profile, rest, ip: "10.0.0.1", rawType: rest.type as string | undefined, req };
+    return { ctx: actionCtx, inserts, updates };
   }
 
   it("forumPostPin: real admin (via ADMIN_EMAILS) can pin someone else's post", async () => {
@@ -191,20 +212,20 @@ describe("forum replies — blocking", () => {
 
   it("get-replies excludes a reply from a user the viewer blocked", async () => {
     const sb = sbWithBlocks();
-    const ctx = { sb, profile: { id: "me1", name: "Ada" }, rest: { postId }, ip: "10.0.0.1", rawType: "get-replies", req: {} as any } as any;
+    const ctx: ActionContext = { sb: sb as unknown as ActionContext["sb"], profile: { id: "me1", name: "Ada" }, rest: { postId }, ip: "10.0.0.1", rawType: "get-replies", req };
     const r = await forumDispatch(ctx);
     const body = await (r as Response).json();
     expect(body.success).toBe(true);
-    expect(body.replies.map((x: any) => x.id)).toEqual(["r1", "r3"]);
+    expect(body.replies.map((x: { id: string }) => x.id)).toEqual(["r1", "r3"]);
   });
 
   it("get-thread excludes a reply from a user the viewer blocked, even though it's in the fetched thread", async () => {
     const sb = sbWithBlocks();
-    const ctx = { sb, profile: { id: "me1", name: "Ada" }, rest: { replyId: "r1" }, ip: "10.0.0.1", rawType: "get-thread", req: {} as any } as any;
+    const ctx: ActionContext = { sb: sb as unknown as ActionContext["sb"], profile: { id: "me1", name: "Ada" }, rest: { replyId: "r1" }, ip: "10.0.0.1", rawType: "get-thread", req };
     const r = await forumDispatch(ctx);
     const body = await (r as Response).json();
     expect(body.success).toBe(true);
-    expect(body.replies.map((x: any) => x.id)).toContain("r1");
-    expect(body.replies.map((x: any) => x.id)).not.toContain("r2");
+    expect(body.replies.map((x: { id: string }) => x.id)).toContain("r1");
+    expect(body.replies.map((x: { id: string }) => x.id)).not.toContain("r2");
   });
 });

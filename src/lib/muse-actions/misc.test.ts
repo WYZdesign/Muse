@@ -1,14 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createSb, tableCalls, eqOf, insertValue, updateValue, type SbCall } from "@/test-support/sb";
+import type { NextRequest } from "next/server";
+import { createSb, tableCalls, eqOf, insertValue, updateValue, type SbCall, type SbMock, type SbResult } from "@/test-support/sb";
+import type { ActionContext } from "@/lib/muse-actions/shared";
 
 vi.mock("@/lib/rate-limit", () => ({ checkRate: async () => true, checkRateUser: async () => true, clientIp: () => "10.0.0.1" }));
 vi.mock("@/lib/request-safety", () => ({ sanitizeText: (s: string, n: number) => String(s).slice(0, n) }));
-vi.mock("@/lib/email", () => ({ sendEmail: async () => ({}), notify: (...a: any[]) => ({ subject: a[1] || "", text: a[2] || "" }) }));
+vi.mock("@/lib/email", () => ({ sendEmail: async () => ({}), notify: (...a: unknown[]) => ({ subject: a[1] || "", text: a[2] || "" }) }));
 vi.mock("@/lib/push", () => ({ pushToProfile: async () => ({}) }));
 
-const state: any = { row: null, inserts: [], updates: [], deletes: [] };
+type TestGlobals = { __sbMock: unknown };
+const g = vi.hoisted(() => globalThis as unknown as TestGlobals);
+
+const state: { row: unknown; inserts: unknown[]; updates: unknown[]; deletes: unknown[] } = { row: null, inserts: [], updates: [], deletes: [] };
 vi.mock("@/lib/supabase", () => ({
-  getServiceClient: () => (globalThis as any).__sbMock,
+  getServiceClient: () => g.__sbMock,
   supabase: { auth: { getUser: async () => ({ data: { user: null } }) } },
 }));
 
@@ -19,32 +24,49 @@ import {
   addBoostInventory, BOOST_DURATIONS,
 } from "@/lib/muse-actions/misc";
 
-function install(handlers: Record<string, (calls: SbCall[]) => any>) {
-  const sb: any = createSb((table, calls) => {
+type Handler = (calls: SbCall[]) => SbResult;
+type TestSb = SbMock & ActionContext["sb"];
+function install(handlers: Record<string, Handler>): TestSb {
+  const sb = createSb((table, calls) => {
     const h = handlers[table];
     return h ? h(calls) : { data: null, error: null };
-  });
-  (globalThis as any).__sbMock = sb;
+  }) as unknown as TestSb;
+  g.__sbMock = sb;
   return sb;
 }
-function act(rest: any) {
-  return { sb: (globalThis as any).__sbMock, profile: { id: "me1", name: "Ada" }, rest, ip: "10.0.0.1", req: {} as any } as any;
+function sbMock(): SbMock { return g.__sbMock as SbMock; }
+function clientSb(): ActionContext["sb"] { return g.__sbMock as ActionContext["sb"]; }
+const req = {} as unknown as NextRequest;
+function act(rest: Record<string, unknown>): ActionContext {
+  return { sb: g.__sbMock as ActionContext["sb"], profile: { id: "me1", name: "Ada" }, rest, ip: "10.0.0.1", req };
 }
 const UUID = "11111111-1111-4111-8111-111111111111";
 
-function makeQuery() {
-  const q: any = {
+type MockQuery = {
+  select: () => MockQuery;
+  eq: () => MockQuery;
+  in: () => MockQuery;
+  order: () => MockQuery;
+  limit: () => MockQuery;
+  insert: (value: Record<string, unknown>) => MockQuery;
+  update: (value: Record<string, unknown>) => MockQuery;
+  delete: () => MockQuery;
+  maybeSingle: () => Promise<{ data: unknown }>;
+  single: () => Promise<{ data: unknown }>;
+};
+function makeQuery(): MockQuery {
+  const q: MockQuery = {
     select: () => q, eq: () => q, in: () => q, order: () => q, limit: () => q,
-    insert: (v: any) => { state.inserts.push(v); return q; },
-    update: (v: any) => { state.updates.push(v); return q; },
+    insert: (v) => { state.inserts.push(v); return q; },
+    update: (v) => { state.updates.push(v); return q; },
     delete: () => q, maybeSingle: async () => ({ data: state.row ?? null }),
     single: async () => ({ data: state.row ?? null }),
   };
   return q;
 }
-function ctx(rest: any, row: any) {
+function ctx(rest: Record<string, unknown>, row: unknown): ActionContext {
   state.row = row;
-  return { sb: { from: () => makeQuery() }, profile: { id: "me1", name: "Ada" }, rest, ip: "10.0.0.1", req: {} as any } as any;
+  return { sb: { from: () => makeQuery() } as unknown as ActionContext["sb"], profile: { id: "me1", name: "Ada" }, rest, ip: "10.0.0.1", req };
 }
 
 beforeEach(() => { vi.clearAllMocks(); state.row = null; state.inserts = []; state.updates = []; state.deletes = []; });
@@ -171,7 +193,7 @@ describe("paymentsGet", () => {
       muse_booking_payments: (calls) => (eqOf(calls, "payee_id") ? { data: [{ id: "p1", created_at: "2026-01-01T00:00:00Z" }, { id: "p2", created_at: "2026-03-01T00:00:00Z" }] } : { data: [{ id: "p2", created_at: "2026-03-01T00:00:00Z" }, { id: "p3", created_at: "2026-05-01T00:00:00Z" }] }),
     });
     const body = await (await paymentsGet(act({})) as Response).json();
-    expect(body.payments.map((p: any) => p.id)).toEqual(["p3", "p2", "p1"]);
+    expect(body.payments.map((p: { id: string }) => p.id)).toEqual(["p3", "p2", "p1"]);
   });
 });
 
@@ -237,9 +259,9 @@ describe("searchAll", () => {
       muse_blocks: () => ({ data: [{ user_id: "me1", target_id: "blocked" }] }),
     });
     const body = await (await searchAll(act({ query: "photo" })) as Response).json();
-    expect(body.results.users.map((u: any) => u.id)).toEqual(["ok"]);
-    expect(body.results.briefs.map((b: any) => b.id)).toEqual(["b2"]);
-    expect(body.results.forum.map((f: any) => f.id)).toEqual(["f2"]);
+    expect(body.results.users.map((u: { id: string }) => u.id)).toEqual(["ok"]);
+    expect(body.results.briefs.map((b: { id: string }) => b.id)).toEqual(["b2"]);
+    expect(body.results.forum.map((f: { id: string }) => f.id)).toEqual(["f2"]);
   });
 
   it("search type=messages searches the caller's conversations and resolves peers", async () => {
@@ -260,8 +282,8 @@ describe("boost — pure helpers", () => {
   });
   it("spendBoost returns null for an unknown duration or missing profile", async () => {
     install({ muse_profiles: () => ({ data: null }) });
-    expect(await spendBoost((globalThis as any).__sbMock, "u1", "bogus")).toBeNull();
-    expect(await spendBoost((globalThis as any).__sbMock, "u1", "24h")).toBeNull();
+    expect(await spendBoost(clientSb(), "u1", "bogus")).toBeNull();
+    expect(await spendBoost(clientSb(), "u1", "24h")).toBeNull();
   });
   it("spendBoost consumes inventory first", async () => {
     const sb = install({ muse_profiles: (calls) => (calls.some((c) => c.method === "update") ? { data: null } : { data: { tier: "free", boost_inventory: 2, boost_expires_at: null } }) });
@@ -286,11 +308,11 @@ describe("boost — pure helpers", () => {
   });
   it("getBoostStatus + addBoostInventory work off the profile row", async () => {
     install({ muse_profiles: (calls) => (calls.some((c) => c.method === "update") ? { data: null } : { data: { tier: "free", boost_inventory: 1, boost_expires_at: new Date(Date.now() + 100000).toISOString() } }) });
-    const st = await getBoostStatus((globalThis as any).__sbMock, "u1");
+    const st = await getBoostStatus(clientSb(), "u1");
     expect(st).toMatchObject({ isPro: false, inventory: 1, isBoosted: true });
-    await addBoostInventory((globalThis as any).__sbMock, "u1", 3);
-    expect(tableCalls((globalThis as any).__sbMock.__log, "muse_profiles").some((c) => c.method === "update")).toBe(true);
-    await addBoostInventory((globalThis as any).__sbMock, "u1", 0);
+    await addBoostInventory(clientSb(), "u1", 3);
+    expect(tableCalls(sbMock().__log, "muse_profiles").some((c) => c.method === "update")).toBe(true);
+    await addBoostInventory(clientSb(), "u1", 0);
   });
 });
 
@@ -371,12 +393,12 @@ describe("saved searches + photo likes", () => {
   });
   it("savedSearchAlerts returns none without searches and alerts otherwise", async () => {
     install({ muse_saved_searches: (calls) => (calls.some((c) => c.method === "update") ? { data: null } : { data: [] }) });
-    expect(await (await savedSearchAlerts({ sb: (globalThis as any).__sbMock, profile: { id: "me1" } } as any) as Response).json()).toEqual({ alerts: [] });
+    expect(await (await savedSearchAlerts({ sb: clientSb(), profile: { id: "me1" } }) as Response).json()).toEqual({ alerts: [] });
     install({
       muse_saved_searches: (calls) => (calls.some((c) => c.method === "update") ? { data: null } : { data: [{ id: "s1", name: "Casting", query: "photo", filters: { verified: true, styles: ["editorial"] }, last_notified_at: null }] }),
       muse_profiles: () => ({ data: [{ id: "u1" }] }),
     });
-    const body = await (await savedSearchAlerts({ sb: (globalThis as any).__sbMock, profile: { id: "me1" } } as any) as Response).json();
+    const body = await (await savedSearchAlerts({ sb: clientSb(), profile: { id: "me1" } }) as Response).json();
     expect(body.alerts[0]).toMatchObject({ searchId: "s1", name: "Casting" });
   });
   it("togglePhotoLike requires a sane url and toggles", async () => {
@@ -389,9 +411,9 @@ describe("saved searches + photo likes", () => {
     expect(tableCalls(sb.__log, "muse_photo_likes").some((c) => c.method === "delete")).toBe(true);
   });
   it("togglePhotoLike inserts a fresh like and returns the count", async () => {
-    const sb = install({ muse_photo_likes: (calls) => (calls.some((c) => c.method === "insert") ? { data: null } : calls.some((c) => c.method === "select" && (c.args[1] as any)?.count === "exact") ? { count: 5 } : { data: null }) });
+    const sb = install({ muse_photo_likes: (calls) => (calls.some((c) => c.method === "insert") ? { data: null } : calls.some((c) => c.method === "select" && c.args[1]?.count === "exact") ? { count: 5 } : { data: null }) });
     const body = await (await togglePhotoLike(act({ photoUrl: "https://cdn/p.jpg" })) as Response).json();
     expect(body).toEqual({ success: true, liked: true, count: 5 });
-    expect(tableCalls((globalThis as any).__sbMock.__log, "muse_photo_likes").some((c) => c.method === "insert")).toBe(true);
+    expect(tableCalls(sbMock().__log, "muse_photo_likes").some((c) => c.method === "insert")).toBe(true);
   });
 });
