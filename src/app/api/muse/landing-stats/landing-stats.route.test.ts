@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { NextRequest } from "next/server";
 
 vi.mock("@/lib/rate-limit", () => ({
   checkRate: vi.fn(async () => true),
@@ -16,7 +17,7 @@ import { GET } from "@/app/api/muse/landing-stats/route";
 import { checkRate } from "@/lib/rate-limit";
 
 function req() {
-  return { headers: { get: () => null } } as any;
+  return { headers: { get: () => null } } as unknown as NextRequest;
 }
 
 describe("landing-stats route", () => {
@@ -33,7 +34,7 @@ describe("landing-stats route", () => {
   });
 
   it("429 when rate limited", async () => {
-    (checkRate as any).mockResolvedValueOnce(false);
+    vi.mocked(checkRate).mockResolvedValueOnce(false);
     const r = await GET(req());
     expect(r.status).toBe(429);
     expect(await r.json()).toEqual({ count: 0 });
@@ -47,11 +48,11 @@ describe("landing-stats route", () => {
 
   it("returns count 0 on service errors", async () => {
     const { getServiceClient } = await import("@/lib/supabase");
-    (getServiceClient as any).mockReturnValueOnce({
+    vi.mocked(getServiceClient).mockReturnValueOnce({
       from: () => {
         throw new Error("down");
       },
-    });
+    } as unknown as ReturnType<typeof getServiceClient>);
     const r = await GET(req());
     expect(r.status).toBe(200);
     expect(await r.json()).toEqual({ count: 0 });

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { NextRequest } from "next/server";
 
 vi.mock("@/lib/rate-limit", () => ({
   checkRate: vi.fn(async () => true),
@@ -24,7 +25,7 @@ function mockReq(body: unknown, headers: Record<string, string> = {}) {
   return {
     json: async () => body,
     headers: { get: (n: string) => headers[n] ?? null },
-  } as any;
+  } as unknown as NextRequest;
 }
 
 describe("depth route", () => {
@@ -84,7 +85,7 @@ describe("depth route", () => {
     vi.resetModules();
     vi.stubEnv("REPLICATE_API_TOKEN", "r8_test");
     vi.stubEnv("REPLICATE_DEPTH_MODEL_VERSION", ownerModelVersion());
-    (checkRate as any).mockResolvedValueOnce(false);
+    vi.mocked(checkRate).mockResolvedValueOnce(false);
     const fresh = await import("@/app/api/muse/depth/route");
     const r = await fresh.POST(
       mockReq(

@@ -1,8 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { NextRequest } from "next/server";
+
+type EmbRow = { id: string; name: string; type: string; embedding: number[] };
+type MockQuery = {
+  select: () => MockQuery;
+  not: () => MockQuery;
+  limit: () => MockQuery;
+  eq: () => MockQuery;
+  data: EmbRow[] | null;
+  error: null;
+  count: number;
+  then: (resolve: (value: { data: EmbRow[] | null; error: null; count: number }) => unknown) => unknown;
+};
+type TestGlobals = typeof globalThis & {
+  __authUser?: { data: { user: { id: string } | null } };
+  __sbMock?: { from: (tbl: string) => MockQuery };
+};
 
 vi.mock("@/lib/supabase", () => ({
-  supabase: { auth: { getUser: async (token: string) => (globalThis as any).__authUser || { data: { user: null } } } },
-  getServiceClient: () => (globalThis as any).__sbMock,
+  supabase: { auth: { getUser: async (token: string) => (globalThis as TestGlobals).__authUser || { data: { user: null } } } },
+  getServiceClient: () => (globalThis as TestGlobals).__sbMock,
 }));
 vi.mock("@/lib/rate-limit", () => ({ checkRate: async () => true, clientIp: () => "10.0.0.1" }));
 vi.mock("@/lib/ai", () => ({
@@ -13,9 +30,9 @@ vi.mock("@/lib/ai", () => ({
 
 import { POST } from "@/app/api/muse/embeddings/route";
 
-(globalThis as any).__sbMock = {
+(globalThis as TestGlobals).__sbMock = {
   from: (tbl: string) => {
-    const q: any = {
+    const q: MockQuery = {
       select: () => q,
       not: () => q,
       limit: () => q,
@@ -26,8 +43,8 @@ import { POST } from "@/app/api/muse/embeddings/route";
       ] : null,
       error: null,
       count: 10,
+      then: (resolve) => resolve({ data: q.data, error: q.error, count: q.count }),
     };
-    q.then = (resolve: any) => resolve({ data: q.data, error: q.error, count: q.count });
     return q;
   },
 };
@@ -43,17 +60,17 @@ function req(body: unknown) {
             : null,
     },
     json: async () => body,
-  } as any;
+  } as unknown as NextRequest;
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
-  (globalThis as any).__authUser = { data: { user: { id: "u1" } } };
+  (globalThis as TestGlobals).__authUser = { data: { user: { id: "u1" } } };
 });
 
 describe("embeddings route", () => {
   it("rejects missing auth with 401", async () => {
-    (globalThis as any).__authUser = { data: { user: null } };
+    (globalThis as TestGlobals).__authUser = { data: { user: null } };
     const r = await POST(req({ action: "embed", text: "hello" }));
     expect(r.status).toBe(401);
   });

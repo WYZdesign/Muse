@@ -95,10 +95,12 @@ describe("viewerSide / viewerSideOf", () => {
   });
 });
 
+type CapabilityView = { canHireBook?: boolean; canApplyToBriefs?: boolean };
+
 describe("role capabilities", () => {
   it("returns the matching capability object", () => {
-    const muse = getRoleCapabilities("muse") as any;
-    const creative = getRoleCapabilities("creative") as any;
+    const muse = getRoleCapabilities("muse") as CapabilityView;
+    const creative = getRoleCapabilities("creative") as CapabilityView;
     expect(muse.canHireBook).toBe(true);
     expect(creative.canApplyToBriefs).toBe(true);
     expect(creative.canHireBook).toBeUndefined();

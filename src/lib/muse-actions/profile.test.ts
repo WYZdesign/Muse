@@ -1,24 +1,36 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { ActionContext } from "@/lib/muse-actions/shared";
 
 vi.mock("@/lib/request-safety", () => ({ sanitizeText: (s: string, n: number) => String(s).slice(0, n) }));
 
-const state: any = { updates: [] };
+const state: { updates: Record<string, unknown>[] } = { updates: [] };
 vi.mock("@/lib/supabase", () => ({
-  getServiceClient: () => (globalThis as any).__sbMock,
+  getServiceClient: () => (globalThis as typeof globalThis & { __sbMock: unknown }).__sbMock,
   supabase: { auth: { getUser: async () => ({ data: { user: null } }) } },
 }));
 
 import { profileUpdate } from "@/lib/muse-actions/profile";
 
-function makeQuery() {
-  const q: any = {
-    update: (v: any) => { state.updates.push(v); return q; },
+type Query = {
+  update: (v: Record<string, unknown>) => Query;
+  eq: () => Query;
+};
+
+function makeQuery(): Query {
+  const q: Query = {
+    update: (v) => { state.updates.push(v); return q; },
     eq: () => q,
   };
   return q;
 }
-function ctx(rest: any) {
-  return { sb: { from: () => makeQuery() }, profile: { id: "u1" }, rest, ip: "10.0.0.1", req: {} as any } as any;
+function ctx(rest: Record<string, unknown>): ActionContext {
+  return {
+    sb: { from: () => makeQuery() } as unknown as ActionContext["sb"],
+    profile: { id: "u1" },
+    rest,
+    ip: "10.0.0.1",
+    req: {} as ActionContext["req"],
+  };
 }
 
 beforeEach(() => { vi.clearAllMocks(); state.updates = []; });

@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { NextRequest } from "next/server";
 
-type Row = Record<string, any>;
+type RowValue = string | number;
+type Row = Record<string, RowValue>;
 const tables: Record<string, Row[]> = {
   muse_waitlist: [],
   muse_landing_analytics: [],
@@ -8,16 +10,23 @@ const tables: Record<string, Row[]> = {
 };
 let forcedInsertError: { code?: string } | null = null;
 
-function makeBuilder(table: string, opts?: { head?: boolean }) {
+type Builder = {
+  eq: (c: string, v: RowValue) => Builder;
+  lt: (c: string, v: RowValue) => Builder;
+  maybeSingle: () => Promise<{ data: Row | null; error: null }>;
+  then: (onF: (value: { count: number; data: Row[] | null; error: null }) => unknown, onR: (reason: unknown) => unknown) => Promise<unknown>;
+};
+
+function makeBuilder(table: string, opts?: { head?: boolean }): Builder {
   const rows = () => tables[table] ?? [];
-  const filters: Array<{ op: "eq" | "lt"; c: string; v: any }> = [];
+  const filters: Array<{ op: "eq" | "lt"; c: string; v: RowValue }> = [];
   const matched = () =>
     rows().filter((r) => filters.every((f) => (f.op === "eq" ? r[f.c] === f.v : r[f.c] < f.v)));
-  const api: any = {
-    eq: (c: string, v: any) => { filters.push({ op: "eq", c, v }); return api; },
-    lt: (c: string, v: any) => { filters.push({ op: "lt", c, v }); return api; },
+  const api: Builder = {
+    eq: (c, v) => { filters.push({ op: "eq", c, v }); return api; },
+    lt: (c, v) => { filters.push({ op: "lt", c, v }); return api; },
     maybeSingle: async () => ({ data: matched()[0] ?? null, error: null }),
-    then: (onF: any, onR: any) =>
+    then: (onF, onR) =>
       Promise.resolve(opts?.head
         ? { count: matched().length, data: null, error: null }
         : { count: matched().length, data: matched(), error: null }
@@ -67,7 +76,7 @@ function mockReq(body: unknown, ip = "10.0.0.1") {
   return {
     json: async () => body,
     headers: { get: (n: string) => (n === "x-forwarded-for" ? ip : null) },
-  } as any;
+  } as unknown as NextRequest;
 }
 
 beforeEach(() => {
@@ -95,7 +104,7 @@ describe("waitlist route", () => {
   });
 
   it("429 when rate limited", async () => {
-    (checkRate as any).mockResolvedValueOnce(false);
+    vi.mocked(checkRate).mockResolvedValueOnce(false);
     const r = await POST(mockReq({ email: "ok@example.com" }));
     expect(r.status).toBe(429);
   });

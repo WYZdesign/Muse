@@ -1,10 +1,28 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { ActionContext } from "@/lib/muse-actions/shared";
 
 vi.mock("@/lib/rate-limit", () => ({ checkRate: async () => true, checkRateUser: async () => true, clientIp: () => "10.0.0.1" }));
 vi.mock("@/lib/request-safety", () => ({ sanitizeText: (s: string, n: number) => String(s).slice(0, n) }));
 
-type Row = Record<string, any>;
+type Row = Record<string, unknown>;
 type FailMode = "none" | "storage" | "enqueue";
+
+type TestGlobals = typeof globalThis & { __sbMock: unknown };
+
+type Query = {
+  select(_cols?: unknown): Query;
+  eq(col: string, val: unknown): Query;
+  in: () => Query;
+  limit: () => Query;
+  or: () => Query;
+  delete(): Query;
+  upsert(v: Row): Query;
+  insert(v: Row): Query;
+  update(_v: Row): Query;
+  maybeSingle: () => Promise<{ data: unknown; error: unknown }>;
+  single: () => Promise<{ data: unknown; error: unknown }>;
+  then: (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) => unknown;
+};
 
 const state = {
   albums: null as Row | null,
@@ -20,7 +38,7 @@ const state = {
 };
 
 vi.mock("@/lib/supabase", () => ({
-  getServiceClient: () => (globalThis as any).__sbMock,
+  getServiceClient: () => (globalThis as TestGlobals).__sbMock,
   supabase: { auth: { getUser: async () => ({ data: { user: null } }) } },
 }));
 
@@ -83,7 +101,7 @@ function makeQuery(table: string) {
     return { data: null, error: null };
   };
 
-  const q: any = {
+  const q: Query = {
     select(_cols?: unknown) { return q; },
     eq(col: string, val: unknown) { filters[col] = val; return q; },
     in: () => q,
@@ -101,13 +119,13 @@ function makeQuery(table: string) {
       const res = await resolveNow();
       return { data: res.data, error: res.error };
     },
-    then: (resolve: any, reject: any) => resolveNow().then(resolve, reject),
+    then: (resolve, reject) => resolveNow().then(resolve, reject),
   };
   return q;
 }
 
 function installSbMock() {
-  (globalThis as any).__sbMock = {
+  (globalThis as TestGlobals).__sbMock = {
     from: (table: string) => makeQuery(table),
     storage: {
       from: (bucket: string) => ({
@@ -127,20 +145,20 @@ function installSbMock() {
 }
 
 function ctx(
-  rest: any,
+  rest: Record<string, unknown>,
   overrides: { album?: Row | null; photos?: Row[] | null; photo?: Row | null } = {},
-) {
+): ActionContext {
   installSbMock();
   if ("album" in overrides) state.albums = overrides.album ?? null;
   if ("photos" in overrides) state.photos = overrides.photos ?? null;
   if ("photo" in overrides) state.photos = overrides.photo ?? null;
   return {
-    sb: (globalThis as any).__sbMock,
+    sb: (globalThis as TestGlobals).__sbMock as unknown as ActionContext["sb"],
     profile: { id: "owner1" },
     rest,
     ip: "10.0.0.1",
-    req: {} as any,
-  } as any;
+    req: {} as ActionContext["req"],
+  };
 }
 
 beforeEach(() => {

@@ -1,24 +1,44 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+import type { NextRequest } from "next/server";
+
 // auth.getUser (anon supabase) + getServiceClient (service). Hoisting-safe via globalThis.
+type MockQuery = {
+  select: () => MockQuery;
+  update: (v: unknown) => MockQuery;
+  insert: (v: unknown) => MockQuery;
+  eq: () => MockQuery;
+  maybeSingle: () => Promise<{ data: unknown }>;
+  single: () => Promise<{ data: unknown }>;
+};
+type TestGlobals = typeof globalThis & {
+  __authUser?: { data: { user: unknown } };
+  __sbMock?: { from: (tbl: string) => MockQuery };
+};
+
 vi.mock("@/lib/supabase", () => ({
-  supabase: { auth: { getUser: async () => (globalThis as any).__authUser || { data: { user: null } } } },
-  getServiceClient: () => (globalThis as any).__sbMock,
+  supabase: { auth: { getUser: async () => (globalThis as TestGlobals).__authUser || { data: { user: null } } } },
+  getServiceClient: () => (globalThis as TestGlobals).__sbMock,
 }));
 vi.mock("@/lib/rate-limit", () => ({ checkRate: async () => true, clientIp: () => "10.0.0.1" }));
 vi.mock("@/lib/questEngine", () => ({ setReferralQuestProgress: async () => ({}) }));
-vi.mock("@/lib/email", () => ({ sendEmail: async () => ({}), notify: (...a: any[]) => ({ subject: a[1] || "", text: a[2] || "" }) }));
+vi.mock("@/lib/email", () => ({ sendEmail: async () => ({}), notify: (...a: unknown[]) => ({ subject: String(a[1] ?? ""), text: String(a[2] ?? "") }) }));
 vi.mock("stripe", () => ({ default: function () { return {}; } }));
 
 import { POST } from "@/app/api/muse/referral/route";
 
-const state: any = { tables: {}, updates: [], inserts: [], selects: [] };
-(globalThis as any).__sbMock = {
+const state: {
+  tables: Record<string, unknown>;
+  updates: { tbl: string; v: unknown }[];
+  inserts: { tbl: string; v: unknown }[];
+  selects: unknown[];
+} = { tables: {}, updates: [], inserts: [], selects: [] };
+(globalThis as TestGlobals).__sbMock = {
   from: (tbl: string) => {
-    const q: any = {
+    const q: MockQuery = {
       select: () => q,
-      update: (v: any) => { state.updates.push({ tbl, v }); return q; },
-      insert: (v: any) => { state.inserts.push({ tbl, v }); return q; },
+      update: (v) => { state.updates.push({ tbl, v }); return q; },
+      insert: (v) => { state.inserts.push({ tbl, v }); return q; },
       eq: () => q,
       maybeSingle: async () => ({ data: state.tables[tbl] ?? null }),
       single: async () => ({ data: state.tables[tbl] ?? null }),
@@ -28,12 +48,12 @@ const state: any = { tables: {}, updates: [], inserts: [], selects: [] };
 };
 
 function req(body: unknown, token = "tok") {
-  return { headers: { get: (n: string) => (n.toLowerCase() === "authorization" ? "Bearer " + token : n.toLowerCase() === "content-type" ? "application/json" : null) }, json: async () => body } as any;
+  return { headers: { get: (n: string) => (n.toLowerCase() === "authorization" ? "Bearer " + token : n.toLowerCase() === "content-type" ? "application/json" : null) }, json: async () => body } as unknown as NextRequest;
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
-  (globalThis as any).__authUser = { data: { user: { id: "u1" } } };
+  (globalThis as TestGlobals).__authUser = { data: { user: { id: "u1" } } };
   state.tables = {}; state.updates = []; state.inserts = [];
 });
 

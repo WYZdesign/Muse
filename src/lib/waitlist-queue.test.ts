@@ -1,19 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-type Row = Record<string, any>;
+type RowValue = string | number;
+type Row = Record<string, RowValue>;
+
+type Chain = {
+  eq: (c: string, v: RowValue) => Chain;
+  lt: (c: string, v: RowValue) => Chain;
+  maybeSingle: () => Promise<{ data: Row | null; error: null }>;
+  then: (onF: (value: { count: number; data: Row[] | null }) => unknown, onR: (reason: unknown) => unknown) => Promise<unknown>;
+};
 
 /** Minimal fake of the supabase query builder for head-count / maybeSingle reads. */
 function fakeClient(rows: Row[]) {
   const make = (table: string) => ({
     select: (_cols: string, opts?: { head?: boolean }) => {
-      const filters: Array<{ op: "eq" | "lt"; c: string; v: any }> = [];
+      const filters: Array<{ op: "eq" | "lt"; c: string; v: RowValue }> = [];
       const matched = () =>
         rows.filter((r) => filters.every((f) => (f.op === "eq" ? r[f.c] === f.v : r[f.c] < f.v)));
-      const api: any = {
-        eq: (c: string, v: any) => { filters.push({ op: "eq", c, v }); return api; },
-        lt: (c: string, v: any) => { filters.push({ op: "lt", c, v }); return api; },
+      const api: Chain = {
+        eq: (c, v) => { filters.push({ op: "eq", c, v }); return api; },
+        lt: (c, v) => { filters.push({ op: "lt", c, v }); return api; },
         maybeSingle: async () => ({ data: matched()[0] ?? null, error: null }),
-        then: (onF: any, onR: any) =>
+        then: (onF, onR) =>
           Promise.resolve(opts?.head
             ? { count: matched().length, data: null }
             : { count: matched().length, data: matched() }
@@ -21,7 +29,7 @@ function fakeClient(rows: Row[]) {
       };
       return api;
     },
-    eq: (_c: string, _v: any) => ({ maybeSingle: async () => ({ data: null, error: null }) }),
+    eq: (_c: string, _v: RowValue) => ({ maybeSingle: async () => ({ data: null, error: null }) }),
     from: () => make(table),
   });
   return { from: (table: string) => make(table) };
@@ -88,7 +96,7 @@ describe("queuePosition", () => {
         select: () => ({
           eq: () => Promise.reject(new Error("network")),
           lt: () => Promise.reject(new Error("network")),
-          then: (_f: any, r: any) => Promise.reject(new Error("network")).then(null, r),
+          then: (_f: (value: unknown) => unknown, r: (reason: unknown) => unknown) => Promise.reject(new Error("network")).then(null, r),
         }),
       }),
     };

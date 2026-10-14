@@ -34,7 +34,7 @@ function makeSetters() {
 
 describe("useMusePersistence — buildPersistPayload", () => {
   const base = {
-    currentUser: { id: "u1" }, obData: { a: 1 }, obStep: 3, matches: [] as any[],
+    currentUser: { id: "u1" }, obData: { a: 1 }, obStep: 3, matches: [] as unknown[],
     dailyLikes: 5, superLikes: 2, savedBriefs: ["b"], appliedBriefs: ["a"],
     savedSessionIds: ["s"], savedProfileIds: ["p"], userBriefs: [], blockedUsers: [],
     notifPrefs: { match: true }, obConnectedSocials: ["ig"], showNsfw: false,

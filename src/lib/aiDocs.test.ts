@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { createSb, tableCalls, type SbCall } from "@/test-support/sb";
+import { createSb, tableCalls, type SbCall, type SbMock } from "@/test-support/sb";
+
+type TestGlobals = typeof globalThis & { __sbMock: SbMock };
 
 const aiMock = vi.hoisted(() => ({
   embedText: vi.fn(),
@@ -18,20 +20,21 @@ vi.mock("@/lib/ai", () => ({
   cosineSimilarity: aiMock.cosineSimilarity,
 }));
 vi.mock("@/lib/supabase", () => ({
-  getServiceClient: () => (globalThis as any).__sbMock,
+  getServiceClient: () => (globalThis as TestGlobals).__sbMock,
 }));
 
 import { MUSE_KNOWLEDGE_BASE, museSystemPrompt, seedKnowledgeBase, retrieveContext, askMuseAI } from "./aiDocs";
 
-interface AiDocsState { docs: any[] | null; existing: any; }
+type AiDoc = { id?: string; section?: string; title?: string; content?: string; embedding?: number[]; updated_at?: string };
+interface AiDocsState { docs: AiDoc[] | null; existing: AiDoc | null; }
 const aiDocsState: AiDocsState = { docs: null, existing: null };
 
-function selectArgs(calls: SbCall[]): any[] {
+function selectArgs(calls: SbCall[]): SbCall["args"] {
   return [...calls].reverse().find((c) => c.method === "select")?.args ?? [];
 }
 
 function installSb(throwTables: string[] = []) {
-  (globalThis as any).__sbMock = createSb((table, calls) => {
+  (globalThis as TestGlobals).__sbMock = createSb((table, calls) => {
     if (throwTables.includes(table)) throw new Error("boom");
     const mutation = calls.find((c) => ["insert", "update", "upsert"].includes(c.method));
     if (mutation) return { data: null, error: null };
@@ -115,7 +118,7 @@ describe("seedKnowledgeBase", () => {
     aiMock.embedText.mockResolvedValue([0.1, 0.2, 0.3]);
     const r = await seedKnowledgeBase();
     expect(r).toEqual({ embedded: MUSE_KNOWLEDGE_BASE.length, skipped: 0 });
-    const upserts = tableCalls((globalThis as any).__sbMock.__log, "muse_ai_docs")
+    const upserts = tableCalls((globalThis as TestGlobals).__sbMock.__log, "muse_ai_docs")
       .filter((c) => c.method === "upsert");
     expect(upserts).toHaveLength(MUSE_KNOWLEDGE_BASE.length);
     expect(upserts[0].args[0]).toHaveProperty("embedding");
@@ -127,7 +130,7 @@ describe("seedKnowledgeBase", () => {
     aiMock.embedText.mockResolvedValue(null);
     const r = await seedKnowledgeBase();
     expect(r).toEqual({ embedded: 0, skipped: 0 });
-    const upserts = tableCalls((globalThis as any).__sbMock.__log, "muse_ai_docs")
+    const upserts = tableCalls((globalThis as TestGlobals).__sbMock.__log, "muse_ai_docs")
       .filter((c) => c.method === "upsert");
     expect(upserts).toHaveLength(0);
   });

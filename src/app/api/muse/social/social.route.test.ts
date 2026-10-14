@@ -1,4 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { NextRequest } from "next/server";
+
+type TestGlobals = typeof globalThis & {
+  __profile?: { data: { id: string } | null; error: unknown };
+  __conns?: { provider: string }[];
+};
 
 vi.mock("@/lib/rate-limit", () => ({
   checkRate: vi.fn(async () => true),
@@ -24,7 +30,7 @@ vi.mock("@/lib/supabase", () => ({
         return {
           select: () => ({
             eq: () => ({
-              maybeSingle: async () => (globalThis as any).__profile || { data: null, error: null },
+              maybeSingle: async () => (globalThis as TestGlobals).__profile || { data: null, error: null },
             }),
           }),
         };
@@ -33,7 +39,7 @@ vi.mock("@/lib/supabase", () => ({
         return {
           select: () => ({
             eq: async () => ({
-              data: (globalThis as any).__conns || [],
+              data: (globalThis as TestGlobals).__conns || [],
               error: null,
             }),
           }),
@@ -55,15 +61,15 @@ function req(search: string, headers: Record<string, string> = {}) {
   return {
     url: `https://muse.test/api/muse/social${search}`,
     headers: { get: (n: string) => headers[n] ?? null },
-  } as any;
+  } as unknown as NextRequest;
 }
 
 describe("social oauth route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv("MUSE_DEMO_MODE", "false");
-    (globalThis as any).__profile = { data: { id: "p1" }, error: null };
-    (globalThis as any).__conns = [{ provider: "spotify" }];
+    (globalThis as TestGlobals).__profile = { data: { id: "p1" }, error: null };
+    (globalThis as TestGlobals).__conns = [{ provider: "spotify" }];
   });
 
   it("401 without bearer", async () => {

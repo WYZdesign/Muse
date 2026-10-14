@@ -1,4 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { NextRequest } from "next/server";
+
+type TestGlobals = typeof globalThis & {
+  __authUser?: { data: { user: { id: string } | null }; error: { message: string } | null };
+  __profile?: { data: { id: string; suspended: boolean } | null; error: unknown };
+};
 
 vi.mock("@/lib/rate-limit", () => ({
   checkRate: vi.fn(async () => true),
@@ -8,14 +14,14 @@ vi.mock("@/lib/rate-limit", () => ({
 vi.mock("@/lib/supabase", () => ({
   supabase: {
     auth: {
-      getUser: vi.fn(async () => (globalThis as any).__authUser || { data: { user: null }, error: null }),
+      getUser: vi.fn(async () => (globalThis as TestGlobals).__authUser || { data: { user: null }, error: null }),
     },
   },
   getServiceClient: vi.fn(() => ({
     from: vi.fn(() => ({
       select: () => ({
         eq: () => ({
-          maybeSingle: async () => (globalThis as any).__profile || { data: null, error: null },
+          maybeSingle: async () => (globalThis as TestGlobals).__profile || { data: null, error: null },
         }),
       }),
     })),
@@ -38,7 +44,7 @@ function mockReq(opts: {
       if (opts.file) fd.set("file", opts.file);
       return fd;
     },
-  } as any;
+  } as unknown as NextRequest;
 }
 
 function audioFile(size = 100) {
@@ -50,8 +56,8 @@ describe("transcribe route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv("MUSE_DEMO_MODE", "false");
-    (globalThis as any).__authUser = { data: { user: { id: "auth-1" } }, error: null };
-    (globalThis as any).__profile = { data: { id: "p1", suspended: false }, error: null };
+    (globalThis as TestGlobals).__authUser = { data: { user: { id: "auth-1" } }, error: null };
+    (globalThis as TestGlobals).__profile = { data: { id: "p1", suspended: false }, error: null };
   });
 
   it("409 in demo mode", async () => {
@@ -76,28 +82,28 @@ describe("transcribe route", () => {
 
   it("401 when auth fails", async () => {
     vi.stubEnv("GROQ_API_KEY", "groq-key");
-    (globalThis as any).__authUser = { data: { user: null }, error: { message: "bad" } };
+    (globalThis as TestGlobals).__authUser = { data: { user: null }, error: { message: "bad" } };
     const r = await POST(mockReq({ headers: { authorization: "Bearer tok" } }));
     expect(r.status).toBe(401);
   });
 
   it("404 when profile missing", async () => {
     vi.stubEnv("GROQ_API_KEY", "groq-key");
-    (globalThis as any).__profile = { data: null, error: null };
+    (globalThis as TestGlobals).__profile = { data: null, error: null };
     const r = await POST(mockReq({ headers: { authorization: "Bearer tok" } }));
     expect(r.status).toBe(404);
   });
 
   it("403 when suspended", async () => {
     vi.stubEnv("GROQ_API_KEY", "groq-key");
-    (globalThis as any).__profile = { data: { id: "p1", suspended: true }, error: null };
+    (globalThis as TestGlobals).__profile = { data: { id: "p1", suspended: true }, error: null };
     const r = await POST(mockReq({ headers: { authorization: "Bearer tok" } }));
     expect(r.status).toBe(403);
   });
 
   it("429 when rate limited", async () => {
     vi.stubEnv("GROQ_API_KEY", "groq-key");
-    (checkRate as any).mockResolvedValueOnce(false);
+    vi.mocked(checkRate).mockResolvedValueOnce(false);
     const r = await POST(mockReq({ headers: { authorization: "Bearer tok" }, file: audioFile() }));
     expect(r.status).toBe(429);
   });

@@ -8,11 +8,13 @@ async function loadAi(env: Record<string, string>): Promise<typeof import("./ai"
   return await import("./ai");
 }
 
-function okJson(body: any): any {
-  return { ok: true, status: 200, json: async () => body, text: async () => JSON.stringify(body) };
+type FetchCall = [string, { headers: Record<string, string>; body: string }];
+
+function okJson(body: unknown): Response {
+  return { ok: true, status: 200, json: async () => body, text: async () => JSON.stringify(body) } as unknown as Response;
 }
-function bad(status: number, text = "nope"): any {
-  return { ok: false, status, json: async () => ({}), text: async () => text };
+function bad(status: number, text = "nope"): Response {
+  return { ok: false, status, json: async () => ({}), text: async () => text } as unknown as Response;
 }
 
 afterEach(() => {
@@ -95,7 +97,7 @@ describe("embedText", () => {
     const spy = vi.spyOn(globalThis, "fetch").mockResolvedValue(okJson({ data: [{ embedding: [0.1, 0.2, 0.3] }] }));
     const out = await mod.embedText("  hello world  ");
     expect(out).toEqual([0.1, 0.2, 0.3]);
-    const [url, opts] = spy.mock.calls[0] as any[];
+    const [url, opts] = spy.mock.calls[0] as FetchCall;
     expect(url).toContain("/embeddings");
     expect(opts.headers.Authorization).toBe("Bearer k");
     expect(opts.headers["X-Title"]).toBe("Musa");
@@ -106,7 +108,7 @@ describe("embedText", () => {
     const mod = await loadAi({ OPENROUTER_API_KEY: "k" });
     const spy = vi.spyOn(globalThis, "fetch").mockResolvedValue(okJson({ data: [{ embedding: [1] }] }));
     await mod.embedText("x".repeat(9000));
-    expect(JSON.parse((spy.mock.calls[0] as any[])[1].body).input).toHaveLength(8000);
+    expect(JSON.parse((spy.mock.calls[0] as FetchCall)[1].body).input).toHaveLength(8000);
   });
 
   it("returns null on a non-ok response", async () => {
@@ -144,7 +146,7 @@ describe("chatComplete", () => {
     const mod = await loadAi({ OPENROUTER_API_KEY: "k", OPENROUTER_CHAT_MODEL: "cm" });
     const spy = vi.spyOn(globalThis, "fetch").mockResolvedValue(okJson({ choices: [{ message: { content: "  hello  " } }] }));
     expect(await mod.chatComplete(messages)).toBe("hello");
-    const [url, opts] = spy.mock.calls[0] as any[];
+    const [url, opts] = spy.mock.calls[0] as FetchCall;
     expect(url).toContain("/chat/completions");
     const body = JSON.parse(opts.body);
     expect(body.model).toBe("cm");
@@ -156,7 +158,7 @@ describe("chatComplete", () => {
     const mod = await loadAi({ OPENROUTER_API_KEY: "k" });
     const spy = vi.spyOn(globalThis, "fetch").mockResolvedValue(okJson({ choices: [{ message: { content: "ok" } }] }));
     await mod.chatComplete(messages, { maxTokens: 42, temperature: 0 });
-    const body = JSON.parse((spy.mock.calls[0] as any[])[1].body);
+    const body = JSON.parse((spy.mock.calls[0] as FetchCall)[1].body);
     expect(body.max_tokens).toBe(42);
     expect(body.temperature).toBe(0);
   });

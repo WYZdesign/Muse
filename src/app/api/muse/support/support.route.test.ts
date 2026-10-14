@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { NextRequest } from "next/server";
 
 vi.mock("@/lib/aiDocs", () => ({
   askMuseAI: vi.fn(),
@@ -18,7 +19,7 @@ vi.mock("@/lib/rate-limit", () => ({
     return n <= 10;
   }),
   checkRateUser: vi.fn(async () => true),
-  clientIp: vi.fn((r: any) => r?.headers?.get?.("x-forwarded-for")?.split(",")[0]?.trim() || "10.0.0.1"),
+  clientIp: vi.fn((r: { headers?: { get?: (n: string) => string | null } }) => r?.headers?.get?.("x-forwarded-for")?.split(",")[0]?.trim() || "10.0.0.1"),
 }));
 
 import { POST } from "@/app/api/muse/support/route";
@@ -30,7 +31,7 @@ function mockReq(body: unknown) {
   return {
     json: async () => body,
     headers: { get: (name: string) => (name === "x-forwarded-for" ? ip : null) },
-  } as any;
+  } as unknown as NextRequest;
 }
 
 describe("support route (integration)", () => {
@@ -45,7 +46,7 @@ describe("support route (integration)", () => {
   });
 
   it("returns the AI answer when the AI is available", async () => {
-    (askMuseAI as any).mockResolvedValue({ answer: "hi there", sources: ["Getting started"] });
+    vi.mocked(askMuseAI).mockResolvedValue({ answer: "hi there", sources: ["Getting started"] });
     const r = await POST(mockReq({ question: "how do I sign up" }));
     expect(r.status).toBe(200);
     const body = await r.json();
@@ -54,8 +55,8 @@ describe("support route (integration)", () => {
   });
 
   it("falls back to a static FAQ answer when AI is unavailable", async () => {
-    (askMuseAI as any).mockResolvedValue(null);
-    (retrieveContext as any).mockResolvedValue({ context: "", sources: [] });
+    vi.mocked(askMuseAI).mockResolvedValue(null);
+    vi.mocked(retrieveContext).mockResolvedValue({ context: "", sources: [] });
     const r = await POST(mockReq({ question: "how do I book a session" }));
     expect(r.status).toBe(200);
     const body = await r.json();
@@ -64,10 +65,10 @@ describe("support route (integration)", () => {
   });
 
   it("rate limits after the threshold", async () => {
-    (askMuseAI as any).mockResolvedValue(null);
-    (retrieveContext as any).mockResolvedValue({ context: "", sources: [] });
+    vi.mocked(askMuseAI).mockResolvedValue(null);
+    vi.mocked(retrieveContext).mockResolvedValue({ context: "", sources: [] });
     const ip = "99.99.99.99";
-    const mk = (body: unknown) => ({ json: async () => body, headers: { get: (n: string) => (n === "x-forwarded-for" ? ip : null) } } as any);
+    const mk = (body: unknown) => ({ json: async () => body, headers: { get: (n: string) => (n === "x-forwarded-for" ? ip : null) } } as unknown as NextRequest);
     let status = 200;
     for (let i = 0; i < 12; i++) {
       const r = await POST(mk({ question: "q" }));

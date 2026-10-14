@@ -12,6 +12,13 @@ vi.mock("@/lib/push", () => ({
 vi.mock("@/lib/muse-actions/shared", () => ({
   isAdminEmail: vi.fn((email?: string) => email === "admin@example.com"),
 }));
+import type { NextRequest } from "next/server";
+
+type TestGlobals = typeof globalThis & {
+  __profile?: { data: { id: string; tier: string } | null; error: unknown };
+  __pushUpsertError?: { code: string } | null;
+};
+
 vi.mock("@/lib/supabase", () => ({
   supabase: {
     auth: {
@@ -28,17 +35,17 @@ vi.mock("@/lib/supabase", () => ({
         return {
           select: () => ({
             eq: () => ({
-              maybeSingle: async () => (globalThis as any).__profile || { data: null, error: null },
+              maybeSingle: async () => (globalThis as TestGlobals).__profile || { data: null, error: null },
             }),
           }),
         };
       }
       if (table === "muse_push_subscriptions") {
         return {
-          upsert: (row: any) => ({
+          upsert: (row: unknown) => ({
             select: async () =>
-              (globalThis as any).__pushUpsertError
-                ? { data: null, error: (globalThis as any).__pushUpsertError }
+              (globalThis as TestGlobals).__pushUpsertError
+                ? { data: null, error: (globalThis as TestGlobals).__pushUpsertError }
                 : { data: [row], error: null },
           }),
           delete: () => ({
@@ -61,7 +68,7 @@ function req(body: unknown, headers: Record<string, string> = {}) {
   return {
     json: async () => body,
     headers: { get: (n: string) => headers[n] ?? null },
-  } as any;
+  } as unknown as NextRequest;
 }
 
 const goodSub = { endpoint: "https://push.example/e", p256dh: "p", auth: "a" };
@@ -70,8 +77,8 @@ describe("push route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv("MUSE_DEMO_MODE", "false");
-    (globalThis as any).__profile = { data: { id: "p1", tier: "free" }, error: null };
-    (globalThis as any).__pushUpsertError = null;
+    (globalThis as TestGlobals).__profile = { data: { id: "p1", tier: "free" }, error: null };
+    (globalThis as TestGlobals).__pushUpsertError = null;
   });
 
   it("GET returns VAPID public key", async () => {
@@ -98,7 +105,7 @@ describe("push route", () => {
   });
 
   it("404 when profile missing", async () => {
-    (globalThis as any).__profile = { data: null, error: null };
+    (globalThis as TestGlobals).__profile = { data: null, error: null };
     const r = await POST(req({ action: "subscribe", subscription: goodSub, access_token: "tok" }));
     expect(r.status).toBe(404);
   });
@@ -117,7 +124,7 @@ describe("push route", () => {
   });
 
   it("subscribe treats 23505 unique violation as success", async () => {
-    (globalThis as any).__pushUpsertError = { code: "23505" };
+    (globalThis as TestGlobals).__pushUpsertError = { code: "23505" };
     const r = await POST(
       req({ action: "subscribe", subscription: goodSub, access_token: "tok" }),
     );
@@ -158,7 +165,7 @@ describe("push route", () => {
   });
 
   it("429 when send rate limited", async () => {
-    (checkRate as any).mockResolvedValueOnce(false);
+    vi.mocked(checkRate).mockResolvedValueOnce(false);
     const r = await POST(
       req({ action: "send", userId: "p1", payload: { title: "t", body: "b" }, access_token: "tok" }),
     );

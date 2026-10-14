@@ -2,30 +2,50 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@/lib/rate-limit", () => ({ checkRate: async () => true, checkRateUser: async () => true, clientIp: () => "10.0.0.1" }));
 vi.mock("@/lib/request-safety", () => ({ sanitizeText: (s: string, n: number) => String(s).slice(0, n) }));
-vi.mock("@/lib/email", () => ({ sendEmail: async () => ({}), notify: (...a: any[]) => ({ subject: a[1] || "", text: a[2] || "" }) }));
+import type { ActionContext } from "@/lib/muse-actions/shared";
+
+vi.mock("@/lib/email", () => ({ sendEmail: async () => ({}), notify: (...a: unknown[]) => ({ subject: String(a[1] ?? ""), text: String(a[2] ?? "") }) }));
 vi.mock("@/lib/push", () => ({ pushToProfile: async () => ({}) }));
 
-const state: any = { row: null, inserts: [], updates: [] };
+const state: { row: unknown; inserts: unknown[]; updates: unknown[] } = { row: null, inserts: [], updates: [] };
 vi.mock("@/lib/supabase", () => ({
-  getServiceClient: () => (globalThis as any).__sbMock,
+  getServiceClient: () => (globalThis as typeof globalThis & { __sbMock: unknown }).__sbMock,
   supabase: { auth: { getUser: async () => ({ data: { user: null } }) } },
 }));
 
 import { connectRequest } from "@/lib/muse-actions/connect";
 
-function makeQuery() {
-  const q: any = {
+type Query = {
+  select: (...a: unknown[]) => Query;
+  eq: (...a: unknown[]) => Query;
+  in: (...a: unknown[]) => Query;
+  order: (...a: unknown[]) => Query;
+  limit: (...a: unknown[]) => Query;
+  insert: (v: unknown) => Query;
+  update: (v: unknown) => Query;
+  maybeSingle: () => Promise<{ data: unknown }>;
+  single: () => Promise<{ data: unknown }>;
+};
+
+function makeQuery(): Query {
+  const q: Query = {
     select: () => q, eq: () => q, in: () => q, order: () => q, limit: () => q,
-    insert: (v: any) => { state.inserts.push(v); return q; },
-    update: (v: any) => { state.updates.push(v); return q; },
+    insert: (v) => { state.inserts.push(v); return q; },
+    update: (v) => { state.updates.push(v); return q; },
     maybeSingle: async () => ({ data: state.row ?? null }),
     single: async () => ({ data: state.row ?? null }),
   };
   return q;
 }
-function ctx(rest: any, row: any) {
+function ctx(rest: Record<string, unknown>, row: unknown): ActionContext {
   state.row = row;
-  return { sb: { from: () => makeQuery() }, profile: { id: "me1", name: "Ada" }, rest, ip: "10.0.0.1", req: {} as any } as any;
+  return {
+    sb: { from: () => makeQuery() } as unknown as ActionContext["sb"],
+    profile: { id: "me1", name: "Ada" },
+    rest,
+    ip: "10.0.0.1",
+    req: {} as ActionContext["req"],
+  };
 }
 
 beforeEach(() => { vi.clearAllMocks(); state.row = null; state.inserts = []; state.updates = []; });

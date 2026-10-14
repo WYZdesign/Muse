@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { NextRequest } from "next/server";
 
 const deletes: string[] = [];
 let emailResult: { sent: boolean; error?: string } = { sent: true };
@@ -48,7 +49,7 @@ function req(body: unknown, token?: string) {
     headers: {
       get: (n: string) => (n === "authorization" && token ? `Bearer ${token}` : null),
     },
-  } as any;
+  } as unknown as NextRequest;
 }
 
 describe("admin promote-waitlist route", () => {
@@ -67,7 +68,7 @@ describe("admin promote-waitlist route", () => {
   });
 
   it("429 when rate limited", async () => {
-    (checkRate as any).mockResolvedValueOnce(false);
+    vi.mocked(checkRate).mockResolvedValueOnce(false);
     const r = await POST(req({ email: "a@b.c" }, "owner-tok"));
     expect(r.status).toBe(429);
   });

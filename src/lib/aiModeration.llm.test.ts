@@ -14,7 +14,7 @@ describe("moderateText (LLM classification path)", () => {
   });
 
   it("blocks when LLM returns a critical classification", async () => {
-    (chatComplete as any).mockResolvedValue(
+    vi.mocked(chatComplete).mockResolvedValue(
       JSON.stringify({ safe: false, categories: ["minor_risk"], severity: "critical", reason: "test" })
     );
     const r = await moderateText("a normal sentence with no heuristic keywords");
@@ -24,7 +24,7 @@ describe("moderateText (LLM classification path)", () => {
   });
 
   it("allows when LLM returns safe", async () => {
-    (chatComplete as any).mockResolvedValue(
+    vi.mocked(chatComplete).mockResolvedValue(
       JSON.stringify({ safe: true, categories: [], severity: "none", reason: "" })
     );
     const r = await moderateText("a normal sentence with no heuristic keywords");
@@ -33,19 +33,19 @@ describe("moderateText (LLM classification path)", () => {
   });
 
   it("fails-open (safe) when LLM returns invalid JSON", async () => {
-    (chatComplete as any).mockResolvedValue("this is not json");
+    vi.mocked(chatComplete).mockResolvedValue("this is not json");
     const r = await moderateText("a normal sentence with no heuristic keywords");
     expect(r.safe).toBe(true);
   });
 
   it("fails-open (safe) when LLM throws", async () => {
-    (chatComplete as any).mockRejectedValue(new Error("network"));
+    vi.mocked(chatComplete).mockRejectedValue(new Error("network"));
     const r = await moderateText("a normal sentence with no heuristic keywords");
     expect(r.safe).toBe(true);
   });
 
   it("strips markdown fences around JSON", async () => {
-    (chatComplete as any).mockResolvedValue('```json\n{"safe": false, "categories": ["spam"], "severity": "low", "reason": "x"}\n```');
+    vi.mocked(chatComplete).mockResolvedValue('```json\n{"safe": false, "categories": ["spam"], "severity": "low", "reason": "x"}\n```');
     const r = await moderateText("a normal sentence with no heuristic keywords");
     expect(r.safe).toBe(false);
     expect(r.categories).toContain("spam");

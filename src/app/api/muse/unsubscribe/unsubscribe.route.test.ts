@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { NextRequest } from "next/server";
 
-const deletes: any[] = [];
-const unsubInserts: any[] = [];
+const deletes: string[] = [];
+const unsubInserts: unknown[] = [];
 
 vi.mock("@/lib/supabase", () => ({
   getServiceClient: vi.fn(() => ({
@@ -18,11 +19,11 @@ vi.mock("@/lib/supabase", () => ({
       }
       if (table === "muse_unsubscribes") {
         return {
-          insert: (row: any) => {
+          insert: (row: unknown) => {
             unsubInserts.push(row);
-            const p: any = Promise.resolve({ error: null });
+            const p: { then: unknown } = Promise.resolve({ error: null });
             p.then = Promise.resolve({ error: null }).then.bind(Promise.resolve({ error: null }));
-            return Promise.resolve({ error: null }).then(() => undefined).catch(() => undefined) as any;
+            return Promise.resolve({ error: null }).then(() => undefined).catch(() => undefined);
           },
         };
       }
@@ -38,7 +39,7 @@ import { GET, POST } from "@/app/api/muse/unsubscribe/route";
 
 function getReq(search = "") {
   const url = new URL(`https://muse.test/api/muse/unsubscribe${search}`);
-  return { nextUrl: url, headers: { get: () => null } } as any;
+  return { nextUrl: url, headers: { get: () => null } } as unknown as NextRequest;
 }
 
 function postReq(opts: {
@@ -64,7 +65,7 @@ function postReq(opts: {
       for (const [k, v] of Object.entries(opts.form || {})) fd.set(k, v);
       return fd;
     },
-  } as any;
+  } as unknown as NextRequest;
 }
 
 describe("unsubscribe route", () => {

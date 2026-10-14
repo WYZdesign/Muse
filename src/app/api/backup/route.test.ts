@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { NextRequest } from "next/server";
 
 vi.mock("@/lib/supabase", () => ({ getServiceClient: vi.fn() }));
 
 import { GET } from "@/app/api/backup/route";
 
 function req(authorization?: string) {
-  return { headers: { get: (name: string) => name === "authorization" ? authorization || null : null } } as any;
+  return { headers: { get: (name: string) => name === "authorization" ? authorization || null : null } } as unknown as NextRequest;
 }
 
 describe("backup cron authorization", () => {

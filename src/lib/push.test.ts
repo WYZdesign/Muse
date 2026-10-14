@@ -1,28 +1,35 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { createSb, tableCalls, type SbCall } from "@/test-support/sb";
+import { createSb, tableCalls, type SbCall, type SbMock } from "@/test-support/sb";
+
+type WebPushOpts = { TTL?: number; vapidDetails?: { subject?: string; publicKey?: string; privateKey?: string } };
 
 const webpush = vi.hoisted(() => ({
   setVapidDetails: vi.fn(),
   generateVAPIDKeys: vi.fn(() => ({ publicKey: "gen-pub", privateKey: "gen-priv" })),
-  sendNotification: vi.fn(async () => ({ statusCode: 201 })),
+  sendNotification: vi.fn(async (_subscription: unknown, _payload: string, _opts: WebPushOpts) => ({ statusCode: 201 })),
 }));
 vi.mock("web-push", () => ({ default: webpush }));
 
+type TestGlobals = typeof globalThis & { __sbMock: SbMock };
+
 vi.mock("@/lib/supabase", () => ({
-  getServiceClient: () => (globalThis as any).__sbMock,
+  getServiceClient: () => (globalThis as TestGlobals).__sbMock,
 }));
 
+type SubRow = { endpoint: string; p256dh: string; auth: string };
+type ProfileState = { preferences?: { notifications?: { push?: boolean } } } | null;
+
 interface State {
-  subs: any[] | null;
-  subsError: any;
-  sends: any[];
-  profile: any;
-  deleted: any[];
+  subs: SubRow[] | null;
+  subsError: unknown;
+  sends: unknown[];
+  profile: ProfileState;
+  deleted: unknown[];
 }
 const state: State = { subs: [], subsError: null, sends: [], profile: null, deleted: [] };
 
 function installSb() {
-  (globalThis as any).__sbMock = createSb((table, calls) => {
+  (globalThis as TestGlobals).__sbMock = createSb((table, calls) => {
     if (calls.some((c) => c.method === "delete")) {
       state.deleted.push(calls.find((c) => c.method === "delete")!.args[0]);
       return { data: null, error: null };
@@ -91,7 +98,7 @@ describe("sendPushNotification", () => {
     const mod = await loadPush({ VAPID_PUBLIC_KEY: "pub", VAPID_PRIVATE_KEY: "priv", VAPID_SUBJECT: "mailto:x@y.z" });
     const r = await mod.sendPushNotification(sub, { title: "T", body: "B" });
     expect(r).toEqual({ success: true });
-    const [subscription, body, opts] = webpush.sendNotification.mock.calls[0] as any[];
+    const [subscription, body, opts] = webpush.sendNotification.mock.calls[0];
     expect(subscription).toEqual({ endpoint: sub.endpoint, keys: { p256dh: "p1", auth: "a1" } });
     expect(JSON.parse(body)).toMatchObject({ title: "T", body: "B" });
     expect(opts.TTL).toBe(24 * 60 * 60);
@@ -143,7 +150,7 @@ describe("sendPushToUser", () => {
       .mockRejectedValueOnce({ statusCode: 410 });
     const r = await mod.sendPushToUser("u1", { title: "t", body: "b" });
     expect(r).toEqual({ sent: 1, failed: 0, expired: 1 });
-    const deleted = tableCalls((globalThis as any).__sbMock.__log, "muse_push_subscriptions")
+    const deleted = tableCalls((globalThis as TestGlobals).__sbMock.__log, "muse_push_subscriptions")
       .filter((c: SbCall) => c.method === "delete");
     expect(deleted).toHaveLength(1);
     expect(deleted[0].args[0]).toBeUndefined();
@@ -176,7 +183,7 @@ describe("pushToProfile", () => {
 
   it("fails open when the preferences read throws", async () => {
     const mod = await loadPush({ VAPID_PUBLIC_KEY: "pub", VAPID_PRIVATE_KEY: "priv" });
-    (globalThis as any).__sbMock = createSb((table) => {
+    (globalThis as TestGlobals).__sbMock = createSb((table) => {
       if (table === "muse_profiles") throw new Error("prefs down");
       if (table === "muse_push_subscriptions") return { data: [{ endpoint: "e1", p256dh: "p", auth: "a" }], error: null };
       return { data: null, error: null };

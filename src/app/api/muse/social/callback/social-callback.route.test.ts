@@ -1,10 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { NextRequest } from "next/server";
+
+type TestGlobals = typeof globalThis & {
+  __state?: { profileId: string; provider: string; ts: number } | null;
+  __upserts?: unknown[];
+};
 
 vi.mock("@/lib/rate-limit", () => ({
   checkRate: vi.fn(async () => true),
 }));
 vi.mock("@/lib/oauth-state", () => ({
-  verifyState: vi.fn(() => (globalThis as any).__state || null),
+  verifyState: vi.fn(() => (globalThis as TestGlobals).__state || null),
 }));
 vi.mock("@/lib/token-crypto", () => ({
   encryptToken: vi.fn((t: string) => `enc:${t}`),
@@ -18,7 +24,7 @@ vi.mock("@/lib/supabase", () => ({
   getServiceClient: vi.fn(() => ({
     from: () => ({
       upsert: async () => {
-        (globalThis as any).__upserts ||= [];
+        (globalThis as TestGlobals).__upserts ||= [];
         return { error: null };
       },
     }),
@@ -33,10 +39,10 @@ function req(search: string) {
   return {
     url: `https://muse.test/api/muse/social/callback${search}`,
     headers: { get: () => null },
-  } as any;
+  } as unknown as NextRequest;
 }
 
-async function locationOf(r: any) {
+async function locationOf(r: Response) {
   // NextResponse.redirect returns a Response with headers Location
   return r.headers?.get?.("location") || r.headers?.get?.("Location") || String(r.url || "");
 }
@@ -45,8 +51,8 @@ describe("social callback route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv("MUSE_DEMO_MODE", "false");
-    (globalThis as any).__state = null;
-    (globalThis as any).__upserts = [];
+    (globalThis as TestGlobals).__state = null;
+    (globalThis as TestGlobals).__upserts = [];
   });
 
   it("redirects with demo_mode when demo", async () => {
@@ -56,7 +62,7 @@ describe("social callback route", () => {
   });
 
   it("redirects rate_limited when over limit", async () => {
-    (checkRate as any).mockResolvedValueOnce(false);
+    vi.mocked(checkRate).mockResolvedValueOnce(false);
     const r = await GET(req("?provider=instagram&code=x&state=y"));
     expect(await locationOf(r)).toContain("error=rate_limited");
   });
@@ -77,13 +83,13 @@ describe("social callback route", () => {
   });
 
   it("redirects invalid_state when verifyState returns null", async () => {
-    (verifyState as any).mockReturnValueOnce(null);
+    vi.mocked(verifyState).mockReturnValueOnce(null);
     const r = await GET(req("?provider=instagram&code=x&state=bad"));
     expect(await locationOf(r)).toContain("error=invalid_state");
   });
 
   it("redirects provider_mismatch when state.provider differs", async () => {
-    (globalThis as any).__state = { profileId: "p1", provider: "spotify", ts: Date.now() };
+    (globalThis as TestGlobals).__state = { profileId: "p1", provider: "spotify", ts: Date.now() };
     const r = await GET(req("?provider=instagram&code=x&state=ok"));
     expect(await locationOf(r)).toContain("error=provider_mismatch");
   });
