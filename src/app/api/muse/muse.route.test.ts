@@ -1,4 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { NextRequest } from "next/server";
+
+type MuseTableValue = Record<string, unknown> | null;
+type MuseSbQuery = {
+  insert: (v: Record<string, unknown>) => MuseSbQuery;
+  select: () => MuseSbQuery;
+  eq: () => MuseSbQuery;
+  maybeSingle: () => Promise<{ data: MuseTableValue }>;
+  update: () => MuseSbQuery;
+  upsert: () => MuseSbQuery;
+  single: () => Promise<{ data: null }>;
+  in: () => MuseSbQuery;
+  rpc: () => Promise<{ data: boolean }>;
+};
+type MuseSbMock = { from: (tbl: string) => MuseSbQuery };
+type MuseTestGlobals = {
+  __authUser?: { data: { user: { id: string } | null } };
+  __sbMock?: MuseSbMock;
+};
+
+const TG = globalThis as unknown as MuseTestGlobals;
 
 vi.mock("@/lib/request-safety", () => ({
   enforceRequestSafety: async () => null,
@@ -6,14 +27,14 @@ vi.mock("@/lib/request-safety", () => ({
 }));
 vi.mock("@/lib/rate-limit", () => ({ checkRate: async () => true, checkRateUser: async () => true, clientIp: () => "10.0.0.1" }));
 vi.mock("@/lib/supabase", () => ({
-  supabase: { auth: { getUser: async () => (globalThis as any).__authUser || { data: { user: null } } } },
-  getServiceClient: () => (globalThis as any).__sbMock,
+  supabase: { auth: { getUser: async () => (globalThis as unknown as MuseTestGlobals).__authUser || { data: { user: null } } } },
+  getServiceClient: () => (globalThis as unknown as MuseTestGlobals).__sbMock,
 }));
-vi.mock("@/lib/http", () => ({ safeServerError: (e: any) => ({ error: e?.message || "err" }) }));
+vi.mock("@/lib/http", () => ({ safeServerError: (e: unknown) => ({ error: (e as { message?: string })?.message || "err" }) }));
 vi.mock("@/lib/aiDocs", () => ({ askMuseAI: async () => ({ answer: "" }) }));
 vi.mock("@/lib/aiModeration", () => ({ screenText: async () => ({ allowed: true }), moderateText: async () => ({ allowed: true }) }));
 vi.mock("@/lib/money", () => ({ parseRateToCents: (n: number) => n * 100 }));
-vi.mock("@/lib/email", () => ({ sendEmail: async () => ({}), notify: (...a: any[]) => ({ subject: a[1] || "", text: a[2] || "" }) }));
+vi.mock("@/lib/email", () => ({ sendEmail: async () => ({}), notify: (...a: unknown[]) => ({ subject: a[1] || "", text: a[2] || "" }) }));
 vi.mock("@/lib/push", () => ({ pushToProfile: async () => ({}) }));
 vi.mock("@/lib/content-check", () => ({ scanWithRekognition: async () => ({ safe: true }), logScan: async () => ({}) }));
 vi.mock("@/lib/questEngine", () => ({ bumpQuest: async () => ({}), questPeriodKey: () => "daily", awardQuestXp: async () => ({}), setQuestProgress: async () => ({}), setReferralQuestProgress: async () => ({}), bumpLoginStreak: async () => ({}), getQuestDefinitions: () => [], questsForPeriod: () => [], rotateQuests: () => [], seededHash: () => 0 }));
@@ -21,11 +42,11 @@ vi.mock("stripe", () => ({ default: function () { return {}; } }));
 
 import { POST } from "@/app/api/muse/route";
 
-const state: any = { inserts: [] };
-(globalThis as any).__sbMock = {
+const state: { inserts: { tbl: string; v: Record<string, unknown> }[] } = { inserts: [] };
+TG.__sbMock = {
   from: (tbl: string) => {
-    const q: any = {
-      insert: (v: any) => { state.inserts.push({ tbl, v }); return q; },
+    const q: MuseSbQuery = {
+      insert: (v: Record<string, unknown>) => { state.inserts.push({ tbl, v }); return q; },
       select: () => q, eq: () => q, maybeSingle: async () => ({ data: (tbl === "muse_profiles" ? { id: "p1", suspended: false } : null) }),
       update: () => q, upsert: () => q, single: async () => ({ data: null }), in: () => q, rpc: async () => ({ data: true }),
     };
@@ -34,10 +55,10 @@ const state: any = { inserts: [] };
 };
 
 function req(body: unknown) {
-  return { headers: { get: (n: string) => (n.toLowerCase() === "content-type" ? "application/json" : null) }, json: async () => body } as any;
+  return { headers: { get: (n: string) => (n.toLowerCase() === "content-type" ? "application/json" : null) }, json: async () => body } as unknown as NextRequest;
 }
 
-beforeEach(() => { vi.clearAllMocks(); vi.stubEnv("MUSE_DEMO_MODE", "false"); (globalThis as any).__authUser = { data: { user: { id: "u1" } } }; state.inserts = []; });
+beforeEach(() => { vi.clearAllMocks(); vi.stubEnv("MUSE_DEMO_MODE", "false"); TG.__authUser = { data: { user: { id: "u1" } } }; state.inserts = []; });
 
 describe("muse dispatcher (integration)", () => {
   it("rejects track-event without a name with 400", async () => {
@@ -48,7 +69,7 @@ describe("muse dispatcher (integration)", () => {
   it("records a valid track-event", async () => {
     const r = await POST(req({ action: "track-event", name: "test_event", props: { a: 1 } }));
     expect(r.status).toBe(200);
-    expect(state.inserts.some((i: any) => i.tbl === "muse_events_log")).toBe(true);
+    expect(state.inserts.some((i) => i.tbl === "muse_events_log")).toBe(true);
   });
 
   it("rejects a track-event with a non-string name with 400", async () => {

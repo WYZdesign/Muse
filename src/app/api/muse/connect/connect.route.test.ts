@@ -1,8 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { NextRequest } from "next/server";
+
+type ConnectTableValue = Record<string, unknown> | null;
+type ConnectSbQuery = {
+  select: () => ConnectSbQuery;
+  insert: (v: Record<string, unknown>) => ConnectSbQuery;
+  upsert: (v: Record<string, unknown>) => ConnectSbQuery;
+  update: (v: Record<string, unknown>) => ConnectSbQuery;
+  eq: () => ConnectSbQuery;
+  maybeSingle: () => Promise<{ data: ConnectTableValue }>;
+  then: (resolve: (v: { data: null; error: null }) => unknown) => unknown;
+};
+type ConnectSbMock = { from: (tbl: string) => ConnectSbQuery };
+type ConnectTestGlobals = {
+  __authUser?: { data: { user: { id: string } | null } };
+  __sbMock?: ConnectSbMock;
+};
+
+const TG = globalThis as unknown as ConnectTestGlobals;
 
 vi.mock("@/lib/supabase", () => ({
-  supabase: { auth: { getUser: async (token: string) => (globalThis as any).__authUser || { data: { user: null } } } },
-  getServiceClient: () => (globalThis as any).__sbMock,
+  supabase: { auth: { getUser: async (token: string) => (globalThis as unknown as ConnectTestGlobals).__authUser || { data: { user: null } } } },
+  getServiceClient: () => (globalThis as unknown as ConnectTestGlobals).__sbMock,
 }));
 vi.mock("@/lib/rate-limit", () => ({ checkRate: async () => true, clientIp: () => "10.0.0.1" }));
 vi.mock("@/lib/money", () => ({ parseRateToCents: (s: string) => parseInt(s.replace(/[^0-9]/g, "")) || 0 }));
@@ -25,7 +44,7 @@ vi.mock("stripe", () => ({
         create: async () => ({ client_secret: "acs_test_123" }),
       },
       paymentIntents: {
-        create: async (opts: any) => ({ id: "pi_123", client_secret: "cs_123", amount: opts.amount }),
+        create: async (opts: { amount: number }) => ({ id: "pi_123", client_secret: "cs_123", amount: opts.amount }),
       },
     };
   },
@@ -33,18 +52,18 @@ vi.mock("stripe", () => ({
 
 import { POST } from "@/app/api/muse/connect/route";
 
-const state: any = { tables: {}, inserts: [] };
-(globalThis as any).__sbMock = {
+const state: { tables: Record<string, ConnectTableValue>; inserts: { tbl: string; v: Record<string, unknown> }[] } = { tables: {}, inserts: [] };
+TG.__sbMock = {
   from: (tbl: string) => {
-    const q: any = {
+    const q: ConnectSbQuery = {
       select: () => q,
-      insert: (v: any) => { state.inserts.push({ tbl, v }); return q; },
-      upsert: (v: any) => { state.inserts.push({ tbl, v }); return q; },
-      update: (v: any) => { state.inserts.push({ tbl, v }); return q; },
+      insert: (v: Record<string, unknown>) => { state.inserts.push({ tbl, v }); return q; },
+      upsert: (v: Record<string, unknown>) => { state.inserts.push({ tbl, v }); return q; },
+      update: (v: Record<string, unknown>) => { state.inserts.push({ tbl, v }); return q; },
       eq: () => q,
       maybeSingle: async () => ({ data: state.tables[tbl] ?? null }),
+      then: (resolve) => resolve({ data: null, error: null }),
     };
-    q.then = (resolve: any) => resolve({ data: null, error: null });
     return q;
   },
 };
@@ -59,20 +78,20 @@ function req(body: unknown, token = "tok") {
     },
     json: async () => body,
     nextUrl: { origin: "https://muse.wyzdesign.com" },
-  } as any;
+  } as unknown as NextRequest;
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
   process.env.STRIPE_SECRET_KEY = "sk_test_fake";
-  (globalThis as any).__authUser = { data: { user: { id: "u1" } } };
+  TG.__authUser = { data: { user: { id: "u1" } } };
   state.tables = {};
   state.inserts = [];
 });
 
 describe("connect route", () => {
   it("rejects missing auth with 401", async () => {
-    (globalThis as any).__authUser = { data: { user: null } };
+    TG.__authUser = { data: { user: null } };
     const r = await POST(req({ action: "account-status" }));
     expect(r.status).toBe(401);
   });

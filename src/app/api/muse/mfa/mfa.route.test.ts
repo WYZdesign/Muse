@@ -7,19 +7,30 @@ import { NextRequest } from "next/server";
 // in src/lib/supabase.ts — this is what the "invalid claim: missing sub
 // claim" bug fix added). Both mocks share the same __mfa state so tests
 // don't care which client shape actually made the call.
+type MfaFactor = { id: string; status: string; friendly_name?: string };
+type MfaTestGlobals = {
+  __factors?: { data: { totp: MfaFactor[] }; error?: { message: string } };
+  __enrollResult?: { data: { id: string; type: string; totp?: { secret?: string; qr_code?: string } } };
+  __challengeResult?: { data: { id: string } };
+  __verifyResult?: { data: unknown };
+  __unenrollResult?: { data: unknown };
+  __authUser?: { data: { user: { id: string } | null }; error?: { message: string } | null };
+};
+
+const TG = globalThis as unknown as MfaTestGlobals;
 const __mfa = vi.hoisted(() => ({
-  listFactors: async () => (globalThis as any).__factors || { data: { totp: [] } },
-  enroll: async (opts: any) => (globalThis as any).__enrollResult || { data: { id: "f1", type: "totp", totp: { secret: "s1", qr_code: "otpauth://..." } } },
-  challenge: async (opts: any) => (globalThis as any).__challengeResult || { data: { id: "ch1" } },
-  verify: async (opts: any) => (globalThis as any).__verifyResult || { data: {} },
-  unenroll: async (opts: any) => (globalThis as any).__unenrollResult || { data: {} },
+  listFactors: async () => (globalThis as unknown as MfaTestGlobals).__factors || { data: { totp: [] } },
+  enroll: async (_opts: unknown) => (globalThis as unknown as MfaTestGlobals).__enrollResult || { data: { id: "f1", type: "totp", totp: { secret: "s1", qr_code: "otpauth://..." } } },
+  challenge: async (_opts: unknown) => (globalThis as unknown as MfaTestGlobals).__challengeResult || { data: { id: "ch1" } },
+  verify: async (_opts: unknown) => (globalThis as unknown as MfaTestGlobals).__verifyResult || { data: {} },
+  unenroll: async (_opts: unknown) => (globalThis as unknown as MfaTestGlobals).__unenrollResult || { data: {} },
 }));
 vi.mock("@/lib/supabase", () => ({
   supabase: {
     auth: {
       getUser: async (token: string) => {
         if (!token) return { data: { user: null }, error: { message: "No token" } };
-        return (globalThis as any).__authUser || { data: { user: null }, error: { message: "Invalid" } };
+        return (globalThis as unknown as MfaTestGlobals).__authUser || { data: { user: null }, error: { message: "Invalid" } };
       },
       mfa: __mfa,
     },
@@ -44,12 +55,12 @@ function req(opts: { method: string; token?: string; body?: unknown; type?: stri
 
 beforeEach(() => {
   vi.clearAllMocks();
-  (globalThis as any).__authUser = { data: { user: { id: "u1" } } };
-  (globalThis as any).__factors = { data: { totp: [] } };
-  (globalThis as any).__enrollResult = { data: { id: "f1", type: "totp", totp: { secret: "s1", qr_code: "otpauth://..." } } };
-  (globalThis as any).__challengeResult = { data: { id: "ch1" } };
-  (globalThis as any).__verifyResult = { data: {} };
-  (globalThis as any).__unenrollResult = { data: {} };
+  TG.__authUser = { data: { user: { id: "u1" } } };
+  TG.__factors = { data: { totp: [] } };
+  TG.__enrollResult = { data: { id: "f1", type: "totp", totp: { secret: "s1", qr_code: "otpauth://..." } } };
+  TG.__challengeResult = { data: { id: "ch1" } };
+  TG.__verifyResult = { data: {} };
+  TG.__unenrollResult = { data: {} };
 });
 
 describe("MFA route", () => {
@@ -59,7 +70,7 @@ describe("MFA route", () => {
   });
 
   it("GET returns mfa-status with enabled=false when no factors", async () => {
-    (globalThis as any).__factors = { data: { totp: [] } };
+    TG.__factors = { data: { totp: [] } };
     const r = await GET(req({ method: "GET", token: "tok", type: "mfa-status" }));
     expect(r.status).toBe(200);
     const body = await r.json();
@@ -67,7 +78,7 @@ describe("MFA route", () => {
   });
 
   it("GET returns mfa-status with enabled=true when verified factor exists", async () => {
-    (globalThis as any).__factors = { data: { totp: [{ id: "f1", status: "verified", friendly_name: "Auth" }] } };
+    TG.__factors = { data: { totp: [{ id: "f1", status: "verified", friendly_name: "Auth" }] } };
     const r = await GET(req({ method: "GET", token: "tok", type: "mfa-status" }));
     expect(r.status).toBe(200);
     const body = await r.json();
@@ -76,7 +87,7 @@ describe("MFA route", () => {
   });
 
   it("GET returns mfa-factors list", async () => {
-    (globalThis as any).__factors = { data: { totp: [{ id: "f1", status: "verified" }] } };
+    TG.__factors = { data: { totp: [{ id: "f1", status: "verified" }] } };
     const r = await GET(req({ method: "GET", token: "tok", type: "mfa-factors" }));
     expect(r.status).toBe(200);
     const body = await r.json();

@@ -1,11 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { NextRequest } from "next/server";
+import type { ModerationResult } from "@/lib/contentScan";
+
+type ContentScanTestGlobals = {
+  __scanResult: ModerationResult;
+  __profile?: { data: { id: string } | null; error: unknown };
+  __authUser?: { data: { user: { id: string } | null }; error: unknown };
+};
+
+const TG = globalThis as unknown as ContentScanTestGlobals;
 
 vi.mock("@/lib/rate-limit", () => ({
   checkRate: vi.fn(async () => true),
   clientIp: vi.fn(() => "10.0.0.1"),
 }));
 vi.mock("@/lib/contentScan", () => ({
-  scanWithRekognition: vi.fn(async () => (globalThis as any).__scanResult),
+  scanWithRekognition: vi.fn(async () => (globalThis as unknown as ContentScanTestGlobals).__scanResult),
   logScan: vi.fn(async () => undefined),
   reportIncident: vi.fn(async () => undefined),
   escalateToNcmec: vi.fn(async () => undefined),
@@ -24,7 +34,7 @@ vi.mock("@/lib/supabase", () => ({
     from: () => ({
       select: () => ({
         eq: () => ({
-          maybeSingle: async () => (globalThis as any).__profile || { data: null, error: null },
+          maybeSingle: async () => (globalThis as unknown as ContentScanTestGlobals).__profile || { data: null, error: null },
         }),
       }),
     }),
@@ -35,7 +45,7 @@ import { POST } from "@/app/api/muse/content-scan/route";
 import { checkRate } from "@/lib/rate-limit";
 import { scanWithRekognition, logScan, reportIncident, escalateToNcmec } from "@/lib/contentScan";
 
-function safeResult() {
+function safeResult(): ModerationResult {
   return {
     safe: true,
     scanned: true,
@@ -61,7 +71,7 @@ function mockReq(opts: {
       if (opts.context) fd.set("context", opts.context);
       return fd;
     },
-  } as any;
+  } as unknown as NextRequest;
 }
 
 function imageFile(type = "image/jpeg", size = 10) {
@@ -72,10 +82,10 @@ describe("content-scan route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv("MUSE_DEMO_MODE", "false");
-    (globalThis as any).__authUser = { data: { user: { id: "auth-1" } }, error: null };
-    (globalThis as any).__profile = { data: { id: "p1" }, error: null };
-    (globalThis as any).__scanResult = safeResult();
-    (scanWithRekognition as any).mockImplementation(async () => (globalThis as any).__scanResult);
+    TG.__authUser = { data: { user: { id: "auth-1" } }, error: null };
+    TG.__profile = { data: { id: "p1" }, error: null };
+    TG.__scanResult = safeResult();
+    vi.mocked(scanWithRekognition).mockImplementation(async () => TG.__scanResult);
   });
 
   it("409 demo mode", async () => {
@@ -95,7 +105,7 @@ describe("content-scan route", () => {
   });
 
   it("429 when rate limited", async () => {
-    (checkRate as any).mockResolvedValueOnce(false);
+    vi.mocked(checkRate).mockResolvedValueOnce(false);
     const r = await POST(mockReq({ headers: { authorization: "Bearer tok" }, file: imageFile() }));
     expect(r.status).toBe(429);
   });
@@ -132,7 +142,7 @@ describe("content-scan route", () => {
   });
 
   it("403 on shouldBlock and reports incident", async () => {
-    (globalThis as any).__scanResult = {
+    TG.__scanResult = {
       ...safeResult(),
       safe: false,
       shouldBlock: true,
@@ -149,7 +159,7 @@ describe("content-scan route", () => {
   });
 
   it("escalates CSAM instead of generic report", async () => {
-    (globalThis as any).__scanResult = {
+    TG.__scanResult = {
       ...safeResult(),
       safe: false,
       shouldBlock: true,
@@ -164,7 +174,7 @@ describe("content-scan route", () => {
   });
 
   it("503 when scan pipeline throws (fail-closed)", async () => {
-    (scanWithRekognition as any).mockRejectedValueOnce(new Error("rek down"));
+    vi.mocked(scanWithRekognition).mockRejectedValueOnce(new Error("rek down"));
     const r = await POST(mockReq({ headers: { authorization: "Bearer tok" }, file: imageFile() }));
     expect(r.status).toBe(503);
     const body = await r.json();

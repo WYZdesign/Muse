@@ -1,4 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { NextRequest } from "next/server";
+
+type EmbedTestGlobals = {
+  __profile?: { data: Record<string, unknown> | null; error: unknown };
+  __profileList?: { id: string }[];
+};
+
+const TG = globalThis as unknown as EmbedTestGlobals;
 
 vi.mock("@/lib/rate-limit", () => ({
   checkRate: vi.fn(async () => true),
@@ -25,23 +33,23 @@ vi.mock("@/lib/supabase", () => ({
     from: (table: string) => {
       if (table === "muse_profiles") {
         return {
-          select: (cols?: string, opts?: any) => {
+          select: (cols?: string, opts?: { count?: string; head?: boolean }) => {
             if (opts?.count === "exact") {
               return {
                 not: () => ({ count: 5 }),
                 count: 10,
-                then: (resolve: any) => resolve({ count: 10 }),
+                then: (resolve: (v: { count: number }) => unknown) => resolve({ count: 10 }),
               };
             }
             return {
               eq: () => ({
-                maybeSingle: async () => (globalThis as any).__profile || { data: null, error: null },
+                maybeSingle: async () => (globalThis as unknown as EmbedTestGlobals).__profile || { data: null, error: null },
               }),
-              limit: async () => ({ data: (globalThis as any).__profileList || [], error: null }),
-              maybeSingle: async () => (globalThis as any).__profile || { data: null, error: null },
+              limit: async () => ({ data: (globalThis as unknown as EmbedTestGlobals).__profileList || [], error: null }),
+              maybeSingle: async () => (globalThis as unknown as EmbedTestGlobals).__profile || { data: null, error: null },
               not: () => ({ count: 5 }),
               count: 10,
-              then: (resolve: any) => resolve({ count: 10 }),
+              then: (resolve: (v: { count: number }) => unknown) => resolve({ count: 10 }),
             };
           },
           update: () => ({ eq: async () => ({ error: null }) }),
@@ -58,7 +66,7 @@ vi.mock("@/lib/supabase", () => ({
         return {
           select: () => ({
             count: 3,
-            then: (resolve: any) => resolve({ count: 3 }),
+            then: (resolve: (v: { count: number }) => unknown) => resolve({ count: 3 }),
           }),
         };
       }
@@ -76,7 +84,7 @@ function req(body: unknown, headers: Record<string, string> = {}) {
   return {
     json: async () => body,
     headers: { get: (n: string) => headers[n] ?? null },
-  } as any;
+  } as unknown as NextRequest;
 }
 
 describe("embed route", () => {
@@ -84,13 +92,13 @@ describe("embed route", () => {
     vi.clearAllMocks();
     vi.stubEnv("MUSE_DEMO_MODE", "false");
     vi.stubEnv("ADMIN_EMAILS", "");
-    (aiEnabled as any).mockReturnValue(true);
-    (embedText as any).mockResolvedValue([0.1, 0.2]);
-    (globalThis as any).__profile = {
+    vi.mocked(aiEnabled).mockReturnValue(true);
+    vi.mocked(embedText).mockResolvedValue([0.1, 0.2]);
+    TG.__profile = {
       data: { id: "p1", name: "Me", email: "user@example.com", tier: "free", type: "creator", bio: "b", styles: [], looking: [] },
       error: null,
     };
-    (globalThis as any).__profileList = [{ id: "p1" }, { id: "p2" }];
+    TG.__profileList = [{ id: "p1" }, { id: "p2" }];
   });
 
   it("409 demo mode", async () => {
@@ -100,7 +108,7 @@ describe("embed route", () => {
   });
 
   it("429 when rate limited", async () => {
-    (checkRate as any).mockResolvedValueOnce(false);
+    vi.mocked(checkRate).mockResolvedValueOnce(false);
     const r = await POST(req({ action: "status" }, { authorization: "Bearer tok" }));
     expect(r.status).toBe(429);
   });
@@ -111,7 +119,7 @@ describe("embed route", () => {
   });
 
   it("404 profile missing", async () => {
-    (globalThis as any).__profile = { data: null, error: null };
+    TG.__profile = { data: null, error: null };
     const r = await POST(req({ action: "status" }, { authorization: "Bearer tok" }));
     expect(r.status).toBe(404);
   });
@@ -132,7 +140,7 @@ describe("embed route", () => {
 
   it("embed-all 503 when AI disabled", async () => {
     vi.stubEnv("ADMIN_EMAILS", "user@example.com");
-    (aiEnabled as any).mockReturnValue(false);
+    vi.mocked(aiEnabled).mockReturnValue(false);
     const r = await POST(req({ action: "embed-all" }, { authorization: "Bearer tok" }));
     expect(r.status).toBe(503);
   });

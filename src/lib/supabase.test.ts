@@ -1,14 +1,24 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import type { Mock } from "vitest";
 
 // createClient is recorded globally so the module can be re-imported with
 // different env without losing call history.
-vi.mock("@supabase/supabase-js", () => ({
-  createClient: (...args: any[]) => (globalThis as any).__createClient(...args),
-}));
+type ClientOpts = {
+  auth: { persistSession?: boolean; autoRefreshToken?: boolean };
+  global: { headers: { Authorization?: string } };
+};
 
-function client(url: string, key: string, opts: any) {
+function client(url: string, key: string, opts: ClientOpts) {
   return { url, key, opts, tag: "client" };
 }
+
+type SupabaseTestGlobals = { __createClient: Mock<typeof client> };
+
+const TG = globalThis as unknown as SupabaseTestGlobals;
+
+vi.mock("@supabase/supabase-js", () => ({
+  createClient: (url: string, key: string, opts: ClientOpts) => (globalThis as unknown as SupabaseTestGlobals).__createClient(url, key, opts),
+}));
 
 // CI sets these to placeholder values at the WORKFLOW level, so
 // `vi.unstubAllEnvs()` restores those placeholders rather than clearing them.
@@ -34,7 +44,7 @@ async function load(env: Record<string, string>): Promise<typeof import("./supab
 }
 
 beforeEach(() => {
-  (globalThis as any).__createClient = vi.fn(client);
+  TG.__createClient = vi.fn(client);
 });
 
 afterEach(() => {
@@ -50,7 +60,7 @@ describe("getServiceClient", () => {
       SUPABASE_SECRET_KEY: "svc-secret",
     });
     mod.getServiceClient();
-    const [url, key, opts] = (globalThis as any).__createClient.mock.calls.at(-1)!;
+    const [url, key, opts] = TG.__createClient.mock.calls.at(-1)!;
     expect(url).toBe("https://svc.example");
     expect(key).toBe("svc-secret");
     expect(opts.auth.persistSession).toBe(false);
@@ -62,7 +72,7 @@ describe("getServiceClient", () => {
       SUPABASE_SERVICE_ROLE_KEY: "legacy-role",
     });
     mod.getServiceClient();
-    const [url, key] = (globalThis as any).__createClient.mock.calls.at(-1)!;
+    const [url, key] = TG.__createClient.mock.calls.at(-1)!;
     expect(url).toBe("https://anon.example");
     expect(key).toBe("legacy-role");
   });
@@ -70,7 +80,7 @@ describe("getServiceClient", () => {
   it("passes empty strings rather than throwing when env is missing", async () => {
     const mod = await load({});
     expect(() => mod.getServiceClient()).not.toThrow();
-    const [url, key] = (globalThis as any).__createClient.mock.calls.at(-1)!;
+    const [url, key] = TG.__createClient.mock.calls.at(-1)!;
     expect(url).toBe("");
     expect(key).toBe("");
   });
@@ -83,7 +93,7 @@ describe("getUserScopedClient", () => {
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon-key",
     });
     mod.getUserScopedClient("tok-123");
-    const [url, key, opts] = (globalThis as any).__createClient.mock.calls.at(-1)!;
+    const [url, key, opts] = TG.__createClient.mock.calls.at(-1)!;
     expect(url).toBe("https://anon.example");
     expect(key).toBe("anon-key");
     expect(opts.auth.persistSession).toBe(false);
@@ -96,7 +106,7 @@ describe("getUserScopedClient", () => {
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "pub-key",
     });
     mod.getUserScopedClient("tok");
-    expect((globalThis as any).__createClient.mock.calls.at(-1)![1]).toBe("pub-key");
+    expect(TG.__createClient.mock.calls.at(-1)![1]).toBe("pub-key");
   });
 });
 
@@ -107,13 +117,13 @@ describe("supabase lazy proxy", () => {
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon-key",
     });
     // No client yet
-    expect((globalThis as any).__createClient).not.toHaveBeenCalled();
+    expect(TG.__createClient).not.toHaveBeenCalled();
 
     // Access twice — the getter must reuse the singleton.
-    void (mod.supabase as any).auth;
-    void (mod.supabase as any).from;
-    expect((globalThis as any).__createClient).toHaveBeenCalledTimes(1);
-    const [url, key, opts] = (globalThis as any).__createClient.mock.calls[0];
+    void mod.supabase.auth;
+    void mod.supabase.from;
+    expect(TG.__createClient).toHaveBeenCalledTimes(1);
+    const [url, key, opts] = TG.__createClient.mock.calls[0];
     expect(url).toBe("https://anon.example");
     expect(key).toBe("anon-key");
     expect(opts.auth.persistSession).toBe(true);

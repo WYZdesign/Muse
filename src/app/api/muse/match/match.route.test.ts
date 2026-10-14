@@ -1,4 +1,54 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { NextRequest } from "next/server";
+
+type MatchCandidateRow = {
+  id: string;
+  name?: string;
+  type?: string;
+  bio?: string;
+  styles?: string[];
+  looking?: string[];
+  zodiac?: string | null;
+  chinese?: string | null;
+  mbti?: string | null;
+  life_path?: number | string | null;
+  avatar?: string;
+  loc?: string;
+  photos?: string[];
+  collabs?: number;
+  verified?: boolean;
+  tier?: string;
+  profile_completion_pct?: number;
+  embedding?: number[] | null;
+  preferences?: Record<string, unknown>;
+  birthdate?: string;
+  last_seen_at?: string;
+  nsfw?: boolean;
+  suspended?: boolean;
+};
+type MatchViewerRow = {
+  id: string;
+  name?: string | null;
+  type?: string | null;
+  bio?: string | null;
+  styles?: string[] | null;
+  looking?: string[] | null;
+  zodiac?: string | null;
+  chinese?: string | null;
+  mbti?: string | null;
+  life_path?: number | string | null;
+  avatar?: string | null;
+  loc?: string | null;
+  tier?: string | null;
+  embedding?: number[] | null;
+};
+type MatchTestGlobals = {
+  __profile?: { data: MatchViewerRow | null; error?: unknown };
+  __candidates?: MatchCandidateRow[];
+  __ownMatches?: { target_id: string }[];
+};
+
+const TG = globalThis as unknown as MatchTestGlobals;
 
 vi.mock("@/lib/rate-limit", () => ({
   checkRate: vi.fn(async () => true),
@@ -25,9 +75,9 @@ vi.mock("@/lib/supabase", () => ({
         return {
           select: () => ({
             eq: () => ({
-              maybeSingle: async () => (globalThis as any).__profile || { data: null, error: null },
+              maybeSingle: async () => (globalThis as unknown as MatchTestGlobals).__profile || { data: null, error: null },
             }),
-            limit: async () => ({ data: (globalThis as any).__candidates || [], error: null }),
+            limit: async () => ({ data: (globalThis as unknown as MatchTestGlobals).__candidates || [], error: null }),
           }),
         };
       }
@@ -41,7 +91,7 @@ vi.mock("@/lib/supabase", () => ({
       if (table === "muse_matches") {
         return {
           select: () => ({
-            eq: async () => ({ data: (globalThis as any).__ownMatches || [], error: null }),
+            eq: async () => ({ data: (globalThis as unknown as MatchTestGlobals).__ownMatches || [], error: null }),
           }),
         };
       }
@@ -57,14 +107,14 @@ function req(headers: Record<string, string> = {}, search = "") {
   return {
     headers: { get: (n: string) => headers[n] ?? null },
     nextUrl: new URL(`https://muse.test/api/muse/match${search}`),
-  } as any;
+  } as unknown as NextRequest;
 }
 
 describe("match route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv("MUSE_DEMO_MODE", "false");
-    (globalThis as any).__profile = {
+    TG.__profile = {
       data: {
         id: "me",
         name: "Me",
@@ -83,7 +133,7 @@ describe("match route", () => {
       },
       error: null,
     };
-    (globalThis as any).__candidates = [
+    TG.__candidates = [
       {
         id: "c1",
         name: "Other",
@@ -137,7 +187,7 @@ describe("match route", () => {
   });
 
   it("429 when rate limited", async () => {
-    (checkRate as any).mockResolvedValueOnce(false);
+    vi.mocked(checkRate).mockResolvedValueOnce(false);
     const r = await GET(req({ authorization: "Bearer tok" }));
     expect(r.status).toBe(429);
   });
@@ -153,7 +203,7 @@ describe("match route", () => {
   });
 
   it("404 when profile missing", async () => {
-    (globalThis as any).__profile = { data: null, error: null };
+    TG.__profile = { data: null, error: null };
     const r = await GET(req({ authorization: "Bearer tok" }));
     expect(r.status).toBe(404);
   });
@@ -178,7 +228,7 @@ describe("match route", () => {
   });
 
   it("hides age (and never leaks birthdate) when the candidate opts out", async () => {
-    (globalThis as any).__candidates = [
+    TG.__candidates = [
       {
         id: "c2",
         name: "Private",
@@ -207,11 +257,11 @@ describe("match route", () => {
   // liked/matched kept resurfacing indefinitely — this endpoint never
   // consulted muse_matches at all. Locks in the fix.
   it("excludes a candidate the viewer already liked/matched (muse_matches row)", async () => {
-    (globalThis as any).__ownMatches = [{ target_id: "c1" }];
+    TG.__ownMatches = [{ target_id: "c1" }];
     const r = await GET(req({ authorization: "Bearer tok" }));
     expect(r.status).toBe(200);
     const body = await r.json();
     expect(body.total).toBe(0);
-    expect(body.profiles.map((p: any) => p.id)).not.toContain("c1");
+    expect(body.profiles.map((p: { id: string }) => p.id)).not.toContain("c1");
   });
 });

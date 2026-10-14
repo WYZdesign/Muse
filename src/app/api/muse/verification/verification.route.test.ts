@@ -1,21 +1,40 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { NextRequest } from "next/server";
+
+type VerificationTableValue = Record<string, unknown> | null;
+type VerificationSbQuery = {
+  select: () => VerificationSbQuery;
+  update: (v: Record<string, unknown>) => VerificationSbQuery;
+  eq: () => VerificationSbQuery;
+  maybeSingle: () => Promise<{ data: VerificationTableValue }>;
+  single: () => Promise<{ data: VerificationTableValue }>;
+};
+type VerificationSbMock = { from: (tbl: string) => VerificationSbQuery };
+type VerificationTestGlobals = {
+  __authUser?: { data: { user: { id: string } | null } };
+  __sbMock?: VerificationSbMock;
+  __ageVerified?: boolean;
+  __stripeCreateError?: Error | null;
+};
+
+const TG = globalThis as unknown as VerificationTestGlobals;
 
 vi.mock("@/lib/supabase", () => ({
   getServiceClient: () => ({
-    auth: { getUser: async (token: string) => (globalThis as any).__authUser || { data: { user: null } } },
-    ...(globalThis as any).__sbMock,
+    auth: { getUser: async (token: string) => (globalThis as unknown as VerificationTestGlobals).__authUser || { data: { user: null } } },
+    ...(globalThis as unknown as VerificationTestGlobals).__sbMock,
   }),
 }));
 vi.mock("@/lib/rate-limit", () => ({ checkRate: async () => true, clientIp: () => "10.0.0.1" }));
-vi.mock("@/lib/email", () => ({ sendEmail: async () => ({}), notify: (...a: any[]) => ({ subject: a[1] || "" }) }));
-vi.mock("@/lib/muse-actions/shared", () => ({ isAgeVerificationCurrent: () => (globalThis as any).__ageVerified ?? false }));
+vi.mock("@/lib/email", () => ({ sendEmail: async () => ({}), notify: (...a: unknown[]) => ({ subject: a[1] || "" }) }));
+vi.mock("@/lib/muse-actions/shared", () => ({ isAgeVerificationCurrent: () => (globalThis as unknown as VerificationTestGlobals).__ageVerified ?? false }));
 class FakeStripeError extends Error {}
-function FakeStripe(this: any) {
+function FakeStripe(this: unknown) {
   return {
     identity: {
       verificationSessions: {
         create: async () => {
-          if ((globalThis as any).__stripeCreateError) throw (globalThis as any).__stripeCreateError;
+          if (TG.__stripeCreateError) throw TG.__stripeCreateError;
           return { id: "vs_1", client_secret: "cs_1", url: "https://stripe.test/vs_1" };
         },
         retrieve: async () => ({ status: "verified", verified_outputs: {} }),
@@ -23,17 +42,17 @@ function FakeStripe(this: any) {
     },
   };
 }
-(FakeStripe as any).errors = { StripeError: FakeStripeError };
+Object.assign(FakeStripe, { errors: { StripeError: FakeStripeError } });
 vi.mock("stripe", () => ({ default: FakeStripe }));
 
 import { POST } from "@/app/api/muse/verification/route";
 
-const state: any = { tables: {}, updates: [] };
-(globalThis as any).__sbMock = {
+const state: { tables: Record<string, VerificationTableValue>; updates: { tbl: string; v: Record<string, unknown> }[] } = { tables: {}, updates: [] };
+TG.__sbMock = {
   from: (tbl: string) => {
-    const q: any = {
+    const q: VerificationSbQuery = {
       select: () => q,
-      update: (v: any) => { state.updates.push({ tbl, v }); return q; },
+      update: (v: Record<string, unknown>) => { state.updates.push({ tbl, v }); return q; },
       eq: () => q,
       maybeSingle: async () => ({ data: state.tables[tbl] ?? null }),
       single: async () => ({ data: state.tables[tbl] ?? null }),
@@ -54,15 +73,15 @@ function req(body: unknown, token = "tok") {
     },
     json: async () => body,
     nextUrl: { origin: "https://muse.wyzdesign.com" },
-  } as any;
+  } as unknown as NextRequest;
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
   process.env.STRIPE_SECRET_KEY = "sk_test_fake";
-  (globalThis as any).__authUser = { data: { user: { id: "u1" } } };
-  (globalThis as any).__ageVerified = false;
-  (globalThis as any).__stripeCreateError = null;
+  TG.__authUser = { data: { user: { id: "u1" } } };
+  TG.__ageVerified = false;
+  TG.__stripeCreateError = null;
   state.tables = {};
   state.updates = [];
 });
@@ -112,7 +131,7 @@ describe("verification route", () => {
   // callers, so surface them instead of masking every failure the same way.
   it("surfaces the underlying Stripe error message instead of a bare generic one", async () => {
     state.tables.muse_profiles = { id: "p1" };
-    (globalThis as any).__stripeCreateError = new FakeStripeError("Expired API Key provided");
+    TG.__stripeCreateError = new FakeStripeError("Expired API Key provided");
     const r = await POST(req({ action: "create-verification-session" }));
     expect(r.status).toBe(500);
     const body = await r.json();
@@ -121,7 +140,7 @@ describe("verification route", () => {
 
   it("falls back to the generic message for a non-Stripe error", async () => {
     state.tables.muse_profiles = { id: "p1" };
-    (globalThis as any).__stripeCreateError = new Error("some unrelated failure");
+    TG.__stripeCreateError = new Error("some unrelated failure");
     const r = await POST(req({ action: "create-verification-session" }));
     expect(r.status).toBe(500);
     const body = await r.json();

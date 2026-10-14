@@ -1,26 +1,31 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+type RateRpcResult = { data: unknown; error: { message: string } | null };
+type RateRpcFn = (name: string, args: { p_key: string; p_limit: number }) => Promise<RateRpcResult>;
+type RateLimitTestGlobals = { __rateRpc?: RateRpcFn };
+
+const TG = globalThis as unknown as RateLimitTestGlobals;
+
 // checkRate fails CLOSED if the durable RPC errors. Mock the service client
 // per-test via globalThis.__rateRpc so fail-closed paths are deterministic.
 vi.mock("@/lib/supabase", () => ({
   getServiceClient: vi.fn(() => ({
-    rpc: vi.fn(async (_name: string, args: any) =>
-      (globalThis as any).__rateRpc
-        ? (globalThis as any).__rateRpc(_name, args)
-        : { data: args?.p_limit <= 999, error: null },
-    ),
+    rpc: vi.fn(async (_name: string, args: { p_key: string; p_limit: number }) => {
+      const fn = (globalThis as unknown as RateLimitTestGlobals).__rateRpc;
+      return fn ? fn(_name, args) : { data: args.p_limit <= 999, error: null };
+    }),
   })),
 }));
 
 import { checkRate, checkRateUser, clientIp } from "./rate-limit";
 
 beforeEach(() => {
-  (globalThis as any).__rateRpc = undefined;
+  TG.__rateRpc = undefined;
 });
 
 describe("clientIp", () => {
   function mockHeaders(get: (name: string) => string | null) {
-    return { headers: { get } } as any;
+    return { headers: { get } };
   }
 
   it("prefers x-real-ip", () => {
@@ -61,27 +66,27 @@ describe("checkRate", () => {
   });
 
   it("fails closed when durable RPC returns an error", async () => {
-    (globalThis as any).__rateRpc = async () => ({ data: null, error: { message: "db down" } });
+    TG.__rateRpc = async () => ({ data: null, error: { message: "db down" } });
     expect(await checkRate("fail-closed-rpc-" + Math.random(), "a", 10)).toBe(false);
   });
 
   it("fails closed when durable RPC returns null (not boolean true)", async () => {
-    (globalThis as any).__rateRpc = async () => ({ data: null, error: null });
+    TG.__rateRpc = async () => ({ data: null, error: null });
     expect(await checkRate("fail-closed-null-" + Math.random(), "a", 10)).toBe(false);
   });
 
   it("fails closed when durable RPC returns non-true value", async () => {
-    (globalThis as any).__rateRpc = async () => ({ data: "ok", error: null });
+    TG.__rateRpc = async () => ({ data: "ok", error: null });
     expect(await checkRate("fail-closed-str-" + Math.random(), "a", 10)).toBe(false);
   });
 
   it("allows when durable RPC returns explicit true", async () => {
-    (globalThis as any).__rateRpc = async () => ({ data: true, error: null });
+    TG.__rateRpc = async () => ({ data: true, error: null });
     expect(await checkRate("allow-true-" + Math.random(), "a", 5)).toBe(true);
   });
 
   it("denies when durable RPC returns explicit false", async () => {
-    (globalThis as any).__rateRpc = async () => ({ data: false, error: null });
+    TG.__rateRpc = async () => ({ data: false, error: null });
     expect(await checkRate("deny-false-" + Math.random(), "a", 5)).toBe(false);
   });
 });
@@ -96,7 +101,7 @@ describe("checkRateUser", () => {
   });
 
   it("fails closed on RPC error for user keys", async () => {
-    (globalThis as any).__rateRpc = async () => ({ data: null, error: { message: "boom" } });
+    TG.__rateRpc = async () => ({ data: null, error: { message: "boom" } });
     expect(await checkRateUser("u-fail-" + Math.random(), "action", 5)).toBe(false);
   });
 });

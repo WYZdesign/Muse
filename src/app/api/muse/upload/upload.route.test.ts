@@ -1,11 +1,32 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { NextRequest } from "next/server";
+
+type UploadTableValue = Record<string, unknown> | null;
+type UploadSbQuery = {
+  select: () => UploadSbQuery;
+  insert: (v: Record<string, unknown>) => UploadSbQuery;
+  update: (v: Record<string, unknown>) => UploadSbQuery;
+  eq: () => UploadSbQuery;
+  maybeSingle: () => Promise<{ data: UploadTableValue }>;
+  then: (resolve: (v: { data: UploadTableValue; error: null }) => unknown) => unknown;
+};
+type UploadSbMock = {
+  from: (tbl: string) => UploadSbQuery;
+  storage: { from: () => { upload: () => Promise<{ data: { path: string }; error: null }>; getPublicUrl: () => { data: { publicUrl: string } } } };
+};
+type UploadTestGlobals = {
+  __authUser?: { data: { user: { id: string } | null } };
+  __sbMock?: UploadSbMock;
+};
+
+const TG = globalThis as unknown as UploadTestGlobals;
 
 vi.mock("@/lib/supabase", () => ({
-  supabase: { auth: { getUser: async (token: string) => (globalThis as any).__authUser || { data: { user: null } } } },
-  getServiceClient: () => (globalThis as any).__sbMock,
+  supabase: { auth: { getUser: async (token: string) => (globalThis as unknown as UploadTestGlobals).__authUser || { data: { user: null } } } },
+  getServiceClient: () => (globalThis as unknown as UploadTestGlobals).__sbMock,
 }));
 vi.mock("@/lib/rate-limit", () => ({ checkRate: async () => true, checkRateUser: async () => true, clientIp: () => "10.0.0.1" }));
-vi.mock("@/lib/http", () => ({ safeServerError: (e: any, ctx: string) => ({ status: 500, json: async () => ({ error: `${ctx} failed` }) }) as any }));
+vi.mock("@/lib/http", () => ({ safeServerError: (e: unknown, ctx: string) => ({ status: 500, json: async () => ({ error: `${ctx} failed` }) }) }));
 vi.mock("@/lib/contentScan", () => ({
   scanWithRekognition: async () => ({ safe: true, scanned: true, flaggedCategories: [], confidence: 0, shouldBlock: false, shouldReport: false, isCSAM: false, details: [] }),
   // Second moderation engine (added alongside Rekognition) — must be present or
@@ -19,17 +40,17 @@ vi.mock("@/lib/contentScan", () => ({
 
 import { POST } from "@/app/api/muse/upload/route";
 
-const state: any = { tables: { muse_profiles: { id: "p1" } }, inserts: [] };
-(globalThis as any).__sbMock = {
+const state: { tables: Record<string, UploadTableValue>; inserts: { tbl: string; v: Record<string, unknown> }[] } = { tables: { muse_profiles: { id: "p1" } }, inserts: [] };
+TG.__sbMock = {
   from: (tbl: string) => {
-    const q: any = {
+    const q: UploadSbQuery = {
       select: () => q,
-      insert: (v: any) => { state.inserts.push({ tbl, v }); return q; },
-      update: (v: any) => q,
+      insert: (v: Record<string, unknown>) => { state.inserts.push({ tbl, v }); return q; },
+      update: (v: Record<string, unknown>) => q,
       eq: () => q,
       maybeSingle: async () => ({ data: state.tables[tbl] ?? null }),
+      then: (resolve) => resolve({ data: state.tables[tbl] ?? null, error: null }),
     };
-    q.then = (resolve: any) => resolve({ data: state.tables[tbl] ?? null, error: null });
     return q;
   },
   storage: {
@@ -47,18 +68,18 @@ function req(formData: FormData, token = "tok") {
         n.toLowerCase() === "authorization" ? "Bearer " + token : null,
     },
     formData: async () => formData,
-  } as any;
+  } as unknown as NextRequest;
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
-  (globalThis as any).__authUser = { data: { user: { id: "u1" } } };
+  TG.__authUser = { data: { user: { id: "u1" } } };
   state.inserts = [];
 });
 
 describe("upload route", () => {
   it("rejects missing auth with 401", async () => {
-    (globalThis as any).__authUser = { data: { user: null } };
+    TG.__authUser = { data: { user: null } };
     const fd = new FormData();
     fd.append("file", new Blob([new Uint8Array([0x89,0x50,0x4E,0x47])], { type: "image/png" }), "test.png");
     const r = await POST(req(fd, ""));

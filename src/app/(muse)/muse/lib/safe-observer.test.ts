@@ -28,7 +28,7 @@ function installFakeMutationObserver() {
   vi.stubGlobal("MutationObserver", FakeMutationObserver);
   const dispatched: CustomEvent[] = [];
   vi.stubGlobal("window", { dispatchEvent: (e: CustomEvent) => dispatched.push(e) });
-  vi.stubGlobal("CustomEvent", class { type: string; detail: any; constructor(type: string, init?: any) { this.type = type; this.detail = init?.detail; } });
+  vi.stubGlobal("CustomEvent", class { type: string; detail: unknown; constructor(type: string, init?: { detail?: unknown }) { this.type = type; this.detail = init?.detail; } });
   return { instances, dispatched };
 }
 
@@ -39,11 +39,11 @@ describe("createSafeObserver", () => {
     const { instances } = installFakeMutationObserver();
     const seen: number[] = [];
     const handle = createSafeObserver((muts) => seen.push(muts.length), { label: "test", maxFiringsPerWindow: 5, windowMs: 1000 });
-    handle.observe({} as any, { childList: true });
+    handle.observe({} as unknown as Node, { childList: true });
 
     const fake = instances[0];
-    fake.callback([{} as MutationRecord], fake as any);
-    fake.callback([{} as MutationRecord], fake as any);
+    fake.callback([{} as MutationRecord], fake as unknown as MutationObserver);
+    fake.callback([{} as MutationRecord], fake as unknown as MutationObserver);
 
     expect(seen).toEqual([1, 1]);
     expect(fake.disconnect).not.toHaveBeenCalled();
@@ -54,13 +54,13 @@ describe("createSafeObserver", () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const seen: number[] = [];
     const handle = createSafeObserver((muts) => seen.push(muts.length), { label: "runaway", maxFiringsPerWindow: 3, windowMs: 1000 });
-    handle.observe({} as any, { childList: true });
+    handle.observe({} as unknown as Node, { childList: true });
 
     const fake = instances[0];
     // Fire well past the threshold in rapid succession (simulating a
     // self-feeding mutation storm) — Date.now() timestamps will all land
     // inside the same rolling window since this runs synchronously.
-    for (let i = 0; i < 10; i++) fake.callback([{} as MutationRecord], fake as any);
+    for (let i = 0; i < 10; i++) fake.callback([{} as MutationRecord], fake as unknown as MutationObserver);
 
     // Circuit breaker should have tripped after the 4th firing (threshold 3)
     // and stopped calling the real callback from then on.
@@ -69,20 +69,20 @@ describe("createSafeObserver", () => {
     expect(errorSpy).toHaveBeenCalledTimes(1);
     expect(dispatched).toHaveLength(1);
     expect(dispatched[0].type).toBe("muse:observer-tripped");
-    expect((dispatched[0] as any).detail.label).toBe("runaway");
+    expect(dispatched[0].detail.label).toBe("runaway");
   });
 
   it("observe() is a no-op once tripped, so a caller can't resurrect a runaway observer", () => {
     const { instances } = installFakeMutationObserver();
     vi.spyOn(console, "error").mockImplementation(() => {});
     const handle = createSafeObserver(() => {}, { label: "runaway", maxFiringsPerWindow: 1, windowMs: 1000 });
-    handle.observe({} as any, {});
+    handle.observe({} as unknown as Node, {});
     const fake = instances[0];
-    fake.callback([{} as MutationRecord], fake as any);
-    fake.callback([{} as MutationRecord], fake as any); // trips here
+    fake.callback([{} as MutationRecord], fake as unknown as MutationObserver);
+    fake.callback([{} as MutationRecord], fake as unknown as MutationObserver); // trips here
 
     fake.observe.mockClear();
-    handle.observe({} as any, {}); // should be swallowed, not re-armed
+    handle.observe({} as unknown as Node, {}); // should be swallowed, not re-armed
     expect(fake.observe).not.toHaveBeenCalled();
   });
 });

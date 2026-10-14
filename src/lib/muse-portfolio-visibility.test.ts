@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import type { getServiceClient } from "@/lib/supabase";
 import { createSb, tableCalls } from "@/test-support/sb";
 import {
   DEFAULT_PORTFOLIO_VISIBILITY,
@@ -10,6 +11,8 @@ import {
   portfolioVisibilityFromPreferences,
   resolvePortfolioGate,
 } from "@/lib/muse-portfolio-visibility";
+
+type Sb = ReturnType<typeof getServiceClient>;
 
 const OWNER = "11111111-1111-4111-8111-111111111111";
 const VIEWER = "22222222-2222-4222-8222-222222222222";
@@ -53,20 +56,20 @@ describe("getProfilePortfolioVisibility", () => {
     const sb = createSb((table) =>
       table === "muse_profiles" ? { data: { preferences: { portfolioVisibility: "matches" } } } : { data: null },
     );
-    expect(await getProfilePortfolioVisibility(sb as any, OWNER)).toBe("matches");
+    expect(await getProfilePortfolioVisibility(sb as unknown as Sb, OWNER)).toBe("matches");
   });
   it("defaults to everyone when the row is missing", async () => {
     const sb = createSb(() => ({ data: null }));
-    expect(await getProfilePortfolioVisibility(sb as any, OWNER)).toBe("everyone");
+    expect(await getProfilePortfolioVisibility(sb as unknown as Sb, OWNER)).toBe("everyone");
   });
 });
 
 describe("areMutuallyMatched", () => {
   it("is false without both ids (and does not query)", async () => {
     const sb = createSb(() => ({ data: [] }));
-    expect(await areMutuallyMatched(sb as any, "", OWNER)).toBe(false);
-    expect(await areMutuallyMatched(sb as any, VIEWER, "")).toBe(false);
-    expect(await areMutuallyMatched(sb as any, OWNER, OWNER)).toBe(false);
+    expect(await areMutuallyMatched(sb as unknown as Sb, "", OWNER)).toBe(false);
+    expect(await areMutuallyMatched(sb as unknown as Sb, VIEWER, "")).toBe(false);
+    expect(await areMutuallyMatched(sb as unknown as Sb, OWNER, OWNER)).toBe(false);
     expect(tableCalls(sb.__log, "muse_matches")).toHaveLength(0);
   });
   it("is true only when both directions exist", async () => {
@@ -76,31 +79,31 @@ describe("areMutuallyMatched", () => {
         { user_id: OWNER, target_id: VIEWER },
       ],
     }));
-    expect(await areMutuallyMatched(both as any, VIEWER, OWNER)).toBe(true);
+    expect(await areMutuallyMatched(both as unknown as Sb, VIEWER, OWNER)).toBe(true);
   });
   it("is false for a one-directional like", async () => {
     const oneWay = createSb(() => ({ data: [{ user_id: VIEWER, target_id: OWNER }] }));
-    expect(await areMutuallyMatched(oneWay as any, VIEWER, OWNER)).toBe(false);
+    expect(await areMutuallyMatched(oneWay as unknown as Sb, VIEWER, OWNER)).toBe(false);
   });
   it("is false when the query returns no data", async () => {
     const none = createSb(() => ({ data: null }));
-    expect(await areMutuallyMatched(none as any, VIEWER, OWNER)).toBe(false);
+    expect(await areMutuallyMatched(none as unknown as Sb, VIEWER, OWNER)).toBe(false);
   });
 });
 
 describe("resolvePortfolioGate", () => {
   it("always allows the owner and does not read their preferences", async () => {
     const sb = createSb(() => ({ data: { preferences: { portfolioVisibility: "private" } } }));
-    expect(await resolvePortfolioGate(sb as any, OWNER, OWNER)).toEqual({ allowed: true, visibility: "everyone" });
+    expect(await resolvePortfolioGate(sb as unknown as Sb, OWNER, OWNER)).toEqual({ allowed: true, visibility: "everyone" });
     expect(tableCalls(sb.__log, "muse_profiles")).toHaveLength(0);
   });
   it("allows any viewer when the portfolio is public", async () => {
     const sb = createSb(() => ({ data: { preferences: { portfolioVisibility: "everyone" } } }));
-    expect(await resolvePortfolioGate(sb as any, OWNER, VIEWER)).toEqual({ allowed: true, visibility: "everyone" });
+    expect(await resolvePortfolioGate(sb as unknown as Sb, OWNER, VIEWER)).toEqual({ allowed: true, visibility: "everyone" });
   });
   it("denies non-owners when the portfolio is private", async () => {
     const sb = createSb(() => ({ data: { preferences: { portfolioVisibility: "private" } } }));
-    const gate = await resolvePortfolioGate(sb as any, OWNER, VIEWER);
+    const gate = await resolvePortfolioGate(sb as unknown as Sb, OWNER, VIEWER);
     expect(gate.allowed).toBe(false);
     expect(gate.visibility).toBe("private");
     expect(tableCalls(sb.__log, "muse_matches")).toHaveLength(0);
@@ -111,7 +114,7 @@ describe("resolvePortfolioGate", () => {
         ? { data: { preferences: { portfolioVisibility: "matches" } } }
         : { data: [{ user_id: VIEWER, target_id: OWNER }, { user_id: OWNER, target_id: VIEWER }] },
     );
-    expect((await resolvePortfolioGate(sb as any, OWNER, VIEWER)).allowed).toBe(true);
+    expect((await resolvePortfolioGate(sb as unknown as Sb, OWNER, VIEWER)).allowed).toBe(true);
   });
   it("denies an unmatched viewer when visibility is matches", async () => {
     const sb = createSb((table) =>
@@ -119,10 +122,10 @@ describe("resolvePortfolioGate", () => {
         ? { data: { preferences: { portfolioVisibility: "matches" } } }
         : { data: [] },
     );
-    expect((await resolvePortfolioGate(sb as any, OWNER, VIEWER)).allowed).toBe(false);
+    expect((await resolvePortfolioGate(sb as unknown as Sb, OWNER, VIEWER)).allowed).toBe(false);
   });
   it("denies an unauthenticated viewer when visibility is matches", async () => {
     const sb = createSb(() => ({ data: { preferences: { portfolioVisibility: "matches" } } }));
-    expect((await resolvePortfolioGate(sb as any, OWNER, null)).allowed).toBe(false);
+    expect((await resolvePortfolioGate(sb as unknown as Sb, OWNER, null)).allowed).toBe(false);
   });
 });
