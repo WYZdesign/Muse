@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createSb, tableCalls, type SbCall } from "@/test-support/sb";
+import { createSb, tableCalls, type SbCall, type SbMock, type SbResult } from "@/test-support/sb";
+import type { NextRequest } from "next/server";
 
 vi.mock("@/lib/rate-limit", () => ({ checkRate: async () => true, checkRateUser: async () => true, clientIp: () => "10.0.0.1" }));
 vi.mock("@/lib/request-safety", () => ({ sanitizeText: (s: string, n: number) => String(s).slice(0, n) }));
@@ -7,53 +8,164 @@ vi.mock("@/lib/http", () => ({
   safeServerError: () => new Response(JSON.stringify({ error: "Server error" }), { status: 500, headers: { "content-type": "application/json" } }),
 }));
 
-const state: any = { profiles: [], nsfw: false };
-(globalThis as any).__authUser = null;
+// The mocked module factory is hoisted above the imports, so the active mock is
+// kept on globalThis and captured through vi.hoisted. The shape below names only
+// what the tests read back; the mock client itself stays opaque.
+type AuthUser = { id: string; email?: string };
+type TestGlobals = { __authUser: AuthUser | null; __sbMock: unknown };
+const g = vi.hoisted(() => globalThis as unknown as TestGlobals);
+
+const state: { profiles: unknown[]; nsfw: boolean } = { profiles: [], nsfw: false };
+g.__authUser = null;
 vi.mock("@/lib/supabase", () => ({
-  getServiceClient: () => (globalThis as any).__sbMock,
-  supabase: { auth: { getUser: async () => ({ data: { user: (globalThis as any).__authUser } }) } },
+  getServiceClient: () => g.__sbMock,
+  supabase: { auth: { getUser: async () => ({ data: { user: g.__authUser } }) } },
 }));
 
 import { GET } from "@/lib/muse-actions/get";
 
-function makeQuery() {
-  const q: any = {
+// The mocked Supabase client returned by installSb().
+type SbAuth = {
+  getUser: (token?: string) => Promise<{ data: { user: AuthUser | null }; error: { message: string } | null }>;
+};
+type TestSb = SbMock & { auth: SbAuth };
+
+// The fluent query builder makeQuery() hands back. Every chain method returns
+// the same builder; the two setters settle it.
+type QueryMock = {
+  select: () => QueryMock;
+  eq: () => QueryMock;
+  in: () => QueryMock;
+  order: () => QueryMock;
+  limit: () => QueryMock;
+  or: () => QueryMock;
+  range: () => QueryMock;
+  update: () => QueryMock;
+  delete: () => QueryMock;
+  upsert: () => QueryMock;
+  insert: () => QueryMock;
+  maybeSingle: () => Promise<{ data: null }>;
+  single: () => Promise<{ data: null }>;
+};
+
+// A list whose .find is known to hit (every call site asserts a found row), so
+// the element is not widened to `| undefined` and the assertions stay unchanged.
+type Found<T> = Omit<T[], "find"> & {
+  find(predicate: (value: T, index: number, obj: T[]) => boolean): T;
+};
+
+// Response shapes read back off the handler JSON. Only the fields each suite
+// touches are named; Supabase rows are already narrowed inside get.ts.
+type ProfileOut = {
+  id: string;
+  age?: number;
+  birthdate?: unknown;
+  preferences?: unknown;
+  matchScore?: number;
+  verified?: boolean;
+  last_seen_at?: string;
+  showOnline?: boolean;
+  showAge?: boolean;
+};
+type ProfilesBody = { profiles: Found<ProfileOut> };
+
+type MatchTargetOut = { id: string; name?: string; nsfw?: boolean; avatar?: string; age?: number; showAge?: boolean };
+type MatchOut = { id?: string; user_id?: string; target_id: MatchTargetOut };
+type MatchesBody = { matches: MatchOut[] };
+
+type MemberOut = { user_id?: string; user_name?: string; user_avatar?: string; role?: string; joined_at?: string };
+type MembersBody = { members: MemberOut[] };
+
+type BriefOut = { id?: string; author_id?: { id?: string; name?: string } };
+type BriefsBody = { briefs: BriefOut[] };
+
+type PostOut = { id?: string; author_id?: { id?: string; name?: string } };
+type PostsBody = { posts: PostOut[] };
+
+type SessionOut = { id: string; name?: string; title?: string; hostVerified?: boolean; hostCompletedSessions?: number };
+type SessionsBody = { sessions: Found<SessionOut> };
+
+type EventOut = { id?: string; created_by?: unknown };
+type EventsBody = { events: EventOut[] };
+
+type MomentOut = { id?: string; author_id?: { id?: string; name?: string } };
+type MomentsBody = { moments: MomentOut[] };
+
+type MessagesBody = { messages: { id: string }[] };
+type RsvpsBody = { rsvps: string[] };
+type ExportBody = { auth: { id: string; email?: string }; muse_profiles: unknown; muse_messages: unknown[]; exportedAt: string };
+type CountBody = { count: number };
+type DiscoverCountBody = { total: number; activeLastWeek: number };
+type ProfessionalOut = { profileId: string | null; verified: boolean; reviewRating: number | null; reviewCount: number; reviewCriteria: Record<string, number> };
+type ProfessionalsBody = { professionals: ProfessionalOut[] };
+type ReviewOut = { id?: string; criteria: Record<string, number | null> };
+type ReviewsBody = { reviews: ReviewOut[] };
+type Trust = { verified?: boolean; ageVerified?: boolean; rating?: number | null; reviewCount?: number; completedAsHost?: number; responseRate?: number | null; lastSeenDaysAgo?: number | null };
+type TrustBody = { trust: Trust };
+type PhotoLikesBody = { counts: Record<string, number>; likedByMe?: Record<string, boolean> };
+type BookingOut = { id?: string; payment_status?: string | null };
+type BookingsBody = { asBooker: BookingOut[]; asHost: BookingOut[] };
+type MyStatsBody = { views: number; likesReceived: number };
+type ViewersBody = { viewers: { id?: string; name?: string; avatar?: string; viewedAt?: string | null }[] };
+type CompletionBody = { completion: number; breakdown: Record<string, { done: boolean }> };
+type AnalyticsBody = { views: number; viewsLast30Days: number; matchesReceived: number; messagesSent: number; briefApplications: number; totalEarningsCents: number; totalEarningsUsd: string };
+type NotificationsBody = { notifications: { id?: string; type?: string; read?: boolean; from?: string; avatar?: string }[] };
+type GroupSlot = { unread?: number; items?: unknown[] };
+type NotifGroupsBody = { groups: Record<string, GroupSlot> };
+type PrefsBody = { prefs: Record<string, boolean> };
+type SearchesBody = { searches: { id?: string; name?: string }[] };
+type BoostBody = { isPro: boolean; inventory: number; isBoosted: boolean; expiresAt: string | null };
+type PayoutBody = { connected: boolean; completedBookingsCount: number; unpaidEarningsCents: number; needsConnect: boolean };
+type RefundsBody = { requests: { id?: string }[] };
+type AlbumOut = { id?: string; photo_count?: number };
+type AlbumsBody = { albums: AlbumOut[] };
+type PhotosBody = { photos: { id?: string; img_url?: string }[] };
+type SimpleListBody = Record<string, unknown>;
+type AdminAnalyticsBody = { totals: Record<string, unknown>; payments: { succeeded: number }; connectedAccounts: number; reportCounts: { total: number }; calls: { total: number }; refunds: { open: number }; retention: { retentionRatePct: number } };
+type AuditLogBody = { entries: { id?: string }[]; limit: number; offset: number };
+
+// Fixture rows for the authed-matches mock.
+type VerifyRow = { age_verified: boolean; age_verified_at: string | null };
+type MatchesRow = { id: string; user_id: string; target_id: { id: string; name: string; nsfw: boolean; avatar: string } };
+
+function makeQuery(): QueryMock {
+  const q: QueryMock = {
     select: () => q, eq: () => q, in: () => q, order: () => q, limit: () => q, or: () => q, range: () => q, update: () => q, delete: () => q, upsert: () => q, insert: () => q,
     maybeSingle: async () => ({ data: null }),
     single: async () => ({ data: null }),
   };
   return q;
 }
-(globalThis as any).__sbMock = { from: () => makeQuery() };
+g.__sbMock = { from: () => makeQuery() };
 
-function req(type: string, token = "", extra: Record<string, string> = {}) {
+function req(type: string, token = "", extra: Record<string, string> = {}): NextRequest {
   return {
     nextUrl: { searchParams: { get: (k: string) => (k === "type" ? type : (extra[k] ?? null)) } },
     headers: { get: (n: string) => (n.toLowerCase() === "authorization" ? (token ? "Bearer " + token : null) : null) },
-  } as any;
+  } as unknown as NextRequest;
 }
 
-beforeEach(() => { vi.clearAllMocks(); (globalThis as any).__authUser = null; (globalThis as any).__sbMock = { from: () => makeQuery() }; delete process.env.ADMIN_EMAILS; });
+beforeEach(() => { vi.clearAllMocks(); g.__authUser = null; g.__sbMock = { from: () => makeQuery() }; delete process.env.ADMIN_EMAILS; });
 
-type Handler = (calls: SbCall[]) => any;
-function installSb(handlers: Record<string, Handler>) {
-  const sb: any = createSb((table, calls) => {
+type Handler = (calls: SbCall[]) => SbResult;
+function installSb(handlers: Record<string, Handler>): TestSb {
+  const sb = createSb((table, calls) => {
     const h = handlers[table];
     return h ? h(calls) : { data: null, error: null };
-  });
-  sb.auth = { getUser: async () => ({ data: { user: (globalThis as any).__authUser }, error: null }) };
-  (globalThis as any).__sbMock = sb;
+  }) as TestSb;
+  sb.auth = { getUser: async () => ({ data: { user: g.__authUser }, error: null }) };
+  g.__sbMock = sb;
   return sb;
 }
 function selectArg(calls: SbCall[]): string {
   const c = [...calls].reverse().find((x) => x.method === "select");
   return typeof c?.args[0] === "string" ? c.args[0] : "";
 }
-function eqOf(calls: SbCall[], field: string): any {
+function eqOf(calls: SbCall[], field: string) {
   const c = [...calls].reverse().find((x) => x.method === "eq" && x.args[0] === field);
   return c?.args[1];
 }
-function profLookup(calls: SbCall[]): any {
+function profLookup(calls: SbCall[]) {
   return selectArg(calls) === "id" ? { data: { id: "me" } } : null;
 }
 
@@ -61,7 +173,7 @@ describe("GET dispatcher (read-only)", () => {
   it("returns a shaped profiles response for an unauthenticated request", async () => {
     const r = await GET(req("profiles"));
     expect(r.status).toBe(200);
-    const body = await r.json();
+    const body: ProfilesBody = await r.json();
     expect(body).toHaveProperty("profiles");
     expect(Array.isArray(body.profiles)).toBe(true);
   });
@@ -74,7 +186,7 @@ describe("GET dispatcher (read-only)", () => {
   it("community-members returns an empty roster for a non-UUID communityId", async () => {
     const r = await GET(req("community-members", "", { communityId: "stub-id" }));
     expect(r.status).toBe(200);
-    const body = await r.json();
+    const body: MembersBody = await r.json();
     expect(body.members).toEqual([]);
   });
 
@@ -84,12 +196,12 @@ describe("GET dispatcher (read-only)", () => {
       { user_id: "u1", user_name: "Ada", role: "admin", joined_at: "2026-01-02" },
       { user_id: "u3", user_name: "Cy", role: "moderator", joined_at: "2026-01-03" },
     ];
-    (globalThis as any).__sbMock = { from: () => ({ select: () => ({ eq: () => ({ order: () => ({ limit: async () => ({ data: rows }) }) }) }) }) };
+    g.__sbMock = { from: () => ({ select: () => ({ eq: () => ({ order: () => ({ limit: async () => ({ data: rows }) }) }) }) }) };
     const r = await GET(req("community-members", "", { communityId: "11111111-1111-4111-8111-111111111111" }));
     expect(r.status).toBe(200);
-    const body = await r.json();
-    expect(body.members.map((m: any) => m.role)).toEqual(["admin", "moderator", "member"]);
-    (globalThis as any).__sbMock = { from: () => makeQuery() };
+    const body: MembersBody = await r.json();
+    expect(body.members.map((m) => m.role)).toEqual(["admin", "moderator", "member"]);
+    g.__sbMock = { from: () => makeQuery() };
   });
 });
 
@@ -99,12 +211,12 @@ describe("GET briefs — applicant count embed", () => {
       { id: "b1", title: "Editorial shoot", author_id: { id: "u1", name: "Ada", avatar: "" }, muse_brief_applications: [{ count: 3 }] },
       { id: "b2", title: "No applicants yet", author_id: { id: "u2", name: "Bo", avatar: "" }, muse_brief_applications: [{ count: 0 }] },
     ];
-    (globalThis as any).__sbMock = { from: () => ({ select: () => ({ order: () => ({ limit: async () => ({ data: rows }) }) }) }) };
+    g.__sbMock = { from: () => ({ select: () => ({ order: () => ({ limit: async () => ({ data: rows }) }) }) }) };
     const r = await GET(req("briefs"));
     expect(r.status).toBe(200);
-    const body = await r.json();
+    const body: BriefsBody = await r.json();
     expect(body.briefs).toEqual(rows);
-    (globalThis as any).__sbMock = { from: () => makeQuery() };
+    g.__sbMock = { from: () => makeQuery() };
   });
 });
 
@@ -117,10 +229,10 @@ describe("GET matches — nsfw gating on the matched partner's avatar", () => {
   // Two muse_profiles lookups happen in order for an authed "matches"
   // request: (1) resolve profileId from auth_id, (2) read age_verified/
   // age_verified_at for that profileId. muse_matches is the actual list.
-  function mockAuthedMatches(verifyRow: any, matchesRows: any[]) {
+  function mockAuthedMatches(verifyRow: VerifyRow, matchesRows: MatchesRow[]) {
     let profilesCallCount = 0;
-    (globalThis as any).__authUser = { id: "auth-1" };
-    (globalThis as any).__sbMock = {
+    g.__authUser = { id: "auth-1" };
+    g.__sbMock = {
       from: (table: string) => {
         if (table === "muse_profiles") {
           profilesCallCount++;
@@ -141,7 +253,7 @@ describe("GET matches — nsfw gating on the matched partner's avatar", () => {
       [{ id: "m1", user_id: "profile-1", target_id: { id: "t1", name: "Nova", nsfw: true, avatar: "https://x/nsfw.jpg" } }],
     );
     const r = await GET(req("matches", "tok"));
-    const body = await r.json();
+    const body: MatchesBody = await r.json();
     expect(body.matches[0].target_id.avatar).toBeUndefined();
   });
 
@@ -152,7 +264,7 @@ describe("GET matches — nsfw gating on the matched partner's avatar", () => {
       [{ id: "m1", user_id: "profile-1", target_id: { id: "t1", name: "Nova", nsfw: true, avatar: "https://x/nsfw.jpg" } }],
     );
     const r = await GET(req("matches", "tok"));
-    const body = await r.json();
+    const body: MatchesBody = await r.json();
     expect(body.matches[0].target_id.avatar).toBeUndefined();
   });
 
@@ -162,7 +274,7 @@ describe("GET matches — nsfw gating on the matched partner's avatar", () => {
       [{ id: "m1", user_id: "profile-1", target_id: { id: "t1", name: "Nova", nsfw: true, avatar: "https://x/nsfw.jpg" } }],
     );
     const r = await GET(req("matches", "tok"));
-    const body = await r.json();
+    const body: MatchesBody = await r.json();
     expect(body.matches[0].target_id.avatar).toBe("https://x/nsfw.jpg");
   });
 
@@ -172,14 +284,14 @@ describe("GET matches — nsfw gating on the matched partner's avatar", () => {
       [{ id: "m1", user_id: "profile-1", target_id: { id: "t1", name: "Nova", nsfw: false, avatar: "https://x/sfw.jpg" } }],
     );
     const r = await GET(req("matches", "tok"));
-    const body = await r.json();
+    const body: MatchesBody = await r.json();
     expect(body.matches[0].target_id.avatar).toBe("https://x/sfw.jpg");
   });
 });
 
 describe("GET profiles — visibility filtering", () => {
   it("excludes self, suspended, blocked, unverified-nsfw and avatar-less/photo-less rows", async () => {
-    (globalThis as any).__authUser = { id: "auth-1" };
+    g.__authUser = { id: "auth-1" };
     installSb({
       muse_profiles: (calls) => {
         const sel = selectArg(calls);
@@ -198,12 +310,12 @@ describe("GET profiles — visibility filtering", () => {
       },
       muse_blocks: () => ({ data: [{ user_id: "me", target_id: "blocked" }] }),
     });
-    const body = await (await GET(req("profiles", "tok"))).json();
-    expect(body.profiles.map((p: any) => p.id)).toEqual(["ok", "photo"]);
+    const body: ProfilesBody = await (await GET(req("profiles", "tok"))).json();
+    expect(body.profiles.map((p) => p.id)).toEqual(["ok", "photo"]);
   });
 
   it("admits nsfw rows for a currently-verified viewer", async () => {
-    (globalThis as any).__authUser = { id: "auth-1" };
+    g.__authUser = { id: "auth-1" };
     installSb({
       muse_profiles: (calls) => {
         const sel = selectArg(calls);
@@ -214,14 +326,14 @@ describe("GET profiles — visibility filtering", () => {
       },
       muse_blocks: () => ({ data: [] }),
     });
-    const body = await (await GET(req("profiles", "tok"))).json();
-    expect(body.profiles.map((p: any) => p.id)).toEqual(["nsfw1"]);
+    const body: ProfilesBody = await (await GET(req("profiles", "tok"))).json();
+    expect(body.profiles.map((p) => p.id)).toEqual(["nsfw1"]);
   });
 });
 
 describe("GET discover-ranked", () => {
   it("404s when the viewer profile is missing", async () => {
-    (globalThis as any).__authUser = { id: "auth-1" };
+    g.__authUser = { id: "auth-1" };
     installSb({
       muse_profiles: (calls) => (selectArg(calls) === "id" ? { data: { id: "me" } } : { data: null }),
     });
@@ -229,7 +341,7 @@ describe("GET discover-ranked", () => {
   });
 
   it("scores, strips self/blocks, and ranks boosted + complementary first", async () => {
-    (globalThis as any).__authUser = { id: "auth-1" };
+    g.__authUser = { id: "auth-1" };
     const future = new Date(Date.now() + 86400000).toISOString();
     installSb({
       muse_profiles: (calls) => {
@@ -250,16 +362,16 @@ describe("GET discover-ranked", () => {
       },
       muse_blocks: () => ({ data: [{ user_id: "me", target_id: "blocked" }] }),
     });
-    const body = await (await GET(req("discover-ranked", "tok"))).json();
-    const ids = body.profiles.map((p: any) => p.id);
+    const body: ProfilesBody = await (await GET(req("discover-ranked", "tok"))).json();
+    const ids = body.profiles.map((p) => p.id);
     expect(ids).not.toContain("me");
     expect(ids).not.toContain("blocked");
     expect(ids[0]).toBe("boosted");
-    expect(body.profiles.every((p: any) => typeof p.matchScore === "number")).toBe(true);
+    expect(body.profiles.every((p) => typeof p.matchScore === "number")).toBe(true);
   });
 
   it("exposes derived age only when the owner's showAge allows it", async () => {
-    (globalThis as any).__authUser = { id: "auth-1" };
+    g.__authUser = { id: "auth-1" };
     installSb({
       muse_profiles: (calls) => {
         const sel = selectArg(calls);
@@ -277,9 +389,9 @@ describe("GET discover-ranked", () => {
       },
       muse_blocks: () => ({ data: [] }),
     });
-    const body = await (await GET(req("discover-ranked", "tok"))).json();
-    const shown = body.profiles.find((p: any) => p.id === "shown");
-    const hidden = body.profiles.find((p: any) => p.id === "hidden");
+    const body: ProfilesBody = await (await GET(req("discover-ranked", "tok"))).json();
+    const shown = body.profiles.find((p) => p.id === "shown");
+    const hidden = body.profiles.find((p) => p.id === "hidden");
     expect(typeof shown.age).toBe("number");
     expect(shown.birthdate).toBeUndefined();
     expect(shown.preferences).toBeUndefined();
@@ -294,7 +406,7 @@ describe("GET discover-ranked", () => {
   // row with user_id = the viewer excludes that target from future results,
   // regardless of whether the match is mutual yet.
   it("excludes a profile the viewer already liked/matched (muse_matches row)", async () => {
-    (globalThis as any).__authUser = { id: "auth-1" };
+    g.__authUser = { id: "auth-1" };
     installSb({
       muse_profiles: (calls) => {
         const sel = selectArg(calls);
@@ -313,8 +425,8 @@ describe("GET discover-ranked", () => {
       muse_blocks: () => ({ data: [] }),
       muse_matches: () => ({ data: [{ target_id: "already-liked" }] }),
     });
-    const body = await (await GET(req("discover-ranked", "tok"))).json();
-    const ids = body.profiles.map((p: any) => p.id);
+    const body: ProfilesBody = await (await GET(req("discover-ranked", "tok"))).json();
+    const ids = body.profiles.map((p) => p.id);
     expect(ids).not.toContain("already-liked");
     expect(ids).toContain("not-yet-seen");
   });
@@ -327,7 +439,7 @@ describe("GET discover-ranked", () => {
   // columns now pass through, and that showOnline derives the same way
   // showAge already does (the owner's own preference, not a client guess).
   it("passes through verified + last_seen_at, and derives showOnline from the owner's preference", async () => {
-    (globalThis as any).__authUser = { id: "auth-1" };
+    g.__authUser = { id: "auth-1" };
     const recentSeen = new Date(Date.now() - 60000).toISOString();
     installSb({
       muse_profiles: (calls) => {
@@ -346,9 +458,9 @@ describe("GET discover-ranked", () => {
       },
       muse_blocks: () => ({ data: [] }),
     });
-    const body = await (await GET(req("discover-ranked", "tok"))).json();
-    const visible = body.profiles.find((p: any) => p.id === "verified-visible");
-    const hidden = body.profiles.find((p: any) => p.id === "online-hidden");
+    const body: ProfilesBody = await (await GET(req("discover-ranked", "tok"))).json();
+    const visible = body.profiles.find((p) => p.id === "verified-visible");
+    const hidden = body.profiles.find((p) => p.id === "online-hidden");
     expect(visible.verified).toBe(true);
     expect(visible.last_seen_at).toBe(recentSeen);
     expect(visible.showOnline).toBe(true);
@@ -358,7 +470,7 @@ describe("GET discover-ranked", () => {
 
 describe("GET matches — blocking", () => {
   it("filters out a match whose target the viewer has blocked", async () => {
-    (globalThis as any).__authUser = { id: "auth-1" };
+    g.__authUser = { id: "auth-1" };
     let pCalls = 0;
     installSb({
       muse_profiles: () => {
@@ -371,8 +483,8 @@ describe("GET matches — blocking", () => {
       ] }),
       muse_blocks: () => ({ data: [{ user_id: "me", target_id: "blocked" }] }),
     });
-    const body = await (await GET(req("matches", "tok"))).json();
-    expect(body.matches.map((m: any) => m.id)).toEqual(["m2"]);
+    const body: MatchesBody = await (await GET(req("matches", "tok"))).json();
+    expect(body.matches.map((m) => m.id)).toEqual(["m2"]);
   });
 });
 
@@ -381,7 +493,7 @@ describe("GET matches — blocking", () => {
 // posts kept showing to the person who blocked them. Locks in the fix.
 describe("GET feed/briefs/forum — blocking", () => {
   it("feed: excludes a post authored by someone the viewer blocked", async () => {
-    (globalThis as any).__authUser = { id: "auth-1" };
+    g.__authUser = { id: "auth-1" };
     installSb({
       muse_profiles: (calls) => profLookup(calls) ?? { data: null },
       muse_feed_posts: () => ({ data: [
@@ -390,20 +502,20 @@ describe("GET feed/briefs/forum — blocking", () => {
       ] }),
       muse_blocks: () => ({ data: [{ user_id: "me", target_id: "blocked" }] }),
     });
-    const body = await (await GET(req("feed", "tok"))).json();
-    expect(body.posts.map((p: any) => p.id)).toEqual(["p2"]);
+    const body: PostsBody = await (await GET(req("feed", "tok"))).json();
+    expect(body.posts.map((p) => p.id)).toEqual(["p2"]);
   });
 
   it("feed: does not filter at all for an unauthenticated request", async () => {
     installSb({
       muse_feed_posts: () => ({ data: [{ id: "p1", author_id: { id: "anyone" } }] }),
     });
-    const body = await (await GET(req("feed"))).json();
-    expect(body.posts.map((p: any) => p.id)).toEqual(["p1"]);
+    const body: PostsBody = await (await GET(req("feed"))).json();
+    expect(body.posts.map((p) => p.id)).toEqual(["p1"]);
   });
 
   it("briefs: excludes a brief authored by someone who blocked the viewer", async () => {
-    (globalThis as any).__authUser = { id: "auth-1" };
+    g.__authUser = { id: "auth-1" };
     installSb({
       muse_profiles: (calls) => profLookup(calls) ?? { data: null },
       muse_briefs: () => ({ data: [
@@ -412,12 +524,12 @@ describe("GET feed/briefs/forum — blocking", () => {
       ] }),
       muse_blocks: () => ({ data: [{ user_id: "blocker", target_id: "me" }] }),
     });
-    const body = await (await GET(req("briefs", "tok"))).json();
-    expect(body.briefs.map((b: any) => b.id)).toEqual(["b2"]);
+    const body: BriefsBody = await (await GET(req("briefs", "tok"))).json();
+    expect(body.briefs.map((b) => b.id)).toEqual(["b2"]);
   });
 
   it("forum: excludes a post authored by someone the viewer blocked", async () => {
-    (globalThis as any).__authUser = { id: "auth-1" };
+    g.__authUser = { id: "auth-1" };
     installSb({
       muse_profiles: (calls) => profLookup(calls) ?? { data: null },
       muse_forum_posts: () => ({ data: [
@@ -426,12 +538,12 @@ describe("GET feed/briefs/forum — blocking", () => {
       ] }),
       muse_blocks: () => ({ data: [{ user_id: "me", target_id: "blocked" }] }),
     });
-    const body = await (await GET(req("forum", "tok"))).json();
-    expect(body.posts.map((p: any) => p.id)).toEqual(["f2"]);
+    const body: PostsBody = await (await GET(req("forum", "tok"))).json();
+    expect(body.posts.map((p) => p.id)).toEqual(["f2"]);
   });
 
   it("sessions: excludes a session hosted by someone the viewer blocked", async () => {
-    (globalThis as any).__authUser = { id: "auth-1" };
+    g.__authUser = { id: "auth-1" };
     installSb({
       muse_profiles: (calls) => profLookup(calls) ?? { data: null },
       muse_sessions: () => ({ data: [
@@ -441,12 +553,12 @@ describe("GET feed/briefs/forum — blocking", () => {
       muse_blocks: () => ({ data: [{ user_id: "me", target_id: "blocked" }] }),
       muse_bookings: () => ({ data: [] }),
     });
-    const body = await (await GET(req("sessions", "tok"))).json();
-    expect(body.sessions.map((s: any) => s.id)).toEqual(["s2"]);
+    const body: SessionsBody = await (await GET(req("sessions", "tok"))).json();
+    expect(body.sessions.map((s) => s.id)).toEqual(["s2"]);
   });
 
   it("moments: excludes a moment authored by someone the viewer blocked", async () => {
-    (globalThis as any).__authUser = { id: "auth-1" };
+    g.__authUser = { id: "auth-1" };
     installSb({
       muse_profiles: (calls) => profLookup(calls) ?? { data: null },
       muse_moments: () => ({ data: [
@@ -455,12 +567,12 @@ describe("GET feed/briefs/forum — blocking", () => {
       ] }),
       muse_blocks: () => ({ data: [{ user_id: "me", target_id: "blocked" }] }),
     });
-    const body = await (await GET(req("moments", "tok"))).json();
-    expect(body.moments.map((m: any) => m.id)).toEqual(["m2"]);
+    const body: MomentsBody = await (await GET(req("moments", "tok"))).json();
+    expect(body.moments.map((m) => m.id)).toEqual(["m2"]);
   });
 
   it("events: excludes an event organized by someone the viewer blocked", async () => {
-    (globalThis as any).__authUser = { id: "auth-1" };
+    g.__authUser = { id: "auth-1" };
     installSb({
       muse_profiles: (calls) => profLookup(calls) ?? { data: null },
       muse_events: () => ({ data: [
@@ -469,14 +581,14 @@ describe("GET feed/briefs/forum — blocking", () => {
       ] }),
       muse_blocks: () => ({ data: [{ user_id: "me", target_id: "blocked" }] }),
     });
-    const body = await (await GET(req("events", "tok"))).json();
-    expect(body.events.map((e: any) => e.id)).toEqual(["e2"]);
+    const body: EventsBody = await (await GET(req("events", "tok"))).json();
+    expect(body.events.map((e) => e.id)).toEqual(["e2"]);
   });
 });
 
 describe("GET messages — participant + limit logic", () => {
   function authed() {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     return installSb({
       muse_profiles: (calls) => profLookup(calls) ?? { data: null },
       muse_messages: () => ({ data: [{ id: "msg1" }] }),
@@ -484,7 +596,7 @@ describe("GET messages — participant + limit logic", () => {
   }
   it("returns [] without a match_id", async () => {
     authed();
-    const body = await (await GET(req("messages", "tok"))).json();
+    const body: MessagesBody = await (await GET(req("messages", "tok"))).json();
     expect(body.messages).toEqual([]);
   });
   it("403s for a non-participant conversation key", async () => {
@@ -493,7 +605,7 @@ describe("GET messages — participant + limit logic", () => {
   });
   it("clamps the limit to 500 and applies the before cursor", async () => {
     const sb = authed();
-    const body = await (await GET(req("messages", "tok", { match_id: "me__other", limit: "99999", before: "2026-01-01" }))).json();
+    const body: MessagesBody = await (await GET(req("messages", "tok", { match_id: "me__other", limit: "99999", before: "2026-01-01" }))).json();
     expect(body.messages).toEqual([{ id: "msg1" }]);
     const msgCalls = tableCalls(sb.__log, "muse_messages");
     expect(msgCalls.find((c) => c.method === "limit")?.args[0]).toBe(500);
@@ -511,24 +623,24 @@ describe("GET simple list types", () => {
     ["moments", "moments", "muse_moments"],
   ])("%s returns the %s list", async (type, key, table) => {
     installSb({ [table]: () => ({ data: [{ id: "row1" }] }) });
-    const body = await (await GET(req(type))).json();
+    const body: SimpleListBody = await (await GET(req(type))).json();
     expect(body[key]).toEqual([{ id: "row1" }]);
   });
 });
 
 describe("GET rsvps", () => {
   it("maps event ids for an authed user", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({
       muse_profiles: (calls) => profLookup(calls) ?? { data: null },
       muse_rsvps: () => ({ data: [{ event_id: "e1" }, { event_id: "e2" }] }),
     });
-    const body = await (await GET(req("rsvps", "tok"))).json();
+    const body: RsvpsBody = await (await GET(req("rsvps", "tok"))).json();
     expect(body.rsvps).toEqual(["e1", "e2"]);
   });
   it("returns [] for an unauthenticated caller", async () => {
     installSb({});
-    const body = await (await GET(req("rsvps"))).json();
+    const body: RsvpsBody = await (await GET(req("rsvps"))).json();
     expect(body.rsvps).toEqual([]);
   });
 });
@@ -544,14 +656,14 @@ describe("GET export", () => {
     expect((await GET(req("export", "tok"))).status).toBe(401);
   });
   it("404s when the profile row is missing", async () => {
-    (globalThis as any).__authUser = { id: "auth-1", email: "a@b.com" };
+    g.__authUser = { id: "auth-1", email: "a@b.com" };
     installSb({ muse_profiles: () => ({ data: null }) });
     expect((await GET(req("export", "tok"))).status).toBe(404);
   });
   it("returns the full account export", async () => {
-    (globalThis as any).__authUser = { id: "auth-1", email: "a@b.com" };
+    g.__authUser = { id: "auth-1", email: "a@b.com" };
     installSb({ muse_profiles: () => ({ data: { id: "me", name: "Ada" } }) });
-    const body = await (await GET(req("export", "tok"))).json();
+    const body: ExportBody = await (await GET(req("export", "tok"))).json();
     expect(body.auth).toEqual({ id: "auth-1", email: "a@b.com" });
     expect(body.muse_profiles).toEqual({ id: "me", name: "Ada" });
     expect(body.muse_messages).toEqual([]);
@@ -567,7 +679,7 @@ describe("GET community-members", () => {
         { user_id: "u2", role: "admin", joined_at: "2" },
       ] }),
     });
-    const body = await (await GET(req("community-members", "", { communityId: "11111111-1111-4111-8111-111111111111" }))).json();
+    const body: MembersBody = await (await GET(req("community-members", "", { communityId: "11111111-1111-4111-8111-111111111111" }))).json();
     expect(body.members[0].role).toBe("admin");
   });
 });
@@ -579,9 +691,9 @@ describe("GET sessions — host trust enrichment", () => {
       muse_profiles: () => ({ data: [{ id: "h1", verified: true }, { id: "h2", verified: false }] }),
       muse_bookings: () => ({ data: [{ host_id: "h1" }, { host_id: "h1" }] }),
     });
-    const body = await (await GET(req("sessions"))).json();
-    const s1 = body.sessions.find((s: any) => s.id === "s1");
-    const s2 = body.sessions.find((s: any) => s.id === "s2");
+    const body: SessionsBody = await (await GET(req("sessions"))).json();
+    const s1 = body.sessions.find((s) => s.id === "s1");
+    const s2 = body.sessions.find((s) => s.id === "s2");
     expect(s1.hostVerified).toBe(true);
     expect(s1.hostCompletedSessions).toBe(2);
     expect(s2.hostCompletedSessions).toBe(0);
@@ -597,26 +709,26 @@ describe("GET sessions — host trust enrichment", () => {
       muse_profiles: () => ({ data: [{ id: "h1", name: "Jordan Lee", verified: true }] }),
       muse_bookings: () => ({ data: [] }),
     });
-    const body = await (await GET(req("sessions"))).json();
-    const s1 = body.sessions.find((s: any) => s.id === "s1");
+    const body: SessionsBody = await (await GET(req("sessions"))).json();
+    const s1 = body.sessions.find((s) => s.id === "s1");
     expect(s1.name).toBe("Jordan Lee");
     expect(s1.title).toBe("Golden Hour Portrait Session");
   });
   it("skips enrichment when there are no sessions", async () => {
     installSb({ muse_sessions: () => ({ data: [] }) });
-    const body = await (await GET(req("sessions"))).json();
+    const body: SessionsBody = await (await GET(req("sessions"))).json();
     expect(body.sessions).toEqual([]);
   });
 });
 
 describe("GET discover-count", () => {
   it("returns totals for an authed user", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     let n = 0;
     installSb({
       muse_profiles: (calls) => (selectArg(calls) === "id" ? { data: { id: "me" } } : { count: ++n === 1 ? 100 : 12 }),
     });
-    const body = await (await GET(req("discover-count", "tok"))).json();
+    const body: DiscoverCountBody = await (await GET(req("discover-count", "tok"))).json();
     expect(body).toEqual({ total: 100, activeLastWeek: 12 });
   });
 });
@@ -631,7 +743,7 @@ describe("GET professionals", () => {
         { reviewee_id: "prof-1", rating: 3, criteria_communication: 3 },
       ] }),
     });
-    const body = await (await GET(req("professionals"))).json();
+    const body: ProfessionalsBody = await (await GET(req("professionals"))).json();
     const p = body.professionals[0];
     expect(p.profileId).toBe("prof-1");
     expect(p.verified).toBe(true);
@@ -648,12 +760,12 @@ describe("GET reviews", () => {
   });
   it("returns [] for a non-uuid profile_id", async () => {
     installSb({});
-    const body = await (await GET(req("reviews", "", { profile_id: "nope" }))).json();
+    const body: ReviewsBody = await (await GET(req("reviews", "", { profile_id: "nope" }))).json();
     expect(body.reviews).toEqual([]);
   });
   it("maps criteria into a nested object", async () => {
     installSb({ muse_reviews: () => ({ data: [{ id: "r1", rating: 5, body: "great", created_at: "t", reviewer_id: { name: "A" }, criteria_communication: 4, criteria_safety: 5 }] }) });
-    const body = await (await GET(req("reviews", "", { profile_id: "11111111-1111-4111-8111-111111111111" }))).json();
+    const body: ReviewsBody = await (await GET(req("reviews", "", { profile_id: "11111111-1111-4111-8111-111111111111" }))).json();
     expect(body.reviews[0].criteria).toEqual({ communication: 4, reliability: null, creative_quality: null, professionalism: null, safety: 5 });
   });
 });
@@ -666,12 +778,12 @@ describe("GET creative-trust", () => {
   });
   it("returns trust:null for a non-uuid", async () => {
     installSb({});
-    const body = await (await GET(req("creative-trust", "", { profile_id: "nope" }))).json();
+    const body: TrustBody = await (await GET(req("creative-trust", "", { profile_id: "nope" }))).json();
     expect(body.trust).toBeNull();
   });
   it("returns trust:null when the profile is missing", async () => {
     installSb({ muse_profiles: () => ({ data: null }) });
-    const body = await (await GET(req("creative-trust", "", { profile_id: pid }))).json();
+    const body: TrustBody = await (await GET(req("creative-trust", "", { profile_id: pid }))).json();
     expect(body.trust).toBeNull();
   });
   it("aggregates reviews, response rate and completed bookings", async () => {
@@ -681,7 +793,7 @@ describe("GET creative-trust", () => {
       muse_bookings: () => ({ count: 4 }),
       muse_message_requests: () => ({ data: [{ status: "accepted" }, { status: "declined" }, { status: "pending" }, { status: "accepted" }] }),
     });
-    const body = await (await GET(req("creative-trust", "", { profile_id: pid }))).json();
+    const body: TrustBody = await (await GET(req("creative-trust", "", { profile_id: pid }))).json();
     expect(body.trust.verified).toBe(true);
     expect(body.trust.ageVerified).toBe(true);
     expect(body.trust.rating).toBe(4.5);
@@ -695,16 +807,16 @@ describe("GET creative-trust", () => {
 describe("GET photo-likes", () => {
   it("returns empty counts when no urls are supplied", async () => {
     installSb({});
-    const body = await (await GET(req("photo-likes"))).json();
+    const body: PhotoLikesBody = await (await GET(req("photo-likes"))).json();
     expect(body.counts).toEqual({});
   });
   it("counts likes and flags likedByMe for an authed viewer", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({
       muse_profiles: (calls) => profLookup(calls) ?? { data: null },
       muse_photo_likes: (calls) => (eqOf(calls, "user_id") ? { data: [{ photo_url: "u2" }] } : { data: [{ photo_url: "u1" }, { photo_url: "u1" }] }),
     });
-    const body = await (await GET(req("photo-likes", "tok", { urls: "u1,u2" }))).json();
+    const body: PhotoLikesBody = await (await GET(req("photo-likes", "tok", { urls: "u1,u2" }))).json();
     expect(body.counts).toEqual({ u1: 2, u2: 0 });
     expect(body.likedByMe).toEqual({ u2: true });
   });
@@ -716,13 +828,13 @@ describe("GET bookings", () => {
     expect((await GET(req("bookings"))).status).toBe(401);
   });
   it("attaches payment_status to both roles", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({
       muse_profiles: (calls) => profLookup(calls) ?? { data: null },
       muse_bookings: (calls) => (eqOf(calls, "user_id") ? { data: [{ id: "b1" }] } : { data: [{ id: "b2" }] }),
       muse_booking_payments: () => ({ data: [{ booking_id: "b1", status: "succeeded" }] }),
     });
-    const body = await (await GET(req("bookings", "tok"))).json();
+    const body: BookingsBody = await (await GET(req("bookings", "tok"))).json();
     expect(body.asBooker[0].payment_status).toBe("succeeded");
     expect(body.asHost[0].payment_status).toBeNull();
   });
@@ -730,7 +842,7 @@ describe("GET bookings", () => {
 
 describe("GET my-stats / profile-viewers", () => {
   it("my-stats returns views and likes received", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({
       muse_profiles: (calls) => {
         const sel = selectArg(calls);
@@ -740,11 +852,11 @@ describe("GET my-stats / profile-viewers", () => {
       },
       muse_matches: () => ({ count: 7 }),
     });
-    const body = await (await GET(req("my-stats", "tok"))).json();
+    const body: MyStatsBody = await (await GET(req("my-stats", "tok"))).json();
     expect(body).toEqual({ views: 42, likesReceived: 7 });
   });
   it("profile-viewers dedupes and drops viewers with no profile", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({
       muse_profiles: (calls) => {
         const sel = selectArg(calls);
@@ -754,7 +866,7 @@ describe("GET my-stats / profile-viewers", () => {
       },
       muse_activity_log: () => ({ data: [{ actor_id: "v1", created_at: "t1" }, { actor_id: "v1", created_at: "t2" }, { actor_id: "ghost", created_at: "t3" }] }),
     });
-    const body = await (await GET(req("profile-viewers", "tok"))).json();
+    const body: ViewersBody = await (await GET(req("profile-viewers", "tok"))).json();
     expect(body.viewers).toHaveLength(1);
     expect(body.viewers[0].id).toBe("v1");
   });
@@ -762,15 +874,15 @@ describe("GET my-stats / profile-viewers", () => {
 
 describe("GET profile-completion", () => {
   it("returns 0 when the profile is missing", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({
       muse_profiles: (calls) => (selectArg(calls) === "id" ? { data: { id: "me" } } : { data: null }),
     });
-    const body = await (await GET(req("profile-completion", "tok"))).json();
+    const body: CompletionBody = await (await GET(req("profile-completion", "tok"))).json();
     expect(body).toEqual({ completion: 0, breakdown: {} });
   });
   it("computes weighted completion and persists it", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     const sb = installSb({
       muse_profiles: (calls) => {
         const sel = selectArg(calls);
@@ -785,7 +897,7 @@ describe("GET profile-completion", () => {
       muse_albums: () => ({ data: [{ id: "a1" }] }),
       muse_album_photos: () => ({ count: 2 }),
     });
-    const body = await (await GET(req("profile-completion", "tok"))).json();
+    const body: CompletionBody = await (await GET(req("profile-completion", "tok"))).json();
     expect(body.completion).toBe(100);
     expect(body.breakdown.avatar.done).toBe(true);
     expect(body.breakdown.photos.done).toBe(true);
@@ -795,7 +907,7 @@ describe("GET profile-completion", () => {
 
 describe("GET my-analytics", () => {
   it("aggregates counts and earnings", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({
       muse_profiles: (calls) => {
         const sel = selectArg(calls);
@@ -810,7 +922,7 @@ describe("GET my-analytics", () => {
       muse_bookings: (calls) => (eqOf(calls, "status") === "completed" ? { data: [{ id: "bk1" }] } : { count: 2 }),
       muse_booking_payments: () => ({ data: [{ amount_cents: 1000, status: "succeeded" }, { amount_cents: 500, status: "succeeded" }] }),
     });
-    const body = await (await GET(req("my-analytics", "tok"))).json();
+    const body: AnalyticsBody = await (await GET(req("my-analytics", "tok"))).json();
     expect(body.views).toBe(9);
     expect(body.viewsLast30Days).toBe(2);
     expect(body.matchesReceived).toBe(3);
@@ -823,33 +935,33 @@ describe("GET my-analytics", () => {
 
 describe("GET notifications family", () => {
   it("notifications returns [] when the profile is missing", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({ muse_profiles: () => ({ data: null }) });
-    const body = await (await GET(req("notifications", "tok"))).json();
+    const body: NotificationsBody = await (await GET(req("notifications", "tok"))).json();
     expect(body.notifications).toEqual([]);
   });
   it("notifications flattens the from_id embed", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({
       muse_profiles: () => ({ data: { id: "me" } }),
       muse_notifications: () => ({ data: [{ id: "n1", type: "like", read: false, from_id: { name: "Ada", avatar: "av" } }] }),
     });
-    const body = await (await GET(req("notifications", "tok"))).json();
+    const body: NotificationsBody = await (await GET(req("notifications", "tok"))).json();
     expect(body.notifications[0].from).toBe("Ada");
     expect(body.notifications[0].avatar).toBe("av");
   });
   it("notification-count sums unread + pending requests", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({
       muse_profiles: () => ({ data: { id: "me" } }),
       muse_notifications: () => ({ count: 2 }),
       muse_message_requests: () => ({ count: 3 }),
     });
-    const body = await (await GET(req("notification-count", "tok"))).json();
+    const body: CountBody = await (await GET(req("notification-count", "tok"))).json();
     expect(body).toEqual({ count: 5 });
   });
   it("notifications-grouped categorizes and adds pending requests", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({
       muse_profiles: () => ({ data: { id: "me" } }),
       muse_notifications: () => ({ data: [
@@ -858,7 +970,7 @@ describe("GET notifications family", () => {
       ] }),
       muse_message_requests: () => ({ count: 2 }),
     });
-    const body = await (await GET(req("notifications-grouped", "tok"))).json();
+    const body: NotifGroupsBody = await (await GET(req("notifications-grouped", "tok"))).json();
     expect(body.groups.matches.unread).toBe(1);
     expect(body.groups.messages.unread).toBe(2);
     expect(body.groups.bookings.items).toHaveLength(1);
@@ -866,25 +978,25 @@ describe("GET notifications family", () => {
     expect(body.groups.other.items).toHaveLength(1);
   });
   it("notification-prefs returns the nested prefs object", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({ muse_profiles: () => ({ data: { id: "me", preferences: { notifications: { match: false } } } }) });
-    const body = await (await GET(req("notification-prefs", "tok"))).json();
+    const body: PrefsBody = await (await GET(req("notification-prefs", "tok"))).json();
     expect(body.prefs).toEqual({ match: false });
   });
 });
 
 describe("GET saved-search-list / boost-status / payout-readiness / my-refunds", () => {
   it("saved-search-list returns searches", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({
       muse_profiles: (calls) => profLookup(calls) ?? { data: null },
       muse_saved_searches: () => ({ data: [{ id: "s1", name: "n" }] }),
     });
-    const body = await (await GET(req("saved-search-list", "tok"))).json();
+    const body: SearchesBody = await (await GET(req("saved-search-list", "tok"))).json();
     expect(body.searches[0].id).toBe("s1");
   });
   it("boost-status returns the real shared boost state", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({
       muse_profiles: (calls) => {
         const sel = selectArg(calls);
@@ -893,27 +1005,27 @@ describe("GET saved-search-list / boost-status / payout-readiness / my-refunds",
         return { data: null };
       },
     });
-    const body = await (await GET(req("boost-status", "tok"))).json();
+    const body: BoostBody = await (await GET(req("boost-status", "tok"))).json();
     expect(body).toEqual({ isPro: true, inventory: 2, isBoosted: false, expiresAt: null });
   });
   it("payout-readiness flags a host with earnings but no Connect account", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({
       muse_profiles: (calls) => profLookup(calls) ?? { data: null },
       muse_stripe_connect: () => ({ data: null }),
       muse_bookings: () => ({ data: [{ id: "bk1" }] }),
       muse_booking_payments: () => ({ data: [{ net_amount_cents: 900 }, { net_amount_cents: 100 }] }),
     });
-    const body = await (await GET(req("payout-readiness", "tok"))).json();
+    const body: PayoutBody = await (await GET(req("payout-readiness", "tok"))).json();
     expect(body.connected).toBe(false);
     expect(body.completedBookingsCount).toBe(1);
     expect(body.unpaidEarningsCents).toBe(1000);
     expect(body.needsConnect).toBe(true);
   });
   it("my-refunds lists refund requests", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({ muse_profiles: (calls) => profLookup(calls) ?? { data: null }, muse_refund_requests: () => ({ data: [{ id: "r1" }] }) });
-    const body = await (await GET(req("my-refunds", "tok"))).json();
+    const body: RefundsBody = await (await GET(req("my-refunds", "tok"))).json();
     expect(body.requests[0].id).toBe("r1");
   });
 });
@@ -930,63 +1042,63 @@ describe("GET albums", () => {
   });
   it("returns [] for a non-uuid target", async () => {
     installSb({});
-    const body = await (await GET(req("albums", "", { profile_id: "bad" }))).json();
+    const body: AlbumsBody = await (await GET(req("albums", "", { profile_id: "bad" }))).json();
     expect(body.albums).toEqual([]);
   });
   it("returns all albums with photo counts for the owner", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({
       muse_profiles: (calls) => profLookup(calls) ?? { data: null },
       muse_albums: () => ({ data: [{ id: "al1", profile_id: "me", access_level: "private" }], error: null }),
       muse_album_photos: () => ({ data: [{ album_id: "al1" }, { album_id: "al1" }] }),
     });
-    const body = await (await GET(req("albums", "tok", { profile_id: "me" }))).json();
+    const body: AlbumsBody = await (await GET(req("albums", "tok", { profile_id: "me" }))).json();
     expect(body.albums[0].photo_count).toBe(2);
   });
   it("still returns the owner's albums when their portfolio is private", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({
       muse_profiles: (calls) => (selectArg(calls) === "preferences" ? { data: { preferences: { portfolioVisibility: "private" } } } : profLookup(calls) ?? { data: null }),
       muse_albums: () => ({ data: [{ id: "al1", profile_id: "me", access_level: "public" }], error: null }),
       muse_album_photos: () => ({ data: [] }),
     });
-    const body = await (await GET(req("albums", "tok", { profile_id: "me" }))).json();
-    expect(body.albums.map((a: any) => a.id)).toEqual(["al1"]);
+    const body: AlbumsBody = await (await GET(req("albums", "tok", { profile_id: "me" }))).json();
+    expect(body.albums.map((a) => a.id)).toEqual(["al1"]);
   });
   it("strips the whole portfolio from a non-owner when the owner set it private", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({
       muse_profiles: (calls) => (selectArg(calls) === "preferences" ? { data: { preferences: { portfolioVisibility: "private" } } } : profLookup(calls) ?? { data: null }),
       muse_albums: () => ({ data: [{ id: "pub", profile_id: other, access_level: "public" }], error: null }),
       muse_album_photos: () => ({ data: [{ album_id: "pub" }] }),
     });
-    const body = await (await GET(req("albums", "tok", { profile_id: other }))).json();
+    const body: AlbumsBody = await (await GET(req("albums", "tok", { profile_id: other }))).json();
     expect(body.albums).toEqual([]);
   });
   it("strips the portfolio from an unmatched viewer when the owner set matches-only", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({
       muse_profiles: (calls) => (selectArg(calls) === "preferences" ? { data: { preferences: { portfolioVisibility: "matches" } } } : profLookup(calls) ?? { data: null }),
       muse_albums: () => ({ data: [{ id: "pub", profile_id: other, access_level: "public" }], error: null }),
       muse_matches: () => ({ data: [] }),
     });
-    const body = await (await GET(req("albums", "tok", { profile_id: other }))).json();
+    const body: AlbumsBody = await (await GET(req("albums", "tok", { profile_id: other }))).json();
     expect(body.albums).toEqual([]);
   });
   it("serves a mutually matched viewer when the owner set matches-only", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({
       muse_profiles: (calls) => (selectArg(calls) === "preferences" ? { data: { preferences: { portfolioVisibility: "matches" } } } : profLookup(calls) ?? { data: null }),
       muse_albums: () => ({ data: [{ id: "pub", profile_id: other, access_level: "public" }], error: null }),
       muse_matches: () => ({ data: [{ user_id: "me", target_id: other }, { user_id: other, target_id: "me" }] }),
       muse_album_photos: () => ({ data: [{ album_id: "pub" }] }),
     });
-    const body = await (await GET(req("albums", "tok", { profile_id: other }))).json();
-    expect(body.albums.map((a: any) => a.id)).toEqual(["pub"]);
+    const body: AlbumsBody = await (await GET(req("albums", "tok", { profile_id: other }))).json();
+    expect(body.albums.map((a) => a.id)).toEqual(["pub"]);
     expect(body.albums[0].photo_count).toBe(1);
   });
   it("hides private and ungranted invite albums from non-owners", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({
       muse_profiles: (calls) => profLookup(calls) ?? { data: null },
       muse_albums: () => ({ data: [
@@ -997,11 +1109,11 @@ describe("GET albums", () => {
       muse_album_access: () => ({ data: [{ album_id: "inv" }] }),
       muse_album_photos: () => ({ data: [] }),
     });
-    const body = await (await GET(req("albums", "tok", { profile_id: other }))).json();
-    expect(body.albums.map((a: any) => a.id).sort()).toEqual(["inv", "pub"]);
+    const body: AlbumsBody = await (await GET(req("albums", "tok", { profile_id: other }))).json();
+    expect(body.albums.map((a) => a.id).sort()).toEqual(["inv", "pub"]);
   });
   it("returns 500 when the album query errors", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({
       muse_profiles: (calls) => profLookup(calls) ?? { data: null },
       muse_albums: () => ({ data: null, error: { message: "db" } }),
@@ -1019,7 +1131,7 @@ describe("GET album-photos", () => {
   });
   it("returns [] for a non-uuid", async () => {
     installSb({});
-    const body = await (await GET(req("album-photos", "", { album_id: "bad" }))).json();
+    const body: PhotosBody = await (await GET(req("album-photos", "", { album_id: "bad" }))).json();
     expect(body.photos).toEqual([]);
   });
   it("404s when the album does not exist", async () => {
@@ -1027,7 +1139,7 @@ describe("GET album-photos", () => {
     expect((await GET(req("album-photos", "", { album_id: aid }))).status).toBe(404);
   });
   it("403s on a private album for a non-owner", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({
       muse_profiles: (calls) => profLookup(calls) ?? { data: null },
       muse_albums: () => ({ data: { id: aid, profile_id: "other", access_level: "private" } }),
@@ -1035,7 +1147,7 @@ describe("GET album-photos", () => {
     expect((await GET(req("album-photos", "tok", { album_id: aid }))).status).toBe(403);
   });
   it("403s on an invite album without a grant", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({
       muse_profiles: (calls) => profLookup(calls) ?? { data: null },
       muse_albums: () => ({ data: { id: aid, profile_id: "other", access_level: "invite" } }),
@@ -1044,18 +1156,18 @@ describe("GET album-photos", () => {
     expect((await GET(req("album-photos", "tok", { album_id: aid }))).status).toBe(403);
   });
   it("signs private-storage photos for an authorized viewer", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({
       muse_profiles: (calls) => profLookup(calls) ?? { data: null },
       muse_albums: () => ({ data: { id: aid, profile_id: "me", access_level: "public" } }),
       muse_album_photos: () => ({ data: [{ id: "ph1", img_url: "storage://muse-private/secret.jpg" }], error: null }),
       storage: () => ({ data: { signedUrl: "https://signed/secret.jpg" }, error: null }),
     });
-    const body = await (await GET(req("album-photos", "tok", { album_id: aid }))).json();
+    const body: PhotosBody = await (await GET(req("album-photos", "tok", { album_id: aid }))).json();
     expect(body.photos[0].img_url).toBe("https://signed/secret.jpg");
   });
   it("403s a non-owner when the owner's portfolio is private (even on a public album)", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({
       muse_profiles: (calls) => (selectArg(calls) === "preferences" ? { data: { preferences: { portfolioVisibility: "private" } } } : profLookup(calls) ?? { data: null }),
       muse_albums: () => ({ data: { id: aid, profile_id: "other", access_level: "public" } }),
@@ -1064,7 +1176,7 @@ describe("GET album-photos", () => {
     expect((await GET(req("album-photos", "tok", { album_id: aid }))).status).toBe(403);
   });
   it("403s an unmatched viewer when the owner set matches-only", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({
       muse_profiles: (calls) => (selectArg(calls) === "preferences" ? { data: { preferences: { portfolioVisibility: "matches" } } } : profLookup(calls) ?? { data: null }),
       muse_albums: () => ({ data: { id: aid, profile_id: "other", access_level: "public" } }),
@@ -1073,24 +1185,24 @@ describe("GET album-photos", () => {
     expect((await GET(req("album-photos", "tok", { album_id: aid }))).status).toBe(403);
   });
   it("serves a mutually matched viewer when the owner set matches-only", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({
       muse_profiles: (calls) => (selectArg(calls) === "preferences" ? { data: { preferences: { portfolioVisibility: "matches" } } } : profLookup(calls) ?? { data: null }),
       muse_albums: () => ({ data: { id: aid, profile_id: other, access_level: "public" } }),
       muse_matches: () => ({ data: [{ user_id: "me", target_id: other }, { user_id: other, target_id: "me" }] }),
       muse_album_photos: () => ({ data: [{ id: "ph1", img_url: "https://cdn.test/x.jpg" }], error: null }),
     });
-    const body = await (await GET(req("album-photos", "tok", { album_id: aid }))).json();
+    const body: PhotosBody = await (await GET(req("album-photos", "tok", { album_id: aid }))).json();
     expect(body.photos[0].img_url).toBe("https://cdn.test/x.jpg");
   });
   it("still serves the owner's own album when they set the portfolio private", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     installSb({
       muse_profiles: (calls) => (selectArg(calls) === "preferences" ? { data: { preferences: { portfolioVisibility: "private" } } } : profLookup(calls) ?? { data: null }),
       muse_albums: () => ({ data: { id: aid, profile_id: "me", access_level: "public" } }),
       muse_album_photos: () => ({ data: [{ id: "ph1", img_url: "https://cdn.test/mine.jpg" }], error: null }),
     });
-    const body = await (await GET(req("album-photos", "tok", { album_id: aid }))).json();
+    const body: PhotosBody = await (await GET(req("album-photos", "tok", { album_id: aid }))).json();
     expect(body.photos[0].img_url).toBe("https://cdn.test/mine.jpg");
   });
 });
@@ -1101,13 +1213,13 @@ describe("GET admin-analytics", () => {
     expect((await GET(req("admin-analytics"))).status).toBe(403);
   });
   it("403s for a non-admin", async () => {
-    (globalThis as any).__authUser = { id: "a" };
+    g.__authUser = { id: "a" };
     process.env.ADMIN_EMAILS = "admin@x.com";
     installSb({ muse_profiles: () => ({ data: { email: "user@x.com" } }) });
     expect((await GET(req("admin-analytics", "tok"))).status).toBe(403);
   });
   it("returns an analytics payload for an admin", async () => {
-    (globalThis as any).__authUser = { id: "a", email: "admin@x.com" };
+    g.__authUser = { id: "a", email: "admin@x.com" };
     process.env.ADMIN_EMAILS = "admin@x.com";
     installSb({
       muse_profiles: (calls) => {
@@ -1127,7 +1239,7 @@ describe("GET admin-analytics", () => {
       muse_refund_requests: () => ({ data: [{ status: "open" }] }),
       muse_calls: () => ({ data: [{ status: "answered" }, { status: "missed" }] }),
     });
-    const body = await (await GET(req("admin-analytics", "tok"))).json();
+    const body: AdminAnalyticsBody = await (await GET(req("admin-analytics", "tok"))).json();
     expect(body.totals).toHaveProperty("users");
     expect(body.payments.succeeded).toBe(1);
     expect(body.connectedAccounts).toBe(2);
@@ -1140,16 +1252,16 @@ describe("GET admin-analytics", () => {
 
 describe("GET admin-audit-log", () => {
   it("403s for a non-admin", async () => {
-    (globalThis as any).__authUser = { id: "a", email: "user@x.com" };
+    g.__authUser = { id: "a", email: "user@x.com" };
     process.env.ADMIN_EMAILS = "admin@x.com";
     installSb({ muse_profiles: () => ({ data: { email: "user@x.com" } }) });
     expect((await GET(req("admin-audit-log", "tok"))).status).toBe(403);
   });
   it("returns audit entries for an admin with limit/offset", async () => {
-    (globalThis as any).__authUser = { id: "a", email: "admin@x.com" };
+    g.__authUser = { id: "a", email: "admin@x.com" };
     process.env.ADMIN_EMAILS = "admin@x.com";
     installSb({ muse_profiles: () => ({ data: { email: "admin@x.com" } }), muse_admin_audit_log: () => ({ data: [{ id: "e1" }] }) });
-    const body = await (await GET(req("admin-audit-log", "tok", { limit: "10", offset: "5" }))).json();
+    const body: AuditLogBody = await (await GET(req("admin-audit-log", "tok", { limit: "10", offset: "5" }))).json();
     expect(body.entries[0].id).toBe("e1");
     expect(body.limit).toBe(10);
     expect(body.offset).toBe(5);
