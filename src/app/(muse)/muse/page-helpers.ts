@@ -8,6 +8,7 @@
 // extraction risk-free and lets the functions be unit-tested directly.
 
 import { ICEBREAKERS } from "./components/types";
+import { isPaidTier } from "./components/subscriptionTiers";
 
 /** Deterministic icebreaker pick: same seed always yields the same line. */
 export function getIcebreaker(type: string, seed?: string): string {
@@ -80,5 +81,24 @@ export function computeUnreadCount(
   serverNotifCount: number,
 ): number {
   return Math.max(activityFeed.filter(n => !n.read).length, serverNotifCount || 0);
+}
+
+/**
+ * Advanced Discover filters (styles, distance, vibe) are a Musa Pro feature.
+ * A free account gets the unlocked defaults instead, so a filter persisted
+ * before the lock can never narrow their deck.
+ */
+export function advancedFilterInput(
+  tier: string,
+  filterStyles: string[],
+  filterScore: number,
+  distance: number,
+): { filterStyles: string[]; filterScore: number; maxDistanceMi?: number } {
+  const ok = isPaidTier(tier);
+  return {
+    filterStyles: ok ? filterStyles : [],
+    filterScore: ok ? filterScore : 50,
+    maxDistanceMi: ok ? distance : undefined,
+  };
 }
 

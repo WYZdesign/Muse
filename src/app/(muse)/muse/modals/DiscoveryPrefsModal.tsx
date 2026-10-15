@@ -3,8 +3,10 @@
 // Discovery filter preferences modal.
 
 
-import { FiArrowLeft } from "react-icons/fi";
+import { FiArrowLeft, FiLock } from "react-icons/fi";
 import { STRINGS } from "@/lib/strings";
+import { AESTHETICS } from "../components/types";
+import { isPaidTier } from "../components/subscriptionTiers";
 import type { MuseModalsProps } from "./types";
 
 type Props = Pick<
@@ -24,6 +26,8 @@ type Props = Pick<
   | "DEMO_MODE"
   | "showToast"
   | "apiFetch"
+  | "userTier"
+  | "setUpsell"
 >;
 
 export function DiscoveryPrefsModal({
@@ -42,7 +46,16 @@ export function DiscoveryPrefsModal({
   DEMO_MODE,
   showToast,
   apiFetch,
+  userTier = "free",
+  setUpsell,
 }: Props) {
+  // "Advanced discovery filters (styles, distance, vibe)" is what Musa Pro
+  // sells, so those three controls are locked for free accounts and open the
+  // upsell instead. Age range and Show Me stay free as the basic filters.
+  const isPro = isPaidTier(userTier);
+  const lockPro = (feature: string, reason: string) => {
+    setUpsell?.({ feature, reason, icon: "🔒" });
+  };
   if (!showDiscoveryPrefs) return null;
   return (
     <div className="modal-overlay" ref={discoveryPrefsTrap} role="dialog" aria-modal="true" aria-label="Discovery preferences" onPointerDown={(e) => { if (e.target === e.currentTarget) setShowDiscoveryPrefs(false); }}>
@@ -59,8 +72,46 @@ export function DiscoveryPrefsModal({
           </div>
         </div>
         <div style={{marginBottom:20}}>
-          <div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:8}}>Max Distance: {discoveryPrefs.distance} mi</div>
-          <input type="range" aria-label="Maximum distance in miles" min={1} max={100} value={discoveryPrefs.distance} onChange={e=>setDiscoveryPrefs(p=>({...p,distance:Number(e.target.value)}))} style={{width:"100%",accentColor:"var(--gold)"}} />
+          <div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:8}}>
+            Max Distance: {discoveryPrefs.distance} mi
+            {!isPro && <span style={{marginLeft:6,fontSize:10,fontWeight:700,color:"var(--gold)",border:"1px solid rgba(255,215,0,0.35)",borderRadius:99,padding:"2px 7px",verticalAlign:"middle"}}>MUSA PRO</span>}
+          </div>
+          <input type="range" aria-label="Maximum distance in miles" min={1} max={100} value={discoveryPrefs.distance} disabled={!isPro}
+            onClick={() => { if (!isPro) lockPro("Distance Filter", "See who's actually close enough to shoot with. Upgrade to Musa Pro to filter by distance."); }}
+            onChange={e=>setDiscoveryPrefs(p=>({...p,distance:Number(e.target.value)}))}
+            style={{width:"100%",accentColor:"var(--gold)",opacity:isPro?1:0.45,pointerEvents:isPro?"auto":"none"}} />
+        </div>
+        <div style={{marginBottom:20,opacity:isPro?1:0.55}}>
+          <div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:8}}>
+            Styles{filterStyles.length ? `: ${filterStyles.length} selected` : ""}
+            {!isPro && <span style={{marginLeft:6,fontSize:10,fontWeight:700,color:"var(--gold)",border:"1px solid rgba(255,215,0,0.35)",borderRadius:99,padding:"2px 7px",verticalAlign:"middle"}}>MUSA PRO</span>}
+          </div>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            {AESTHETICS.map((s) => {
+              const on = filterStyles.includes(s);
+              return (
+                <button key={s} type="button" aria-pressed={on} aria-disabled={!isPro}
+                  onClick={() => {
+                    if (!isPro) { lockPro("Advanced Filters", "Filter Discover by aesthetic and style. Upgrade to Musa Pro to narrow the deck to exactly what you shoot."); return; }
+                    setFilterStyles(on ? filterStyles.filter((x) => x !== s) : [...filterStyles, s]);
+                  }}
+                  style={{minHeight:36,padding:"7px 13px",borderRadius:99,cursor:"pointer",fontSize:12,fontWeight:600,transition:"all .25s",background:on?"rgba(255,215,0,0.12)":"rgba(255,255,255,0.04)",border:"1px solid "+(on?"rgba(255,215,0,0.3)":"rgba(255,255,255,0.06)"),color:on?"var(--gold)":"var(--muted)"}}>
+                  {s}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div style={{marginBottom:20}}>
+          <div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:8}}>
+            Vibe: {filterScore <= 50 ? "any" : `min ${filterScore}%`}
+            {!isPro && <span style={{marginLeft:6,fontSize:10,fontWeight:700,color:"var(--gold)",border:"1px solid rgba(255,215,0,0.35)",borderRadius:99,padding:"2px 7px",verticalAlign:"middle"}}>MUSA PRO</span>}
+          </div>
+          <input type="range" aria-label="Minimum vibe match percent" min={50} max={95} value={filterScore} disabled={!isPro}
+            onClick={() => { if (!isPro) lockPro("Vibe Filter", "Only show people you actually click with. Upgrade to Musa Pro to set a minimum vibe score."); }}
+            onChange={e=>setFilterScore(Number(e.target.value))}
+            style={{width:"100%",accentColor:"var(--gold)",opacity:isPro?1:0.45,pointerEvents:isPro?"auto":"none"}} />
+          <div style={{fontSize:11,color:"var(--muted)",marginTop:6}}>{filterScore <= 50 ? "Show everyone, however you vibe." : `Hide anyone below a ${filterScore}% vibe match.`}</div>
         </div>
         <div style={{marginBottom:20}}>
           <div style={{fontSize:13,fontWeight:600,color:"var(--text)",marginBottom:8}}>Show Me</div>

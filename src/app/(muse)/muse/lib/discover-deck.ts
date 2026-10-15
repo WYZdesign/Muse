@@ -27,9 +27,11 @@ export type DiscoverDeckInput = {
   myGeo: { lat: number; long: number } | null;
   discoverSearch: string;
   obData: OnboardingData;
+  /** Musa Pro only: the Max Distance ceiling in miles. Omitted = no ceiling. */
+  maxDistanceMi?: number;
 };
 
-export function buildFilteredProfiles({ seed, liveProfiles, showNsfw, filterStyles, filterScore, myGeo, discoverSearch, obData }: DiscoverDeckInput): DiscoveryProfile[] {
+export function buildFilteredProfiles({ seed, liveProfiles, showNsfw, filterStyles, filterScore, myGeo, discoverSearch, obData, maxDistanceMi }: DiscoverDeckInput): DiscoveryProfile[] {
     // Stable order guarantee: the demo/static deck is shuffled ONCE with a
     // per-mount random seed, then live profiles are APPENDED (never reshuffled),
     // and we do NOT re-sort by distance after first paint. A new seed on every
@@ -97,5 +99,13 @@ export function buildFilteredProfiles({ seed, liveProfiles, showNsfw, filterStyl
       }
       return boosted;
     });
+    // Advanced filter (Musa Pro): the Max Distance control was pure theatre
+    // before this block -- the slider rendered a value but never removed
+    // anyone from the deck. Profiles whose distance could not be computed
+    // (no viewer geo, or the target hides their distance) stay in: we cannot
+    // prove they are too far, and emptying the deck would be the worse lie.
+    if (typeof maxDistanceMi === "number" && Number.isFinite(maxDistanceMi)) {
+      return enriched.filter((p) => typeof p.distanceMi !== "number" || p.distanceMi <= maxDistanceMi);
+    }
     return enriched;
-}
+  }

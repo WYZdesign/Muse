@@ -69,7 +69,7 @@ export function MuseModals(props: MuseModalsStackProps) {
     showShareProfile, setShowShareProfile, shareProfileTrap,
     showDisclosureModal, setShowDisclosureModal, disclosureTarget, setDisclosureTarget, disclosureBookingId, existingDisclosure, ageVerified, setAgeVerified, pendingDisclosureConfirm, setPendingDisclosureConfirm, pendingDisclosureCreate, setPendingDisclosureCreate,
     showAgeVerification, setShowAgeVerification,
-    upsell, closeUpsell,
+    upsell, setUpsell, closeUpsell,
     showSafetyCheckin, setShowSafetyCheckin, safetyCheckins, setSafetyCheckins, safetyProfile, setSafetyProfile,
     showPromptBank, setShowPromptBank, promptBankData, promptResponses, setPromptResponses,
     showReferral, setShowReferral, showConnect, setShowConnect, showPaymentHistory, setShowPaymentHistory,
@@ -136,6 +136,8 @@ export function MuseModals(props: MuseModalsStackProps) {
         DEMO_MODE={DEMO_MODE}
         showToast={showToast}
         apiFetch={apiFetch}
+        userTier={currentUser?.tier}
+        setUpsell={setUpsell}
       />
       <UnmatchModal
         unmatchTarget={unmatchTarget}

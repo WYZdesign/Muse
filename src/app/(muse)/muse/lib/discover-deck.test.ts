@@ -67,4 +67,40 @@ describe("buildFilteredProfiles", () => {
     expect(typeof out[0].score).toBe("number");
     expect(Array.isArray(out[0].matchReasons)).toBe(true);
   });
+
+  // Max Distance is a Musa Pro filter and used to render a value without ever
+  // removing anyone. LA to NY is roughly 2450 miles, so a 100 mile ceiling must
+  // drop it while keeping the Los Angeles row.
+  const MY_GEO = { lat: 34.05, long: -118.24 };
+
+  it("drops profiles beyond the Max Distance ceiling when one is set", () => {
+    const out = build([
+      p({ id: "near", loc: "Los Angeles, CA" }),
+      p({ id: "far", loc: "New York, NY" }),
+    ], { myGeo: MY_GEO, maxDistanceMi: 100 });
+    expect(out.map((x) => x.id)).toEqual(["near"]);
+  });
+
+  it("keeps profiles whose distance cannot be computed", () => {
+    const out = build([
+      p({ id: "near", loc: "Los Angeles, CA" }),
+      p({ id: "unknown", loc: "Testville" }),
+    ], { myGeo: MY_GEO, maxDistanceMi: 100 });
+    expect(out.map((x) => x.id).sort()).toEqual(["near", "unknown"]);
+  });
+
+  it("keeps a profile that opted out of showing its distance", () => {
+    const out = build([
+      p({ id: "hidden", loc: "New York, NY", showDistance: false }),
+    ], { myGeo: MY_GEO, maxDistanceMi: 100 });
+    expect(out.map((x) => x.id)).toEqual(["hidden"]);
+  });
+
+  it("applies no ceiling at all when maxDistanceMi is omitted", () => {
+    const out = build([
+      p({ id: "near", loc: "Los Angeles, CA" }),
+      p({ id: "far", loc: "New York, NY" }),
+    ], { myGeo: MY_GEO });
+    expect(out.map((x) => x.id).sort()).toEqual(["far", "near"]);
+  });
 });

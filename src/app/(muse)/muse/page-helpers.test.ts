@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getIcebreaker, getReferralTier, checkProfileBadges, sanitizeInput } from "./page-helpers";
+import { getIcebreaker, getReferralTier, checkProfileBadges, sanitizeInput, advancedFilterInput } from "./page-helpers";
 import { ICEBREAKERS } from "./components/types";
 
 describe("page-helpers (extracted from page.tsx)", () => {
@@ -70,6 +70,27 @@ describe("page-helpers (extracted from page.tsx)", () => {
 
     it("caps length at 500", () => {
       expect(sanitizeInput("a".repeat(900)).length).toBe(500);
+    });
+  });
+
+  describe("advancedFilterInput", () => {
+    it("passes the values through for a paying tier", () => {
+      expect(advancedFilterInput("muse_pro", ["Editorial"], 80, 25)).toEqual({
+        filterStyles: ["Editorial"], filterScore: 80, maxDistanceMi: 25,
+      });
+    });
+
+    it("returns the unlocked defaults for a free account", () => {
+      expect(advancedFilterInput("free", ["Editorial"], 80, 25)).toEqual({
+        filterStyles: [], filterScore: 50, maxDistanceMi: undefined,
+      });
+    });
+
+    it("treats every paid tier and unknown/nullish tiers predictably", () => {
+      expect(advancedFilterInput("pro", [], 60, 10).maxDistanceMi).toBe(10);
+      expect(advancedFilterInput("muse_studio", [], 60, 10).maxDistanceMi).toBe(10);
+      expect(advancedFilterInput("", [], 60, 10).maxDistanceMi).toBeUndefined();
+      expect(advancedFilterInput("gold", [], 60, 10).maxDistanceMi).toBeUndefined();
     });
   });
 });

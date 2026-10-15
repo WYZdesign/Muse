@@ -32,7 +32,7 @@ import type { BadgeInfo } from "./components/badgeInfo";
 import { useChatState } from "./hooks/useChatState";
 import { useCall } from "./hooks/useCall";
 import { useFocusTrap } from "./hooks/useFocusTrap";
-import { getIcebreaker, getReferralTier, checkProfileBadges, buildBriefTitleMap, computeUnreadCount } from "./page-helpers";
+import { getIcebreaker, getReferralTier, checkProfileBadges, buildBriefTitleMap, computeUnreadCount, advancedFilterInput } from "./page-helpers";
 import { useBriefsState } from "./hooks/useBriefsState";
 import { useSavedListingsState } from "./hooks/useSavedListingsState";
 import { useModalVisibility } from "./hooks/useModalVisibility";
@@ -720,8 +720,9 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   // (moved into useNotificationSync above)
 
   const filteredProfiles = useMemo(() => buildFilteredProfiles({
-    seed: shuffleSeedRef.current, liveProfiles, showNsfw, filterStyles, filterScore, myGeo, discoverSearch, obData,
-  }), [liveProfiles, showNsfw, filterStyles, filterScore, myGeo, discoverSearch, obData]);
+    seed: shuffleSeedRef.current, liveProfiles, showNsfw, myGeo, discoverSearch, obData,
+    ...advancedFilterInput(currentUser.tier, filterStyles, filterScore, discoveryPrefs.distance),
+  }), [liveProfiles, showNsfw, filterStyles, filterScore, myGeo, discoverSearch, obData, currentUser.tier, discoveryPrefs.distance]);
 
   const { cardAlbums, setCardAlbums, cardAlbumIdx, setCardAlbumIdx, cardAlbumPhotos, setCardAlbumPhotos } = useCardAlbumPhotos({ apiFetch, filteredProfiles, currentIdx });
 
@@ -1171,6 +1172,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         showAgeVerification={showAgeVerification}
         setShowAgeVerification={setShowAgeVerification}
         upsell={upsell}
+        setUpsell={setUpsell}
         closeUpsell={closeUpsell}
         showSafetyCheckin={showSafetyCheckin}
         setShowSafetyCheckin={setShowSafetyCheckin}

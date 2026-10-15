@@ -197,8 +197,11 @@ export type MuseModalsProps = {
   setShowAgeVerification: Setter<boolean>;
 
   // Upsell
+  setUpsell: (v: UpsellInfo | null) => void;
   upsell: UpsellInfo | null;
   closeUpsell: () => void;
+  /** Viewer's subscription tier, used to lock Pro-only controls. */
+  userTier?: string;
 
   // Safety check-in
   showSafetyCheckin: boolean;
