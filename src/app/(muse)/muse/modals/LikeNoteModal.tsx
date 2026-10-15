@@ -83,7 +83,15 @@ export function LikeNoteModal({
           // anchored/annotated like needs its own explicit record —
           // matchCreate merges anchor/note into the existing row either way.
           if (target?.id) {
-            apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "match", target_id: target.id, note, anchor_type: anchor?.type, anchor_value: anchor?.value }) }).catch(() => {});
+            // Awaited and checked: this used to .catch(() => {}) and always
+            // toast "Liked", so a rejected like (daily cap, block, rate
+            // limit) still told the user it had gone through.
+            const likeRes = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "match", target_id: target.id, note, anchor_type: anchor?.type, anchor_value: anchor?.value }) }).catch(() => null);
+            if (likeRes && !likeRes.ok) {
+              const likeBody = await likeRes.json().catch((): { error?: string } => ({}));
+              showToast(likeBody?.error || "Couldn't send that like — try again in a moment");
+              return;
+            }
           }
           if (note) {
             const msg = note;

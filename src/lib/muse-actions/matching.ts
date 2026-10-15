@@ -9,9 +9,13 @@
 import { checkRate, checkRateUser } from "@/lib/rate-limit";
 import { bumpQuest } from "@/lib/questEngine";
 import { sanitizeText } from "@/lib/request-safety";
-import { UUID_RE, emailProfile, NextResponse, safeServerError, type ActionContext } from "./shared";
+import { UUID_RE, emailProfile, NextResponse, safeServerError, isPaidTier, type ActionContext } from "./shared";
 
 const ANCHOR_TYPES = new Set(["prompt", "photo"]);
+
+/** Free-tier daily like cap. Matches the "10 likes/day" the Free plan has
+ *  always advertised; Pro advertises unlimited and is exempt. */
+export const FREE_DAILY_LIKES = 10;
 
 /** Builds the notification body shown to the recipient of a like — anchored
  *  to the specific prompt/photo that was liked when that context is present,
@@ -54,6 +58,31 @@ export const matchCreate = async ({ sb, profile, rest, ip }: ActionContext) => {
   if (target.suspended) return NextResponse.json({ error: "Unable to match with this user" }, { status: 403 });
   const { data: matchBlock } = await sb.from("muse_blocks").select("id").or(`and(user_id.eq.${profile.id},target_id.eq.${target_id}),and(user_id.eq.${target_id},target_id.eq.${profile.id})`).limit(1).maybeSingle();
   if (matchBlock) return NextResponse.json({ error: "Unable to match with this user" }, { status: 403 });
+  // Free-tier daily like cap. This is the gate behind the Free plan's
+  // "10 likes/day" and Pro's "Unlimited likes" (both were advertised on the
+  // subscription screen while nothing enforced either). Counted from the
+  // muse_activity_log rows this handler already writes at the end of a
+  // successful like, so no extra table, column, or cron is needed; the
+  // current like is not yet written, so the count is of prior likes today.
+  // Studio is Pro-equivalent via isPaidTier, so a Studio subscriber is not
+  // capped. A failed cap must NOT consume a like.
+  if (!isPaidTier(String(profile.tier ?? ""))) {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const { count: likesToday } = await sb.from("muse_activity_log")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", profile.id)
+      .eq("action", "match")
+      .gte("created_at", startOfDay.toISOString());
+    if ((likesToday ?? 0) >= FREE_DAILY_LIKES) {
+      return NextResponse.json({
+        error: `You've used all ${FREE_DAILY_LIKES} free likes for today. They reset at midnight, or go unlimited with Musa Pro.`,
+        code: "LIKE_LIMIT",
+        limit: FREE_DAILY_LIKES,
+        used: likesToday ?? 0,
+      }, { status: 429 });
+    }
+  }
   const upsertRow: Record<string, unknown> = { user_id: profile.id, target_id };
   if (anchorType) { upsertRow.anchor_type = anchorType; upsertRow.anchor_value = anchorValue; }
   if (note) upsertRow.note = note;

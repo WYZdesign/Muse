@@ -166,8 +166,12 @@ export function useSwipeActions({
         showToast("Demo interest preview — no person was notified and no match was created.");
       } else authFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "match", target_id: p.id, intent }) }).then(async (r) => {
         if (!r.ok) {
-          const d = await r.json().catch((): { error?: string } => ({}));
-          if (r.status === 429) showToast("You're swiping a bit fast — give it a few seconds and try again");
+          const d = await r.json().catch((): { error?: string; code?: string } => ({}));
+          // LIKE_LIMIT is also a 429, so it must be checked before the generic
+          // rate-limit branch or a capped Free user is told they are "swiping
+          // too fast" instead of being told they are out of daily likes.
+          if (d?.code === "LIKE_LIMIT") showToast(d?.error || "You're out of free likes for today. They reset at midnight, or go unlimited with Musa Pro.");
+          else if (r.status === 429) showToast("You're swiping a bit fast — give it a few seconds and try again");
           else if (r.status === 403) showToast(d?.error || "Can't like this profile right now");
           else showToast(d?.error || "Match failed — try again");
           return;

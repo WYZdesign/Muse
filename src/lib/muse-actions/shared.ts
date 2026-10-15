@@ -42,6 +42,19 @@ export function isAgeVerificationCurrent(row: { age_verified?: boolean | null; a
   return Date.now() - verifiedAt < AGE_VERIFICATION_VALID_DAYS * 24 * 60 * 60 * 1000;
 }
 
+/** The one server-side paid-tier allowlist. `muse_studio` is Pro-equivalent,
+ *  which is what the Stripe webhook's KNOWN_TIERS and the client's
+ *  subscriptionTiers.isPaidTier already assume. Every pricing-pass gate (like
+ *  cap, who-liked-you, advanced filters, priority placement, incognito, read
+ *  receipts) calls this instead of re-typing the tier strings, so a new paid
+ *  tier added later cannot silently fall through to Free in some features and
+ *  not others. */
+export const PAID_TIERS = new Set(["muse_pro", "pro", "muse_studio"]);
+
+export function isPaidTier(tier: string | null | undefined): boolean {
+  return !!tier && PAID_TIERS.has(tier);
+}
+
 export function getAuthUser() {
   return supabase.auth.getUser();
 }
