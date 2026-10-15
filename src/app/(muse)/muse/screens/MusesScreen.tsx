@@ -405,10 +405,14 @@ export const MusesScreen = memo(function MusesScreen({
                 // (3/4 -> 2/3) — same "card too short, crops most of the profile
                 // photo under object-fit:cover" issue on this grid.
                 <div key={p.id} className="muse-likes-card" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (!unlocked) { setShowLikesUpsell(true); } else { setViewProfile(p as unknown as ViewProfile); } } }} style={{ position: "relative", borderRadius: 16, overflow: "hidden", aspectRatio: "2/3", cursor: "pointer", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }} onClick={() => { if (!unlocked) { setShowLikesUpsell(true); } else { setViewProfile(p as unknown as ViewProfile); } }}>
-                  <Image loading="lazy" src={p.img} alt={p.name} fill sizes="(max-width: 600px) 50vw, 300px" style={{ objectFit: "cover", filter: !unlocked ? "blur(4px)" : undefined }} />
+                  <Image loading="lazy" src={p.img} alt={unlocked ? p.name : "Liked you"} fill sizes="(max-width: 600px) 50vw, 300px" style={{ objectFit: "cover", filter: !unlocked ? "blur(4px)" : undefined }} />
                   <div className="muse-likes-info" style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "12px 10px", background: "linear-gradient(to top,rgba(10,6,18,0.95) 0%,rgba(10,6,18,0.6) 60%,transparent 100%)" }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{p.name}</div>
-                    <div style={{ fontSize: 11, color: "var(--gold)", fontWeight: 600 }}>{p.type}</div>
+                    {/* Blur was cosmetic: the name and type still rendered in
+                        cleartext below a blurred photo, so Free users could read
+                        exactly who liked them. The name is the Pro feature, so it
+                        (and the alt text, which also exposed it) is gated too. */}
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{unlocked ? p.name : "Someone interested"}</div>
+                    <div style={{ fontSize: 11, color: "var(--gold)", fontWeight: 600 }}>{unlocked ? p.type : "Go Pro to reveal"}</div>
                   </div>
                   <button type="button" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Interested", desc: "This person has shown interest in connecting with you — go Pro to reveal exactly who and connect instantly.", icon: "✦", color: "#FF69B4" }); }} style={{ position: "absolute", top: 8, right: 8, minWidth: 44, minHeight: 44, display: "flex", alignItems: "center", justifyContent: "center", padding: "3px 8px", borderRadius: 99, background: "linear-gradient(135deg,var(--coral),var(--pink))", fontSize: 9, fontWeight: 800, color: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,0.4)", cursor: "pointer", border: "none" }}>✦ Interested</button>
                   {!unlocked && (<button type="button" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Pro", desc: "Pro members get full access — reveal who's interested and message them directly.", icon: "⭐", color: "var(--gold)" }); }} style={{ position: "absolute", top: 8, left: 8, minWidth: 44, minHeight: 44, display: "flex", alignItems: "center", justifyContent: "center", padding: "2px 7px", borderRadius: 99, background: "rgba(0,0,0,0.65)", fontSize: 9, fontWeight: 700, color: "var(--gold)", border: "1px solid rgba(255,215,0,0.3)", cursor: "pointer" }}>PRO</button>)}

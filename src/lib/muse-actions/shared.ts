@@ -55,6 +55,32 @@ export function isPaidTier(tier: string | null | undefined): boolean {
   return !!tier && PAID_TIERS.has(tier);
 }
 
+/** Like notifications are the surface behind "See who likes you" (Pro), so a
+ *  Free recipient must never receive the liker's identity. The sender name is
+ *  embedded in TWO places: the stored `body` (written at insert time by
+ *  likeNotificationBody, always name-first) and the `from_id(name, avatar)`
+ *  join every read path attaches. Redacting only one of them leaks via the
+ *  other, so both are handled here. Runs at READ time, not insert time, so a
+ *  member who upgrades sees their pending likes immediately and one who lapses
+ *  stops seeing them. Returns the row unchanged when the recipient is paid or
+ *  the row is not a like, so nothing else is touched. */
+export function applyLikeTierGate<T extends { type?: string | null; body?: string | null }>(
+  n: T,
+  senderName: string | null | undefined,
+  senderAvatar: string | null | undefined,
+  recipientPaid: boolean,
+): T {
+  if (recipientPaid) return n;
+  const t = String(n.type ?? "");
+  if (t !== "match" && t !== "like") return n;
+  const rawBody = String(n.body ?? "");
+  const name = String(senderName ?? "").trim();
+  let body = rawBody;
+  if (name && rawBody.startsWith(name)) body = "Someone" + rawBody.slice(name.length);
+  else if (name && rawBody.includes(name)) body = rawBody.split(name).join("Someone");
+  return { ...n, body, from: "Someone", avatar: "" } as unknown as T;
+}
+
 export function getAuthUser() {
   return supabase.auth.getUser();
 }

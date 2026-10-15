@@ -109,7 +109,7 @@ type MyStatsBody = { views: number; likesReceived: number };
 type ViewersBody = { viewers: { id?: string; name?: string; avatar?: string; viewedAt?: string | null }[] };
 type CompletionBody = { completion: number; breakdown: Record<string, { done: boolean }> };
 type AnalyticsBody = { views: number; viewsLast30Days: number; matchesReceived: number; messagesSent: number; briefApplications: number; totalEarningsCents: number; totalEarningsUsd: string };
-type NotificationsBody = { notifications: { id?: string; type?: string; read?: boolean; from?: string; avatar?: string }[] };
+type NotificationsBody = { notifications: { id?: string; type?: string; read?: boolean; from?: string; avatar?: string; body?: string }[] };
 type GroupSlot = { unread?: number; items?: unknown[] };
 type NotifGroupsBody = { groups: Record<string, GroupSlot> };
 type PrefsBody = { prefs: Record<string, boolean> };
@@ -940,11 +940,33 @@ describe("GET notifications family", () => {
     const body: NotificationsBody = await (await GET(req("notifications", "tok"))).json();
     expect(body.notifications).toEqual([]);
   });
-  it("notifications flattens the from_id embed", async () => {
+  it("notifications flattens the from_id embed for a paid recipient", async () => {
+    g.__authUser = { id: "a" };
+    installSb({
+      muse_profiles: () => ({ data: { id: "me", tier: "muse_pro" } }),
+      muse_notifications: () => ({ data: [{ id: "n1", type: "like", read: false, body: "Ada liked your photo!", from_id: { name: "Ada", avatar: "av" } }] }),
+    });
+    const body: NotificationsBody = await (await GET(req("notifications", "tok"))).json();
+    expect(body.notifications[0].from).toBe("Ada");
+    expect(body.notifications[0].avatar).toBe("av");
+    expect(body.notifications[0].body).toBe("Ada liked your photo!");
+  });
+  it("notifications hides the liker's identity from a free recipient", async () => {
     g.__authUser = { id: "a" };
     installSb({
       muse_profiles: () => ({ data: { id: "me" } }),
-      muse_notifications: () => ({ data: [{ id: "n1", type: "like", read: false, from_id: { name: "Ada", avatar: "av" } }] }),
+      muse_notifications: () => ({ data: [{ id: "n1", type: "like", read: false, body: "Ada liked your photo!", from_id: { name: "Ada", avatar: "av" } }] }),
+    });
+    const body: NotificationsBody = await (await GET(req("notifications", "tok"))).json();
+    expect(body.notifications[0].from).toBe("Someone");
+    expect(body.notifications[0].avatar).toBe("");
+    expect(body.notifications[0].body).toBe("Someone liked your photo!");
+  });
+  it("notifications keeps a non-like sender visible for a free recipient", async () => {
+    g.__authUser = { id: "a" };
+    installSb({
+      muse_profiles: () => ({ data: { id: "me" } }),
+      muse_notifications: () => ({ data: [{ id: "n1", type: "booking", read: false, body: "Booking confirmed", from_id: { name: "Ada", avatar: "av" } }] }),
     });
     const body: NotificationsBody = await (await GET(req("notifications", "tok"))).json();
     expect(body.notifications[0].from).toBe("Ada");

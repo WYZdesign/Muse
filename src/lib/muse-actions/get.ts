@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { safeServerError } from "@/lib/http";
 import { sanitizeText } from "@/lib/request-safety";
-import { bearerTokenFromReq, isConvoParticipant, UUID_RE, isAdminEmail, isAgeVerificationCurrent } from "./shared";
+import { bearerTokenFromReq, isConvoParticipant, UUID_RE, isAdminEmail, isAgeVerificationCurrent, isPaidTier, applyLikeTierGate } from "./shared";
 import { getBoostStatus, isBoostActive } from "./misc";
 import { resolvePortfolioGate } from "@/lib/muse-portfolio-visibility";
 import { publicAge } from "@/lib/muse-age";
@@ -996,7 +996,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === "notifications" && user) {
-      const { data: profile } = await sb.from("muse_profiles").select("id").eq("auth_id", user.id).maybeSingle();
+      const { data: profile } = await sb.from("muse_profiles").select("id, tier").eq("auth_id", user.id).maybeSingle();
       if (!profile) return NextResponse.json({ notifications: [] });
       // Root-cause fix (Torreé batch Part B item 8 — "Activity ghost 'S'
       // avatars"): this used to `select("*")` on the raw table, which
@@ -1013,7 +1013,12 @@ export async function GET(req: NextRequest) {
       // ProfileScreen's Activity tab / page.tsx's activityFeed merge
       // actually calls.
       const { data }: { data: NotificationRow[] | null } = await sb.from("muse_notifications").select("*, from_id(name, avatar)").eq("user_id", profile.id).order("created_at", { ascending: false }).limit(30);
-      const notifications = (data || []).map((n) => ({ ...n, from: n.from_id?.name || "", avatar: n.from_id?.avatar || "" }));
+      // "See who likes you" gate: a Free recipient must not receive the liker's
+      // name/avatar in the join or in the stored body. The normal from/avatar
+      // mapping runs first so non-like notifications keep their sender.
+      const recipientPaid = isPaidTier(String(profile.tier ?? ""));
+      const notifications = (data || []).map((n) =>
+        applyLikeTierGate({ ...n, from: n.from_id?.name || "", avatar: n.from_id?.avatar || "" }, n.from_id?.name, n.from_id?.avatar, recipientPaid));
       return NextResponse.json({ notifications });
     }
 
@@ -1026,9 +1031,12 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === "notifications-grouped" && user) {
-      const { data: profile } = await sb.from("muse_profiles").select("id").eq("auth_id", user.id).maybeSingle();
+      const { data: profile } = await sb.from("muse_profiles").select("id, tier").eq("auth_id", user.id).maybeSingle();
       if (!profile) return NextResponse.json({ groups: {} });
-      const { data }: { data: NotificationRow[] | null } = await sb.from("muse_notifications").select("*").eq("user_id", profile.id).order("created_at", { ascending: false }).limit(100);
+      // Same sender join as GET ?type=notifications — without it the stored
+      // body (which leads with the liker's name) can't be redacted for Free.
+      const { data }: { data: NotificationRow[] | null } = await sb.from("muse_notifications").select("*, from_id(name, avatar)").eq("user_id", profile.id).order("created_at", { ascending: false }).limit(100);
+      const recipientPaid = isPaidTier(String(profile.tier ?? ""));
       const groups: Record<string, { items: NotificationRow[]; unread: number }> = {};
       const categorize = (t: string) => {
         if (t === "match" || t === "like") return "matches";
@@ -1037,8 +1045,9 @@ export async function GET(req: NextRequest) {
         if (t === "suspension" || t === "strike") return "safety";
         return "other";
       };
-      for (const n of (data || [])) {
-        const cat = categorize(n.type as string);
+      for (const raw of (data || [])) {
+        const n = applyLikeTierGate(raw, raw.from_id?.name, raw.from_id?.avatar, recipientPaid);
+        const cat = categorize(String(n.type ?? ""));
         if (!groups[cat]) groups[cat] = { items: [], unread: 0 };
         groups[cat].items.push(n);
         if (!n.read) groups[cat].unread++;

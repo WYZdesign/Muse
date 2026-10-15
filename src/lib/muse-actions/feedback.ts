@@ -11,6 +11,7 @@ import { safeServerError } from "@/lib/http";
 import { sanitizeText } from "@/lib/request-safety";
 import { sendEmail } from "@/lib/email";
 import type { ActionContext } from "./shared";
+import { isPaidTier, applyLikeTierGate } from "./shared";
 
 /** A muse_notifications row as read for the inbox, joined with its sender's
  *  name/avatar when one exists (system notifications carry no from_id). */
@@ -48,14 +49,19 @@ export async function feedbackGetNotifications({ sb, profile, rest }: ActionCont
     boost: { label: "Musa Boost", letter: "⚡" },
     pro: { label: "Musa Pro", letter: "P" },
   };
-  const notifications = (data || []).map((n) => {
-    const meta = SYSTEM_META[n.type as string] || { label: "Musa", letter: "M" };
-    return {
-      ...n,
-      from: n.from_id?.name || meta.label,
-      avatar: n.from_id?.avatar || "",
-      _systemAvatar: n.from_id ? undefined : meta.letter,
+  const recipientPaid = isPaidTier(String(profile.tier ?? ""));
+  const notifications = (data || []).map((n0) => {
+    const meta = SYSTEM_META[n0.type as string] || { label: "Musa", letter: "M" };
+    const n = {
+      ...n0,
+      from: n0.from_id?.name || meta.label,
+      avatar: n0.from_id?.avatar || "",
+      _systemAvatar: n0.from_id ? undefined : meta.letter,
     };
+    // "See who likes you" is Pro: a Free recipient must not receive the liker's
+    // identity. Gated AFTER the system-label mapping so non-like rows and every
+    // paid recipient keep their normal sender label.
+    return applyLikeTierGate(n, n0.from_id?.name, n0.from_id?.avatar, recipientPaid);
   });
   return NextResponse.json({ success: true, notifications });
 }
