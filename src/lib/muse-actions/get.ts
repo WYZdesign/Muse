@@ -123,6 +123,7 @@ type ProfileRow = {
   age_verified?: boolean | null;
   age_verified_at?: string | null;
   verified?: boolean | null;
+  tier?: string | null;
   boost_inventory?: string | number | null;
   boost_expires_at?: string | null;
   last_seen_at?: string | null;
@@ -349,7 +350,7 @@ export async function GET(req: NextRequest) {
       if (!viewer) return NextResponse.json({ error: "Not found" }, { status: 404 });
       const viewerVerified = isAgeVerificationCurrent(viewer);
       const { data }: { data: ProfileRow[] | null } = await sb.from("muse_profiles")
-        .select("id, name, type, avatar, bio, loc, styles, looking, nsfw, suspended, zodiac, chinese, mbti, life_path, boost_expires_at, preferences, birthdate, verified, last_seen_at")
+        .select("id, name, type, avatar, bio, loc, styles, looking, nsfw, suspended, zodiac, chinese, mbti, life_path, boost_expires_at, tier, preferences, birthdate, verified, last_seen_at")
         .limit(400);
       let blockedIds = new Set<string>();
       {
@@ -389,12 +390,19 @@ export async function GET(req: NextRequest) {
           // — this card previously never showed the verified checkmark or
           // online dot for any real profile, since neither column was ever
           // fetched here, unlike the matches/feed/profiles handlers).
-          return { ...p, age: publicAge(p), showAge: p.preferences?.showAge !== false, showOnline: p.preferences?.showOnline !== false, birthdate: undefined, preferences: undefined, matchScore: base, boosted, sideMatches: !!side && !!CREATIVE_SIDE[p.type as string] && CREATIVE_SIDE[p.type as string] !== side };
+          // tier is read only to rank by; it is stripped like birthdate and
+          // preferences so a viewer never learns who is paying.
+          return { ...p, age: publicAge(p), showAge: p.preferences?.showAge !== false, showOnline: p.preferences?.showOnline !== false, birthdate: undefined, preferences: undefined, tier: undefined, matchScore: base, boosted, priority: isPaidTier(String(p.tier ?? "")), sideMatches: !!side && !!CREATIVE_SIDE[p.type as string] && CREATIVE_SIDE[p.type as string] !== side };
         });
-      // Boosted + complementary-side first, then by match score; capped for payload.
+      // Ranking ladder, highest weight first: an active Boost is the "top of
+      // the stack" feature (1.0), then Musa Pro priority placement (0.75),
+      // then complementary-side (0.5), then match score (0 to 1). A Boost
+      // still outranks a Pro, but Pro placement beats a free profile at a
+      // comparable match score, which is what "Priority placement in
+      // Discover" is selling.
       scored.sort((a, b) => {
-        const ap = (a.boosted ? 1 : 0) + (a.sideMatches ? 0.5 : 0) + a.matchScore / 100;
-        const bp = (b.boosted ? 1 : 0) + (b.sideMatches ? 0.5 : 0) + b.matchScore / 100;
+        const ap = (a.boosted ? 1 : 0) + (a.priority ? 0.75 : 0) + (a.sideMatches ? 0.5 : 0) + a.matchScore / 100;
+        const bp = (b.boosted ? 1 : 0) + (b.priority ? 0.75 : 0) + (b.sideMatches ? 0.5 : 0) + b.matchScore / 100;
         return bp - ap;
       });
       return NextResponse.json({ profiles: scored.slice(0, 100) });

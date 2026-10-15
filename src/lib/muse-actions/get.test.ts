@@ -61,6 +61,7 @@ type ProfileOut = {
   age?: number;
   birthdate?: unknown;
   preferences?: unknown;
+  tier?: unknown;
   matchScore?: number;
   verified?: boolean;
   last_seen_at?: string;
@@ -368,6 +369,60 @@ describe("GET discover-ranked", () => {
     expect(ids).not.toContain("blocked");
     expect(ids[0]).toBe("boosted");
     expect(body.profiles.every((p) => typeof p.matchScore === "number")).toBe(true);
+  });
+
+  it("ranks a paying profile above an otherwise identical free one", async () => {
+    g.__authUser = { id: "auth-1" };
+    installSb({
+      muse_profiles: (calls) => {
+        const sel = selectArg(calls);
+        if (sel === "id") return { data: { id: "me" } };
+        if (sel.includes("life_path") && sel.includes("age_verified_at")) {
+          return { data: { id: "me", type: "Photographer", styles: ["Editorial"], looking: ["Model"], zodiac: "Aries", age_verified: false, age_verified_at: null } };
+        }
+        if (sel.includes("boost_expires_at")) {
+          // Same type/styles/looking on both rows, so calcMatchScore ties and
+          // only the tier decides the order.
+          return { data: [
+            { id: "free", avatar: "a", type: "Model", styles: ["Editorial"], looking: ["Photographer"] },
+            { id: "pro", avatar: "a", type: "Model", styles: ["Editorial"], looking: ["Photographer"], tier: "muse_pro" },
+          ] };
+        }
+        return { data: null };
+      },
+      muse_blocks: () => ({ data: [] }),
+    });
+    const body: ProfilesBody = await (await GET(req("discover-ranked", "tok"))).json();
+    const ids = body.profiles.map((p) => p.id);
+    expect(ids.indexOf("pro")).toBeLessThan(ids.indexOf("free"));
+    // The tier is a ranking input only; it must not leak into the payload.
+    expect(body.profiles.find((p) => p.id === "pro").tier).toBeUndefined();
+  });
+
+  it("keeps an active Boost above priority placement", async () => {
+    g.__authUser = { id: "auth-1" };
+    const future = new Date(Date.now() + 86400000).toISOString();
+    installSb({
+      muse_profiles: (calls) => {
+        const sel = selectArg(calls);
+        if (sel === "id") return { data: { id: "me" } };
+        if (sel.includes("life_path") && sel.includes("age_verified_at")) {
+          return { data: { id: "me", type: "Photographer", styles: ["Editorial"], looking: ["Model"], zodiac: "Aries", age_verified: false, age_verified_at: null } };
+        }
+        if (sel.includes("boost_expires_at")) {
+          return { data: [
+            { id: "pro", avatar: "a", type: "Model", styles: ["Editorial"], looking: ["Photographer"], tier: "muse_pro" },
+            { id: "boosted", avatar: "a", type: "Model", styles: ["Editorial"], looking: ["Photographer"], boost_expires_at: future },
+          ] };
+        }
+        return { data: null };
+      },
+      muse_blocks: () => ({ data: [] }),
+    });
+    const body: ProfilesBody = await (await GET(req("discover-ranked", "tok"))).json();
+    const ids = body.profiles.map((p) => p.id);
+    // Boost is the "top of the stack" feature, so it still outranks priority.
+    expect(ids[0]).toBe("boosted");
   });
 
   it("exposes derived age only when the owner's showAge allows it", async () => {
