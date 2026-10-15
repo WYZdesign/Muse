@@ -17,16 +17,9 @@ import UpsellModal from "../components/UpsellModal";
 import SafetyCheckinModal from "../components/SafetyCheckinModal";
 import PromptBankModal from "../components/PromptBankModal";
 import ReferralPanel from "../components/ReferralPanel";
-import ConnectPanel from "../components/ConnectPanel";
 import PaymentHistory from "../components/PaymentHistory";
 import { DailyLoginModal } from "../components/DailyLoginModal";
 import PageTour from "../components/PageTour";
-// livekit-client is ~580KB; split it out of the /muse shell so it only loads
-// when a call actually starts. The overlay renders null before that anyway.
-const CallOverlay = dynamic(() => import("../components/CallOverlay"), {
-  ssr: false,
-  loading: () => null,
-});
 import { LikeNoteModal } from "./LikeNoteModal";
 import { TermsModal } from "./TermsModal";
 import { PrivacyModal } from "./PrivacyModal";
@@ -42,6 +35,18 @@ import { EditProfileModal } from "./EditProfileModal";
 import { ShareProfileSheet } from "./ShareProfileSheet";
 import { IncomingCallModal } from "./IncomingCallModal";
 import type { MuseModalsStackProps } from "./types";
+
+// Both panels are rendered only behind a flag (activeCall / showConnect), so
+// keep their SDKs out of the /muse shell: livekit-client is ~537KB and the
+// Stripe Connect wrappers another ~200KB. They stream in on first open.
+const CallOverlay = dynamic(() => import("../components/CallOverlay"), {
+  ssr: false,
+  loading: () => null,
+});
+const ConnectPanel = dynamic(() => import("../components/ConnectPanel"), {
+  ssr: false,
+  loading: () => null,
+});
 
 export function MuseModals(props: MuseModalsStackProps) {
   const {
