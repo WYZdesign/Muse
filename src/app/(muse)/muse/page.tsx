@@ -33,7 +33,6 @@ import { useChatState } from "./hooks/useChatState";
 import { useCall } from "./hooks/useCall";
 import { useFocusTrap } from "./hooks/useFocusTrap";
 import { getIcebreaker, getReferralTier, checkProfileBadges, buildBriefTitleMap, computeUnreadCount } from "./page-helpers";
-import CallOverlay from "./components/CallOverlay";
 import { useBriefsState } from "./hooks/useBriefsState";
 import { useSavedListingsState } from "./hooks/useSavedListingsState";
 import { useModalVisibility } from "./hooks/useModalVisibility";

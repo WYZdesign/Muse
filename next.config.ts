@@ -43,6 +43,29 @@ const securityHeaders = [
   { key: "Permissions-Policy", value: "camera=(self), microphone=(self), geolocation=(self), payment=(self)" },
 ];
 
+// Vercel serves everything in public/ as `public, must-revalidate, max-age=0`,
+// which forces a 304 revalidation round trip for every single asset. The
+// gallery alone is ~1000 files / 228MB, so a normal scroll was paying an
+// origin round trip per image and nothing ever came out of the HTTP cache.
+// These are stable, effectively immutable files, so cache them for a year.
+// Deliberately NOT listed: /sw-muse.js (must update on every deploy) and
+// /manifest.webmanifest (revalidate so icon/start_url changes land promptly).
+const LONG_CACHE = [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }];
+const LONG_CACHE_SOURCES = [
+  "/models/:path*",
+  "/studio/:path*",
+  "/videos/:path*",
+  "/screenshots/:path*",
+  "/muse-icon.png",
+  "/muse-app-icon.png",
+  "/wyz-crown-icon.png",
+  "/og-image.png",
+  "/apple-touch-icon.png",
+  "/favicon-192x192.png",
+  "/favicon-512x512.png",
+  "/favicon.ico",
+];
+
 const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
@@ -67,7 +90,9 @@ const nextConfig: NextConfig = {
         source: "/(.*)",
         headers: securityHeaders,
       },
-      // HTML documents must never be cached — a stale shell references dead
+      // Stable static assets: cache for a year (see LONG_CACHE_SOURCES).
+      ...LONG_CACHE_SOURCES.map((source) => ({ source, headers: LONG_CACHE })),
+      // HTML documents must never be cached, a stale shell references dead
       // /_next/ chunk URLs and renders a blank screen. Always revalidate.
       {
         source: "/muse",

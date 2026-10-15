@@ -4,6 +4,7 @@
 
 
 import React from "react";
+import dynamic from "next/dynamic";
 import type { Match } from "../components/types";
 import { ScreenErrorBoundary } from "../components/ScreenErrorBoundary";
 import { PAGE_TOURS, tourSeenKey } from "../components/pageTourContent";
@@ -20,7 +21,12 @@ import ConnectPanel from "../components/ConnectPanel";
 import PaymentHistory from "../components/PaymentHistory";
 import { DailyLoginModal } from "../components/DailyLoginModal";
 import PageTour from "../components/PageTour";
-import CallOverlay from "../components/CallOverlay";
+// livekit-client is ~580KB; split it out of the /muse shell so it only loads
+// when a call actually starts. The overlay renders null before that anyway.
+const CallOverlay = dynamic(() => import("../components/CallOverlay"), {
+  ssr: false,
+  loading: () => null,
+});
 import { LikeNoteModal } from "./LikeNoteModal";
 import { TermsModal } from "./TermsModal";
 import { PrivacyModal } from "./PrivacyModal";
