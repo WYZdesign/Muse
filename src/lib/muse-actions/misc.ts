@@ -324,6 +324,15 @@ async function grantBoosts(sb: ActionContext["sb"], userId: string, count: numbe
 // Export for quest claim (boost rewards) — see api/muse/connect and quests.ts.
 export { grantBoosts as addBoostInventory };
 
+// A boost also front-pages the user's open briefs. This is what the industry
+// tiers sell as "Talent-pool boost (x1/week) - front page" / "Boosted
+// placement on every Brief you post"; without it a paying hirer had nothing
+// of their own to boost.
+async function boostOpenBriefs(sb: ActionContext["sb"], userId: string, expiry: string) {
+  try {
+    await sb.from("muse_briefs").update({ boost_expires_at: expiry }).eq("author_id", userId).eq("status", "open");
+  } catch { /* profile boost is already granted; briefs are best-effort */ }
+}
 // Spends a boost (inventory first, then Pro weekly allowance) and sets the
 // active-boost expiry. Returns the new expiry, or null if none could be spent.
 export async function spendBoost(sb: ActionContext["sb"], profileId: string, durationKey: string): Promise<string | null> {
@@ -341,6 +350,7 @@ export async function spendBoost(sb: ActionContext["sb"], profileId: string, dur
   const inventory = Number(prof.boost_inventory || 0);
   if (inventory > 0) {
     await sb.from("muse_profiles").update({ boost_expires_at: newExpiry, boost_inventory: inventory - 1 }).eq("id", profileId);
+    await boostOpenBriefs(sb, profileId, newExpiry);
     return newExpiry;
   }
   if (isPro) {
@@ -354,6 +364,7 @@ export async function spendBoost(sb: ActionContext["sb"], profileId: string, dur
     if ((count ?? 0) >= 1) return null;
     await sb.from("muse_activity_log").insert({ user_id: profileId, action: "boost", details: { week: monday.toISOString().slice(0, 10), at: now.toISOString(), duration: durationKey } });
     await sb.from("muse_profiles").update({ boost_expires_at: newExpiry }).eq("id", profileId);
+    await boostOpenBriefs(sb, profileId, newExpiry);
     return newExpiry;
   }
   return null;

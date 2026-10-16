@@ -77,7 +77,7 @@ type MatchesBody = { matches: MatchOut[] };
 type MemberOut = { user_id?: string; user_name?: string; user_avatar?: string; role?: string; joined_at?: string };
 type MembersBody = { members: MemberOut[] };
 
-type BriefOut = { id?: string; author_id?: { id?: string; name?: string } };
+type BriefOut = { id?: string; boost_expires_at?: string | null; author_id?: { id?: string; name?: string; tier?: string } };
 type BriefsBody = { briefs: BriefOut[] };
 
 type PostOut = { id?: string; author_id?: { id?: string; name?: string } };
@@ -221,6 +221,38 @@ describe("GET briefs — applicant count embed", () => {
   });
 });
 
+// Brief placement is what the industry tiers sell: "Talent-pool boost x1/week
+// - front page" and "Boosted placement on every Brief you post" (Musa Studio).
+// A live brief boost is the front-page slot, then a paying author's briefs.
+describe("GET briefs — placement ranking", () => {
+  it("ranks a live-boosted brief, then a paying author, then the rest", async () => {
+    const future = new Date(Date.now() + 86400000).toISOString();
+    const rows = [
+      { id: "free", title: "Free", author_id: { id: "u1", name: "F", avatar: "", tier: "free" } },
+      { id: "pro", title: "Pro", author_id: { id: "u2", name: "P", avatar: "", tier: "muse_pro" } },
+      { id: "boosted", title: "Boosted", author_id: { id: "u3", name: "B", avatar: "", tier: "free" }, boost_expires_at: future },
+    ];
+    g.__sbMock = { from: () => ({ select: () => ({ order: () => ({ limit: async () => ({ data: rows }) }) }) }) };
+    const r = await GET(req("briefs"));
+    expect(r.status).toBe(200);
+    const body: BriefsBody = await r.json();
+    expect(body.briefs.map((b) => b.id)).toEqual(["boosted", "pro", "free"]);
+    // tier is a ranking input only, never exposed.
+    expect(body.briefs.every((b) => b.author_id?.tier === undefined)).toBe(true);
+    g.__sbMock = { from: () => makeQuery() };
+  });
+
+  it("leaves newest-first order alone when nothing is boosted or paid", async () => {
+    const rows = [
+      { id: "newer", title: "Newer", author_id: { id: "u1", name: "A", avatar: "", tier: "free" } },
+      { id: "older", title: "Older", author_id: { id: "u2", name: "B", avatar: "", tier: "free" } },
+    ];
+    g.__sbMock = { from: () => ({ select: () => ({ order: () => ({ limit: async () => ({ data: rows }) }) }) }) };
+    const body: BriefsBody = await (await GET(req("briefs"))).json();
+    expect(body.briefs.map((b) => b.id)).toEqual(["newer", "older"]);
+    g.__sbMock = { from: () => makeQuery() };
+  });
+});
 // "matches" previously had NO nsfw gating at all — a matched partner's
 // avatar came through unconditionally regardless of the viewer's
 // verification, unlike "profiles" (Discover) right above it in get.ts.

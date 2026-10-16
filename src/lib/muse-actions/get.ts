@@ -166,7 +166,7 @@ type MatchRow = { id?: unknown; user_id?: unknown; target_id?: ProfileRow | null
 type PostRow = { author_id?: ProfileRow | null };
 
 /** A muse_briefs row with its embedded author profile. */
-type BriefRow = { author_id?: ProfileRow | null };
+type BriefRow = { author_id?: ProfileRow | null; boost_expires_at?: string | null };
 
 /** A muse_events row (the organizer lives in created_by). */
 type EventRow = { created_by?: unknown };
@@ -493,7 +493,7 @@ export async function GET(req: NextRequest) {
       // so a brief's poster can see interest on their own post without a
       // separate round-trip — CollabScreen.tsx surfaces this only to the
       // brief's own author, not to other viewers.
-      const { data }: { data: BriefRow[] | null } = await sb.from("muse_briefs").select("*, author_id(id, name, avatar), muse_brief_applications(count)").order("created_at", { ascending: false }).limit(50);
+      const { data }: { data: BriefRow[] | null } = await sb.from("muse_briefs").select("*, author_id(id, name, avatar, tier), muse_brief_applications(count)").order("created_at", { ascending: false }).limit(50);
       // Same gap as "feed" above — blocking never reached this listing.
       let briefs = data || [];
       if (profileId) {
@@ -501,6 +501,22 @@ export async function GET(req: NextRequest) {
         const blockedIds = blockedIdSet(blocks, profileId);
         briefs = briefs.filter((b) => !blockedIds.has(String(b.author_id?.id)));
       }
+      // Placement ladder, matching the pricing copy: a live Brief boost is the
+      // "front page" slot (Musa Pro weekly boost / every Musa Studio brief),
+      // then a paying author's briefs (priority placement), then newest first
+      // exactly as the DB returned them (Array.sort is stable).
+      const boostLive = (v?: string | null) => !!v && new Date(v).getTime() > Date.now();
+      briefs = [...briefs]
+        .sort((a, b) => {
+          const ab = boostLive(a.boost_expires_at) ? 1 : 0;
+          const bb = boostLive(b.boost_expires_at) ? 1 : 0;
+          if (ab !== bb) return bb - ab;
+          const ap = isPaidTier(String(a.author_id?.tier ?? "")) ? 1 : 0;
+          const bp = isPaidTier(String(b.author_id?.tier ?? "")) ? 1 : 0;
+          return bp - ap;
+        })
+        // tier is read only to rank by, stripped like the other surfaces.
+        .map((b) => b.author_id ? { ...b, author_id: { ...b.author_id, tier: undefined } } : b);
       return NextResponse.json({ briefs });
     }
 

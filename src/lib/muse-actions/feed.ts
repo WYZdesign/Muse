@@ -209,7 +209,15 @@ export const briefCreate = async ({ sb, profile, rest, ip }: ActionContext) => {
     await sb.from("muse_activity_log").insert({ user_id: profile.id, action: "brief_blocked", details: { categories: briefScreen.categories } });
     return NextResponse.json({ error: "Brief blocked by safety policy", code: "SAFETY_BLOCK" }, { status: 403 });
   }
-  const { error } = await sb.from("muse_briefs").insert({ author_id: profile.id, title: cleanTitle, description: cleanDesc, budget: budget || "Negotiable", category: cat || "concept", tags: tags || [], paid: paid || false, rate: rate || "" });
+  // Musa Studio sells "Boosted placement on every Brief you post", so a Studio
+  // author's briefs start with a live 7 day front-page window. Everyone else
+  // starts unboosted and can spend a boost later.
+  const { data: authorRow }: { data: { tier?: string | null } | null } =
+    await sb.from("muse_profiles").select("tier").eq("id", profile.id).maybeSingle();
+  const studioBoost = authorRow?.tier === "muse_studio"
+    ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    : null;
+  const { error } = await sb.from("muse_briefs").insert({ author_id: profile.id, title: cleanTitle, description: cleanDesc, budget: budget || "Negotiable", category: cat || "concept", tags: tags || [], paid: paid || false, rate: rate || "", boost_expires_at: studioBoost });
   if (error) return safeServerError(error, "db op");
   return NextResponse.json({ success: true });
 };
