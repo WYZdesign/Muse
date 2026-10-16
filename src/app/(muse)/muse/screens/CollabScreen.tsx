@@ -75,6 +75,7 @@ export interface CollabScreenProps {
   currentUser: CurrentUser;
   apiFetch: AuthFetchFn;
   showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
+  setUpsell?: (v: { feature: string; reason: string; icon?: string } | null) => void;
   uid: () => number;
   openHamburger?: () => void;
   unreadNotificationCount?: number;
@@ -116,6 +117,7 @@ export const CollabScreen = memo(function CollabScreen({
   currentUser,
   apiFetch,
   showToast,
+  setUpsell,
   uid,
   appliedBriefs = [],
   setAppliedBriefs = () => {},
@@ -405,7 +407,17 @@ export const CollabScreen = memo(function CollabScreen({
                         }
                         try {
                           const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "brief-apply", briefId: brief.id }) });
-                          if (!r.ok) throw new Error("failed");
+                          if (!r.ok) {
+                            // Free plan allows 10 brief responses a day; open the
+                            // upsell instead of a bare "Failed to apply".
+                            const d = await r.json().catch(() => ({} as { code?: string; error?: string }));
+                            if (d.code === "BRIEF_LIMIT") {
+                              setUpsell?.({ feature: "Unlimited Brief Responses", reason: d.error || "You've used your free brief responses for today. Upgrade to Musa Pro to respond without limit.", icon: "📝" });
+                              setAppliedBriefs(prev => prev.filter(x => x !== brief.id));
+                              return;
+                            }
+                            throw new Error("failed");
+                          }
                           showToast("Applied!");
                           apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "track-quest", action_keys: ["apply_brief"] }) }).catch(() => {});
                         } catch {

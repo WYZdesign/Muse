@@ -12,7 +12,12 @@ import { checkRate } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/request-safety";
 import { screenText } from "@/lib/aiModeration";
 import { bumpQuest } from "@/lib/questEngine";
-import { UUID_RE, validateInput, NextResponse, safeServerError, type ActionContext } from "./shared";
+import { UUID_RE, validateInput, NextResponse, safeServerError, isPaidTier, type ActionContext } from "./shared";
+
+/** Free-tier daily brief-response cap. The industry Free plan advertises
+ *  "10 brief responses/day" and Musa Pro advertises "Unlimited brief
+ *  responses"; this is the single number both refer to. */
+export const FREE_DAILY_BRIEF_RESPONSES = 10;
 
 export const feedPost = async ({ sb, profile, rest, ip }: ActionContext) => {
   if (!await checkRate(ip, "feed", 10)) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
@@ -226,6 +231,29 @@ export const briefApply = async ({ sb, profile, rest }: ActionContext) => {
   const { briefId } = rest;
   if (!briefId) return NextResponse.json({ error: "briefId required" }, { status: 400 });
   if (!UUID_RE.test(String(briefId))) return NextResponse.json({ success: true, demo: true });
+  // Free-tier daily brief-response cap, mirroring the like cap in matching.ts.
+  // This is the gate behind the industry Free plan's "10 brief responses/day"
+  // and Musa Pro's "Unlimited brief responses", neither of which was enforced
+  // anywhere. Counted from muse_brief_applications rows since local midnight,
+  // so no extra table, column or cron is needed. Studio is Pro-equivalent via
+  // isPaidTier. Checked before the insert so a blocked attempt does not burn
+  // a response.
+  if (!isPaidTier(String(profile.tier ?? ""))) {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const { count: usedToday } = await sb.from("muse_brief_applications")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", profile.id)
+      .gte("created_at", startOfDay.toISOString());
+    if ((usedToday ?? 0) >= FREE_DAILY_BRIEF_RESPONSES) {
+      return NextResponse.json({
+        error: `You've used all ${FREE_DAILY_BRIEF_RESPONSES} free brief responses for today. They reset at midnight, or respond without limit on Musa Pro.`,
+        code: "BRIEF_LIMIT",
+        limit: FREE_DAILY_BRIEF_RESPONSES,
+        used: usedToday ?? 0,
+      }, { status: 429 });
+    }
+  }
   const { error } = await sb.from("muse_brief_applications").insert({ brief_id: briefId, user_id: profile.id });
   if (error) return safeServerError(error, "db op");
   try {

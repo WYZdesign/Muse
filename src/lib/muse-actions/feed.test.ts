@@ -234,3 +234,44 @@ describe("briefCreate / briefApply", () => {
     expect(tableCalls(sb.__log, "muse_notifications").some((c) => c.method === "insert")).toBe(true);
   });
 });
+
+// The industry Free plan advertises "10 brief responses/day" and Musa Pro
+// advertises "Unlimited brief responses". Neither was enforced anywhere.
+describe("briefApply — free daily response cap", () => {
+  function capSb(count: number, inserts: unknown[]) {
+    return {
+      from: (table: string) => ({
+        select: () => ({
+          eq: () => ({ gte: () => Promise.resolve({ count }), maybeSingle: () => Promise.resolve({ data: null }) }),
+          maybeSingle: () => Promise.resolve({ data: null }),
+        }),
+        insert: (v: unknown) => { if (table === "muse_brief_applications") inserts.push(v); return Promise.resolve({ error: null }); },
+        update: () => ({ eq: () => Promise.resolve({ error: null }) }),
+      }),
+    } as unknown as ActionContext["sb"];
+  }
+  const ctx = (count: number, inserts: unknown[], tier: string) =>
+    ({ sb: capSb(count, inserts), profile: { id: "me1", name: "Ada", tier }, rest: { briefId: UUID }, ip: "10.0.0.1", req } as ActionContext);
+
+  it("429s a free account at the cap and inserts nothing", async () => {
+    const inserts: unknown[] = [];
+    const r = await briefApply(ctx(10, inserts, "free"));
+    expect((r as Response).status).toBe(429);
+    expect(await (r as Response).json()).toMatchObject({ code: "BRIEF_LIMIT", limit: 10, used: 10 });
+    expect(inserts).toHaveLength(0);
+  });
+
+  it("lets a free account through below the cap", async () => {
+    const inserts: unknown[] = [];
+    const r = await briefApply(ctx(9, inserts, "free"));
+    expect((r as Response).status).toBe(200);
+    expect(inserts).toHaveLength(1);
+  });
+
+  it("never caps a paying account", async () => {
+    const inserts: unknown[] = [];
+    const r = await briefApply(ctx(999, inserts, "muse_pro"));
+    expect((r as Response).status).toBe(200);
+    expect(inserts).toHaveLength(1);
+  });
+});
