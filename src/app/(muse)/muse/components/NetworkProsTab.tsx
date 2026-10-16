@@ -39,6 +39,9 @@ export interface NetworkProsTabProps {
   onToggleSave: (id: string | number) => void;
   handleImgError: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
   onOpenProfile: (p: Professional) => void;
+  /** Advanced talent filters (skills, experience, rate, sort, looking) are Musa Pro. */
+  proFiltersLocked?: boolean;
+  setUpsell?: (v: { feature: string; reason: string; icon?: string } | null) => void;
 }
 
 export function NetworkProsTab({
@@ -46,6 +49,7 @@ export function NetworkProsTab({
   proExp, setProExp, proSort, setProSort, proHiringOnly, setProHiringOnly, proRateBand, setProRateBand,
   proSkill, setProSkill, proLooking, setProLooking, allSkills, allLooking, proList,
   savedProfileIds, onToggleSave, handleImgError, onOpenProfile,
+  proFiltersLocked = false, setUpsell,
 }: NetworkProsTabProps) {
   return (
     <>
@@ -88,10 +92,16 @@ export function NetworkProsTab({
             key={f.key}
             type="button"
             aria-label={`${f.label} filter${f.active ? " (active)" : ""}`}
-            onClick={() => setFilterSections(s => ({ ...s, [f.key]: !s[f.key] }))}
+            onClick={() => {
+              if (proFiltersLocked) {
+                setUpsell?.({ feature: "Advanced Talent Filters", reason: "Narrow the directory by skills, experience, rate and who they are looking for. Upgrade to Musa Pro to use the advanced talent filters.", icon: "🔎" });
+                return;
+              }
+              setFilterSections(s => ({ ...s, [f.key]: !s[f.key] }));
+            }}
             style={{ cursor: "pointer", fontSize: 11, fontWeight: 700, color: f.active ? "#0a0612" : "var(--text)", background: f.active ? f.grad : "rgba(255,255,255,0.06)", border: f.active ? "none" : "1px solid rgba(255,255,255,0.1)", borderRadius: 99, padding: "10px 14px", minHeight: 44, display: "flex", alignItems: "center", transition: "all .2s", whiteSpace: "nowrap", flexShrink: 0 }}
           >
-            {f.label}{f.active ? " ✓" : ""}
+            {f.label}{f.active ? " ✓" : ""}{proFiltersLocked ? " · Pro" : ""}
           </button>
         ))}
         <button

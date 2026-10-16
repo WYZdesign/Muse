@@ -17,6 +17,7 @@ import { NetworkProsTab, type ProExp, type ProSort, type ProRateBand } from "../
 import { NetworkForumTab } from "../components/NetworkForumTab";
 import { NetworkThreadModal } from "../components/NetworkThreadModal";
 import { NetworkProDetailModal } from "../components/NetworkProDetailModal";
+import { isPaidTier } from "../components/subscriptionTiers";
 
 export interface NetworkScreenProps {
   screen: Screen;
@@ -28,6 +29,7 @@ export interface NetworkScreenProps {
   matches: Match[];
   apiFetch: (url: string, opts?: RequestInit) => Promise<Response>;
   showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
+  setUpsell?: (v: { feature: string; reason: string; icon?: string } | null) => void;
   setViewProfile: (p: ViewProfile | null) => void;
   currentUser: CurrentUser;
   handleImgError: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
@@ -73,6 +75,7 @@ export const NetworkScreen = memo(function NetworkScreen({
   matches: _matches,
   apiFetch,
   showToast,
+  setUpsell,
   setViewProfile: _setViewProfile,
   currentUser,
   handleImgError,
@@ -152,12 +155,12 @@ export const NetworkScreen = memo(function NetworkScreen({
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [replyToId, setReplyToId] = useState<string | null>(null);
   const [commentVotes, setCommentVotes] = useState<Record<string, "up" | "down" | null>>({});
-  // Real, DB-backed replies for the open thread (nested via parentReplyId).
-  // Falls back to a post's inline `comments` for demo/seed posts.
+  // Real, DB-backed replies for the open thread (nested via parentReplyId); falls back to a post's inline `comments` for demo/seed posts.
   const [threadReplies, setThreadReplies] = useState<Record<string, ThreadReply[]>>({});
   const [badgeInfo, setBadgeInfo] = useState<BadgeInfo | null>(null);
   const [filterSections, setFilterSections] = useState<Record<string, boolean>>({ experience: false, sort: false, rate: false, skills: false, looking: false });
   const iAmIndustry = viewerSide(currentUser?.type) === "industry";
+  const proFiltersLocked = !isPaidTier(currentUser?.tier); // advanced talent filters are Musa Pro
 
   const parseYrs = (e: string) => parseInt(e, 10) || 0;
   const parseRate = (r?: string) => parseInt(String(r || "").replace(/[^0-9]/g, ""), 10) || 0;
@@ -172,7 +175,7 @@ export const NetworkScreen = memo(function NetworkScreen({
       return proServerResults.filter((p) => showNsfw || !p.nsfw);
     }
     let list: Professional[] = (liveProfessionals?.length ? liveProfessionals : (demo ? PROFESSIONALS : [])).filter((p) => showNsfw || !p.nsfw);
-    if (proExp !== "all") list = list.filter((p) => expBand(p.exp) === proExp);
+    if (!proFiltersLocked && proExp !== "all") list = list.filter((p) => expBand(p.exp) === proExp);
     if (proHiringOnly) list = list.filter((p) => p.openings > 0);
     const q = proSearch.trim().toLowerCase();
     if (q) {
@@ -184,8 +187,8 @@ export const NetworkScreen = memo(function NetworkScreen({
           (p.looking || []).some((l: string) => l.toLowerCase().includes(q))
       );
     }
-    if (proSkill.length) list = list.filter((p) => proSkill.every((s) => p.skills.includes(s)));
-    if (proRateBand !== "all") {
+    if (!proFiltersLocked && proSkill.length) list = list.filter((p) => proSkill.every((s) => p.skills.includes(s)));
+    if (!proFiltersLocked && proRateBand !== "all") {
       list = list.filter((p) => {
         const r = parseRate(p.rate);
         if (proRateBand === "tfp") return /tfp/i.test(String(p.rate || ""));
@@ -194,8 +197,8 @@ export const NetworkScreen = memo(function NetworkScreen({
         return r > 150;
       });
     }
-    if (proLooking !== "all") list = list.filter((p) => (p.looking || []).some((l: string) => l === proLooking));
-    const arr = [...list];
+    if (!proFiltersLocked && proLooking !== "all") list = list.filter((p) => (p.looking || []).some((l: string) => l === proLooking));
+    const arr = [...list]; if (proFiltersLocked) return arr;
     if (proSort === "expDesc") arr.sort((a, b) => parseYrs(b.exp) - parseYrs(a.exp));
     else if (proSort === "expAsc") arr.sort((a, b) => parseYrs(a.exp) - parseYrs(b.exp));
     else if (proSort === "rateDesc") arr.sort((a, b) => parseRate(b.rate) - parseRate(a.rate));
@@ -233,10 +236,8 @@ export const NetworkScreen = memo(function NetworkScreen({
         const res = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "search", query: value, type: "users", limit: 50 }) });
         const data: { success?: boolean; results: { users?: unknown[] } } = await res.json();
         if (data.success) {
-          // Audit fix (2026-10-07): search returns muse_profiles rows (avatar,
-          // styles, no exp/openings/rate), but this directory is built for the
-          // muse_professionals shape. Map fields (broken photos + "undefined"
-          // stat tiles otherwise).
+          // Audit fix (2026-10-07): search returns muse_profiles rows (avatar, styles,
+          // no exp/openings/rate) but this directory is built for the muse_professionals shape.
           setProServerResults((data.results.users || []).map(toProfessionalRow));
         }
       } catch { setProServerResults([]); }
@@ -575,6 +576,8 @@ export const NetworkScreen = memo(function NetworkScreen({
             setProSort={setProSort}
             proHiringOnly={proHiringOnly}
             setProHiringOnly={setProHiringOnly}
+      proFiltersLocked={proFiltersLocked}
+      setUpsell={setUpsell}
             proRateBand={proRateBand}
             setProRateBand={setProRateBand}
             proSkill={proSkill}
