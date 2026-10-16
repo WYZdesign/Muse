@@ -66,6 +66,7 @@ export const MUSE_REST_SCHEMAS: Record<string, z.ZodTypeAny> = {
   "match": z.object({ targetId: idLike.optional() }).passthrough(),
   "connect": z.object({ targetId: idLike.optional(), profileId: idLike.optional(), targetProfileId: idLike.optional(), note: z.string().max(500).optional() }).passthrough(),
   // ── messaging ──
+  "messages-mark-read": z.object({ matchId: idLike.optional(), match_id: idLike.optional(), userId: idLike.optional(), user_id: idLike.optional() }).passthrough(),
   "message-request-accept": z.object({ requestId: idLike.optional(), id: idLike.optional() }).passthrough(),
   "message-request-decline": z.object({ requestId: idLike.optional(), id: idLike.optional() }).passthrough(),
   "message-request-block": z.object({ requestId: idLike.optional(), id: idLike.optional() }).passthrough(),

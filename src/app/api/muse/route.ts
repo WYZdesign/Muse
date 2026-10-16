@@ -20,7 +20,7 @@ import { sessionBook, sessionCreate, bookingRespond, bookingCancel, bookingCompl
 import { connectRequest } from "@/lib/muse-actions/connect";
 import { profileUpdate, profileDelete } from "@/lib/muse-actions/profile";
 import { matchCreate, matchDelete, profileViewTrack } from "@/lib/muse-actions/matching";
-import { messageSend, messageRequestAccept, messageRequestDecline, messageRequestBlock, messageRequestsGet, blockUser, unblockUser, blockedUsers } from "@/lib/muse-actions/messaging";
+import { messageSend, messageRequestAccept, messageRequestDecline, messageRequestBlock, messageRequestsGet, blockUser, unblockUser, blockedUsers, messagesMarkRead } from "@/lib/muse-actions/messaging";
 import { feedPost, feedPostLike, feedCommentAdd, momentCreate, momentLike, briefCreate, briefApply } from "@/lib/muse-actions/feed";
 import { forumDispatch, reportCreate, userBlock, userUnblock, blocksGet, forumPostPin, forumPostLock } from "@/lib/muse-actions/forum";
 import { preferencesSave, promoApply, notificationsMarkRead, clientSync, paymentsGet, searchAll, boostActivate, boostAnalytics, boostStatus, saveBoostPurchase, savedSearchSave, savedSearchList, savedSearchDelete, savedSearchAlerts, togglePhotoLike } from "@/lib/muse-actions/misc";
@@ -68,6 +68,7 @@ ACTIONS["message-requests"] = messageRequestsGet;
 ACTIONS["block-user"] = blockUser;
 ACTIONS["unblock-user"] = unblockUser;
 ACTIONS["blocked-users"] = blockedUsers;
+ACTIONS["messages-mark-read"] = messagesMarkRead;
 
 // ═══ FEED & MOMENTS, BRIEFS ═══
 // Handlers extracted to lib/muse-actions/feed.ts (monolith split, interleaved-domain pass).

@@ -17,7 +17,7 @@ vi.mock("@/lib/supabase", () => ({
   supabase: { auth: { getUser: async () => ({ data: { user: null } }) } },
 }));
 
-import { messageSend, messageRequestsGet } from "@/lib/muse-actions/messaging";
+import { messageSend, messageRequestsGet, messagesMarkRead } from "@/lib/muse-actions/messaging";
 
 type MockQuery = {
   select: () => MockQuery;
@@ -129,5 +129,53 @@ describe("messageRequestsGet — only pending requests surface in the inbox", ()
     expect((r as Response).status).toBe(200);
     const body = await (r as Response).json();
     expect(body.requests).toEqual([{ id: "req1", status: "pending" }]);
+  });
+});
+
+describe("messagesMarkRead", () => {
+  // Read receipts. The stamp must only ever land on rows this user RECEIVED,
+  // and only on ones not already read, so a receipt shows when each message
+  // was first seen rather than the last time the chat was opened.
+  function sbReturning(rows: unknown, updates: Record<string, unknown>[]) {
+    return {
+      from: () => ({
+        select: () => ({ eq: () => ({ eq: () => Promise.resolve({ data: rows, error: null }) }) }),
+        update: (v: Record<string, unknown>) => { updates.push(v); return { in: () => Promise.resolve({ error: null }) }; },
+      }),
+    } as unknown as ActionContext["sb"];
+  }
+  const act = (sb: ActionContext["sb"], rest: Record<string, unknown>): ActionContext =>
+    ({ sb, profile: { id: "me1", name: "Ada" }, rest, ip: "10.0.0.1", req } as ActionContext);
+
+  it("400s when neither matchId nor userId is given", async () => {
+    const r = await messagesMarkRead(ctx({}, null));
+    expect((r as Response).status).toBe(400);
+  });
+
+  it("stamps only the never-read rows and reports the count", async () => {
+    const updates: Record<string, unknown>[] = [];
+    const sb = sbReturning([{ id: "m1", read_at: null }, { id: "m2", read_at: "2026-01-01T00:00:00Z" }, { id: "m3" }], updates);
+    const r = await messagesMarkRead(act(sb, { matchId: "me1__u2" }));
+    expect((r as Response).status).toBe(200);
+    expect(await (r as Response).json()).toMatchObject({ success: true, updated: 2 });
+    expect(updates).toHaveLength(1);
+    expect(updates[0].read).toBe(true);
+    expect(typeof updates[0].read_at).toBe("string");
+  });
+
+  it("writes nothing when every message is already read", async () => {
+    const updates: Record<string, unknown>[] = [];
+    const sb = sbReturning([{ id: "m1", read_at: "2026-01-01T00:00:00Z" }], updates);
+    const r = await messagesMarkRead(act(sb, { matchId: "me1__u2" }));
+    expect(await (r as Response).json()).toMatchObject({ success: true, updated: 0 });
+    expect(updates).toHaveLength(0);
+  });
+
+  it("accepts a userId instead of a matchId", async () => {
+    const updates: Record<string, unknown>[] = [];
+    const sb = sbReturning([{ id: "m1", read_at: null }], updates);
+    const r = await messagesMarkRead(act(sb, { userId: "u2" }));
+    expect((r as Response).status).toBe(200);
+    expect(updates).toHaveLength(1);
   });
 });

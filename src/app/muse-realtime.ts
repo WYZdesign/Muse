@@ -24,6 +24,7 @@ type MessageRow = {
   transcript?: string | null;
   created_at?: string | null;
   client_msg_id?: string | null;
+  read_at?: string | null;
 };
 
 /** The live INSERT row forwarded by the muse_messages realtime channel. */
@@ -113,7 +114,7 @@ export async function fetchConversationHistory(opts: {
   myId: string;
   theirId: string;
   limit?: number;
-}): Promise<{ from: "me" | "them"; text: string; img?: string; time: string; clientMsgId?: string; kind?: string; mediaUrl?: string; mediaType?: string; durationMs?: number; transcript?: string }[]> {
+}): Promise<{ from: "me" | "them"; text: string; img?: string; time: string; clientMsgId?: string; kind?: string; mediaUrl?: string; mediaType?: string; durationMs?: number; transcript?: string; readAt?: string }[]> {
   if (!opts.myId || opts.myId === "local" || !opts.theirId) return [];
   const convo = convoIdFor(opts.myId, opts.theirId);
   try {
@@ -132,6 +133,7 @@ export async function fetchConversationHistory(opts: {
       mediaType: r.media_type || undefined,
       durationMs: typeof r.duration_ms === "number" ? r.duration_ms : undefined,
       transcript: r.transcript || undefined,
+      readAt: r.read_at || undefined,
       time: r.created_at
         ? new Date(r.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
         : "",
@@ -143,6 +145,24 @@ export async function fetchConversationHistory(opts: {
   } catch (err) {
     trackError("fetchConversationHistory_failed", { convo, err: String(err) });
     return [];
+  }
+}
+
+/**
+ * Stamp the receiver side of a conversation as read. Called when the chat is
+ * open so the other person's client can show a "Seen" receipt (Musa Pro).
+ * Best-effort: a failure here must never break the chat.
+ */
+export async function markConversationRead(myId: string, theirId: string): Promise<void> {
+  if (!myId || myId === "local" || !theirId) return;
+  try {
+    await authFetch("/api/muse", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "messages-mark-read", matchId: convoIdFor(myId, theirId) }),
+    });
+  } catch (err) {
+    trackError("markConversationRead_failed", { theirId, err: String(err) });
   }
 }
 

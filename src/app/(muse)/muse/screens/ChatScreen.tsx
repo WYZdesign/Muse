@@ -10,6 +10,7 @@ import Nav from "../components/Nav";
 import RecorderSheet from "../components/RecorderSheet";
 import { authFetch } from "../lib/auth-client";
 import { useFocusTrap } from "../hooks/useFocusTrap";
+import { isPaidTier } from "../components/subscriptionTiers";
 import type { Screen, Match } from "../components/types";
 import type { AuthUser, ViewProfile } from "../page-models";
 
@@ -26,6 +27,7 @@ type ChatMessage = {
   mediaUrl?: string;
   durationMs?: number;
   transcript?: string;
+  readAt?: string | null;
 };
 
 // The conversation target. Matches the Match rows page.tsx owns, widened only
@@ -92,11 +94,13 @@ export interface ChatScreenProps {
   persistMessage?: (opts: { myId: string; theirId: string; text: string; img?: string }) => Promise<void>;
   getIcebreaker?: (type: string, seed?: string) => string;
   sendMsg?: (text?: string) => void;
+  userTier?: string;
 }
 
 export const ChatScreen = memo(function ChatScreen({
   screen,
   chatTarget,
+  userTier = "free",
   setChatTarget,
   showScreen,
   goBack,
@@ -126,6 +130,10 @@ export const ChatScreen = memo(function ChatScreen({
   fetchCallHistory,
   demo = false,
 }: ChatScreenProps) {
+  // Read receipts are a Musa Pro feature: a paying sender sees "✓✓" once the
+  // other person has actually opened the thread (read_at set), a free sender
+  // only ever sees "✓" for delivered. Nothing is faked.
+  const isPro = isPaidTier(userTier);
   // Blur-then-reveal chat image messages (consistent with Discover/BTS/Portfolio):
   // chat media can be sensitive, so it's blurred until the viewer taps to reveal,
   // instead of rendering unblurred like a plain img.
@@ -447,7 +455,7 @@ export const ChatScreen = memo(function ChatScreen({
                 )}
                 {msg.text && <div>{msg.text}</div>}
                 <div className="msg-time" style={{ textAlign: msg.from === "me" ? "right" : "left", marginTop: 4, fontSize: 10, color: msg.from === "me" ? "rgba(10,6,18,0.4)" : "var(--muted)" }}>
-                  {msg.time}{msg.from === "me" && <span style={{ marginLeft: 4 }}>{i === (chatTarget.messages || []).length - 1 ? "✓✓" : "✓"}</span>}
+                  {msg.time}{msg.from === "me" && <span style={{ marginLeft: 4 }} title={isPro && msg.readAt ? "Read " + new Date(msg.readAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Sent"}>{isPro && msg.readAt ? "✓✓" : "✓"}</span>}
                 </div>
               </div>
             ))}

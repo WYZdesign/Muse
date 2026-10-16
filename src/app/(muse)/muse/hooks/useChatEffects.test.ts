@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 vi.mock("@/app/muse-realtime", () => ({
   subscribeToConversation: vi.fn(() => ({ sendTyping: vi.fn(), unsubscribe: vi.fn() })),
   fetchConversationHistory: vi.fn(async () => []),
+  markConversationRead: vi.fn(async () => {}),
 }));
 
 import { renderHook, cleanup } from "@testing-library/react";

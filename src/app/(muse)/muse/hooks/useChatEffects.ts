@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
-import { subscribeToConversation, fetchConversationHistory } from "@/app/muse-realtime";
+import { subscribeToConversation, fetchConversationHistory, markConversationRead } from "@/app/muse-realtime";
 import type { Match } from "../components/types";
 
 /**
@@ -97,6 +97,10 @@ export function useChatEffects({
         return { ...m, messages: [...history, ...localOnly] };
       }));
     }).catch(() => {});
+    // Opening the thread marks everything the other person sent as read, so
+    // their client can render a "Seen" receipt (Musa Pro). Fire and forget:
+    // a failure here must never affect the chat itself.
+    markConversationRead(myId, theirId);
     return () => { cancelled = true; };
   }, [authUser?.profile?.id, chatTarget, chatTarget?.id, authUser?.id, setChatTarget, setMatches]);
 
