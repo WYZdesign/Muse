@@ -72,6 +72,28 @@ function ctx(rest: Record<string, unknown>, row: unknown): ActionContext {
 beforeEach(() => { vi.clearAllMocks(); state.row = null; state.inserts = []; state.updates = []; state.deletes = []; });
 
 describe("misc actions", () => {
+  // Incognito hides a profile from every other Discover deck and is sold as a
+  // Musa Pro feature, so the tier is re-checked server-side rather than
+  // trusting the (optional) client lock.
+  it("preferencesSave forces incognito off for a free account", async () => {
+    const c = { ...ctx({ preferences: { incognito: true } }, null), profile: { id: "me1", name: "Ada", tier: "free" } } as ActionContext;
+    const r = await preferencesSave(c);
+    expect((r as Response).status).toBe(200);
+    expect((state.updates[0] as { preferences: Record<string, unknown> }).preferences.incognito).toBe(false);
+  });
+
+  it("preferencesSave keeps incognito for a paying account", async () => {
+    const c = { ...ctx({ preferences: { incognito: true } }, null), profile: { id: "me1", name: "Ada", tier: "muse_pro" } } as ActionContext;
+    await preferencesSave(c);
+    expect((state.updates[0] as { preferences: Record<string, unknown> }).preferences.incognito).toBe(true);
+  });
+
+  it("preferencesSave still stores unrelated preferences for a free account", async () => {
+    const c = { ...ctx({ preferences: { showZodiac: false } }, null), profile: { id: "me1", name: "Ada", tier: "free" } } as ActionContext;
+    await preferencesSave(c);
+    expect((state.updates[0] as { preferences: Record<string, unknown> }).preferences.showZodiac).toBe(false);
+  });
+
   it("promoApply requires a code (400)", async () => {
     const r = await promoApply(ctx({}, null));
     expect((r as Response).status).toBe(400);

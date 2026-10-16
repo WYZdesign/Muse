@@ -323,6 +323,7 @@ export async function GET(req: NextRequest) {
         if (profileId && String(p.id) === String(profileId)) return false;
         if (blockedIds.has(String(p.id))) return false;
         if (p.suspended) return false;
+        if (p.preferences?.incognito === true) return false;
         if (p.nsfw && !viewerVerified) return false;
         const hasAvatar = typeof p.avatar === "string" && p.avatar.trim().length > 0;
         const hasPhotos = Array.isArray(p.photos) && p.photos.length > 0;
@@ -375,6 +376,10 @@ export async function GET(req: NextRequest) {
           if (blockedIds.has(String(p.id))) return false;
           if (alreadyMatchedIds.has(String(p.id))) return false;
           if (p.suspended) return false;
+          // Incognito (Musa Pro): the owner browses without appearing in
+          // anyone else's deck. Still excluded from their own deck by the
+          // self check above, and matches/chat are untouched.
+          if (p.preferences?.incognito === true) return false;
           if (p.nsfw && !viewerVerified) return false;
           const hasAvatar = typeof p.avatar === "string" && p.avatar.trim().length > 0;
           const hasPhotos = Array.isArray(p.photos) && p.photos.length > 0;

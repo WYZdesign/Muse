@@ -11,7 +11,7 @@
 import { checkRate, checkRateUser } from "@/lib/rate-limit";
 import { sanitizeAvailabilityStatus, sanitizeTravelDestinations, sanitizeTravelDates, sanitizeBudgetRange } from "@/lib/muse-availability";
 import { normalizePortfolioVisibility } from "@/lib/muse-portfolio-visibility";
-import { UUID_RE, NextResponse, safeServerError, type ActionContext } from "./shared";
+import { UUID_RE, NextResponse, safeServerError, isPaidTier, type ActionContext } from "./shared";
 
 // Loose row shapes for values that come straight off Supabase (the client is
 // created without database generics, so query results are `any`). These name
@@ -37,6 +37,9 @@ export const preferencesSave = async ({ sb, profile, rest }: ActionContext) => {
     // user; showOnline (above) and showMatchPercent are Premium-gated on the
     // client (UpsellModal) before this action is ever called for them.
     "showZodiac", "showAge", "showMbti", "showLifePath", "showChinese", "showMatchPercent",
+    // Incognito hides the profile from the Discover deck. Musa Pro only, so it
+    // is re-checked against the tier below rather than trusted from the client.
+    "incognito",
     "pushNotifications", "soundEffects", "darkMode", "distance", "ageRange",
     "openToTravel", "autoReply", "privacy", "visibility", "tags",
     "ageMin", "ageMax", "gender",
@@ -61,6 +64,12 @@ export const preferencesSave = async ({ sb, profile, rest }: ActionContext) => {
   const prefs: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(source as Record<string, unknown>)) {
     if (ALLOWED_PREFS.has(k)) prefs[k] = v;
+  }
+  // Incognito is a Musa Pro feature, so a free account cannot switch it on
+  // even if the client lock is bypassed. The UI gate is convenience; this is
+  // the control.
+  if (prefs.incognito === true && !isPaidTier(String(profile.tier ?? ""))) {
+    prefs.incognito = false;
   }
   // Canonicalise the server-read privacy value on write, so the stored
   // vocabulary can never drift from what the enforcement path understands

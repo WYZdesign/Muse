@@ -44,6 +44,7 @@ export type UseSessionApplyArgs = {
   setShowDistance: Dispatch<SetStateAction<boolean>>;
   setShowZodiac: Dispatch<SetStateAction<boolean>>;
   setShowAge: Dispatch<SetStateAction<boolean>>;
+  setShowIncognito: Dispatch<SetStateAction<boolean>>;
   setShowMbti: Dispatch<SetStateAction<boolean>>;
   setShowLifePath: Dispatch<SetStateAction<boolean>>;
   setShowChinese: Dispatch<SetStateAction<boolean>>;
@@ -83,6 +84,7 @@ export function useSessionApply({
   setShowDistance,
   setShowZodiac,
   setShowAge,
+  setShowIncognito,
   setShowMbti,
   setShowLifePath,
   setShowChinese,
@@ -215,6 +217,11 @@ export function useSessionApply({
                 }
                 if (typeof d.profile.preferences?.showAge === "boolean") {
                   setShowAge(d.profile.preferences.showAge);
+                }
+                // Incognito is Musa Pro; the server forces it false for free
+                // accounts, so reading it back as-is is always safe.
+                if (typeof d.profile.preferences?.incognito === "boolean") {
+                  setShowIncognito(d.profile.preferences.incognito);
                 }
                 if (typeof d.profile.preferences?.showMbti === "boolean") {
                   setShowMbti(d.profile.preferences.showMbti);

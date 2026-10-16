@@ -8,7 +8,6 @@ import { FiArrowLeft, FiUser, FiLink, FiStar, FiUsers, FiShield, FiInstagram, Fi
 import type { Screen } from "../components/types"; import type { CurrentUser, AuthUser, AuthFetchFn, MuseTheme, BlockedProfileRow } from "../page-models"; import type { OnboardingData } from "../hooks/useAuthOnboardingState";
 import { getMuseRole, roleBadgeText, type MuseRole } from "@/lib/role";
 import { validatePassword, PASSWORD_RULES_LABEL } from "@/lib/password-policy";
-import { isPaidTier } from "../components/subscriptionTiers";
 import { BoostAnalyticsPanel } from "../components/BoostAnalyticsPanel";
 import { SettingsSubPage } from "../components/SettingsSubPage";
 import { ToggleRow, OpacitySlider } from "../components/SettingsToggleRow";
@@ -16,6 +15,7 @@ import { SettingsMFAPanel } from "../components/SettingsMFAPanel";
 import { SettingsPersonalityPanel, SettingsCreativeProfilePanel } from "../components/SettingsPersonalityCreativePanels";
 import { SettingsBriefTemplatesPanel, SettingsTeamPanel, SettingsHiringPanel } from "../components/SettingsBusinessPanels";
 import { SettingsRateSettingsPanel, SettingsPortfolioPanel, SettingsAvailabilityPanel } from "../components/SettingsPricingPanels";
+import { SettingsPrivacyToggles } from "../components/SettingsPrivacyToggles";
 import { SettingsHelpSupportSection } from "../components/SettingsHelpSupportSection";
 
 const THEME_ABBR: Record<string, string> = { lasunset: "SUNSET", deepspace: "SPACE", nebula: "NEBULA", deepsea: "DEEPSEA", cinder: "CINDER", boreal: "BOREAL", sunrise: "SUNRISE", daylight: "DAY", sky: "SKY", rose: "ROSE", meadow: "MEADOW", frost: "FROST" };
@@ -106,6 +106,8 @@ export interface SettingsScreenProps {
   setShowChinese?: (v: boolean) => void;
   showMatchPercent?: boolean;
   setShowMatchPercent?: (v: boolean) => void;
+  showIncognito?: boolean;
+  setShowIncognito?: (v: boolean) => void;
   userTier?: string;
   setUpsell?: (v: { feature: string; reason: string; icon?: string } | null) => void;
   authFetch?: AuthFetchFn;
@@ -184,6 +186,8 @@ export const SettingsScreen = memo(function SettingsScreen({
   setShowChinese,
   showMatchPercent,
   setShowMatchPercent,
+  showIncognito,
+  setShowIncognito,
   userTier = "free",
   setUpsell,
   authFetch,
@@ -571,105 +575,13 @@ export const SettingsScreen = memo(function SettingsScreen({
           <div className="settings-group">
             <div className="settings-group-title">Privacy & Safety</div>
             {privacyItems.map(renderRow)}
-            <ToggleRow
-              label="Show Distance"
-              desc="Musa Pro"
-              checked={!!showDistance}
-              onToggle={() => {
-                if (!isPaidTier(userTier)) {
-                  setUpsell?.({ feature: "Show Distance", reason: "Let people see how close you are. Upgrade to Musa Pro to control whether your distance is shown on your profile.", icon: "📍" });
-                  return;
-                }
-                const next = !showDistance;
-                setShowDistance?.(next);
-                apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showDistance: next } }) }).catch(() => showToast("Couldn't save — try again"));
-              }}
-            />
-            {/* Free profile-field visibility toggles — every user can hide
-                these optional fields from their profile as seen by others.
-                The profile owner always still sees their own full profile
-                in edit mode (these only affect PublicProfileScreen/Discover
-                rendering for OTHER viewers). */}
-            <ToggleRow
-              label="Zodiac Sign"
-              checked={showZodiac !== false}
-              onToggle={() => {
-                const next = !(showZodiac !== false);
-                setShowZodiac?.(next);
-                apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showZodiac: next } }) }).catch(() => showToast("Couldn't save — try again"));
-              }}
-            />
-            <ToggleRow
-              label="Age"
-              desc="Musa Pro"
-              checked={showAge !== false}
-              onToggle={() => {
-                if (!isPaidTier(userTier)) {
-                  setUpsell?.({ feature: "Hide Age", reason: "Keep your age private. Upgrade to Musa Pro to control whether your age is shown on your profile.", icon: "🎂" });
-                  return;
-                }
-                const next = !(showAge !== false);
-                setShowAge?.(next);
-                apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showAge: next } }) }).catch(() => showToast("Couldn't save — try again"));
-              }}
-            />
-            <ToggleRow
-              label="MBTI Type"
-              checked={showMbti !== false}
-              onToggle={() => {
-                const next = !(showMbti !== false);
-                setShowMbti?.(next);
-                apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showMbti: next } }) }).catch(() => showToast("Couldn't save — try again"));
-              }}
-            />
-            <ToggleRow
-              label="Life Path Number"
-              checked={showLifePath !== false}
-              onToggle={() => {
-                const next = !(showLifePath !== false);
-                setShowLifePath?.(next);
-                apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showLifePath: next } }) }).catch(() => showToast("Couldn't save — try again"));
-              }}
-            />
-            <ToggleRow
-              label="Chinese Zodiac"
-              checked={showChinese !== false}
-              onToggle={() => {
-                const next = !(showChinese !== false);
-                setShowChinese?.(next);
-                apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showChinese: next } }) }).catch(() => showToast("Couldn't save — try again"));
-              }}
-            />
-            {/* Premium-gated visibility toggles — same UpsellModal paywall
-                pattern used elsewhere in the app (Rewind, Boost, unlimited
-                likes) instead of a new gating mechanism. */}
-            <ToggleRow
-              label="Online Status"
-              desc="Musa Pro"
-              checked={!!showOnline}
-              onToggle={() => {
-                if (!isPaidTier(userTier)) {
-                  setUpsell?.({ feature: "Hide Online Status", reason: "Control who sees when you're active. Upgrade to Musa Pro to hide your online status from other members.", icon: "🟢" });
-                  return;
-                }
-                const next = !showOnline;
-                setShowOnline?.(next);
-                apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showOnline: next } }) }).catch(() => showToast("Couldn't save — try again"));
-              }}
-            />
-            <ToggleRow
-              label="Match % Visible to Others"
-              desc="Musa Pro"
-              checked={showMatchPercent !== false}
-              onToggle={() => {
-                if (!isPaidTier(userTier)) {
-                  setUpsell?.({ feature: "Hide Match %", reason: "Keep your match-percentage private. Upgrade to Musa Pro to control whether others see how well you match with them.", icon: "✨" });
-                  return;
-                }
-                const next = !(showMatchPercent !== false);
-                setShowMatchPercent?.(next);
-                apiFetch?.("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "save-preferences", preferences: { showMatchPercent: next } }) }).catch(() => showToast("Couldn't save — try again"));
-              }}
+            <SettingsPrivacyToggles
+              values={{ showDistance: !!showDistance, showZodiac: showZodiac !== false, showAge: showAge !== false, showMbti: showMbti !== false, showLifePath: showLifePath !== false, showChinese: showChinese !== false, showOnline: !!showOnline, showMatchPercent: showMatchPercent !== false, incognito: !!showIncognito }}
+              onChange={(k, next) => ({ showDistance: setShowDistance, showZodiac: setShowZodiac, showAge: setShowAge, showMbti: setShowMbti, showLifePath: setShowLifePath, showChinese: setShowChinese, showOnline: setShowOnline, showMatchPercent: setShowMatchPercent, incognito: setShowIncognito } as Record<string, ((v: boolean) => void) | undefined>)[k]?.(next)}
+              userTier={userTier}
+              setUpsell={setUpsell}
+              apiFetch={apiFetch}
+              showToast={showToast}
             />
           </div>
 

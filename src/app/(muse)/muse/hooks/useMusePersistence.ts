@@ -69,6 +69,7 @@ export type PersistValues = {
   showLifePath: boolean;
   showChinese: boolean;
   showMatchPercent: boolean;
+  showIncognito: boolean;
   rsvpdEvents: ReturnType<typeof useCommunityData>["rsvpdEvents"];
   forumPosts: ReturnType<typeof useFeedData>["forumPosts"];
   feedPosts: ReturnType<typeof useFeedData>["feedPosts"];
@@ -117,6 +118,7 @@ export type PersistSetters = {
   setShowDistance: React.Dispatch<React.SetStateAction<boolean>>;
   setShowZodiac: React.Dispatch<React.SetStateAction<boolean>>;
   setShowAge: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowIncognito: React.Dispatch<React.SetStateAction<boolean>>;
   setShowMbti: React.Dispatch<React.SetStateAction<boolean>>;
   setShowLifePath: React.Dispatch<React.SetStateAction<boolean>>;
   setShowChinese: React.Dispatch<React.SetStateAction<boolean>>;
@@ -159,7 +161,7 @@ export function buildPersistPayload(v: PersistValues) {
     v: STATE_VERSION,
     currentUser: v.currentUser, obData: v.obData, obStep: v.obStep, matches: v.matches.slice(-MAX_ITEMS), dailyLikes: v.dailyLikes, superLikes: v.superLikes,
     savedBriefs: v.savedBriefs, appliedBriefs: v.appliedBriefs, savedSessionIds: v.savedSessionIds, savedProfileIds: v.savedProfileIds, userBriefs: v.userBriefs.slice(-MAX_ITEMS), blockedUsers: v.blockedUsers, notifPrefs: v.notifPrefs,
-    obConnectedSocials: v.obConnectedSocials, showNsfw: v.showNsfw, showOnline: v.showOnline, showDistance: v.showDistance, showZodiac: v.showZodiac, showAge: v.showAge, showMbti: v.showMbti, showLifePath: v.showLifePath, showChinese: v.showChinese, showMatchPercent: v.showMatchPercent, rsvpdEvents: v.rsvpdEvents, forumPosts: v.forumPosts.slice(-MAX_ITEMS), feedPosts: v.feedPosts.slice(-MAX_ITEMS),
+    obConnectedSocials: v.obConnectedSocials, showNsfw: v.showNsfw, showOnline: v.showOnline, showDistance: v.showDistance, showZodiac: v.showZodiac, showAge: v.showAge, showMbti: v.showMbti, showLifePath: v.showLifePath, showChinese: v.showChinese, showMatchPercent: v.showMatchPercent, showIncognito: v.showIncognito, rsvpdEvents: v.rsvpdEvents, forumPosts: v.forumPosts.slice(-MAX_ITEMS), feedPosts: v.feedPosts.slice(-MAX_ITEMS),
     testLevels: v.testLevels, obSelects: v.obSelects, obProfilePic: v.obProfilePic, obPortfolioItems: v.obPortfolioItems, likedBy: v.likedBy.slice(-MAX_ITEMS),
     profileViews: DEMO_MODE ? v.profileViews : 0, profileViewers: DEMO_MODE ? v.profileViewers.slice(-20) : [], stories: v.stories.slice(-20), theme: v.theme, activityFeed: v.activityFeed.slice(-MAX_ITEMS),
     discoveryPrefs: v.discoveryPrefs, chatImages: Object.fromEntries(Object.entries(v.chatImages).slice(-20).map(([k, val]) => [k, (val as string[]).slice(-20)])), screen: v.screen, filterStyles: v.filterStyles, filterScore: v.filterScore,
@@ -228,6 +230,7 @@ export function applyLoadedState(d: LoadedState, s: PersistSetters) {
   if (d.showLifePath != null) s.setShowLifePath(d.showLifePath);
   if (d.showChinese != null) s.setShowChinese(d.showChinese);
   if (d.showMatchPercent != null) s.setShowMatchPercent(d.showMatchPercent);
+  if (d.showIncognito != null) s.setShowIncognito(d.showIncognito);
   if (d.rsvpdEvents) s.setRsvpdEvents(d.rsvpdEvents);
   if (d.forumPosts) s.setForumPosts(d.forumPosts);
   if (d.feedPosts) s.setFeedPosts(d.feedPosts);

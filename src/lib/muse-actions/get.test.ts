@@ -399,6 +399,31 @@ describe("GET discover-ranked", () => {
     expect(body.profiles.find((p) => p.id === "pro").tier).toBeUndefined();
   });
 
+  it("excludes a profile whose owner turned on Incognito", async () => {
+    g.__authUser = { id: "auth-1" };
+    installSb({
+      muse_profiles: (calls) => {
+        const sel = selectArg(calls);
+        if (sel === "id") return { data: { id: "me" } };
+        if (sel.includes("life_path") && sel.includes("age_verified_at")) {
+          return { data: { id: "me", type: "Photographer", styles: ["Editorial"], looking: ["Model"], zodiac: "Aries", age_verified: false, age_verified_at: null } };
+        }
+        if (sel.includes("boost_expires_at")) {
+          return { data: [
+            { id: "visible", avatar: "a", type: "Model", styles: ["Editorial"], looking: ["Photographer"] },
+            { id: "hidden", avatar: "a", type: "Model", styles: ["Editorial"], looking: ["Photographer"], preferences: { incognito: true } },
+          ] };
+        }
+        return { data: null };
+      },
+      muse_blocks: () => ({ data: [] }),
+    });
+    const body: ProfilesBody = await (await GET(req("discover-ranked", "tok"))).json();
+    const ids = body.profiles.map((p) => p.id);
+    expect(ids).toContain("visible");
+    expect(ids).not.toContain("hidden");
+  });
+
   it("keeps an active Boost above priority placement", async () => {
     g.__authUser = { id: "auth-1" };
     const future = new Date(Date.now() + 86400000).toISOString();
