@@ -26,7 +26,7 @@ export default function PricingPage() {
   const proFeatures = [
     "See everyone who is interested in you",
     "Control who sees your age, distance, online status, and match %",
-    "Early access to new features",
+    "Unlimited likes, incognito, and read receipts",
     "Founding member perks",
   ];
 

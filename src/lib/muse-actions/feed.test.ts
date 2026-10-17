@@ -19,7 +19,7 @@ vi.mock("@/lib/supabase", () => ({
   supabase: { auth: { getUser: async () => ({ data: { user: null } }) } },
 }));
 
-import { feedPost, momentCreate, briefApply, feedCommentAdd, feedPostLike, momentLike, briefCreate } from "@/lib/muse-actions/feed";
+import { feedPost, momentCreate, briefApply, feedCommentAdd, feedPostLike, momentLike, briefCreate, briefViewTrack } from "@/lib/muse-actions/feed";
 
 const UUID = "11111111-1111-4111-8111-111111111111";
 type Handler = (calls: SbCall[]) => SbResult;
@@ -273,5 +273,50 @@ describe("briefApply — free daily response cap", () => {
     const r = await briefApply(ctx(999, inserts, "muse_pro"));
     expect((r as Response).status).toBe(200);
     expect(inserts).toHaveLength(1);
+  });
+});
+
+// "See who's interested before they apply" (Musa Pro): a brief view is
+// recorded for a viewer, never for the author, and deduped by the unique
+// (brief_id, viewer_id) constraint rather than by client bookkeeping.
+describe("briefViewTrack", () => {
+  function viewSb(authorId: string | null, upserts: unknown[]) {
+    return {
+      from: () => ({
+        select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: authorId ? { author_id: authorId } : null }) }) }),
+        upsert: (v: unknown) => { upserts.push(v); return Promise.resolve({ error: null }); },
+      }),
+    } as unknown as ActionContext["sb"];
+  }
+  const act = (sb: ActionContext["sb"], rest: Record<string, unknown>) =>
+    ({ sb, profile: { id: "me1", name: "Ada", tier: "muse_pro" }, rest, ip: "10.0.0.1", req } as ActionContext);
+
+  it("records a view when someone else opens the brief", async () => {
+    const upserts: unknown[] = [];
+    const r = await briefViewTrack(act(viewSb("author-1", upserts), { briefId: UUID }));
+    expect((r as Response).status).toBe(200);
+    expect(upserts).toHaveLength(1);
+    expect(upserts[0]).toMatchObject({ brief_id: UUID, viewer_id: "me1" });
+  });
+
+  it("never records the author viewing their own brief", async () => {
+    const upserts: unknown[] = [];
+    const r = await briefViewTrack(act(viewSb("me1", upserts), { briefId: UUID }));
+    expect((r as Response).status).toBe(200);
+    expect(upserts).toHaveLength(0);
+  });
+
+  it("does nothing for a missing brief", async () => {
+    const upserts: unknown[] = [];
+    const r = await briefViewTrack(act(viewSb(null, upserts), { briefId: UUID }));
+    expect((r as Response).status).toBe(200);
+    expect(upserts).toHaveLength(0);
+  });
+
+  it("treats a non-uuid id as demo and records nothing", async () => {
+    const upserts: unknown[] = [];
+    const r = await briefViewTrack(act(viewSb("author-1", upserts), { briefId: "not-a-uuid" }));
+    expect((r as Response).status).toBe(200);
+    expect(upserts).toHaveLength(0);
   });
 });

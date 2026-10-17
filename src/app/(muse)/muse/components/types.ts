@@ -245,7 +245,7 @@ export const TIERS_BY_SIDE: Record<"creative" | "industry", typeof TIERS> = {
   industry: [
     { name:"Free",price:"$0",period:"forever",features:["10 brief responses/day","Basic company profile","Chat with matched talent","Standard talent search"],current:true },
     { name:"Musa Pro",price:"$9.99",period:"/month",features:["Unlimited brief responses — hire at scale","See who's interested before they apply","Advanced talent filters (skills, experience, rate)","Read receipts on every message","Talent-pool boost (×1/week) — front page","Incognito mode — scout discreetly","Priority placement in talent search"] },
-    { name:"Musa Studio",price:"$29.99",period:"/month",features:["Everything in Musa Pro","Boosted placement on every Brief you post","Unlimited saved-talent lists","Priority support","Early access to new industry-side tools"] },
+    { name:"Musa Studio",price:"$29.99",period:"/month",features:["Everything in Musa Pro","Boosted placement on every Brief you post","Unlimited saved-talent lists","Priority support"] },
   ],
 };
 
