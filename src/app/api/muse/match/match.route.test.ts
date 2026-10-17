@@ -253,6 +253,32 @@ describe("match route", () => {
     expect(body.profiles[0].birthdate).toBeUndefined();
   });
 
+  it("honors a paid candidate's match-percent privacy setting", async () => {
+    TG.__candidates![0] = {
+      ...TG.__candidates![0],
+      tier: "muse_studio",
+      preferences: { showMatchPercent: false },
+    };
+
+    const r = await GET(req({ authorization: "Bearer tok" }));
+
+    expect(r.status).toBe(200);
+    expect((await r.json()).profiles[0].showMatchPercent).toBe(false);
+  });
+
+  it("does not let an unknown tier hide match percentage", async () => {
+    TG.__candidates![0] = {
+      ...TG.__candidates![0],
+      tier: "legacy_unknown",
+      preferences: { showMatchPercent: false },
+    };
+
+    const r = await GET(req({ authorization: "Bearer tok" }));
+
+    expect(r.status).toBe(200);
+    expect((await r.json()).profiles[0].showMatchPercent).toBe(true);
+  });
+
   // Known open issue (DELIVERY_STATUS.md): a candidate the viewer already
   // liked/matched kept resurfacing indefinitely — this endpoint never
   // consulted muse_matches at all. Locks in the fix.

@@ -92,12 +92,20 @@ export async function POST(req: NextRequest) {
             .eq("status", "pending");
           break;
         }
-        // Subscription — only ever assign a tier we actually know
+        // Subscription — canonicalize legacy checkout aliases before persisting
+        // so every paid entitlement reads the same tier vocabulary.
         const userId = session.client_reference_id || session.metadata?.userId;
-        // Only ever assign a tier we actually know — never trust arbitrary
-        // metadata.plan strings (a stray value would land an unknown tier).
-        const KNOWN_TIERS = new Set(["free", "muse_pro", "muse_studio", "muse", "sovereign"]);
-        const plan = session.metadata?.plan && KNOWN_TIERS.has(session.metadata.plan) ? session.metadata.plan : "muse_pro";
+        const PLAN_TO_TIER: Record<string, "free" | "muse_pro" | "muse_studio"> = {
+          free: "free",
+          muse_pro: "muse_pro",
+          muse_studio: "muse_studio",
+          // Legacy checkout plan IDs remain accepted, but the database never
+          // stores an alias that server-side entitlement checks do not know.
+          muse: "muse_pro",
+          sovereign: "muse_pro",
+        };
+        const requestedPlan = session.metadata?.plan || "";
+        const plan = PLAN_TO_TIER[requestedPlan] || "muse_pro";
         if (userId) {
           await sb.from("muse_profiles").update({ tier: plan }).eq("auth_id", userId);
           // Referral reward: if the subscriber was referred, grant both parties a

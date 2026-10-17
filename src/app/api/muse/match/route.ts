@@ -6,6 +6,7 @@ import { checkRate, clientIp } from "@/lib/rate-limit";
 import { embedText, cosineSimilarity, aiEnabled } from "@/lib/ai";
 import { publicAge } from "@/lib/muse-age";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
+import { isPaidTier } from "@/lib/subscription-tiers";
 
 /**
  * Musa Recommendations API — AI-powered matching.
@@ -201,7 +202,7 @@ export async function GET(req: NextRequest) {
       // toggle in SettingsScreen). Only meaningful for paid tiers; a
       // free-tier candidate's preference here is ignored server-side too,
       // matching the client's own gating.
-      const candidateIsPaid = c.tier === "muse_pro" || c.tier === "pro" || c.tier === "muse_studio";
+      const candidateIsPaid = isPaidTier(c.tier);
       const showMatchPercent = !(candidateIsPaid && c.preferences?.showMatchPercent === false);
 
       return {

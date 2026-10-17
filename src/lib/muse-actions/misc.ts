@@ -340,7 +340,7 @@ export async function spendBoost(sb: ActionContext["sb"], profileId: string, dur
   if (!hours) return null;
   const { data: prof } = await sb.from("muse_profiles").select("tier, boost_inventory, boost_expires_at").eq("id", profileId).maybeSingle();
   if (!prof) return null;
-  const isPro = prof.tier === "muse_pro" || prof.tier === "pro" || prof.tier === "muse_studio";
+  const isPro = isPaidTier(prof.tier);
 
   const running = prof.boost_expires_at && new Date(prof.boost_expires_at).getTime() > Date.now()
     ? new Date(prof.boost_expires_at).getTime()
@@ -434,7 +434,7 @@ export async function getBoostStatus(sb: ActionContext["sb"], profileId: string)
   const { data: prof } = await sb.from("muse_profiles")
     .select("tier, boost_inventory, boost_expires_at")
     .eq("id", profileId).maybeSingle();
-  const isPro = !!prof && (prof.tier === "muse_pro" || prof.tier === "pro" || prof.tier === "muse_studio");
+  const isPro = isPaidTier(prof?.tier);
   const expiresAt = prof?.boost_expires_at || null;
   const isBoosted = isBoostActive(expiresAt);
   return { isPro, inventory: Number(prof?.boost_inventory || 0), isBoosted, expiresAt: isBoosted ? expiresAt : null };

@@ -235,10 +235,11 @@ export const blockedUsers = async ({ sb, profile }: ActionContext) => {
 
 // Read receipts. The receiver's client calls this when it opens a
 // conversation so the sender can see that (and when) their message was read.
-// Two steps on purpose: read_at is stamped only on rows that have never been
-// read, so the receipt shows when each message was FIRST seen rather than the
-// last time the chat happened to be open. The update is scoped to
-// receiver_id = me, so nobody can mark another person's inbox as read.
+// A single conditional update stamps only rows that have never been read, so
+// the receipt shows when each message was FIRST seen rather than the last time
+// the chat happened to be open. Scoping to receiver_id = me means nobody can
+// mark another person's inbox as read, and the read_at predicate prevents a
+// concurrent tab from replacing an earlier timestamp.
 export const messagesMarkRead = async ({ sb, profile, rest }: ActionContext) => {
   const matchIdRaw = String(rest.matchId || rest.match_id || "").trim();
   const otherId = rest.userId || rest.user_id || rest.theirId;
@@ -247,12 +248,13 @@ export const messagesMarkRead = async ({ sb, profile, rest }: ActionContext) => 
     if (!otherId) return NextResponse.json({ error: "matchId or userId required" }, { status: 400 });
     matchId = [profile.id, String(otherId)].sort().join("__");
   }
-  const { data: rows }: { data: { id?: unknown; read_at?: string | null }[] | null } =
-    await sb.from("muse_messages").select("id, read_at").eq("match_id", matchId).eq("receiver_id", profile.id);
-  const unreadIds = (rows || []).filter((r) => !r.read_at).map((r) => r.id);
-  if (unreadIds.length === 0) return NextResponse.json({ success: true, updated: 0 });
   const now = new Date().toISOString();
-  const { error } = await sb.from("muse_messages").update({ read: true, read_at: now }).in("id", unreadIds);
+  const { data: updatedRows, error } = await sb.from("muse_messages")
+    .update({ read: true, read_at: now })
+    .eq("match_id", matchId)
+    .eq("receiver_id", profile.id)
+    .is("read_at", null)
+    .select("id");
   if (error) return safeServerError(error, "mark messages read");
-  return NextResponse.json({ success: true, updated: unreadIds.length, read_at: now });
+  return NextResponse.json({ success: true, updated: updatedRows?.length || 0, read_at: now });
 };

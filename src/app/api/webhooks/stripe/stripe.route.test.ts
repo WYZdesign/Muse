@@ -109,4 +109,22 @@ describe("stripe webhook (integration)", () => {
     const rewardInsert = state.inserts.find((i) => i.tbl === "muse_referral_rewards");
     expect((rewardInsert?.v || []).length).toBe(0);
   });
+
+  it.each([
+    ["muse", "muse_pro"],
+    ["sovereign", "muse_pro"],
+    ["muse_pro", "muse_pro"],
+    ["muse_studio", "muse_studio"],
+    ["unknown-plan", "muse_pro"],
+  ])("persists the canonical tier for checkout plan %s", async (requestedPlan, expectedTier) => {
+    TG.__mockStripeEvent = {
+      type: "checkout.session.completed",
+      data: { object: { client_reference_id: "u1", payment_intent: null, metadata: { plan: requestedPlan } } },
+    };
+
+    const r = await POST(req("{}"));
+
+    expect(r.status).toBe(200);
+    expect(state.updates.find((u) => u.tbl === "muse_profiles")?.v.tier).toBe(expectedTier);
+  });
 });

@@ -133,14 +133,21 @@ describe("messageRequestsGet — only pending requests surface in the inbox", ()
 });
 
 describe("messagesMarkRead", () => {
-  // Read receipts. The stamp must only ever land on rows this user RECEIVED,
-  // and only on ones not already read, so a receipt shows when each message
-  // was first seen rather than the last time the chat was opened.
-  function sbReturning(rows: unknown, updates: Record<string, unknown>[]) {
+  // Read receipts use one conditional update. The stamp must only ever land
+  // on rows this user received and that have never been read, so concurrent
+  // tabs cannot replace the first-read timestamp.
+  function sbReturning(updatedRows: unknown, updates: Record<string, unknown>[], filters: [string, unknown][]) {
     return {
       from: () => ({
-        select: () => ({ eq: () => ({ eq: () => Promise.resolve({ data: rows, error: null }) }) }),
-        update: (v: Record<string, unknown>) => { updates.push(v); return { in: () => Promise.resolve({ error: null }) }; },
+        update: (v: Record<string, unknown>) => {
+          updates.push(v);
+          const query = {
+            eq: (column: string, value: unknown) => { filters.push([column, value]); return query; },
+            is: (column: string, value: unknown) => { filters.push([column, value]); return query; },
+            select: () => Promise.resolve({ data: updatedRows, error: null }),
+          };
+          return query;
+        },
       }),
     } as unknown as ActionContext["sb"];
   }
@@ -152,28 +159,32 @@ describe("messagesMarkRead", () => {
     expect((r as Response).status).toBe(400);
   });
 
-  it("stamps only the never-read rows and reports the count", async () => {
+  it("atomically stamps only the receiver's never-read rows and reports the count", async () => {
     const updates: Record<string, unknown>[] = [];
-    const sb = sbReturning([{ id: "m1", read_at: null }, { id: "m2", read_at: "2026-01-01T00:00:00Z" }, { id: "m3" }], updates);
+    const filters: [string, unknown][] = [];
+    const sb = sbReturning([{ id: "m1" }, { id: "m3" }], updates, filters);
     const r = await messagesMarkRead(act(sb, { matchId: "me1__u2" }));
     expect((r as Response).status).toBe(200);
     expect(await (r as Response).json()).toMatchObject({ success: true, updated: 2 });
     expect(updates).toHaveLength(1);
     expect(updates[0].read).toBe(true);
     expect(typeof updates[0].read_at).toBe("string");
+    expect(filters).toEqual([["match_id", "me1__u2"], ["receiver_id", "me1"], ["read_at", null]]);
   });
 
-  it("writes nothing when every message is already read", async () => {
+  it("reports zero when the conditional update finds no unread messages", async () => {
     const updates: Record<string, unknown>[] = [];
-    const sb = sbReturning([{ id: "m1", read_at: "2026-01-01T00:00:00Z" }], updates);
+    const filters: [string, unknown][] = [];
+    const sb = sbReturning([], updates, filters);
     const r = await messagesMarkRead(act(sb, { matchId: "me1__u2" }));
     expect(await (r as Response).json()).toMatchObject({ success: true, updated: 0 });
-    expect(updates).toHaveLength(0);
+    expect(updates).toHaveLength(1);
   });
 
   it("accepts a userId instead of a matchId", async () => {
     const updates: Record<string, unknown>[] = [];
-    const sb = sbReturning([{ id: "m1", read_at: null }], updates);
+    const filters: [string, unknown][] = [];
+    const sb = sbReturning([{ id: "m1" }], updates, filters);
     const r = await messagesMarkRead(act(sb, { userId: "u2" }));
     expect((r as Response).status).toBe(200);
     expect(updates).toHaveLength(1);

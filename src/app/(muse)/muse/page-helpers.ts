@@ -8,7 +8,7 @@
 // extraction risk-free and lets the functions be unit-tested directly.
 
 import { ICEBREAKERS } from "./components/types";
-import { isPaidTier } from "./components/subscriptionTiers";
+import { isPaidTier } from "@/lib/subscription-tiers";
 
 /** Deterministic icebreaker pick: same seed always yields the same line. */
 export function getIcebreaker(type: string, seed?: string): string {
