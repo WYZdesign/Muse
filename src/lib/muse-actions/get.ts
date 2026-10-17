@@ -166,7 +166,7 @@ type MatchRow = { id?: unknown; user_id?: unknown; target_id?: ProfileRow | null
 type PostRow = { author_id?: ProfileRow | null };
 
 /** A muse_briefs row with its embedded author profile. */
-type BriefRow = { author_id?: ProfileRow | null; boost_expires_at?: string | null };
+type BriefRow = { id?: string; author_id?: ProfileRow | null; boost_expires_at?: string | null };
 
 /** A muse_events row (the organizer lives in created_by). */
 type EventRow = { created_by?: unknown };
@@ -501,6 +501,35 @@ export async function GET(req: NextRequest) {
         const blockedIds = blockedIdSet(blocks, profileId);
         briefs = briefs.filter((b) => !blockedIds.has(String(b.author_id?.id)));
       }
+      // Author-side interest ("see who's interested before they apply",
+      // Musa Pro). Only the brief's own author reads this back, never a
+      // third party. A free author gets the count; a paying author also
+      // learns who they are, which is the tier's actual promise.
+      const ownBriefIds = profileId
+        ? briefs.filter((b) => String(b.author_id?.id) === String(profileId)).map((b) => String(b.id))
+        : [];
+      const viewCounts = new Map<string, number>();
+      const viewersByBrief = new Map<string, { id: string; name: string; avatar: string }[]>();
+      if (ownBriefIds.length) {
+        const { data: viewRows }: { data: { brief_id?: string; viewer_id?: string }[] | null } =
+          await sb.from("muse_brief_views").select("brief_id, viewer_id").in("brief_id", ownBriefIds);
+        const rowsV = viewRows || [];
+        for (const v of rowsV) viewCounts.set(String(v.brief_id), (viewCounts.get(String(v.brief_id)) || 0) + 1);
+        const { data: me }: { data: { tier?: string | null } | null } =
+          await sb.from("muse_profiles").select("tier").eq("id", profileId).maybeSingle();
+        if (isPaidTier(String(me?.tier ?? ""))) {
+          const viewerIds = [...new Set(rowsV.map((v) => String(v.viewer_id)))];
+          const { data: people }: { data: { id: string; name?: string; avatar?: string }[] | null } =
+            viewerIds.length ? await sb.from("muse_profiles").select("id, name, avatar").in("id", viewerIds) : { data: [] };
+          const byId = new Map((people || []).map((p) => [String(p.id), p]));
+          for (const v of rowsV) {
+            const person = byId.get(String(v.viewer_id));
+            if (!person) continue;
+            const bid = String(v.brief_id);
+            viewersByBrief.set(bid, [...(viewersByBrief.get(bid) || []), { id: String(person.id), name: person.name || "", avatar: person.avatar || "" }]);
+          }
+        }
+      }
       // Placement ladder, matching the pricing copy: a live Brief boost is the
       // "front page" slot (Musa Pro weekly boost / every Musa Studio brief),
       // then a paying author's briefs (priority placement), then newest first
@@ -516,7 +545,16 @@ export async function GET(req: NextRequest) {
           return bp - ap;
         })
         // tier is read only to rank by, stripped like the other surfaces.
-        .map((b) => b.author_id ? { ...b, author_id: { ...b.author_id, tier: undefined } } : b);
+        .map((b) => {
+          const bid = String(b.id);
+          const own = String(b.author_id?.id) === String(profileId);
+          return {
+            ...b,
+            viewCount: own ? (viewCounts.get(bid) || 0) : undefined,
+            viewers: own ? (viewersByBrief.get(bid) || []) : undefined,
+            author_id: b.author_id ? { ...b.author_id, tier: undefined } : b.author_id,
+          };
+        });
       return NextResponse.json({ briefs });
     }
 

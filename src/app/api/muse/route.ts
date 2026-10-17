@@ -21,7 +21,7 @@ import { connectRequest } from "@/lib/muse-actions/connect";
 import { profileUpdate, profileDelete } from "@/lib/muse-actions/profile";
 import { matchCreate, matchDelete, profileViewTrack } from "@/lib/muse-actions/matching";
 import { messageSend, messageRequestAccept, messageRequestDecline, messageRequestBlock, messageRequestsGet, blockUser, unblockUser, blockedUsers, messagesMarkRead } from "@/lib/muse-actions/messaging";
-import { feedPost, feedPostLike, feedCommentAdd, momentCreate, momentLike, briefCreate, briefApply } from "@/lib/muse-actions/feed";
+import { feedPost, feedPostLike, feedCommentAdd, momentCreate, momentLike, briefCreate, briefApply, briefViewTrack } from "@/lib/muse-actions/feed";
 import { forumDispatch, reportCreate, userBlock, userUnblock, blocksGet, forumPostPin, forumPostLock } from "@/lib/muse-actions/forum";
 import { preferencesSave, promoApply, notificationsMarkRead, clientSync, paymentsGet, searchAll, boostActivate, boostAnalytics, boostStatus, saveBoostPurchase, savedSearchSave, savedSearchList, savedSearchDelete, savedSearchAlerts, togglePhotoLike } from "@/lib/muse-actions/misc";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
@@ -80,6 +80,7 @@ ACTIONS["create-moment"] = momentCreate;
 ACTIONS["like-moment"] = momentLike;
 ACTIONS["brief"] = briefCreate;
 ACTIONS["brief-apply"] = briefApply;
+ACTIONS["brief-view"] = briefViewTrack;
 
 // ═══ FORUM, REPORTS & BLOCKS ═══
 // Handlers extracted to lib/muse-actions/forum.ts (monolith split, interleaved-domain pass).

@@ -3,7 +3,7 @@
 // Collab briefs board screen.
 
 
-import React, { memo, useEffect, useState } from "react";
+import React, { memo, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { FiArrowLeft, FiPlus, FiSearch, FiGrid, FiRepeat, FiDollarSign, FiVolume2, FiZap, FiFlag, FiInfo, FiX, FiBookmark } from "react-icons/fi";
 import { matchesBriefSearch } from "../components/searchMatch";
@@ -162,6 +162,9 @@ export const CollabScreen = memo(function CollabScreen({
   // table on the backend, and adding one is a bigger change than this pass
   // is scoped for. A toast with Undo keeps the dismiss from being a trap.
   const [hiddenBriefIds, setHiddenBriefIds] = useState<Set<number>>(new Set());
+  // Brief ids this session already reported as viewed, so a re-render cannot
+  // spam the tracker (one row per viewer is enforced server-side anyway).
+  const viewedBriefsRef = useRef<Set<string>>(new Set());
   // Audit fix (2026-09-08, wyzmind's Torreé batch item 3): the "meet in public
   // places" safety reminder used to sit inline in every tfp/paid/opencall card's
   // body, permanently taking up space. Torreé asked for it to become a small
@@ -294,6 +297,18 @@ export const CollabScreen = memo(function CollabScreen({
           const ordered = side === "industry"
             ? [...filtered.filter(isOwnBrief), ...filtered.filter(b => !isOwnBrief(b))]
             : [...filtered.filter(b => !isOwnBrief(b)), ...filtered.filter(isOwnBrief)];
+          // "See who's interested before they apply" (Musa Pro): report that
+          // this brief was opened, once per session, so the author sees interest
+          // before an application ever lands. Client-only and fire-and-forget;
+          // the server ignores the author viewing their own brief.
+          if (typeof window !== "undefined" && !demo) {
+            for (const b of filtered) {
+              const bid = String(b.id);
+              if (viewedBriefsRef.current.has(bid) || isOwnBrief(b)) continue;
+              viewedBriefsRef.current.add(bid);
+              apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "brief-view", briefId: bid }) }).catch(() => {});
+            }
+          }
           if (filtered.length === 0) {
             return briefSearchQuery.trim() ? (
               <EmptyState icon={<FiSearch size={44} />} title="No matches" sub={`Nothing found for "${briefSearchQuery.trim()}"`}>
@@ -353,6 +368,16 @@ export const CollabScreen = memo(function CollabScreen({
                         👥 {brief.applicantCount} interested
                       </span>
                     )}
+                                      {!demo && isOwnBrief(brief) && (() => {
+                      const bv = brief as unknown as { viewCount?: number; viewers?: { name?: string }[] };
+                      if (!bv.viewCount) return null;
+                      const names = Array.isArray(bv.viewers) ? bv.viewers.map((v) => v.name).filter(Boolean) : [];
+                      return (
+                        <span className="brief-meta-item" style={{ color: "var(--gold)" }} title="People who opened your brief">
+                          👁 {bv.viewCount} viewed{names.length ? ` · ${names.slice(0, 3).join(", ")}${names.length > 3 ? ` +${names.length - 3}` : ""}` : ""}
+                        </span>
+                      );
+                    })()}
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4, width: "100%", justifyContent: "center" }}>

@@ -227,6 +227,24 @@ export const briefCreate = async ({ sb, profile, rest, ip }: ActionContext) => {
   return NextResponse.json({ success: true });
 };
 
+// "See who's interested before they apply" (Musa Pro): records that this
+// viewer opened a brief. The author reads the aggregate back in the briefs
+// list. Deduped by the (brief_id, viewer_id) unique constraint, and the author
+// is never recorded as viewing their own brief.
+export const briefViewTrack = async ({ sb, profile, rest }: ActionContext) => {
+  const briefId = rest.briefId || rest.brief_id;
+  if (!briefId || !UUID_RE.test(String(briefId))) return NextResponse.json({ success: true, demo: true });
+  const { data: brief }: { data: { author_id?: string | null } | null } =
+    await sb.from("muse_briefs").select("author_id").eq("id", briefId).maybeSingle();
+  if (!brief || String(brief.author_id) === String(profile.id)) return NextResponse.json({ success: true });
+  const { error } = await sb.from("muse_brief_views").upsert(
+    { brief_id: briefId, viewer_id: profile.id },
+    { onConflict: "brief_id,viewer_id", ignoreDuplicates: true },
+  );
+  if (error) return safeServerError(error, "brief view track");
+  return NextResponse.json({ success: true });
+};
+
 export const briefApply = async ({ sb, profile, rest }: ActionContext) => {
   const { briefId } = rest;
   if (!briefId) return NextResponse.json({ error: "briefId required" }, { status: 400 });
