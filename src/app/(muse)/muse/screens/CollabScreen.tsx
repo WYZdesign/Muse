@@ -212,6 +212,32 @@ export const CollabScreen = memo(function CollabScreen({
     return () => cancelAnimationFrame(raf);
   }, [screen]);
 
+  // "See who's interested before they apply" (Musa Pro): report that a
+  // brief was opened, once per session, so the author sees interest before
+  // an application ever lands. Client-only and fire-and-forget; the server
+  // ignores the author viewing their own brief. Recomputes the same
+  // currently-visible-briefs list the JSX below builds, but does so in an
+  // effect — i.e. only after a render has actually committed to the
+  // screen — rather than inline during render, which real content the user
+  // never saw could otherwise have pinged.
+  useEffect(() => {
+    if (typeof window === "undefined" || demo) return;
+    const allBriefs: CollabBrief[] = [
+      ...userBriefs.map(b => ({ ...b, author: currentUser.name, authorImg: currentUser.avatar, deadline: "Flexible", urgent: false, nsfw: false, cat: b.cat || "concept" })),
+      ...(liveBriefs?.length ? liveBriefs : (demo ? BRIEFS : [])),
+    ];
+    let filtered = (museCat === "all" ? allBriefs : allBriefs.filter(b => b.cat === museCat)).filter(b => !hiddenBriefIds.has(b.id));
+    if (briefSearchQuery.trim()) filtered = filtered.filter(b => matchesBriefSearch(b, briefSearchQuery));
+    const localOwnIds = new Set(userBriefs.map(b => b.id));
+    const isOwnBrief = (b: CollabBrief) => localOwnIds.has(b.id) || b.author_id?.id === currentUser?.id;
+    for (const b of filtered) {
+      const bid = String(b.id);
+      if (viewedBriefsRef.current.has(bid) || isOwnBrief(b)) continue;
+      viewedBriefsRef.current.add(bid);
+      apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "brief-view", briefId: bid }) }).catch(() => {});
+    }
+  }, [userBriefs, liveBriefs, demo, museCat, hiddenBriefIds, briefSearchQuery, currentUser, apiFetch]);
+
   return (
     <div className={"screen-el" + (screen === "briefs" ? " active" : "")} data-screen="briefs">
       <h1 className="sr-only">Collaborations</h1>
@@ -297,18 +323,15 @@ export const CollabScreen = memo(function CollabScreen({
           const ordered = side === "industry"
             ? [...filtered.filter(isOwnBrief), ...filtered.filter(b => !isOwnBrief(b))]
             : [...filtered.filter(b => !isOwnBrief(b)), ...filtered.filter(isOwnBrief)];
-          // "See who's interested before they apply" (Musa Pro): report that
-          // this brief was opened, once per session, so the author sees interest
-          // before an application ever lands. Client-only and fire-and-forget;
-          // the server ignores the author viewing their own brief.
-          if (typeof window !== "undefined" && !demo) {
-            for (const b of filtered) {
-              const bid = String(b.id);
-              if (viewedBriefsRef.current.has(bid) || isOwnBrief(b)) continue;
-              viewedBriefsRef.current.add(bid);
-              apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "brief-view", briefId: bid }) }).catch(() => {});
-            }
-          }
+          // "See who's interested before they apply" view tracking used to
+          // fire its network call right here, inline while this IIFE built
+          // the JSX. That's a side effect running during render, which React
+          // is explicitly allowed to call more than once without ever
+          // committing the result (concurrent rendering can discard a
+          // render; StrictMode double-invokes it in dev) — so it could ping
+          // "viewed" for briefs the user never actually saw on screen. It's
+          // been moved to the briefViewTrack useEffect below, which only
+          // runs after a render actually commits.
           if (filtered.length === 0) {
             return briefSearchQuery.trim() ? (
               <EmptyState icon={<FiSearch size={44} />} title="No matches" sub={`Nothing found for "${briefSearchQuery.trim()}"`}>

@@ -328,6 +328,26 @@ describe("boost — pure helpers", () => {
     });
     expect(await spendBoost(sb, "u1", "24h")).toBeNull();
   });
+  it("spendBoost extends open briefs' boost via muse_briefs.update, never a blanket overwrite", async () => {
+    // Regression: boostOpenBriefs used to unconditionally set EVERY open
+    // brief's boost_expires_at to the new profile-boost expiry — which would
+    // SHORTEN a brief that already had a longer-running boost (e.g. a Musa
+    // Studio brief's fresh 7-day creation boost) down to whatever shorter
+    // window an unrelated profile-boost spend happened to grant. The fix
+    // scopes the update with an `.or()` so it only ever touches briefs whose
+    // current boost is null or weaker than the new expiry.
+    const sb = install({
+      muse_profiles: (calls) => (calls.some((c) => c.method === "update") ? { data: null } : { data: { tier: "free", boost_inventory: 2, boost_expires_at: null } }),
+      muse_briefs: () => ({ data: null }),
+    });
+    const expiry = await spendBoost(sb, "u1", "24h");
+    expect(expiry).toBeTruthy();
+    const briefUpdateCalls = tableCalls(sb.__log, "muse_briefs");
+    const orCall = briefUpdateCalls.find((c) => c.method === "or");
+    expect(orCall).toBeDefined();
+    expect(String(orCall?.args[0])).toContain("boost_expires_at.is.null");
+    expect(String(orCall?.args[0])).toContain(`boost_expires_at.lt.${expiry}`);
+  });
   it("getBoostStatus + addBoostInventory work off the profile row", async () => {
     install({ muse_profiles: (calls) => (calls.some((c) => c.method === "update") ? { data: null } : { data: { tier: "free", boost_inventory: 1, boost_expires_at: new Date(Date.now() + 100000).toISOString() } }) });
     const st = await getBoostStatus(clientSb(), "u1");

@@ -331,7 +331,15 @@ export { grantBoosts as addBoostInventory };
 // of their own to boost.
 async function boostOpenBriefs(sb: ActionContext["sb"], userId: string, expiry: string) {
   try {
-    await sb.from("muse_briefs").update({ boost_expires_at: expiry }).eq("author_id", userId).eq("status", "open");
+    // Only ever EXTEND a brief's boost window, never shorten it. A blanket
+    // overwrite here would clobber a longer-running boost a brief already
+    // has (e.g. a Musa Studio brief's fresh 7-day creation boost) down to
+    // whatever shorter window the user's unrelated *profile* boost spend
+    // happens to grant — a real downgrade a paying author would never
+    // expect from activating their own boost.
+    await sb.from("muse_briefs").update({ boost_expires_at: expiry })
+      .eq("author_id", userId).eq("status", "open")
+      .or(`boost_expires_at.is.null,boost_expires_at.lt.${expiry}`);
   } catch { /* profile boost is already granted; briefs are best-effort */ }
 }
 // Spends a boost (inventory first, then Pro weekly allowance) and sets the

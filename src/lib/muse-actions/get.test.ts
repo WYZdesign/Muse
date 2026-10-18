@@ -129,6 +129,24 @@ type AuditLogBody = { entries: { id?: string }[]; limit: number; offset: number 
 type VerifyRow = { age_verified: boolean; age_verified_at: string | null };
 type MatchesRow = { id: string; user_id: string; target_id: { id: string; name: string; nsfw: boolean; avatar: string } };
 
+// "briefs" now issues two parallel queries (a boost-filtered one via .gt()
+// and a plain newest-first one) that get merged/deduped — see get.ts. Tests
+// below don't care about the boost filter itself (that's the DB's job), so
+// this stub hands back the same rows down either path.
+function briefsChain(rows: unknown[]) {
+  const chain = { gt: () => chain, order: () => ({ limit: async () => ({ data: rows }) }) };
+  return chain;
+}
+
+// For the regression test that distinguishes the two parallel queries: a
+// chain that answers with `boostedRows` once `.gt()` has been called on it
+// (the live-boosted-only query), and `recentRows` otherwise (the plain
+// newest-first query).
+function briefsChainDual(boostedRows: unknown[], recentRows: unknown[]) {
+  const boostedChain = { order: () => ({ limit: async () => ({ data: boostedRows }) }) };
+  return { gt: () => boostedChain, order: () => ({ limit: async () => ({ data: recentRows }) }) };
+}
+
 function makeQuery(): QueryMock {
   const q: QueryMock = {
     select: () => q, eq: () => q, in: () => q, order: () => q, limit: () => q, or: () => q, range: () => q, update: () => q, delete: () => q, upsert: () => q, insert: () => q,
@@ -212,7 +230,7 @@ describe("GET briefs — applicant count embed", () => {
       { id: "b1", title: "Editorial shoot", author_id: { id: "u1", name: "Ada", avatar: "" }, muse_brief_applications: [{ count: 3 }] },
       { id: "b2", title: "No applicants yet", author_id: { id: "u2", name: "Bo", avatar: "" }, muse_brief_applications: [{ count: 0 }] },
     ];
-    g.__sbMock = { from: () => ({ select: () => ({ order: () => ({ limit: async () => ({ data: rows }) }) }) }) };
+    g.__sbMock = { from: () => ({ select: () => briefsChain(rows) }) };
     const r = await GET(req("briefs"));
     expect(r.status).toBe(200);
     const body: BriefsBody = await r.json();
@@ -232,7 +250,7 @@ describe("GET briefs — placement ranking", () => {
       { id: "pro", title: "Pro", author_id: { id: "u2", name: "P", avatar: "", tier: "muse_pro" } },
       { id: "boosted", title: "Boosted", author_id: { id: "u3", name: "B", avatar: "", tier: "free" }, boost_expires_at: future },
     ];
-    g.__sbMock = { from: () => ({ select: () => ({ order: () => ({ limit: async () => ({ data: rows }) }) }) }) };
+    g.__sbMock = { from: () => ({ select: () => briefsChain(rows) }) };
     const r = await GET(req("briefs"));
     expect(r.status).toBe(200);
     const body: BriefsBody = await r.json();
@@ -242,12 +260,31 @@ describe("GET briefs — placement ranking", () => {
     g.__sbMock = { from: () => makeQuery() };
   });
 
+  it("surfaces a live-boosted brief even when it has fallen out of the newest-50 window", async () => {
+    // Regression: `.order(created_at).limit(50)` alone only ever fetches
+    // the 50 newest rows, so a boosted brief older than that window never
+    // made it into the array to sort to the front in the first place — a
+    // paid "front page" placement that could silently vanish once 50 newer
+    // briefs got posted. The fix fetches live-boosted briefs in their own
+    // unbounded-by-date query and merges them in.
+    const future = new Date(Date.now() + 86400000).toISOString();
+    const oldBoosted = { id: "old-boosted", title: "Old but boosted", author_id: { id: "u9", name: "Old", avatar: "", tier: "free" }, boost_expires_at: future };
+    const recentRows = [
+      { id: "newer1", title: "Newer 1", author_id: { id: "u1", name: "A", avatar: "", tier: "free" } },
+      { id: "newer2", title: "Newer 2", author_id: { id: "u2", name: "B", avatar: "", tier: "free" } },
+    ];
+    g.__sbMock = { from: () => ({ select: () => briefsChainDual([oldBoosted], recentRows) }) };
+    const body: BriefsBody = await (await GET(req("briefs"))).json();
+    expect(body.briefs.map((b) => b.id)).toEqual(["old-boosted", "newer1", "newer2"]);
+    g.__sbMock = { from: () => makeQuery() };
+  });
+
   it("leaves newest-first order alone when nothing is boosted or paid", async () => {
     const rows = [
       { id: "newer", title: "Newer", author_id: { id: "u1", name: "A", avatar: "", tier: "free" } },
       { id: "older", title: "Older", author_id: { id: "u2", name: "B", avatar: "", tier: "free" } },
     ];
-    g.__sbMock = { from: () => ({ select: () => ({ order: () => ({ limit: async () => ({ data: rows }) }) }) }) };
+    g.__sbMock = { from: () => ({ select: () => briefsChain(rows) }) };
     const body: BriefsBody = await (await GET(req("briefs"))).json();
     expect(body.briefs.map((b) => b.id)).toEqual(["newer", "older"]);
     g.__sbMock = { from: () => makeQuery() };

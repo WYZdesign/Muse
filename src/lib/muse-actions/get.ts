@@ -493,9 +493,31 @@ export async function GET(req: NextRequest) {
       // so a brief's poster can see interest on their own post without a
       // separate round-trip — CollabScreen.tsx surfaces this only to the
       // brief's own author, not to other viewers.
-      const { data }: { data: BriefRow[] | null } = await sb.from("muse_briefs").select("*, author_id(id, name, avatar, tier), muse_brief_applications(count)").order("created_at", { ascending: false }).limit(50);
+      //
+      // Boosted briefs are a paid promise ("front page" placement) that must
+      // hold regardless of how old the brief is. Sorting-after-limit doesn't
+      // do that: `.order(created_at).limit(50)` only ever fetches the 50
+      // newest rows, so a boosted brief older than that window would never
+      // even be IN the array to sort to the front — it'd silently vanish
+      // from the feed the moment 50 newer briefs got posted, boost or not.
+      // Fetch live-boosted briefs in their own unbounded-by-date query first,
+      // then fill the rest of the page from the newest briefs, deduped.
+      const briefCols = "*, author_id(id, name, avatar, tier), muse_brief_applications(count)";
+      const nowIso = new Date().toISOString();
+      const [{ data: boosted }, { data: recent }]: [{ data: BriefRow[] | null }, { data: BriefRow[] | null }] = await Promise.all([
+        sb.from("muse_briefs").select(briefCols).gt("boost_expires_at", nowIso).order("created_at", { ascending: false }).limit(50),
+        sb.from("muse_briefs").select(briefCols).order("created_at", { ascending: false }).limit(50),
+      ]);
+      const seen = new Set<string>();
+      let briefs: BriefRow[] = [];
+      for (const b of [...(boosted || []), ...(recent || [])]) {
+        const bid = String(b.id);
+        if (seen.has(bid)) continue;
+        seen.add(bid);
+        briefs.push(b);
+      }
+      briefs = briefs.slice(0, 50);
       // Same gap as "feed" above — blocking never reached this listing.
-      let briefs = data || [];
       if (profileId) {
         const { data: blocks }: { data: BlockRow[] | null } = await sb.from("muse_blocks").select("user_id, target_id").or(`user_id.eq.${profileId},target_id.eq.${profileId}`);
         const blockedIds = blockedIdSet(blocks, profileId);
