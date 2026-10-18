@@ -6,7 +6,7 @@ import { getReferralUrl } from "@/lib/urls";
 import Nav from "../components/Nav";
 import StreakWidget from "../components/StreakWidget";
 import type { Screen, Match } from "../components/types";
-import { isPaidTier } from "../components/subscriptionTiers";
+import { isPaidTier, isStudioTier } from "../components/subscriptionTiers";
 import { ZODIAC_GLYPH, MbtiIcon, LifePathIcon, ChineseZodiacIcon } from "../components/traitIcons";
 import Lightbox from "../components/Lightbox";
 import { ZODIAC_FULL, MBTI_FULL, CHINESE_FULL, LIFE_PATH_FULL, STYLE_FULL, BadgeInfoModal, type BadgeInfo } from "../components/badgeInfo";
@@ -392,7 +392,7 @@ export const ProfileScreen = memo(function ProfileScreen({
               )}
             </div>
           )}
-          <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 10 }}>Plan: <span style={{ color: "var(--gold)", fontWeight: 600 }}>{currentUser.tier === "muse_studio" ? "Musa Studio" : isPaidTier(userTier) || isPaidTier(currentUser.tier) ? "Musa Pro" : "Free"}</span></div>
+          <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 10 }}>Plan: <span style={{ color: "var(--gold)", fontWeight: 600 }}>{isStudioTier(currentUser.tier) ? "Musa Studio" : isPaidTier(userTier) || isPaidTier(currentUser.tier) ? "Musa Pro" : "Free"}</span></div>
           {isPaidTier(currentUser.tier) && !currentUser.foundingTier ? (
             <button className="btn btn-outline" style={{ fontSize: 14, padding: "14px 0" }} onClick={() => setScreen("subscription")}>Manage Plan</button>
           ) : isPaidTier(currentUser.tier) && currentUser.foundingTier ? (

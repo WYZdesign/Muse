@@ -10,7 +10,7 @@ import { supabase, getServiceClient } from "@/lib/supabase";
 import { safeServerError } from "@/lib/http";
 import { sendEmail, notify } from "@/lib/email";
 import { pushToProfile } from "@/lib/push";
-import { isPaidTier, PAID_TIER_IDS } from "@/lib/subscription-tiers";
+import { isPaidTier, PAID_TIER_IDS, isStudioTier, STUDIO_TIER_IDS } from "@/lib/subscription-tiers";
 
 export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -50,7 +50,7 @@ export function isAgeVerificationCurrent(row: { age_verified?: boolean | null; a
  *  receipts) calls this instead of re-typing the tier strings, so a new paid
  *  tier added later cannot silently fall through to Free in some features and
  *  not others. */
-export { isPaidTier, PAID_TIER_IDS };
+export { isPaidTier, PAID_TIER_IDS, isStudioTier, STUDIO_TIER_IDS };
 
 /** Like notifications are the surface behind "See who likes you" (Pro), so a
  *  Free recipient must never receive the liker's identity. The sender name is

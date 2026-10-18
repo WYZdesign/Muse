@@ -12,7 +12,7 @@ import { checkRate } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/request-safety";
 import { screenText } from "@/lib/aiModeration";
 import { bumpQuest } from "@/lib/questEngine";
-import { UUID_RE, validateInput, NextResponse, safeServerError, isPaidTier, type ActionContext } from "./shared";
+import { UUID_RE, validateInput, NextResponse, safeServerError, isPaidTier, isStudioTier, type ActionContext } from "./shared";
 
 /** Free-tier daily brief-response cap. The industry Free plan advertises
  *  "10 brief responses/day" and Musa Pro advertises "Unlimited brief
@@ -219,7 +219,10 @@ export const briefCreate = async ({ sb, profile, rest, ip }: ActionContext) => {
   // starts unboosted and can spend a boost later.
   const { data: authorRow }: { data: { tier?: string | null } | null } =
     await sb.from("muse_profiles").select("tier").eq("id", profile.id).maybeSingle();
-  const studioBoost = authorRow?.tier === "muse_studio"
+  // Was a hardcoded `=== "muse_studio"` check — the same tier-vocabulary
+  // drift fixed elsewhere this pass (subscription-tiers.ts's isStudioTier
+  // is the one place that string is supposed to live), now closed here too.
+  const studioBoost = isStudioTier(String(authorRow?.tier ?? ""))
     ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
     : null;
   const { error } = await sb.from("muse_briefs").insert({ author_id: profile.id, title: cleanTitle, description: cleanDesc, budget: budget || "Negotiable", category: cat || "concept", tags: tags || [], paid: paid || false, rate: rate || "", boost_expires_at: studioBoost });

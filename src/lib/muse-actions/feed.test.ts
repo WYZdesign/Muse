@@ -219,6 +219,25 @@ describe("briefCreate / briefApply", () => {
     await briefCreate(act({ title: "Editorial shoot" }));
     expect(insertValue(tableCalls(sb.__log, "muse_briefs"))).toMatchObject({ title: "Editorial shoot", budget: "Negotiable", category: "concept" });
   });
+  it("briefCreate gives a Musa Studio author's brief a live boost_expires_at (via the shared isStudioTier, not a hardcoded string)", async () => {
+    const sb = install({
+      muse_profiles: () => ({ data: { tier: "muse_studio" } }),
+      muse_briefs: () => ({ data: null }),
+    });
+    await briefCreate(act({ title: "Editorial shoot" }));
+    const row = insertValue(tableCalls(sb.__log, "muse_briefs")) as { boost_expires_at?: string | null };
+    expect(row.boost_expires_at).toBeTruthy();
+    expect(new Date(row.boost_expires_at as string).getTime()).toBeGreaterThan(Date.now());
+  });
+  it("briefCreate leaves a non-Studio author's brief unboosted", async () => {
+    const sb = install({
+      muse_profiles: () => ({ data: { tier: "muse_pro" } }),
+      muse_briefs: () => ({ data: null }),
+    });
+    await briefCreate(act({ title: "Editorial shoot" }));
+    const row = insertValue(tableCalls(sb.__log, "muse_briefs")) as { boost_expires_at?: string | null };
+    expect(row.boost_expires_at).toBeFalsy();
+  });
   it("briefApply demo-stubs a non-uuid and succeeds otherwise", async () => {
     install({});
     expect(await (await briefApply(act({ briefId: "nope" })) as Response).json()).toMatchObject({ demo: true });

@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { isStudioTier } from "../components/subscriptionTiers";
 
 type SupportTicket = {
   id: string;
@@ -37,7 +38,7 @@ export function SupportModal({ open, onClose, apiFetch, showToast, userTier }: S
 
   if (!open) return null;
 
-  const isStudio = String(userTier ?? "") === "muse_studio";
+  const isStudio = isStudioTier(userTier);
 
   const submit = async () => {
     if (!subject.trim() || !body.trim() || busy) return;
