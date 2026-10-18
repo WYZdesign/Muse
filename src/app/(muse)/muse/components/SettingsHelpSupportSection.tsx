@@ -25,10 +25,13 @@ export interface SettingsHelpSupportSectionProps {
   showScreen: (s: Screen) => void;
   showToast: (msg: string | { msg: string; onTap?: () => void }) => void;
   authFetch?: AuthFetchFn;
+  /** Opens the AI help-guide chat (SupportChat). */
   setSupportOpen?: (v: boolean) => void;
+  /** Opens the human support-ticket modal (SupportModal) — a separate flow from the AI help guide above. */
+  setContactSupportOpen?: (v: boolean) => void;
 }
 
-export function SettingsHelpSupportSection({ showScreen, showToast, authFetch, setSupportOpen }: SettingsHelpSupportSectionProps) {
+export function SettingsHelpSupportSection({ showScreen, showToast, authFetch, setSupportOpen, setContactSupportOpen }: SettingsHelpSupportSectionProps) {
   const [showBugForm, setShowBugForm] = useState(false);
   const [bugCategory, setBugCategory] = useState("ui");
   const [bugDescription, setBugDescription] = useState("");
@@ -55,6 +58,7 @@ export function SettingsHelpSupportSection({ showScreen, showToast, authFetch, s
         <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => { clearAllPageTourFlags(); showToast("Tutorials reset — you'll see them again as you explore"); }}>Replay Tutorials</button>
         <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => showScreen("codex")}>Glossary + Codex</button>
         <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => setSupportOpen?.(true)}>Help Guide</button>
+        <button className="btn btn-outline" style={{ width: "100%", fontSize: 13 }} onClick={() => setContactSupportOpen?.(true)}><FiHelpCircle size={14} style={{ marginRight: 6 }} />Contact Support</button>
         {!showIdeaForm ? (
           <button className="btn" style={{ width: "100%", fontSize: 13, background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)", color: "var(--gold)" }} onClick={() => setShowIdeaForm(true)}>Have an Idea?</button>
         ) : (

@@ -112,6 +112,7 @@ export interface SettingsScreenProps {
   setUpsell?: (v: { feature: string; reason: string; icon?: string } | null) => void;
   authFetch?: AuthFetchFn;
   setSupportOpen?: (v: boolean) => void;
+  setContactSupportOpen?: (v: boolean) => void;
 }
 
 export const SettingsScreen = memo(function SettingsScreen({
@@ -192,6 +193,7 @@ export const SettingsScreen = memo(function SettingsScreen({
   setUpsell,
   authFetch,
   setSupportOpen,
+  setContactSupportOpen,
   preferences = {},
 }: SettingsScreenProps) {
   const [showChangePassword, setShowChangePassword] = useState(false);
@@ -607,7 +609,7 @@ export const SettingsScreen = memo(function SettingsScreen({
             </div>
           )}
 
-          <SettingsHelpSupportSection showScreen={showScreen} showToast={showToast} authFetch={authFetch} setSupportOpen={setSupportOpen} />
+          <SettingsHelpSupportSection showScreen={showScreen} showToast={showToast} authFetch={authFetch} setSupportOpen={setSupportOpen} setContactSupportOpen={setContactSupportOpen} />
 
           <button className="btn btn-outline" style={{ width: "100%", marginBottom: 20 }} onClick={() => doLogout()}>Log Out</button>
         </div>

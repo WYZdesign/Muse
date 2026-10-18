@@ -70,7 +70,7 @@ export function MuseModals(props: MuseModalsStackProps) {
     showShareProfile, setShowShareProfile, shareProfileTrap,
     showDisclosureModal, setShowDisclosureModal, disclosureTarget, setDisclosureTarget, disclosureBookingId, existingDisclosure, ageVerified, setAgeVerified, pendingDisclosureConfirm, setPendingDisclosureConfirm, pendingDisclosureCreate, setPendingDisclosureCreate,
     showAgeVerification, setShowAgeVerification,
-    upsell, setUpsell, closeUpsell, supportOpen, setSupportOpen,
+    upsell, setUpsell, closeUpsell, contactSupportOpen, setContactSupportOpen,
     showSafetyCheckin, setShowSafetyCheckin, safetyCheckins, setSafetyCheckins, safetyProfile, setSafetyProfile,
     showPromptBank, setShowPromptBank, promptBankData, promptResponses, setPromptResponses,
     showReferral, setShowReferral, showConnect, setShowConnect, showPaymentHistory, setShowPaymentHistory,
@@ -371,7 +371,7 @@ export function MuseModals(props: MuseModalsStackProps) {
       {showConnect && (
         <ConnectPanel onClose={() => setShowConnect(false)} />
       )}
-      <SupportModal open={supportOpen} onClose={() => setSupportOpen(false)} apiFetch={apiFetch} showToast={showToast} userTier={currentUser?.tier} />
+      <SupportModal open={contactSupportOpen} onClose={() => setContactSupportOpen(false)} apiFetch={apiFetch} showToast={showToast} userTier={currentUser?.tier} />
       {showPaymentHistory && (
         <PaymentHistory userId={authUser?.id || ""} onClose={() => setShowPaymentHistory(false)} />
       )}

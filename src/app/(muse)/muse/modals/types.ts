@@ -198,9 +198,12 @@ export type MuseModalsProps = {
 
   // Upsell
   setUpsell: (v: UpsellInfo | null) => void;
-  /** Human support ticket modal (Musa Studio requests are created as priority). */
+  /** AI help-guide chat (SupportChat), triggered by Settings' "Help Guide" button. */
   supportOpen: boolean;
   setSupportOpen: (v: boolean) => void;
+  /** Human support ticket modal (SupportModal; Musa Studio requests are created as priority) — a separate entry point from the AI help-guide chat above. */
+  contactSupportOpen: boolean;
+  setContactSupportOpen: (v: boolean) => void;
   upsell: UpsellInfo | null;
   closeUpsell: () => void;
   /** Viewer's subscription tier, used to lock Pro-only controls. */
