@@ -38,7 +38,7 @@ export default function PricingPage() {
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
           <div style={{ border: "1px solid rgba(255,215,0,0.2)", borderRadius: 12, padding: 32 }}>
-            <h2 style={{ fontSize: 1.25, fontWeight: 600, marginBottom: 4, color: "#fff" }}>Free</h2>
+            <h2 style={{ fontSize: "1.25rem", fontWeight: 600, marginBottom: 4, color: "#fff" }}>Free</h2>
             <p style={{ fontSize: 28, fontWeight: 700, color: "#ffd700", marginBottom: 24 }}>$0<span style={{ fontSize: 14, color: "rgba(255,255,255,0.5)" }}>/forever</span></p>
             <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
               {freeFeatures.map((f, i) => (
@@ -48,7 +48,7 @@ export default function PricingPage() {
           </div>
 
           <div style={{ border: "1px solid rgba(255,215,0,0.5)", borderRadius: 12, padding: 32, background: "rgba(255,215,0,0.04)" }}>
-            <h2 style={{ fontSize: 1.25, fontWeight: 600, marginBottom: 4, color: "#fff" }}>Pro</h2>
+            <h2 style={{ fontSize: "1.25rem", fontWeight: 600, marginBottom: 4, color: "#fff" }}>Pro</h2>
             <p style={{ fontSize: 28, fontWeight: 700, color: "#ffd700", marginBottom: 24 }}>$9.99<span style={{ fontSize: 14, color: "rgba(255,255,255,0.5)" }}>/mo</span></p>
             <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
               {proFeatures.map((f, i) => (
