@@ -42,6 +42,7 @@ const DEMO_READ_ACTIONS = new Set([
   "get-prompts", "get-prompt-responses", "booking-reminders",
   "host-availability", "get-payments", "get-quests", "search",
   "saved-search-list", "boost-status", "get-notifications", "talent-lists-get",
+  "support-tickets-get",
 ]);
 
 // ═══ PROFILE ═══

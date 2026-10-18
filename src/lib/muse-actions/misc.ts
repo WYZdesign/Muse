@@ -12,6 +12,7 @@ import { checkRate, checkRateUser } from "@/lib/rate-limit";
 import { sanitizeAvailabilityStatus, sanitizeTravelDestinations, sanitizeTravelDates, sanitizeBudgetRange } from "@/lib/muse-availability";
 import { normalizePortfolioVisibility } from "@/lib/muse-portfolio-visibility";
 import { UUID_RE, NextResponse, safeServerError, isPaidTier, type ActionContext } from "./shared";
+import { isStudioTier } from "@/lib/subscription-tiers";
 
 // Loose row shapes for values that come straight off Supabase (the client is
 // created without database generics, so query results are `any`). These name
@@ -571,8 +572,11 @@ export async function togglePhotoLike({ sb, profile, rest }: ActionContext) {
 // tier gets a small cap and Studio is uncapped. Every query below is scoped
 // to the caller's own lists, so one account can never read or edit another's.
 export const TALENT_LIST_CAP = 3;
-
-const isStudioTier = (tier: unknown) => String(tier ?? "") === "muse_studio";
+// "Unlimited" lists for Studio means unlimited list *count*, not an unbounded
+// table scan per list — every tier, Studio included, keeps the same per-list
+// item cap so a single list can never grow large enough to make search/list
+// operations against it slow.
+export const TALENT_LIST_ITEM_CAP = 500;
 
 /** Owns this list? Returns the row, or null when it is not the caller's. */
 async function ownTalentList(sb: ActionContext["sb"], listId: string, ownerId: string) {
@@ -593,14 +597,14 @@ export const talentListsGet = async ({ sb, profile }: ActionContext) => {
   }
   return NextResponse.json({
     lists: rows.map((l) => ({ ...l, profileIds: items.filter((i) => String(i.list_id) === String(l.id)).map((i) => i.profile_id) })),
-    cap: isStudioTier(profile.tier) ? null : TALENT_LIST_CAP,
+    cap: isStudioTier(String(profile.tier ?? "")) ? null : TALENT_LIST_CAP,
   });
 };
 
 export const talentListCreate = async ({ sb, profile, rest }: ActionContext) => {
   const name = String(rest.name || "").trim().slice(0, 60);
   if (!name) return NextResponse.json({ error: "name required" }, { status: 400 });
-  if (!isStudioTier(profile.tier)) {
+  if (!isStudioTier(String(profile.tier ?? ""))) {
     const { count } = await sb.from("muse_talent_lists")
       .select("id", { count: "exact", head: true }).eq("owner_id", profile.id);
     if ((count ?? 0) >= TALENT_LIST_CAP) {
@@ -639,6 +643,21 @@ export const talentListItemSet = async ({ sb, profile, rest }: ActionContext) =>
     if (error) return safeServerError(error, "db op");
     return NextResponse.json({ success: true, removed: true });
   }
+  // Re-adding someone already on the list is a no-op (the upsert below just
+  // dedupes), so only the cap check needs to know whether this call would
+  // actually grow the list before deciding to block it.
+  const { data: existing } = await sb.from("muse_talent_list_items")
+    .select("id").eq("list_id", listId).eq("profile_id", profileId).maybeSingle();
+  if (!existing) {
+    const { count } = await sb.from("muse_talent_list_items")
+      .select("id", { count: "exact", head: true }).eq("list_id", listId);
+    if ((count ?? 0) >= TALENT_LIST_ITEM_CAP) {
+      return NextResponse.json({
+        error: `This list is at its ${TALENT_LIST_ITEM_CAP}-profile limit.`,
+        code: "TALENT_LIST_ITEM_LIMIT", limit: TALENT_LIST_ITEM_CAP,
+      }, { status: 429 });
+    }
+  }
   const { error } = await sb.from("muse_talent_list_items")
     .upsert({ list_id: listId, profile_id: profileId }, { onConflict: "list_id,profile_id", ignoreDuplicates: true });
   if (error) return safeServerError(error, "db op");
@@ -652,7 +671,7 @@ export const supportTicketCreate = async ({ sb, profile, rest }: ActionContext) 
   const subject = String(rest.subject || "").trim().slice(0, 120);
   const body = String(rest.body || "").trim().slice(0, 4000);
   if (!subject || !body) return NextResponse.json({ error: "subject and body required" }, { status: 400 });
-  const priority = isStudioTier(profile.tier) ? "high" : "normal";
+  const priority = isStudioTier(String(profile.tier ?? "")) ? "high" : "normal";
   const { data, error } = await sb.from("muse_support_tickets")
     .insert({ user_id: profile.id, subject, body, priority }).select("id, created_at").maybeSingle();
   if (error) return safeServerError(error, "db op");

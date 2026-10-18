@@ -17,7 +17,7 @@ import { NetworkProsTab, type ProExp, type ProSort, type ProRateBand } from "../
 import { NetworkForumTab } from "../components/NetworkForumTab";
 import { NetworkThreadModal } from "../components/NetworkThreadModal";
 import { NetworkProDetailModal } from "../components/NetworkProDetailModal";
-import { isPaidTier } from "../components/subscriptionTiers";
+import { isPaidTier, isStudioTier } from "../components/subscriptionTiers";
 
 import { useProFilters } from "../hooks/useProFilters";
 
@@ -158,10 +158,15 @@ export const NetworkScreen = memo(function NetworkScreen({
   // Saved-talent lists ("Unlimited saved-talent lists" is Musa Studio). The
   // server owns the cap; listCap is null for Studio and 3 otherwise.
   const [talentLists, setTalentLists] = useState<{ id: string; name: string; profileIds: string[] }[]>([]);
-  const [listCap, setListCap] = useState<number | null>(null);
+  // Demo mode never calls the server, so default to the demo persona's own
+  // tier rather than `null` — `null` reads as "Studio: unlimited" in the UI,
+  // which would be wrong for every demo persona except an actual Studio one.
+  // Must match TALENT_LIST_CAP in src/lib/muse-actions/misc.ts.
+  const DEMO_TALENT_LIST_CAP = 3;
+  const [listCap, setListCap] = useState<number | null>(isStudioTier(currentUser?.tier) ? null : DEMO_TALENT_LIST_CAP);
   const [newListName, setNewListName] = useState("");
   const refreshTalentLists = useCallback(async () => {
-    if (demo) return;
+    if (demo) { setListCap(isStudioTier(currentUser?.tier) ? null : DEMO_TALENT_LIST_CAP); return; }
     try {
       const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "talent-lists-get" }) });
       if (!r.ok) return;
@@ -169,7 +174,7 @@ export const NetworkScreen = memo(function NetworkScreen({
       setTalentLists(Array.isArray(d.lists) ? d.lists : []);
       setListCap(typeof d.cap === "number" ? d.cap : null);
     } catch { /* lists are optional */ }
-  }, [demo, apiFetch]);
+  }, [demo, apiFetch, currentUser?.tier]);
   useEffect(() => { refreshTalentLists(); }, [refreshTalentLists]);
   const createTalentList = useCallback(async (name: string) => {
     const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "talent-list-create", name }) });
