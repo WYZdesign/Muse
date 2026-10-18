@@ -241,6 +241,20 @@ export const MUSE_REST_SCHEMAS: Record<string, z.ZodTypeAny> = {
     durationDays: z.number().max(3650).nullable().optional(),
     reportId: idLike.optional(),
   }).passthrough(),
+  // ── saved-talent lists (Musa Studio pricing-honesty pass) ──
+  "talent-lists-get": z.object({}).passthrough(),
+  "talent-list-create": z.object({ name: z.string().max(60).optional() }).passthrough(),
+  "talent-list-delete": z.object({ listId: idLike.optional(), list_id: idLike.optional() }).passthrough(),
+  "talent-list-items": z.object({
+    listId: idLike.optional(), list_id: idLike.optional(),
+    profileId: idLike.optional(), profile_id: idLike.optional(),
+    remove: z.union([z.boolean(), z.string()]).optional(),
+  }).passthrough(),
+  // ── human support tickets (Musa Studio priority) ──
+  "support-ticket-create": z.object({ subject: z.string().max(120).optional(), body: z.string().max(4000).optional() }).passthrough(),
+  "support-tickets-get": z.object({}).passthrough(),
+  "admin-support-tickets": z.object({}).passthrough(),
+  "admin-resolve-support-ticket": z.object({ ticketId: idLike.optional(), ticket_id: idLike.optional() }).passthrough(),
 };
 
 export type RestValidation = { ok: true; data: Record<string, unknown> } | { ok: false; error: string };

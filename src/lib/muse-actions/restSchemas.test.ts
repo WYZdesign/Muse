@@ -93,13 +93,23 @@ const NEW_ACTION_PAYLOADS: Record<string, Record<string, unknown>> = {
   "admin-review-custom-value": { targetUserId: "44444444-4444-4444-4444-444444444444", field: "type" },
   "admin-scan-nsfw": { all: true },
   "admin-suspend-user": { targetUserId: "44444444-4444-4444-4444-444444444444", reason: "Reported: harassment", durationDays: 7 },
+  // saved-talent lists
+  "talent-lists-get": {},
+  "talent-list-create": { name: "Favorites" },
+  "talent-list-delete": { listId: "11111111-1111-1111-1111-111111111111" },
+  "talent-list-items": { listId: "11111111-1111-1111-1111-111111111111", profileId: "22222222-2222-2222-2222-222222222222", remove: true },
+  // human support tickets
+  "support-ticket-create": { subject: "Need help", body: "My payment did not go through." },
+  "support-tickets-get": {},
+  "admin-support-tickets": {},
+  "admin-resolve-support-ticket": { ticketId: "33333333-3333-3333-3333-333333333333" },
 };
 
 describe("extended mutating-action schemas", () => {
   const actions = Object.keys(NEW_ACTION_PAYLOADS);
 
   it("adds a schema for every targeted mutating action", () => {
-    expect(actions.length).toBe(39);
+    expect(actions.length).toBe(47);
     for (const action of actions) expect(MUSE_REST_SCHEMAS[action]).toBeDefined();
   });
 
@@ -144,5 +154,7 @@ describe("extended mutating-action schemas", () => {
     expect(validateRest("toggle-session-availability", { available: "yes" }).ok).toBe(false);
     expect(validateRest("create-album", { title: "x".repeat(300) }).ok).toBe(false);
     expect(validateRest("track-quest", { action_keys: ["a".repeat(65)] }).ok).toBe(false);
+    expect(validateRest("talent-list-create", { name: "x".repeat(200) }).ok).toBe(false);
+    expect(validateRest("support-ticket-create", { subject: "x".repeat(200), body: "ok" }).ok).toBe(false);
   });
 });
