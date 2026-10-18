@@ -13,7 +13,7 @@ import { validateRest } from "@/lib/muse-actions/restSchemas";
 import { questGetQuests, questTrackQuest, questClaimQuest, questNotifyClaimable } from "@/lib/muse-actions/quests";
 import { albumCreate, albumUpdate, albumDelete, albumAddPhoto, albumRemovePhoto, albumGrantAccess, albumRevokeAccess, albumListAccess, albumView, albumLike } from "@/lib/muse-actions/albums";
 import { feedbackGetNotifications, feedbackMarkAllRead, feedbackDeleteNotification, feedbackClearNotifications, feedbackReportBug, feedbackSubmitIdea } from "@/lib/muse-actions/feedback";
-import { adminResolveAppeal, adminBrain, adminReports, adminStrikes, adminSuspendUser, adminScanNsfw, adminContentScans, adminResolveIncident, adminResolveReport, adminRefunds, adminResolveRefund, adminCustomValues, adminReviewCustomValue } from "@/lib/muse-actions/admin";
+import { adminResolveAppeal, adminBrain, adminReports, adminStrikes, adminSuspendUser, adminScanNsfw, adminContentScans, adminResolveIncident, adminResolveReport, adminRefunds, adminResolveRefund, adminCustomValues, adminReviewCustomValue, adminSupportTickets, adminResolveSupportTicket } from "@/lib/muse-actions/admin";
 import { disclosureCreate, disclosureConfirm, disclosureGet, strikesGet, strikeAppeal } from "@/lib/muse-actions/disclosures";
 import { communityJoin, communityLeave, communityCreate, eventCreate, eventRsvp, eventCancelRsvp, communityUpdateRules, communityKick, communityBan, communityUnban, communitySetRole, communityGetBans, communityMute, communityUnmute, communityGetMutes, communityGetJoinRequests, communityApproveJoinRequest, communityDenyJoinRequest } from "@/lib/muse-actions/communities";
 import { sessionBook, sessionCreate, bookingRespond, bookingCancel, bookingComplete, reviewSubmit, checkinRespond, checkinsGet, safetyDetailsShare, safetyProfileSave, safetyProfileGet, promptsGet, promptResponseSave, promptResponsesGet, bookingReminders, hostAvailability, sessionAvailabilityToggle } from "@/lib/muse-actions/sessions";
@@ -23,7 +23,7 @@ import { matchCreate, matchDelete, profileViewTrack } from "@/lib/muse-actions/m
 import { messageSend, messageRequestAccept, messageRequestDecline, messageRequestBlock, messageRequestsGet, blockUser, unblockUser, blockedUsers, messagesMarkRead } from "@/lib/muse-actions/messaging";
 import { feedPost, feedPostLike, feedCommentAdd, momentCreate, momentLike, briefCreate, briefApply, briefViewTrack } from "@/lib/muse-actions/feed";
 import { forumDispatch, reportCreate, userBlock, userUnblock, blocksGet, forumPostPin, forumPostLock } from "@/lib/muse-actions/forum";
-import { preferencesSave, promoApply, notificationsMarkRead, clientSync, paymentsGet, searchAll, boostActivate, boostAnalytics, boostStatus, saveBoostPurchase, savedSearchSave, savedSearchList, savedSearchDelete, savedSearchAlerts, togglePhotoLike, talentListsGet, talentListCreate, talentListDelete, talentListItemSet } from "@/lib/muse-actions/misc";
+import { preferencesSave, promoApply, notificationsMarkRead, clientSync, paymentsGet, searchAll, boostActivate, boostAnalytics, boostStatus, saveBoostPurchase, savedSearchSave, savedSearchList, savedSearchDelete, savedSearchAlerts, togglePhotoLike, talentListsGet, talentListCreate, talentListDelete, talentListItemSet, supportTicketCreate, supportTicketsGet } from "@/lib/muse-actions/misc";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -87,6 +87,12 @@ ACTIONS["talent-lists-get"] = talentListsGet;
 ACTIONS["talent-list-create"] = talentListCreate;
 ACTIONS["talent-list-delete"] = talentListDelete;
 ACTIONS["talent-list-items"] = talentListItemSet;
+
+// === SUPPORT TICKETS ===
+ACTIONS["support-ticket-create"] = supportTicketCreate;
+ACTIONS["support-tickets-get"] = supportTicketsGet;
+ACTIONS["admin-support-tickets"] = adminSupportTickets;
+ACTIONS["admin-resolve-support-ticket"] = adminResolveSupportTicket;
 
 // ═══ FORUM, REPORTS & BLOCKS ═══
 // Handlers extracted to lib/muse-actions/forum.ts (monolith split, interleaved-domain pass).

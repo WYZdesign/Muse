@@ -198,6 +198,9 @@ export type MuseModalsProps = {
 
   // Upsell
   setUpsell: (v: UpsellInfo | null) => void;
+  /** Human support ticket modal (Musa Studio requests are created as priority). */
+  supportOpen: boolean;
+  setSupportOpen: (v: boolean) => void;
   upsell: UpsellInfo | null;
   closeUpsell: () => void;
   /** Viewer's subscription tier, used to lock Pro-only controls. */

@@ -163,6 +163,7 @@ export default function AdminDashboard() {
 
         <div style={{ display: "flex", gap: 8, marginBottom: 28, justifyContent: "center", flexWrap: "nowrap", overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "thin" }}>
           <a href="/muse/admin/moderation" style={navBtn("rgba(255,215,0,0.15)", "rgba(255,215,0,0.3)", "#ffd700")}>🛡️ Moderation</a>
+            <a href="/muse/admin/support" style={navBtn("rgba(0,188,212,0.15)", "rgba(0,188,212,0.3)", "#00BCD4")}>🎟️ Support</a>
           <a href="/muse" style={navBtn("rgba(255,255,255,0.06)", "rgba(255,255,255,0.1)", "rgba(255,255,255,0.7)")}>🏠 Back to Musa by WYZ</a>
         </div>
 

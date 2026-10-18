@@ -204,8 +204,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
   const [showOnline, setShowOnline] = useState(true);
   const [showDistance, setShowDistance] = useState(true);
   // Per-field profile visibility toggles (Settings > Privacy & Safety).
-  // Zodiac/age/MBTI/life-path/Chinese are free; showMatchPercent and
-  // incognito are Premium-gated (see UpsellModal usage in SettingsScreen).
+  // Zodiac/age/MBTI/life-path/Chinese are free; showMatchPercent and incognito are Premium-gated.
   const [showZodiac, setShowZodiac] = useState(true);
   const [showAge, setShowAge] = useState(true);
   const [showMbti, setShowMbti] = useState(true);
@@ -1173,6 +1172,7 @@ const { chatTarget, setChatTarget, chatInput, setChatInput, showMatchMenu, setSh
         showAgeVerification={showAgeVerification}
         setShowAgeVerification={setShowAgeVerification}
         upsell={upsell}
+        supportOpen={supportOpen} setSupportOpen={setSupportOpen}
         setUpsell={setUpsell}
         closeUpsell={closeUpsell}
         showSafetyCheckin={showSafetyCheckin}

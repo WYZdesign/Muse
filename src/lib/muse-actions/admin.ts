@@ -371,3 +371,30 @@ export const adminResolveRefund = async ({ sb, profile, rest }: ActionContext) =
   await sb.from("muse_admin_audit_log").insert({ admin_user_id: profile.id, query_text: `resolve_refund:${requestId}:${status}` });
   return NextResponse.json({ success: true });
 };
+
+// Support queue. "Priority support" means a Musa Studio ticket is created with
+// priority 'high'; here the queue puts high first, oldest first within a band,
+// so the promise has a visible, ordered effect rather than just a label.
+export const adminSupportTickets = async ({ sb, profile }: ActionContext) => {
+  if (!isAdminEmail(profile.email)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const { data, error } = await sb.from("muse_support_tickets")
+    .select("id, user_id, subject, body, status, priority, created_at, resolved_at")
+    .order("created_at", { ascending: true }).limit(300);
+  if (error) return safeServerError(error, "db op");
+  type TicketRow = { status?: string | null; priority?: string | null };
+  const rows = (data || []) as (TicketRow & Record<string, unknown>)[];
+  const rank = (p?: string | null) => (p === "high" ? 0 : 1);
+  const open = rows.filter((t) => t.status === "open").sort((a, b) => rank(a.priority) - rank(b.priority));
+  const closed = rows.filter((t) => t.status !== "open");
+  return NextResponse.json({ tickets: [...open, ...closed], openCount: open.length });
+};
+
+export const adminResolveSupportTicket = async ({ sb, profile, rest }: ActionContext) => {
+  if (!isAdminEmail(profile.email)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const ticketId = String(rest.ticketId || rest.ticket_id || "");
+  if (!UUID_RE.test(ticketId)) return NextResponse.json({ error: "Valid ticketId required" }, { status: 400 });
+  const { error } = await sb.from("muse_support_tickets")
+    .update({ status: "resolved", resolved_at: new Date().toISOString() }).eq("id", ticketId);
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ success: true });
+};

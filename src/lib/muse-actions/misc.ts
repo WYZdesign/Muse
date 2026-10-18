@@ -644,3 +644,25 @@ export const talentListItemSet = async ({ sb, profile, rest }: ActionContext) =>
   if (error) return safeServerError(error, "db op");
   return NextResponse.json({ success: true, removed: false });
 };
+
+// === SUPPORT TICKETS ===
+// "Priority support" is a Musa Studio benefit, so the priority is derived from
+// the submitter's tier here and never from client input.
+export const supportTicketCreate = async ({ sb, profile, rest }: ActionContext) => {
+  const subject = String(rest.subject || "").trim().slice(0, 120);
+  const body = String(rest.body || "").trim().slice(0, 4000);
+  if (!subject || !body) return NextResponse.json({ error: "subject and body required" }, { status: 400 });
+  const priority = isStudioTier(profile.tier) ? "high" : "normal";
+  const { data, error } = await sb.from("muse_support_tickets")
+    .insert({ user_id: profile.id, subject, body, priority }).select("id, created_at").maybeSingle();
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ success: true, ticket: data, priority });
+};
+
+export const supportTicketsGet = async ({ sb, profile }: ActionContext) => {
+  const { data, error } = await sb.from("muse_support_tickets")
+    .select("id, subject, body, status, priority, created_at, resolved_at")
+    .eq("user_id", profile.id).order("created_at", { ascending: false }).limit(50);
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ tickets: data || [] });
+};
