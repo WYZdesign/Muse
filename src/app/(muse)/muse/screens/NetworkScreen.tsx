@@ -176,19 +176,26 @@ export const NetworkScreen = memo(function NetworkScreen({
     } catch { /* lists are optional */ }
   }, [demo, apiFetch, currentUser?.tier]);
   useEffect(() => { refreshTalentLists(); }, [refreshTalentLists]);
+  // create/add-to-list are writes, which the demo backend 409s on (see
+  // DEMO_READ_ACTIONS in api/muse/route.ts) — every other write path in
+  // this app (CollabScreen's apply/save/respond, etc.) short-circuits in
+  // demo mode with a friendly preview toast instead of letting that 409
+  // surface as a bare "Couldn't create/save..." error; these two didn't.
   const createTalentList = useCallback(async (name: string) => {
+    if (demo) { showToast("Demo preview — no list was created."); return false; }
     const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "talent-list-create", name }) });
     const d = await r.json().catch(() => ({} as { error?: string }));
     if (!r.ok) { showToast(d.error || "Couldn't create that list"); return false; }
     await refreshTalentLists();
     return true;
-  }, [apiFetch, refreshTalentLists, showToast]);
-  const addToTalentList = useCallback(async (listId: string, profileId: string) => {
-    const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "talent-list-items", listId, profileId }) });
-    if (!r.ok) { showToast("Couldn't save to that list"); return; }
-    showToast("Saved to list");
+  }, [demo, apiFetch, refreshTalentLists, showToast]);
+  const addToTalentList = useCallback(async (listId: string, profileId: string, remove = false) => {
+    if (demo) { showToast(remove ? "Demo preview — nothing was removed." : "Demo preview — nothing was saved."); return; }
+    const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "talent-list-items", listId, profileId, remove }) });
+    if (!r.ok) { showToast(remove ? "Couldn't remove from that list" : "Couldn't save to that list"); return; }
+    showToast(remove ? "Removed from list" : "Saved to list");
     await refreshTalentLists();
-  }, [apiFetch, refreshTalentLists, showToast]);
+  }, [demo, apiFetch, refreshTalentLists, showToast]);
 
   const {
     proExp, setProExp, proSort, setProSort, proHiringOnly, setProHiringOnly,

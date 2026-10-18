@@ -49,7 +49,7 @@ export interface NetworkProDetailModalProps {
   newListName: string;
   setNewListName: (v: string) => void;
   onCreateTalentList: (name: string) => Promise<boolean>;
-  onAddToTalentList: (listId: string, profileId: string) => void | Promise<void>;
+  onAddToTalentList: (listId: string, profileId: string, remove?: boolean) => void | Promise<void>;
 }
 
 export function NetworkProDetailModal({
@@ -189,12 +189,28 @@ export function NetworkProDetailModal({
               </div>
               {talentLists.length > 0 && (
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
-                  {talentLists.map((l) => (
-                    <button key={l.id} type="button" onClick={() => onAddToTalentList(l.id, String(proDetail.profileId || proDetail.id))}
-                      style={{ padding: "8px 12px", fontSize: 12, fontWeight: 600, borderRadius: 99, border: "1px solid rgba(255,215,0,0.3)", background: "rgba(255,215,0,0.08)", color: "var(--gold)", cursor: "pointer" }}>
-                      {l.name}{l.profileIds.length ? ` (${l.profileIds.length})` : ""}
-                    </button>
-                  ))}
+                  {talentLists.map((l) => {
+                    // There was no way to tell a list this profile is
+                    // already saved to from one it isn't — every pill
+                    // looked identical — and clicking an "on" pill just
+                    // re-added (a harmless no-op), with no way to remove.
+                    // This checks membership so the pill can show its real
+                    // state and the click can toggle both directions.
+                    const pid = String(proDetail.profileId || proDetail.id);
+                    const onList = l.profileIds.includes(pid);
+                    return (
+                      <button key={l.id} type="button" aria-pressed={onList}
+                        onClick={() => onAddToTalentList(l.id, pid, onList)}
+                        style={{
+                          padding: "8px 12px", fontSize: 12, fontWeight: 600, borderRadius: 99, cursor: "pointer",
+                          border: onList ? "1px solid var(--gold)" : "1px solid rgba(255,215,0,0.3)",
+                          background: onList ? "var(--gold)" : "rgba(255,215,0,0.08)",
+                          color: onList ? "#0a0612" : "var(--gold)",
+                        }}>
+                        {onList ? "✓ " : ""}{l.name}{l.profileIds.length ? ` (${l.profileIds.length})` : ""}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
               <div style={{ display: "flex", gap: 6 }}>
