@@ -23,7 +23,7 @@ import { matchCreate, matchDelete, profileViewTrack } from "@/lib/muse-actions/m
 import { messageSend, messageRequestAccept, messageRequestDecline, messageRequestBlock, messageRequestsGet, blockUser, unblockUser, blockedUsers, messagesMarkRead } from "@/lib/muse-actions/messaging";
 import { feedPost, feedPostLike, feedCommentAdd, momentCreate, momentLike, briefCreate, briefApply, briefViewTrack } from "@/lib/muse-actions/feed";
 import { forumDispatch, reportCreate, userBlock, userUnblock, blocksGet, forumPostPin, forumPostLock } from "@/lib/muse-actions/forum";
-import { preferencesSave, promoApply, notificationsMarkRead, clientSync, paymentsGet, searchAll, boostActivate, boostAnalytics, boostStatus, saveBoostPurchase, savedSearchSave, savedSearchList, savedSearchDelete, savedSearchAlerts, togglePhotoLike } from "@/lib/muse-actions/misc";
+import { preferencesSave, promoApply, notificationsMarkRead, clientSync, paymentsGet, searchAll, boostActivate, boostAnalytics, boostStatus, saveBoostPurchase, savedSearchSave, savedSearchList, savedSearchDelete, savedSearchAlerts, togglePhotoLike, talentListsGet, talentListCreate, talentListDelete, talentListItemSet } from "@/lib/muse-actions/misc";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -41,7 +41,7 @@ const DEMO_READ_ACTIONS = new Set([
   "get-disclosures", "get-strikes", "get-checkins", "get-safety-profile",
   "get-prompts", "get-prompt-responses", "booking-reminders",
   "host-availability", "get-payments", "get-quests", "search",
-  "saved-search-list", "boost-status", "get-notifications",
+  "saved-search-list", "boost-status", "get-notifications", "talent-lists-get",
 ]);
 
 // ═══ PROFILE ═══
@@ -81,6 +81,12 @@ ACTIONS["like-moment"] = momentLike;
 ACTIONS["brief"] = briefCreate;
 ACTIONS["brief-apply"] = briefApply;
 ACTIONS["brief-view"] = briefViewTrack;
+
+// === SAVED-TALENT LISTS ===
+ACTIONS["talent-lists-get"] = talentListsGet;
+ACTIONS["talent-list-create"] = talentListCreate;
+ACTIONS["talent-list-delete"] = talentListDelete;
+ACTIONS["talent-list-items"] = talentListItemSet;
 
 // ═══ FORUM, REPORTS & BLOCKS ═══
 // Handlers extracted to lib/muse-actions/forum.ts (monolith split, interleaved-domain pass).

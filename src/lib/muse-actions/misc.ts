@@ -565,3 +565,82 @@ export async function togglePhotoLike({ sb, profile, rest }: ActionContext) {
   const { count } = await sb.from("muse_photo_likes").select("*", { count: "exact", head: true }).eq("photo_url", photoUrl);
   return _NR.json({ success: true, liked, count: count || 0 });
 };
+
+// ═══ SAVED-TALENT LISTS ═══
+// "Unlimited saved-talent lists" is a Musa Studio benefit, so every other
+// tier gets a small cap and Studio is uncapped. Every query below is scoped
+// to the caller's own lists, so one account can never read or edit another's.
+export const TALENT_LIST_CAP = 3;
+
+const isStudioTier = (tier: unknown) => String(tier ?? "") === "muse_studio";
+
+/** Owns this list? Returns the row, or null when it is not the caller's. */
+async function ownTalentList(sb: ActionContext["sb"], listId: string, ownerId: string) {
+  const { data } = await sb.from("muse_talent_lists").select("id, name").eq("id", listId).eq("owner_id", ownerId).maybeSingle();
+  return data || null;
+}
+
+export const talentListsGet = async ({ sb, profile }: ActionContext) => {
+  const { data: lists, error } = await sb.from("muse_talent_lists")
+    .select("id, name, created_at").eq("owner_id", profile.id).order("created_at", { ascending: true });
+  if (error) return safeServerError(error, "db op");
+  const rows = (lists || []) as { id: string; name: string; created_at?: string }[];
+  const ids = rows.map((l) => l.id);
+  let items: { list_id: string; profile_id: string }[] = [];
+  if (ids.length) {
+    const { data } = await sb.from("muse_talent_list_items").select("list_id, profile_id").in("list_id", ids);
+    items = (data || []) as { list_id: string; profile_id: string }[];
+  }
+  return NextResponse.json({
+    lists: rows.map((l) => ({ ...l, profileIds: items.filter((i) => String(i.list_id) === String(l.id)).map((i) => i.profile_id) })),
+    cap: isStudioTier(profile.tier) ? null : TALENT_LIST_CAP,
+  });
+};
+
+export const talentListCreate = async ({ sb, profile, rest }: ActionContext) => {
+  const name = String(rest.name || "").trim().slice(0, 60);
+  if (!name) return NextResponse.json({ error: "name required" }, { status: 400 });
+  if (!isStudioTier(profile.tier)) {
+    const { count } = await sb.from("muse_talent_lists")
+      .select("id", { count: "exact", head: true }).eq("owner_id", profile.id);
+    if ((count ?? 0) >= TALENT_LIST_CAP) {
+      return NextResponse.json({
+        error: `You can keep ${TALENT_LIST_CAP} lists on your plan. Musa Studio removes the limit.`,
+        code: "TALENT_LIST_LIMIT", limit: TALENT_LIST_CAP, used: count ?? 0,
+      }, { status: 429 });
+    }
+  }
+  const { data, error } = await sb.from("muse_talent_lists")
+    .insert({ owner_id: profile.id, name }).select("id, name, created_at").maybeSingle();
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ success: true, list: data });
+};
+
+export const talentListDelete = async ({ sb, profile, rest }: ActionContext) => {
+  const listId = String(rest.listId || rest.list_id || "");
+  if (!UUID_RE.test(listId)) return NextResponse.json({ error: "Valid listId required" }, { status: 400 });
+  const owned = await ownTalentList(sb, listId, profile.id);
+  if (!owned) return NextResponse.json({ error: "List not found" }, { status: 404 });
+  const { error } = await sb.from("muse_talent_lists").delete().eq("id", listId).eq("owner_id", profile.id);
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ success: true });
+};
+
+export const talentListItemSet = async ({ sb, profile, rest }: ActionContext) => {
+  const listId = String(rest.listId || rest.list_id || "");
+  const profileId = String(rest.profileId || rest.profile_id || "");
+  if (!UUID_RE.test(listId) || !UUID_RE.test(profileId)) {
+    return NextResponse.json({ error: "Valid listId and profileId required" }, { status: 400 });
+  }
+  const owned = await ownTalentList(sb, listId, profile.id);
+  if (!owned) return NextResponse.json({ error: "List not found" }, { status: 404 });
+  if (rest.remove === true || rest.remove === "true") {
+    const { error } = await sb.from("muse_talent_list_items").delete().eq("list_id", listId).eq("profile_id", profileId);
+    if (error) return safeServerError(error, "db op");
+    return NextResponse.json({ success: true, removed: true });
+  }
+  const { error } = await sb.from("muse_talent_list_items")
+    .upsert({ list_id: listId, profile_id: profileId }, { onConflict: "list_id,profile_id", ignoreDuplicates: true });
+  if (error) return safeServerError(error, "db op");
+  return NextResponse.json({ success: true, removed: false });
+};

@@ -44,6 +44,12 @@ export interface NetworkProDetailModalProps {
   onOpenChat: (m: ChatLaunchTarget) => void;
   iAmIndustry: boolean;
   onBadgeInfo: (info: BadgeInfo | null) => void;
+  talentLists: { id: string; name: string; profileIds: string[] }[];
+  listCap: number | null;
+  newListName: string;
+  setNewListName: (v: string) => void;
+  onCreateTalentList: (name: string) => Promise<boolean>;
+  onAddToTalentList: (listId: string, profileId: string) => void | Promise<void>;
 }
 
 export function NetworkProDetailModal({
@@ -57,6 +63,7 @@ export function NetworkProDetailModal({
   onOpenChat,
   iAmIndustry,
   onBadgeInfo,
+  talentLists, listCap, newListName, setNewListName, onCreateTalentList, onAddToTalentList,
 }: NetworkProDetailModalProps) {
   return (
     <div
@@ -175,6 +182,31 @@ export function NetworkProDetailModal({
             >
               <FiShare2 size={14} /> Share Profile
             </button>
+            <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text2)", marginBottom: 8 }}>
+                Save to a talent list
+                {listCap !== null ? <span style={{ marginLeft: 6, fontWeight: 500, color: "var(--muted)" }}>({talentLists.length}/{listCap})</span> : <span style={{ marginLeft: 6, fontWeight: 500, color: "var(--gold)" }}>Studio: unlimited</span>}
+              </div>
+              {talentLists.length > 0 && (
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+                  {talentLists.map((l) => (
+                    <button key={l.id} type="button" onClick={() => onAddToTalentList(l.id, String(proDetail.profileId || proDetail.id))}
+                      style={{ padding: "8px 12px", fontSize: 12, fontWeight: 600, borderRadius: 99, border: "1px solid rgba(255,215,0,0.3)", background: "rgba(255,215,0,0.08)", color: "var(--gold)", cursor: "pointer" }}>
+                      {l.name}{l.profileIds.length ? ` (${l.profileIds.length})` : ""}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div style={{ display: "flex", gap: 6 }}>
+                <input value={newListName} onChange={(e) => setNewListName(e.target.value)} placeholder="New list name" aria-label="New talent list name"
+                  style={{ flex: 1, minWidth: 0, padding: "10px 12px", fontSize: 12, borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "var(--text)" }} />
+                <button type="button" disabled={!newListName.trim()}
+                  onClick={async () => { const ok = await onCreateTalentList(newListName.trim()); if (ok) setNewListName(""); }}
+                  style={{ padding: "10px 14px", fontSize: 12, fontWeight: 700, borderRadius: 10, border: "none", background: newListName.trim() ? "linear-gradient(135deg,var(--gold),var(--amber))" : "rgba(255,255,255,0.08)", color: newListName.trim() ? "#0a0612" : "var(--muted)", cursor: newListName.trim() ? "pointer" : "default" }}>
+                  Create
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

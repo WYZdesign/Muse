@@ -1,7 +1,7 @@
 /** Network screen: industry professionals directory and forum tabs with thread and pro detail modals. */
 "use client";
 
-import React, { useState, useMemo, useEffect, memo } from "react";
+import React, { useState, useMemo, useEffect, useCallback, memo } from "react";
 import { createPortal } from "react-dom";
 import { createSpatialScene } from "../hooks/useDeviceTilt";
 import { useFocusTrap } from "../hooks/useFocusTrap";
@@ -18,6 +18,8 @@ import { NetworkForumTab } from "../components/NetworkForumTab";
 import { NetworkThreadModal } from "../components/NetworkThreadModal";
 import { NetworkProDetailModal } from "../components/NetworkProDetailModal";
 import { isPaidTier } from "../components/subscriptionTiers";
+
+import { useProFilters } from "../hooks/useProFilters";
 
 export interface NetworkScreenProps {
   screen: Screen;
@@ -138,18 +140,9 @@ export const NetworkScreen = memo(function NetworkScreen({
   const [expandedPostId, setExpandedPostId] = useState<number | null>(null);
   const [commentTexts, setCommentTexts] = useState<Record<number, string>>({});
   const [votedPosts, setVotedPosts] = useState<Record<number, "up" | "down" | null>>({});
-  const [proExp, setProExp] = useState<ProExp>("all");
-  const [proSort, setProSort] = useState<ProSort>("match");
-  const [proHiringOnly, setProHiringOnly] = useState(false);
-  const [proSearch, setProSearch] = useState("");
   const [forumSearch, setForumSearch] = useState("");
   const [forumSearchOpen, setForumSearchOpen] = useState(false);
 
-  const [proSkill, setProSkill] = useState<string[]>([]);
-  const [proRateBand, setProRateBand] = useState<ProRateBand>("all");
-  const [proLooking, setProLooking] = useState<string>("all");
-  const [proSearchServer, setProSearchServer] = useState("");
-  const [proServerResults, setProServerResults] = useState<Professional[]>([]);
   const [threadId, setThreadId] = useState<number | null>(null);
   const [threadSort, setThreadSort] = useState<"best" | "new">("best");
   const [replyTo, setReplyTo] = useState<string | null>(null);
@@ -162,58 +155,42 @@ export const NetworkScreen = memo(function NetworkScreen({
   const iAmIndustry = viewerSide(currentUser?.type) === "industry";
   const proFiltersLocked = !isPaidTier(currentUser?.tier); // advanced talent filters are Musa Pro
 
-  const parseYrs = (e: string) => parseInt(e, 10) || 0;
-  const parseRate = (r?: string) => parseInt(String(r || "").replace(/[^0-9]/g, ""), 10) || 0;
-  const expBand = (e: string): "rising" | "established" | "veteran" => {
-    const y = parseYrs(e);
-    return y >= 12 ? "veteran" : y >= 8 ? "established" : "rising";
-  };
+  // Saved-talent lists ("Unlimited saved-talent lists" is Musa Studio). The
+  // server owns the cap; listCap is null for Studio and 3 otherwise.
+  const [talentLists, setTalentLists] = useState<{ id: string; name: string; profileIds: string[] }[]>([]);
+  const [listCap, setListCap] = useState<number | null>(null);
+  const [newListName, setNewListName] = useState("");
+  const refreshTalentLists = useCallback(async () => {
+    if (demo) return;
+    try {
+      const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "talent-lists-get" }) });
+      if (!r.ok) return;
+      const d = await r.json();
+      setTalentLists(Array.isArray(d.lists) ? d.lists : []);
+      setListCap(typeof d.cap === "number" ? d.cap : null);
+    } catch { /* lists are optional */ }
+  }, [demo, apiFetch]);
+  useEffect(() => { refreshTalentLists(); }, [refreshTalentLists]);
+  const createTalentList = useCallback(async (name: string) => {
+    const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "talent-list-create", name }) });
+    const d = await r.json().catch(() => ({} as { error?: string }));
+    if (!r.ok) { showToast(d.error || "Couldn't create that list"); return false; }
+    await refreshTalentLists();
+    return true;
+  }, [apiFetch, refreshTalentLists, showToast]);
+  const addToTalentList = useCallback(async (listId: string, profileId: string) => {
+    const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "talent-list-items", listId, profileId }) });
+    if (!r.ok) { showToast("Couldn't save to that list"); return; }
+    showToast("Saved to list");
+    await refreshTalentLists();
+  }, [apiFetch, refreshTalentLists, showToast]);
 
-  const proList = (() => {
-    // If server search has results, use those
-    if (proSearchServer.trim().length >= 2 && proServerResults.length > 0) {
-      return proServerResults.filter((p) => showNsfw || !p.nsfw);
-    }
-    let list: Professional[] = (liveProfessionals?.length ? liveProfessionals : (demo ? PROFESSIONALS : [])).filter((p) => showNsfw || !p.nsfw);
-    if (!proFiltersLocked && proExp !== "all") list = list.filter((p) => expBand(p.exp) === proExp);
-    if (proHiringOnly) list = list.filter((p) => p.openings > 0);
-    const q = proSearch.trim().toLowerCase();
-    if (q) {
-      list = list.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.type.toLowerCase().includes(q) ||
-          p.skills.some((s: string) => s.toLowerCase().includes(q)) ||
-          (p.looking || []).some((l: string) => l.toLowerCase().includes(q))
-      );
-    }
-    if (!proFiltersLocked && proSkill.length) list = list.filter((p) => proSkill.every((s) => p.skills.includes(s)));
-    if (!proFiltersLocked && proRateBand !== "all") {
-      list = list.filter((p) => {
-        const r = parseRate(p.rate);
-        if (proRateBand === "tfp") return /tfp/i.test(String(p.rate || ""));
-        if (proRateBand === "50to100") return r >= 50 && r < 100;
-        if (proRateBand === "100to150") return r >= 100 && r <= 150;
-        return r > 150;
-      });
-    }
-    if (!proFiltersLocked && proLooking !== "all") list = list.filter((p) => (p.looking || []).some((l: string) => l === proLooking));
-    const arr = [...list]; if (proFiltersLocked) return arr;
-    if (proSort === "expDesc") arr.sort((a, b) => parseYrs(b.exp) - parseYrs(a.exp));
-    else if (proSort === "expAsc") arr.sort((a, b) => parseYrs(a.exp) - parseYrs(b.exp));
-    else if (proSort === "rateDesc") arr.sort((a, b) => parseRate(b.rate) - parseRate(a.rate));
-    else if (proSort === "rateAsc") arr.sort((a, b) => parseRate(a.rate) - parseRate(b.rate));
-    else if (proSort === "openings") arr.sort((a, b) => b.openings - a.openings);
-    return arr;
-  })();
-
-  const { allSkills, allLooking } = useMemo(() => {
-    const proSource = liveProfessionals?.length ? liveProfessionals : PROFESSIONALS;
-    return {
-      allSkills: [...new Set(proSource.flatMap((p) => p.skills))],
-      allLooking: [...new Set(proSource.flatMap((p) => p.looking || []))],
-    };
-  }, [liveProfessionals]);
+  const {
+    proExp, setProExp, proSort, setProSort, proHiringOnly, setProHiringOnly,
+    proSearch, setProSearch, proSkill, setProSkill, proRateBand, setProRateBand,
+    proLooking, setProLooking, proSearchServer, setProSearchServer,
+    proServerResults, setProServerResults, proList, allSkills, allLooking,
+  } = useProFilters({ liveProfessionals, showNsfw, demo, proFiltersLocked });
 
   const filteredForum = useMemo(() => {
     return [...(liveForum?.length ? liveForum : (demo ? FORUM_POSTS : []))]
@@ -664,6 +641,12 @@ export const NetworkScreen = memo(function NetworkScreen({
           onOpenChat={openChat}
           iAmIndustry={iAmIndustry}
           onBadgeInfo={setBadgeInfo}
+          talentLists={talentLists}
+          listCap={listCap}
+          onCreateTalentList={createTalentList}
+          onAddToTalentList={addToTalentList}
+          newListName={newListName}
+          setNewListName={setNewListName}
         />
       )}
 
