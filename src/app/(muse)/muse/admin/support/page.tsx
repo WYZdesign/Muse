@@ -6,7 +6,7 @@ import { authFetch } from "@/app/(muse)/muse/lib/api";
 
 type Ticket = {
   id: string;
-  user_id?: string;
+  user_id?: { id?: string; name?: string; email?: string } | string;
   subject: string;
   body: string;
   status?: string;
@@ -76,6 +76,7 @@ export default function AdminSupportPage() {
       {state === "ready" && tickets.map((t) => {
         const resolved = t.status !== "open";
         const high = t.priority === "high";
+        const submitter = typeof t.user_id === "object" && t.user_id ? t.user_id : null;
         return (
           <div key={t.id} style={{ border: "1px solid " + (high && !resolved ? "rgba(255,215,0,0.35)" : "rgba(255,255,255,0.08)"), background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: 16, marginBottom: 12, opacity: resolved ? 0.6 : 1 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 6 }}>
@@ -84,6 +85,11 @@ export default function AdminSupportPage() {
                 {resolved ? "Resolved" : high ? "Priority" : "Open"}
               </span>
             </div>
+            {submitter && (
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 8 }}>
+                {submitter.name || "Unknown member"}{submitter.email ? <> &middot; <a href={`mailto:${submitter.email}`} style={{ color: "#ffd700", textDecoration: "none" }}>{submitter.email}</a></> : null}
+              </div>
+            )}
             <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", whiteSpace: "pre-wrap", marginBottom: 10 }}>{t.body}</div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
               <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>

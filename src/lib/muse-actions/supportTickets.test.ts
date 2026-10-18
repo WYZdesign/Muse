@@ -100,6 +100,17 @@ describe("admin support-ticket actions (isAdminEmail gate)", () => {
     expect((r as Response).status).toBe(403);
   });
 
+  it("adminSupportTickets joins the submitter's name/email, so the admin can actually reply", async () => {
+    // "We reply by email" (SupportModal.tsx's copy) needs the queue to
+    // surface something to reply to — a bare user_id isn't it.
+    const sb = install({
+      muse_support_tickets: () => ({ data: [{ id: UUID, status: "open", priority: "normal", created_at: "2026-10-18T00:00:00Z", user_id: { id: "me1", name: "Ada", email: "ada@example.com" } }] }),
+    });
+    await adminSupportTickets(admin({}));
+    const calls = tableCalls(sb.__log, "muse_support_tickets");
+    expect(calls.some((c) => c.method === "select" && String(c.args[0]).includes("user_id(id, name, email)"))).toBe(true);
+  });
+
   it("adminSupportTickets orders high-priority tickets first, oldest first within a band", async () => {
     // The real query orders by created_at ascending before this handler
     // re-sorts by priority, so the mock hands rows back already in that

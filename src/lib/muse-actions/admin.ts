@@ -377,8 +377,12 @@ export const adminResolveRefund = async ({ sb, profile, rest }: ActionContext) =
 // so the promise has a visible, ordered effect rather than just a label.
 export const adminSupportTickets = async ({ sb, profile }: ActionContext) => {
   if (!isAdminEmail(profile.email)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  // The member-facing copy promises "we reply by email" (SupportModal.tsx),
+  // but the queue used to hand back only a bare user_id — nothing an admin
+  // could actually reply to. Joins the submitter's name/email in, same
+  // pattern adminReports/adminStrikes already use for their own user_id.
   const { data, error } = await sb.from("muse_support_tickets")
-    .select("id, user_id, subject, body, status, priority, created_at, resolved_at")
+    .select("id, user_id(id, name, email), subject, body, status, priority, created_at, resolved_at")
     .order("created_at", { ascending: true }).limit(300);
   if (error) return safeServerError(error, "db op");
   type TicketRow = { status?: string | null; priority?: string | null };
