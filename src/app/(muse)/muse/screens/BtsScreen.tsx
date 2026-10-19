@@ -486,7 +486,7 @@ export const BtsScreen = memo(function BtsScreen({
                   title="Report"
                   className="bts-story-report-btn"
                   onClick={(e) => { e.stopPropagation(); reportStory(s); }}
-                  style={{ position: "absolute", top: 22, right: -2, zIndex: 2, width: 44, height: 44, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(10,6,18,0.85)", color: "var(--muted)", fontSize: 14, lineHeight: 1, cursor: "pointer", alignItems: "center", justifyContent: "center" }}>⋯</button>
+                  style={{ position: "absolute", top: 22, right: -2, zIndex: 2, width: 30, height: 30, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(10,6,18,0.85)", color: "var(--muted)", fontSize: 15, lineHeight: 1, cursor: "pointer", alignItems: "center", justifyContent: "center" }}>⋯</button>
               </div>
             ))}
           </div>
