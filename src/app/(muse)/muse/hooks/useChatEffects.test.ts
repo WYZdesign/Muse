@@ -41,6 +41,25 @@ describe("useChatEffects", () => {
     expect(result.current.realtimeStatus).toBe("connecting");
   });
 
+  // Read receipts: the receiver's mark-read action stamps read_at, and the
+  // channel now listens for that UPDATE so the sender's tick goes live instead
+  // of waiting for the thread to be reopened.
+  it("stamps my messages read when the other side reads the thread", () => {
+    let applied: { messages: { from: string; readAt?: string | null }[] } | null = null;
+    const setChatTarget = vi.fn((fn: (p: unknown) => unknown) => {
+      applied = fn({ id: 1, messages: [
+        { from: "me", text: "hi", time: "1:00" },
+        { from: "them", text: "yo", time: "1:01" },
+      ] }) as typeof applied;
+    });
+    renderHook(() => useChatEffects(args({ setChatTarget }) as never));
+    const onRead = vi.mocked(subscribeToConversation).mock.calls[0][0].onRead;
+    expect(typeof onRead).toBe("function");
+    onRead?.("2026-10-19T00:00:00.000Z");
+    expect(applied).not.toBeNull();
+    expect(applied!.messages[0].readAt).toBe("2026-10-19T00:00:00.000Z");
+    expect(applied!.messages[1].readAt).toBeUndefined();
+  });
   it("subscribes to the conversation and hydrates history when a chat is open", () => {
     renderHook(() => useChatEffects(args() as never));
     expect(subscribeToConversation).toHaveBeenCalledTimes(1);

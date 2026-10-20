@@ -55,6 +55,15 @@ export function useChatEffects({
         setTimeout(() => messagesEndRef.current?.scrollIntoView({behavior:"smooth"}), 50);
       },
       onStatus: (status) => setRealtimeStatus(status),
+      // The receiver read the thread: stamp every message I sent that has
+      // no receipt yet, which is what the server just did on their side.
+      onRead: (readAt) => {
+        const stamp = <T,>(list: T[]): T[] =>
+          (list as unknown as { from?: string; readAt?: string | null }[]).map((m) =>
+            (m.from === "me" && !m.readAt ? { ...m, readAt } : m) as unknown as T);
+        setChatTarget(prev => prev ? { ...prev, messages: stamp(prev.messages) } : prev);
+        setMatches(prev => prev.map(m => String(m.id) === theirId ? { ...m, messages: stamp(m.messages) } : m));
+      },
       onTyping: () => {
         setThemTyping(true);
         if (typingTimerRef.current) clearTimeout(typingTimerRef.current);

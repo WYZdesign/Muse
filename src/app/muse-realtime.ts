@@ -197,6 +197,9 @@ export function subscribeToConversation(opts: {
   // only looked right after a reload re-ran the history fetch.
   onMessage: (senderId: string, text: string, img?: string, extras?: RealtimeMessageExtras) => void;
   onStatus?: (status: RealtimeStatus) => void;
+  /** Fires when the other side marks the thread read, so the sender's
+   *  receipt can update live instead of only after reopening the chat. */
+  onRead?: (readAt: string) => void;
   onTyping?: () => void;
 }): { unsubscribe: () => void; sendTyping: () => void } {
   if (!opts.myId || opts.myId === "local") return { unsubscribe: () => {}, sendTyping: () => {} };
@@ -254,6 +257,22 @@ export function subscribeToConversation(opts: {
             durationMs: typeof row.duration_ms === "number" ? row.duration_ms : undefined,
             transcript: row.transcript || undefined,
           });
+        }
+      )
+      // Read receipts. messagesMarkRead stamps every unread row in the
+      // thread with one timestamp, so a single UPDATE event covers the
+      // whole batch; the sender only needs to know that it happened.
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "muse_messages",
+          filter: `match_id=eq.${convo}`,
+        },
+        (payload: unknown) => {
+          const row = (payload as { new?: { read_at?: string | null } | null }).new;
+          if (row?.read_at) opts.onRead?.(row.read_at);
         }
       )
       .on("broadcast", { event: "typing" }, () => {

@@ -3,18 +3,29 @@ import { describe, it, expect, vi } from "vitest";
 // Capture the postgres_changes INSERT handler each test registers, so a test
 // can simulate a live row arriving without a real Supabase connection.
 let capturedInsertHandler: ((payload: unknown) => void) | null = null;
+let capturedUpdateHandler: ((payload: unknown) => void) | null = null;
 
 // muse-realtime.ts builds/imports the supabase client at module load; stub the
 // heavy modules so the pure distance helper can be tested in isolation.
 vi.mock("@/lib/supabase", () => ({
   supabase: {
     auth: {},
-    channel: () => ({
-      on: (event: string, config: unknown, handler?: (payload: unknown) => void) => {
-        if (event === "postgres_changes" && handler) capturedInsertHandler = handler;
-        return { on: () => ({ subscribe: () => ({}) }), subscribe: () => ({}) };
-      },
-    }),
+    channel: () => {
+      // Chainable so any number of .on() registrations work; captures the
+      // INSERT (new message) and UPDATE (read receipt) handlers separately.
+      const chain = {
+        on: (event: string, config: unknown, handler?: (payload: unknown) => void) => {
+          if (event === "postgres_changes" && handler) {
+            const ev = (config as { event?: string } | null)?.event;
+            if (ev === "UPDATE") capturedUpdateHandler = handler;
+            else capturedInsertHandler = handler;
+          }
+          return chain;
+        },
+        subscribe: () => ({}),
+      };
+      return chain;
+    },
     removeChannel: () => {},
   },
 }));
@@ -81,6 +92,15 @@ describe("subscribeToConversation — live INSERT row mapping", () => {
     });
   });
 
+  // Read receipts: the receiver's mark-read UPDATE must reach onRead so the
+  // sender's tick can go live without reopening the thread.
+  it("forwards a read_at UPDATE to onRead", () => {
+    const onRead = vi.fn();
+    subscribeToConversation({ myId: "me", theirId: "them", onMessage: () => {}, onRead });
+    expect(capturedUpdateHandler).not.toBeNull();
+    capturedUpdateHandler?.({ new: { read_at: "2026-10-19T00:00:00.000Z" } });
+    expect(onRead).toHaveBeenCalledWith("2026-10-19T00:00:00.000Z");
+  });
   it("ignores the sender's own echo", () => {
     capturedInsertHandler = null;
     const onMessage = vi.fn();
