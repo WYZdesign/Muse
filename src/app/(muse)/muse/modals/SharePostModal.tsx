@@ -43,7 +43,7 @@ export function SharePostModal({ shareTarget, setShareTarget, shareTargetTrap, s
                 else if (s.name === "More") { if (navigator.share) { navigator.share({ title: "Musa by WYZ", text: shareTarget.text || "Check this out on Musa by WYZ!", url }).catch(() => {}); } else { navigator.clipboard?.writeText(url); showToast("Link copied!"); } setShareTarget(null); }
                 else if (href) { window.open(href, "_blank", "noopener"); setShareTarget(null); }
               }} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "14px 6px", cursor: "pointer", transition: "all .2s" }}>
-                <div style={{ width: 44, height: 44, borderRadius: "50%", background: s.bg, color: s.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 800 }}>{s.icon}</div>
+                <div style={{ width: 44, height: 44, borderRadius: "50%", background: s.bg, color: s.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: s.name === "More" ? 14 : 20, letterSpacing: s.name === "More" ? -1 : undefined, fontWeight: 800 }}>{s.icon}</div>
                 <div style={{ fontSize: 11, color: "var(--text2)", fontWeight: 600 }}>{s.name}</div>
               </button>
             );

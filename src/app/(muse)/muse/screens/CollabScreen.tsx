@@ -350,18 +350,18 @@ export const CollabScreen = memo(function CollabScreen({
                   aria-label="Not interested"
                   title="Not interested"
                   onClick={() => hideBrief(brief.id)}
-                  style={{ position: "absolute", top: 8, left: 8, zIndex: 2, width: 44, height: 44, borderRadius: "50%", border: "none", background: "transparent", color: "var(--text)", fontSize: 14, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                  style={{ position: "absolute", top: 8, left: 8, zIndex: 2, width: 28, height: 28, borderRadius: "50%", border: "none", background: "transparent", color: "var(--text)", fontSize: 13, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                 >✕</button>
               )}
               {/* Report flag + safety info (top-right cluster) */}
               <div style={{ position: "absolute", top: 14, right: 14, zIndex: 3, display: "flex", gap: 4, alignItems: "center" }}>
-                {!isOwnBrief(brief) && (<button aria-label="Report brief" title="Report" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowReport(true); setReportTarget({ id: brief.id, type: "brief", name: brief.author }); }} style={{ width: 44, height: 44, color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><FiFlag size={14} /></button>)}
+                {!isOwnBrief(brief) && (<button aria-label="Report brief" title="Report" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowReport(true); setReportTarget({ id: brief.id, type: "brief", name: brief.author }); }} style={{ width: 28, height: 28, color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><FiFlag size={14} /></button>)}
                 {brief.cat !== "concept" && (
                   <button
                     aria-label="Safety info"
                     title="Safety info"
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSafetyInfoBriefId(brief.id); }}
-                     style={{ width: 44, height: 44, borderRadius: 10, border: "none", background: "transparent", color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                     style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: "transparent", color: "var(--text2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                   ><FiInfo size={15} /></button>
                 )}
               </div>
