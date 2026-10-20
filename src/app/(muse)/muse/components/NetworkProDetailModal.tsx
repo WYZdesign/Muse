@@ -65,6 +65,13 @@ export function NetworkProDetailModal({
   onBadgeInfo,
   talentLists, listCap, newListName, setNewListName, onCreateTalentList, onAddToTalentList,
 }: NetworkProDetailModalProps) {
+  // Talent-list items are keyed by muse_profiles.id, so only a live member
+  // with a resolved profileId can be saved. Seed/demo professionals carry a
+  // numeric id, which the server correctly rejects as a non-UUID; without
+  // this guard the pill just failed silently.
+  const saveableId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(proDetail.profileId || ""))
+    ? String(proDetail.profileId)
+    : null;
   return (
     <div
       style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", alignItems: "flex-start", justifyContent: "center", overflowY: "auto" }}
@@ -187,6 +194,11 @@ export function NetworkProDetailModal({
                 Save to a talent list
                 {listCap !== null ? <span style={{ marginLeft: 6, fontWeight: 500, color: "var(--muted)" }}>({talentLists.length}/{listCap})</span> : <span style={{ marginLeft: 6, fontWeight: 500, color: "var(--gold)" }}>Studio: unlimited</span>}
               </div>
+              {!saveableId && (
+                <div style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.5 }}>
+                  Talent lists are available for members with a live profile. This one is a preview profile.
+                </div>
+              )}
               {talentLists.length > 0 && (
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
                   {talentLists.map((l) => {
@@ -196,11 +208,11 @@ export function NetworkProDetailModal({
                     // re-added (a harmless no-op), with no way to remove.
                     // This checks membership so the pill can show its real
                     // state and the click can toggle both directions.
-                    const pid = String(proDetail.profileId || proDetail.id);
+                    const pid = saveableId || "";
                     const onList = l.profileIds.includes(pid);
                     return (
                       <button key={l.id} type="button" aria-pressed={onList}
-                        onClick={() => onAddToTalentList(l.id, pid, onList)}
+                        onClick={() => { if (saveableId) onAddToTalentList(l.id, saveableId, onList); }}
                         style={{
                           padding: "8px 12px", fontSize: 12, fontWeight: 600, borderRadius: 99, cursor: "pointer",
                           border: onList ? "1px solid var(--gold)" : "1px solid rgba(255,215,0,0.3)",
@@ -216,7 +228,7 @@ export function NetworkProDetailModal({
               <div style={{ display: "flex", gap: 6 }}>
                 <input value={newListName} onChange={(e) => setNewListName(e.target.value)} placeholder="New list name" aria-label="New talent list name"
                   style={{ flex: 1, minWidth: 0, padding: "10px 12px", fontSize: 12, borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "var(--text)" }} />
-                <button type="button" disabled={!newListName.trim()}
+                <button type="button" disabled={!newListName.trim() || !saveableId}
                   onClick={async () => { const ok = await onCreateTalentList(newListName.trim()); if (ok) setNewListName(""); }}
                   style={{ padding: "10px 14px", fontSize: 12, fontWeight: 700, borderRadius: 10, border: "none", background: newListName.trim() ? "linear-gradient(135deg,var(--gold),var(--amber))" : "rgba(255,255,255,0.08)", color: newListName.trim() ? "#0a0612" : "var(--muted)", cursor: newListName.trim() ? "pointer" : "default" }}>
                   Create

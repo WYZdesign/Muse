@@ -192,7 +192,7 @@ export const NetworkScreen = memo(function NetworkScreen({
   const addToTalentList = useCallback(async (listId: string, profileId: string, remove = false) => {
     if (demo) { showToast(remove ? "Demo preview — nothing was removed." : "Demo preview — nothing was saved."); return; }
     const r = await apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "talent-list-items", listId, profileId, remove }) });
-    if (!r.ok) { showToast(remove ? "Couldn't remove from that list" : "Couldn't save to that list"); return; }
+    if (!r.ok) { const d = await r.json().catch(() => ({} as { error?: string })); showToast(d.error || (remove ? "Couldn't remove from that list" : "Couldn't save to that list")); return; }
     showToast(remove ? "Removed from list" : "Saved to list");
     await refreshTalentLists();
   }, [demo, apiFetch, refreshTalentLists, showToast]);
