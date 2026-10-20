@@ -57,3 +57,24 @@ re-applies a recorded file.
 > Prefer the **Supabase CLI** (`supabase migration new` / `supabase db push`) if you
 > want migrations run from the CLI against the linked project; this runner exists
 > as a zero-dependency alternative for scripted/CI application.
+
+## Every new table must GRANT explicitly (Supabase, 2026-10-30)
+
+Supabase stops auto-granting Data API access to tables created in `public`
+on 2026-10-30. A new table without a GRANT returns `permission denied` to
+PostgREST / supabase-js / GraphQL, including on preview branches and after
+`supabase db reset`.
+
+Add the grant in the SAME migration that creates the table:
+
+```sql
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.<table> TO service_role;
+```
+
+Only grant `anon` / `authenticated` when the browser is meant to read the
+table directly (for example a realtime-subscribed table). This app's action
+layer uses the service role, and the newer privacy tables run RLS with no
+policies on purpose, so granting the client roles would make them fail open.
+
+`0044_explicit_data_api_grants.sql` covers every table that exists today and
+is the reference for the pattern.
