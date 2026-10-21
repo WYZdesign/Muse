@@ -510,6 +510,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                               // browser re-fetched a ~120KB JPEG on every arrow tap.
                               // Letting next/image proxy it means Vercel re-encodes to a
                               // small WebP and serves it with long-lived caching.
+                              unoptimized
                               loading={isTop ? "eager" : "lazy"}
                               style={{ objectFit: "cover", objectPosition: heroPortrait ? "center top" : "center", background: "linear-gradient(160deg,#1a0a2e,#0a0612)", transition: "transform 0.15s ease-out, filter 0.3s ease", transformStyle: "preserve-3d", filter: profile.nsfw && !revealedNsfw.has(String(profile.id)) ? "blur(26px) brightness(0.7)" : "none" }}
                             />
