@@ -266,6 +266,21 @@ export const DiscoverScreen = memo(function DiscoverScreen({
     return (base[currentPhotoIdx ?? 0]) || topCard?.img || "";
   })();
 
+  // Warm the remaining photos for the top card so the first arrow tap does
+  // not wait on a cold network fetch (the bucket sets no-cache).
+  useEffect(() => {
+    if (!topCard) return;
+    const list = topCard.photos?.length ? topCard.photos : [topCard.img];
+    const warmed: HTMLImageElement[] = [];
+    for (const src of list.slice(0, 4)) {
+      if (!src) continue;
+      const im = document.createElement("img");
+      im.src = src;
+      warmed.push(im);
+    }
+    return () => { for (const im of warmed) im.src = ""; };
+  }, [topCard]);
+
   const hdrRef = useRef<HTMLDivElement | null>(null);
   // Tap-outside-to-close for the expanded search bar (M9): the header
   // content fading back in is handled purely by CSS (.discover-hdr-title's
@@ -491,7 +506,11 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                               sizes="(max-width: 600px) 100vw, 400px"
                               draggable={false}
                               onError={handleImgError}
-                              unoptimized
+                              // The catalog bucket sends "private, no-cache", so the
+                              // browser re-fetched a ~120KB JPEG on every arrow tap.
+                              // Letting next/image proxy it means Vercel re-encodes to a
+                              // small WebP and serves it with long-lived caching.
+                              loading={isTop ? "eager" : "lazy"}
                               style={{ objectFit: "cover", objectPosition: heroPortrait ? "center top" : "center", background: "linear-gradient(160deg,#1a0a2e,#0a0612)", transition: "transform 0.15s ease-out, filter 0.3s ease", transformStyle: "preserve-3d", filter: profile.nsfw && !revealedNsfw.has(String(profile.id)) ? "blur(26px) brightness(0.7)" : "none" }}
                             />
                                         {profile.nsfw && !revealedNsfw.has(String(profile.id)) && (
