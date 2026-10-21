@@ -483,6 +483,19 @@ textarea.inp{resize:none}
    nav's top edge on show and back down behind it on dismiss via
    transform, so no other screen content ever shifts. */
 .verify-banner{position:absolute;animation:verifyBannerIn .32s cubic-bezier(.22,1,.36,1) forwards;transition:transform .32s cubic-bezier(.22,1,.36,1)}
+
+/* Round 5 audit: the verification banner is an absolute overlay pinned just
+   above the bottom nav, so for any unverified account (the default state) it
+   covered the last strip of every scrolling screen AND swallowed taps meant
+   for the content beneath it - Apply/Book/Join buttons under it were not just
+   hidden, they were untappable. Two fixes: the bar no longer captures pointer
+   events outside its own buttons, and the scroll containers reserve its height
+   while it is present so the last row clears it. */
+.verify-banner{pointer-events:none}
+.verify-banner button{pointer-events:auto}
+.phone:has(.verify-banner) :is(.match-list,.briefs-scroll,.conn-scroll,.profile-scroll,.portfolio-scroll,.settings-scroll,.messages,.card-info-scroll){
+  padding-bottom: calc(env(safe-area-inset-bottom,0px) + 168px);
+}
 .verify-banner-closing{animation:verifyBannerOut .32s cubic-bezier(.4,0,1,1) forwards}
 @keyframes verifyBannerIn{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:0.85}}
 @keyframes verifyBannerOut{from{transform:translateY(0);opacity:0.85}to{transform:translateY(100%);opacity:0}}
