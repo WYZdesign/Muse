@@ -5,6 +5,7 @@ import { viewerSide } from "@/lib/role";
 import type { ViewerSide } from "@/lib/role";
 import type { CommunityRule } from "../components/types";
 import type { DiscoveryProfile } from "../lib/discover-deck";
+import { MODEL_GALLERY } from "../components/modelGallery";
 
 // Raw API row shapes: the opaque JSON each endpoint returns (PostgREST rows,
 // joined authors, embedded counts). Every normalizer reads its input
@@ -173,6 +174,20 @@ type RawFeedPostInput = {
  * zodiac/mbti/life-path badges on every Discover card. Idempotent like the
  * other normalizers here so it's safe to call from both fetch sites.
  */
+/**
+ * Curated discovery photos for a model, keyed by its /models/<DIR>/ avatar
+ * path. The catalog comes from wyzdesign's culled Lightroom albums (max 4
+ * per model). Used as a fallback so LIVE profiles get the same curated
+ * frames as the seed deck; profiles whose folder has no album keep their
+ * single avatar.
+ */
+function curatedPhotosFor(img: string): string[] {
+  const m = /\/models\/([^/]+)\//.exec(img || "");
+  if (!m) return [];
+  const gallery = MODEL_GALLERY[m[1]];
+  return gallery ? gallery.slice(0, 4) : [];
+}
+
 export function normalizeProfile(p: RawProfileInput) {
   return {
     ...p,
@@ -190,7 +205,9 @@ export function normalizeProfile(p: RawProfileInput) {
     chinese: p.chinese || "",
     mbti: p.mbti || "",
     lifePath: p.lifePath ?? p.life_path ?? "",
-    photos: Array.isArray(p.photos) ? p.photos : [],
+    photos: Array.isArray(p.photos) && p.photos.length
+      ? p.photos
+      : curatedPhotosFor(String(p.img ?? p.avatar ?? "")),
     collabs: p.collabs || 0,
     verified: !!p.verified,
     matchScore: p.matchScore,
