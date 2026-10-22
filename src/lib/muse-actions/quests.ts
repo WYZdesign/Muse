@@ -127,19 +127,28 @@ export async function questTrackQuest({ sb, profile, rest, ip }: ActionContext) 
       .maybeSingle();
 
     if (existing?.completed) { results.push({ action_key: quest.action_key, alreadyCompleted: true }); continue; }
+    // A row that already reached its target is complete, whatever the flag
+    // says. Without this, a row written before `completed` was maintained
+    // re-fires the toast on every call.
+    if (existing && (existing.progress ?? 0) >= quest.target_count) {
+      await sb.from("muse_user_quests").update({ completed: true, completed_at: new Date().toISOString() }).eq("id", existing.id);
+      results.push({ action_key: quest.action_key, alreadyCompleted: true });
+      continue;
+    }
 
     const newProgress = (existing?.progress || 0) + 1;
     const completed = newProgress >= quest.target_count;
 
+    let write: { error?: unknown } | null = null;
     if (existing) {
-      await sb.from("muse_user_quests").update({
+      write = await sb.from("muse_user_quests").update({
         progress: newProgress,
         completed,
         completed_at: completed ? new Date().toISOString() : null,
         updated_at: new Date().toISOString(),
       }).eq("id", existing.id);
     } else {
-      await sb.from("muse_user_quests").insert({
+      write = await sb.from("muse_user_quests").insert({
         user_id: profile.id,
         quest_id: quest.id,
         period_key: periodKey,
@@ -148,6 +157,14 @@ export async function questTrackQuest({ sb, profile, rest, ip }: ActionContext) 
         completed,
         completed_at: completed ? new Date().toISOString() : null,
       });
+    }
+
+    if (write.error) {
+      // The completion was not persisted, so do not announce it. This is
+      // exactly what caused the same "Quest complete" toast on every action
+      // while muse_user_quests was missing in production.
+      results.push({ action_key: quest.action_key, alreadyCompleted: true });
+      continue;
     }
 
     if (completed) {
