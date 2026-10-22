@@ -494,6 +494,7 @@ textarea.inp{resize:none}
 .verify-banner{pointer-events:none}
 .verify-banner button{pointer-events:auto}
 .phone:has(.verify-banner) .card-hero-info{padding-bottom:70px}
+.phone:has(.verify-banner) .match-fab{bottom:calc(28px + 64px)}
 .phone:has(.verify-banner) :is(.match-list,.briefs-scroll,.conn-scroll,.profile-scroll,.portfolio-scroll,.settings-scroll,.messages,.card-info-scroll){
   padding-bottom: calc(env(safe-area-inset-bottom,0px) + 168px);
 }
