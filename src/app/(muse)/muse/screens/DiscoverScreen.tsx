@@ -634,7 +634,7 @@ export const DiscoverScreen = memo(function DiscoverScreen({
                               ><span className="card-photo-nav" aria-hidden="true">›</span></button>
                             </>
                           )}
-                          <div className={"card-photo-dots" + (cardScrolled ? " hidden" : "")} aria-hidden={cardScrolled || undefined} inert={cardScrolled || undefined}>
+                          <div className={"card-photo-dots" + (cardScrolled || !isTop ? " hidden" : "")} aria-hidden={cardScrolled || undefined} inert={cardScrolled || undefined}>
                             {photos.map((_: string, i: number) => <button key={i} className={"card-photo-dot" + (i === currentPhotoIdx ? " active" : "")} aria-label={`Show photo ${i + 1}`} onClick={(e) => { e.stopPropagation(); setCurrentPhotoIdx?.(i); }} style={{ width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", padding: 0, cursor: "pointer" }}><span style={{ width: i === currentPhotoIdx ? 16 : 7, height: 7, borderRadius: i === currentPhotoIdx ? 4 : "50%", background: i === currentPhotoIdx ? "#FFD700" : "rgba(255,255,255,0.4)", transition: "all .25s", display: "block" }} /></button>)}
                           </div>
                           {isTop && (!profile.nsfw || revealedNsfw.has(String(profile.id))) && (

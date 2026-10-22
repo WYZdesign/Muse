@@ -493,6 +493,7 @@ textarea.inp{resize:none}
    while it is present so the last row clears it. */
 .verify-banner{pointer-events:none}
 .verify-banner button{pointer-events:auto}
+.phone:has(.verify-banner) .card-info{padding-bottom:64px}
 .phone:has(.verify-banner) :is(.match-list,.briefs-scroll,.conn-scroll,.profile-scroll,.portfolio-scroll,.settings-scroll,.messages,.card-info-scroll){
   padding-bottom: calc(env(safe-area-inset-bottom,0px) + 168px);
 }
