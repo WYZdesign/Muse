@@ -62,6 +62,22 @@ export function buildFilteredProfiles({ seed, liveProfiles, showNsfw, filterStyl
         ? liveProfileList
         : (DEMO_MODE ? base : []);
     let list = showNsfw ? merged : merged.filter(p => !p.nsfw);
+    // Owner request: the deck should feel random rather than a fixed sequence.
+    // Boosted profiles still lead, because an active boost is the paid "top of
+    // the stack" feature, but everything else is reshuffled with the per-mount
+    // seed so each visit presents a different order.
+    {
+      const shuffleRest = (arr: DiscoveryProfile[]) => {
+        const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+          const j = Math.floor(mulberry(seed + 7919 + i) * (i + 1));
+          [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+      };
+      const isBoosted = (p: DiscoveryProfile) => (p as unknown as { boosted?: boolean }).boosted === true;
+      list = [...list.filter(isBoosted), ...shuffleRest(list.filter((p) => !isBoosted(p)))];
+    }
     if (filterStyles.length > 0) list = list.filter(p => p.styles.some((s: string) => filterStyles.includes(s)));
     if (filterScore > 50) list = list.filter(p => p.score >= filterScore);
     if (discoverSearch.trim()) {

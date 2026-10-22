@@ -479,7 +479,7 @@ export const CommunityScreen = memo(function CommunityScreen({
                                       onClick={(e) => { e.stopPropagation(); setMemberMenuFor(memberMenuFor === String(m.user_id) ? null : String(m.user_id)); }}
                                       style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", padding: 4, display: "flex", alignItems: "center" }}
                                     >
-                                      <FiMoreHorizontal size={16} />
+                                      <FiMoreHorizontal size={15} />
                                     </button>
                                     {memberMenuFor === String(m.user_id) && (
                                       <div style={{ position: "absolute", right: 0, top: "100%", zIndex: 10, background: "var(--card-bg)", border: "1px solid var(--border-subtle)", borderRadius: 12, padding: 6, minWidth: 150, boxShadow: "0 8px 24px rgba(0,0,0,0.5)" }}>
@@ -602,7 +602,7 @@ export const CommunityScreen = memo(function CommunityScreen({
                 {(c.name || "").trim().charAt(0).toUpperCase()}
               </div>
             )}
-            <button aria-label="Report community" title="Report" onClick={(e) => { e.stopPropagation(); setReportTarget({ id: c.id, type: "community", name: c.name || "community" }); setShowReport(true); }} style={{ position: "absolute", top: 8, right: 8, zIndex: 2, width: 44, height: 44, borderRadius: "50%", border: "1px solid var(--border-subtle)", background: "var(--card-bg)", color: "var(--muted)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>⋯</button>
+            <button aria-label="Report community" title="Report" onClick={(e) => { e.stopPropagation(); setReportTarget({ id: c.id, type: "community", name: c.name || "community" }); setShowReport(true); }} style={{ position: "absolute", top: 8, right: 8, zIndex: 2, width: 28, height: 28, borderRadius: "50%", border: "1px solid var(--border-subtle)", background: "var(--card-bg)", color: "var(--muted)", fontSize: 13, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>⋯</button>
             {/* width:"100%" is required — .conn-card sets align-items:flex-start, so a
                 column child without explicit width shrink-wraps and left-anchors, making
                 the title and badges center against different reference boxes. */}
@@ -643,7 +643,7 @@ export const CommunityScreen = memo(function CommunityScreen({
                 {(ev.title || "").trim().charAt(0).toUpperCase()}
               </div>
             )}
-            <button aria-label="Report event" title="Report" onClick={(e) => { e.stopPropagation(); setReportTarget({ id: ev.id, type: "community_event", name: ev.title || "event" }); setShowReport(true); }} style={{ position: "absolute", top: 8, right: 8, zIndex: 2, width: 44, height: 44, borderRadius: "50%", border: "1px solid var(--border-subtle)", background: "var(--card-bg)", color: "var(--muted)", fontSize: 12, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>⋯</button>
+            <button aria-label="Report event" title="Report" onClick={(e) => { e.stopPropagation(); setReportTarget({ id: ev.id, type: "community_event", name: ev.title || "event" }); setShowReport(true); }} style={{ position: "absolute", top: 8, right: 8, zIndex: 2, width: 28, height: 28, borderRadius: "50%", border: "1px solid var(--border-subtle)", background: "var(--card-bg)", color: "var(--muted)", fontSize: 13, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>⋯</button>
             {/* width:"100%" fixes shrink-wrap left-anchoring under .conn-card's
                 align-items:flex-start — same root cause as the Groups cards above. */}
             <div style={{ width: "100%", padding: 16, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>

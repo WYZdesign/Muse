@@ -477,16 +477,7 @@ export const BtsScreen = memo(function BtsScreen({
                 >
                   {s.author?.split(" ")[0] || "..."}
                 </span>
-                </button>
-                {/* Report is a SIBLING of the card's role="button" node, not a
-                    descendant — a focusable button nested inside another
-                    interactive control is an axe `nested-interactive` violation. */}
-                <button
-                  aria-label={`Report ${s.author?.split(" ")[0] || "moment"}`}
-                  title="Report"
-                  className="bts-story-report-btn"
-                  onClick={(e) => { e.stopPropagation(); reportStory(s); }}
-                  style={{ position: "absolute", top: 22, right: -2, zIndex: 2, width: 30, height: 30, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(10,6,18,0.85)", color: "var(--muted)", fontSize: 15, lineHeight: 1, cursor: "pointer", alignItems: "center", justifyContent: "center" }}>⋯</button>
+                </button>
               </div>
             ))}
           </div>

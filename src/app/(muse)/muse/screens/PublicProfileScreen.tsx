@@ -241,7 +241,7 @@ export const PublicProfileScreen = memo(function PublicProfileScreen({
     <div style={{ position: "fixed", inset: 0, zIndex: 10000, background: "linear-gradient(180deg,#0f081e 0%,#0a0612 100%)", overflowY: "auto", WebkitOverflowScrolling: "touch" }}>
       {/* Header */}
       <div style={{ position: "sticky", top: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", background: "linear-gradient(180deg,rgba(15,8,30,0.98),rgba(15,8,30,0.85))", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,215,0,0.1)" }}>
-        <button onClick={onBack} aria-label="Go back" style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text)", cursor: "pointer" }}>
+        <button onClick={onBack} aria-label="Go back" style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text)", cursor: "pointer" }}>
           <FiChevronLeft size={20} />
         </button>
         <div style={{ fontFamily: "'Playfair Display',serif", fontStyle: "italic", fontSize: 20, fontWeight: 800, backgroundImage: "linear-gradient(135deg,var(--gold),var(--lavender),var(--pink),var(--gold))", backgroundSize: "400% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", animation: "gradientShift 6s ease-in-out infinite", lineHeight: "28px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "60%" }}>
