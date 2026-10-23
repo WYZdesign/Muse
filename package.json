@@ -40,7 +40,7 @@
     "@tensorflow/tfjs-core": "^4.22.0",
     "livekit-client": "^2.22.3",
     "livekit-server-sdk": "^2.19.0",
-    "next": "16.3.8",
+    "next": "16.4.3",
     "qrcode": "^1.5.4",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
@@ -63,7 +63,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/web-push": "^3.6.4",
-    "@vitest/coverage-v8": "^4.1.11",
+    "@vitest/coverage-v8": "^4.1.12",
     "canvas": "^3.2.3",
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
@@ -75,13 +75,12 @@
     "playwright": "^1.63.0",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.12"
   },
   "overrides": {
     "uuid": "^11.1.1",
     "sharp": "^0.35.5",
     "source-map-js": "^1.2.2",
-    "vite": "^8.3.4",
     "vite": "^8.3.4"
   }
 }

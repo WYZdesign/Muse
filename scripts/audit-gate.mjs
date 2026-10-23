@@ -22,29 +22,20 @@ import { spawnSync } from "node:child_process";
  * the moment its advisory stops being reported (the run prints "no longer
  * reported" for anything stale).
  *
- * Reviewed 2026-10-08. The production tree is clean; the one entry left is a
- * dev-only advisory with no patched version published.
+ * Reviewed 2026-10-22. The tree is clean (0 advisories), so the allowlist is
+ * empty. Keep the map and DEV_ONLY so a future reviewed exception has one
+ * narrow, obvious place to live.
  */
-const ALLOWLIST = new Map([
-  // ---- braces (dev-only) ---------------------------------------------------
-  // CVE-2026-93687: stack-exhaustion DoS in braces <= 3.0.3, and 3.0.3 IS the
-  // newest release, so the advisory has no patched version ("Patched versions:
-  // None"). It cannot reach production code: the only path is
-  // eslint-config-next -> @next/eslint-plugin-next -> fast-glob -> micromatch
-  // -> braces, which is lint tooling. `npm audit fix` offers only `--force`,
-  // which downgrades eslint-config-next to v14 - strictly worse than the
-  // advisory. Re-check when braces ships 3.0.4+.
-  ["GHSA-VFJ7-8CJW-P6XM", "braces: stack-exhaustion DoS (CVE-2026-93687); no patched version exists (<=3.0.3 is latest); dev-only via eslint-config-next"],
-]);
+const ALLOWLIST = new Map([]);
 
 /** Entries that only ever appear in the dev tree. */
-const DEV_ONLY = new Set(["GHSA-VFJ7-8CJW-P6XM"]);
+const DEV_ONLY = new Set([]);
 
 const SEVERITIES = new Set(["high", "critical"]);
 const GHSA_RE = /GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}/i;
 
 /** Pure evaluation - no I/O, so it can be unit-tested with synthetic reports. */
-function evaluate(report, { omitDev }) {
+function evaluate(report, { omitDev, allowlist = ALLOWLIST, devOnly = DEV_ONLY }) {
   const vulns = report?.vulnerabilities || {};
 
   /** Every GHSA id reachable from a package's `via` chain. */
@@ -77,7 +68,7 @@ function evaluate(report, { omitDev }) {
       violations.push({ name, severity: info.severity, ids: ["(no advisory id reported)"] });
       continue;
     }
-    const blocked = ids.filter((id) => !ALLOWLIST.has(id));
+    const blocked = ids.filter((id) => !allowlist.has(id));
     if (blocked.length > 0) {
       violations.push({ name, severity: info.severity, ids: blocked });
     } else {
@@ -86,8 +77,8 @@ function evaluate(report, { omitDev }) {
     }
   }
 
-  const stale = [...ALLOWLIST.keys()].filter(
-    (id) => !seenAllowlisted.has(id) && !(omitDev && DEV_ONLY.has(id)),
+  const stale = [...allowlist.keys()].filter(
+    (id) => !seenAllowlisted.has(id) && !(omitDev && devOnly.has(id)),
   );
   return { violations, allowed, seenAllowlisted, stale, highCritical };
 }
@@ -120,6 +111,10 @@ function selftest() {
     via: [{ url: `https://github.com/advisories/${id}`, severity, title: id }],
   });
   const allowed = "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm";
+  // The production allowlist is empty; the selftest injects its own fixture so
+  // the allowlist mechanics stay covered without leaving a stale live entry.
+  const fixtureAllow = new Map([["GHSA-VFJ7-8CJW-P6XM", "selftest fixture"]]);
+  const fixtureDevOnly = new Set(["GHSA-VFJ7-8CJW-P6XM"]);
   const cases = [
     {
       label: "allowlisted advisory alone -> pass",
@@ -164,7 +159,7 @@ function selftest() {
 
   let bad = 0;
   for (const c of cases) {
-    const res = evaluate(c.report, { omitDev: false });
+    const res = evaluate(c.report, { omitDev: false, allowlist: fixtureAllow, devOnly: fixtureDevOnly });
     const got = res.violations.length === 0 ? 0 : 1;
     const ok = got === c.expect;
     if (!ok) bad += 1;
