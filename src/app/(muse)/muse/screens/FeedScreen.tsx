@@ -455,7 +455,7 @@ export const FeedScreen = memo(function FeedScreen({
               <button
                 className="btn btn-gold"
                 disabled={!feedText.trim() && !feedMedia.length && !feedClip}
-                style={{ flex: 1, flexShrink: 0, padding: "12px 0", fontSize: 13, fontWeight: 700, borderRadius: 12, whiteSpace: "nowrap", opacity: (!feedText.trim() && !feedMedia.length && !feedClip) ? 0.5 : 1, cursor: (!feedText.trim() && !feedMedia.length && !feedClip) ? "not-allowed" : "pointer", minHeight: 44 }}
+                style={{ flexGrow: 1, flexShrink: 0, flexBasis: "auto", padding: "12px 0", fontSize: 13, fontWeight: 700, borderRadius: 12, whiteSpace: "nowrap", opacity: (!feedText.trim() && !feedMedia.length && !feedClip) ? 0.5 : 1, cursor: (!feedText.trim() && !feedMedia.length && !feedClip) ? "not-allowed" : "pointer", minHeight: 44 }}
                 aria-disabled={!feedText.trim() && !feedMedia.length && !feedClip}
                 onClick={async () => {
                   if (demo) { showToast("Posting is unavailable in this demo."); return; }
@@ -484,7 +484,7 @@ export const FeedScreen = memo(function FeedScreen({
               </button>
               <button
                 className="btn btn-outline"
-                style={{ flex: 1, flexShrink: 0, padding: "12px 0", fontSize: 13, fontWeight: 600, borderRadius: 12, whiteSpace: "nowrap", minHeight: 44 }}
+                style={{ flexGrow: 1, flexShrink: 0, flexBasis: "auto", padding: "12px 0", fontSize: 13, fontWeight: 600, borderRadius: 12, whiteSpace: "nowrap", minHeight: 44 }}
                 onClick={() => openCamera("photo")}
               >
                 📷 BTS
@@ -832,3 +832,4 @@ export const FeedScreen = memo(function FeedScreen({
 });
 
 export default FeedScreen;
+
