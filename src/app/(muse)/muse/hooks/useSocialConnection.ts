@@ -2,6 +2,8 @@
 "use client";
 
 import { useEffect, type Dispatch, type SetStateAction } from "react";
+import { getAccessToken } from "../lib/api";
+import { MUSE_CLOSED_BETA_HIDE_SOCIAL } from "@/lib/config";
 
 /**
  * Social-connection lifecycle, extracted verbatim from page.tsx: fetching the
@@ -24,13 +26,35 @@ export function useSocialConnection({
   setObConnectedSocials,
   showToast,
 }: UseSocialConnectionArgs) {
-  // Fetch connected accounts status from server on mount (overrides stale localStorage)
+  // Fetch connected accounts status from server on mount (overrides stale localStorage).
+  // Social is hidden during closed beta, where this call is pointless. When it
+  // is not hidden, wait for the session token before calling: the mount effect
+  // runs before the token is attached, so firing immediately sent an
+  // unauthenticated request that always 401'd and logged a console error on
+  // every load (observed live on /muse).
   useEffect(() => {
-    authFetch("/api/muse/social?action=status")
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.connected) setObConnectedSocials(d.connected); })
-      .catch(() => {});
-  }, [setObConnectedSocials]);
+    if (MUSE_CLOSED_BETA_HIDE_SOCIAL) return;
+    let cancelled = false;
+    let tries = 0;
+    const tick = async () => {
+      if (cancelled) return;
+      if (!getAccessToken()) {
+        if (++tries > 40) return; // ~10s, then give up quietly
+        setTimeout(tick, 250);
+        return;
+      }
+      try {
+        const r = await authFetch("/api/muse/social?action=status");
+        if (!r.ok) return;
+        const d = await r.json();
+        if (!cancelled && d?.connected) setObConnectedSocials(d.connected);
+      } catch {
+        // Best effort; localStorage state is the fallback.
+      }
+    };
+    tick();
+    return () => { cancelled = true; };
+  }, [authFetch, setObConnectedSocials]);
 
   // Check for OAuth callback on mount. Was previously (incorrectly) a React.useEffect
   // call nested inside loadState's async body — a Rules-of-Hooks violation that threw
