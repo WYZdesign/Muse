@@ -397,7 +397,7 @@ export const FeedScreen = memo(function FeedScreen({
                 <button type="button" onClick={rec.stop} className="btn btn-gold" style={{ padding: "6px 14px", fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}><FiSquare size={12} /> Stop</button>
               </div>
             )}
-            <div style={{ display: "flex", gap: 8, alignItems: "center", width: "100%" }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", width: "100%", flexWrap: "wrap" }}>
               <label style={{ width: 44, height: 44, borderRadius: 10, background: "var(--glass)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, color: "var(--text2)", flexShrink: 0 }}>
                 <FiImage size={16} />
                 <input
@@ -455,7 +455,7 @@ export const FeedScreen = memo(function FeedScreen({
               <button
                 className="btn btn-gold"
                 disabled={!feedText.trim() && !feedMedia.length && !feedClip}
-                style={{ flex: 1, padding: "12px 0", fontSize: 13, fontWeight: 700, borderRadius: 12, whiteSpace: "nowrap", opacity: (!feedText.trim() && !feedMedia.length && !feedClip) ? 0.5 : 1, cursor: (!feedText.trim() && !feedMedia.length && !feedClip) ? "not-allowed" : "pointer", minHeight: 44 }}
+                style={{ flex: 1, flexShrink: 0, padding: "12px 0", fontSize: 13, fontWeight: 700, borderRadius: 12, whiteSpace: "nowrap", opacity: (!feedText.trim() && !feedMedia.length && !feedClip) ? 0.5 : 1, cursor: (!feedText.trim() && !feedMedia.length && !feedClip) ? "not-allowed" : "pointer", minHeight: 44 }}
                 aria-disabled={!feedText.trim() && !feedMedia.length && !feedClip}
                 onClick={async () => {
                   if (demo) { showToast("Posting is unavailable in this demo."); return; }
@@ -484,7 +484,7 @@ export const FeedScreen = memo(function FeedScreen({
               </button>
               <button
                 className="btn btn-outline"
-                style={{ flex: 1, padding: "12px 0", fontSize: 13, fontWeight: 600, borderRadius: 12, whiteSpace: "nowrap", minHeight: 44 }}
+                style={{ flex: 1, flexShrink: 0, padding: "12px 0", fontSize: 13, fontWeight: 600, borderRadius: 12, whiteSpace: "nowrap", minHeight: 44 }}
                 onClick={() => openCamera("photo")}
               >
                 📷 BTS

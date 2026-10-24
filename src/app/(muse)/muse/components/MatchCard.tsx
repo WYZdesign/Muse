@@ -184,11 +184,11 @@ const MatchCard = memo(function MatchCard({ m, view, isNew, actions }: MatchCard
         })()}
       </div>
       <div className="match-info" style={isList ? { marginLeft: 14, textAlign: "left" } : undefined}>
-        <div className="match-name" style={{ display: "flex", alignItems: "center", gap: 5, ...(isList ? { fontSize: 15, lineHeight: 1.2 } : {}) }}>
-          {m.name}
-          {m.verified && <button type="button" className="card-verified-mark" style={{ fontSize: 13 }} title="Identity verified" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Verified", desc: "Identity verified by Musa by WYZ — we confirmed this member's government ID and professional credentials.", icon: "✓", color: "#FFD700" }); }}>✓</button>}
+        <div className="match-name" style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0, ...(isList ? { fontSize: 15, lineHeight: 1.2 } : {}) }}>
+          <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.name}</span>
+          {m.verified && <button type="button" className="card-verified-mark" style={{ fontSize: 13, flexShrink: 0 }} title="Identity verified" onClick={(e) => { e.stopPropagation(); setBadgeInfo({ name: "Verified", desc: "Identity verified by Musa by WYZ — we confirmed this member's government ID and professional credentials.", icon: "✓", color: "#FFD700" }); }}>✓</button>}
           {/* Role badge */}
-          <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 99, background: isMuse ? "rgba(255,215,0,0.12)" : "rgba(138,43,226,0.12)", border: `1px solid ${isMuse ? "rgba(255,215,0,0.25)" : "rgba(138,43,226,0.25)"}`, color: isMuse ? "var(--gold)" : "#b388ff", whiteSpace: "nowrap" }}>
+          <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 99, background: isMuse ? "rgba(255,215,0,0.12)" : "rgba(138,43,226,0.12)", border: `1px solid ${isMuse ? "rgba(255,215,0,0.25)" : "rgba(138,43,226,0.25)"}`, color: isMuse ? "var(--gold)" : "#b388ff", whiteSpace: "nowrap", flexShrink: 0 }}>
             {roleBadgeText(matchRole)}
           </span>
           {/* Demo badge removed: every seeded match carried a red "Demo" chip,
