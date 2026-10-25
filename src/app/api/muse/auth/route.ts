@@ -296,6 +296,73 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, profile: pubProfile(data) });
     }
 
+    if (action === "export-account") {
+      // Data portability (GDPR Art. 20 / CCPA right to know). Returns the
+      // caller's own data as a downloadable JSON document: profile, posts,
+      // messages they sent or received, bookings on either side, quests,
+      // reports they filed, and notifications. Third-party content inside
+      // received messages is part of their conversation record; nothing here
+      // is exposed to anyone but the authenticated owner.
+      if (!await checkRate(ip, "export-account", 3)) {
+        return NextResponse.json({ error: "Too many attempts — try later" }, { status: 429 });
+      }
+      const accessToken = bearerOrBodyToken(req, body);
+      const { data: { user }, error: authErr } = await supabase.auth.getUser(accessToken);
+      if (authErr || !user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+      const sb = getServiceClient();
+      const { data: profile }: { data: Record<string, unknown> | null } = await sb
+        .from("muse_profiles").select("*").eq("auth_id", user.id).maybeSingle();
+      if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+      const pid = String(profile.id);
+
+      const [feedPosts, messages, bookings, quests, reportsFiled, notifications] = await Promise.all([
+        sb.from("muse_feed_posts").select("*").eq("author_id", pid).order("created_at", { ascending: false }).limit(5000),
+        sb.from("muse_messages").select("*").or(`sender_id.eq.${pid},receiver_id.eq.${pid}`).order("created_at", { ascending: false }).limit(5000),
+        sb.from("muse_bookings").select("*").or(`user_id.eq.${pid},host_id.eq.${pid}`).order("created_at", { ascending: false }).limit(5000),
+        sb.from("muse_user_quests").select("*").eq("user_id", pid).limit(5000),
+        sb.from("muse_reports").select("*").eq("reporter_id", pid).order("created_at", { ascending: false }).limit(1000),
+        sb.from("muse_notifications").select("*").eq("user_id", pid).order("created_at", { ascending: false }).limit(5000),
+      ]);
+
+      const payload = {
+        meta: {
+          format: "muse-data-export",
+          version: 1,
+          generatedAt: new Date().toISOString(),
+          included: ["account", "profile", "feedPosts", "messages", "bookings", "quests", "reportsFiled", "notifications"],
+          excluded: [
+            "media binaries (photos/videos are downloadable from your profile and posts)",
+            "other members' private data",
+            "moderation records and internal enforcement notes",
+          ],
+          notes: "Messages include ones you sent and received. Deleted accounts are purged 30 days after the request.",
+        },
+        account: {
+          id: user.id,
+          email: user.email ?? null,
+          createdAt: user.created_at ?? null,
+          lastSignInAt: user.last_sign_in_at ?? null,
+        },
+        profile,
+        feedPosts: feedPosts.data ?? [],
+        messages: messages.data ?? [],
+        bookings: bookings.data ?? [],
+        quests: quests.data ?? [],
+        reportsFiled: reportsFiled.data ?? [],
+        notifications: notifications.data ?? [],
+      };
+
+      const safeId = pid.replace(/[^a-zA-Z0-9]/g, "").slice(0, 8);
+      return new NextResponse(JSON.stringify(payload, null, 2), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Disposition": `attachment; filename="muse-data-${safeId}-${new Date().toISOString().slice(0, 10)}.json"`,
+          "Cache-Control": "no-store",
+        },
+      });
+    }
+
     if (action === "delete-account") {
       if (!await checkRate(ip, "delete-account", 3)) {
         return NextResponse.json({ error: "Too many attempts — try later" }, { status: 429 });

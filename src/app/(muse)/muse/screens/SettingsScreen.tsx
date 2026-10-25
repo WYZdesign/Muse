@@ -2,7 +2,7 @@
 "use client";
 
 import React, { memo, useState, useEffect, useRef } from "react";
-import { FiArrowLeft, FiUser, FiLink, FiStar, FiUsers, FiShield, FiInstagram, FiMusic, FiHeadphones, FiEye, FiMoreHorizontal, FiZap, FiDollarSign, FiGift, FiFile, FiX, FiLock, FiBell, FiCompass, FiFacebook, FiBriefcase } from "react-icons/fi";
+import { FiArrowLeft, FiUser, FiLink, FiStar, FiUsers, FiShield, FiInstagram, FiMusic, FiHeadphones, FiEye, FiMoreHorizontal, FiZap, FiDollarSign, FiGift, FiFile, FiX, FiLock, FiBell, FiCompass, FiFacebook, FiBriefcase, FiDownload } from "react-icons/fi";
 // Push subscribe/unsubscribe arrive as PROPS (page.tsx owns the real impls) —
 // importing the module fns here too shadowed them and invited drift.
 import type { Screen } from "../components/types"; import type { CurrentUser, AuthUser, AuthFetchFn, MuseTheme, BlockedProfileRow } from "../page-models"; import type { OnboardingData } from "../hooks/useAuthOnboardingState";
@@ -385,11 +385,45 @@ export const SettingsScreen = memo(function SettingsScreen({
     { icon: <FiZap size={18} />, label: "Boost Performance", desc: "See how your profile boost is doing", action: () => setShowBoostAnalytics(true), dot: false },
   ];
 
+  const [exportingData, setExportingData] = useState(false);
+  const downloadMyData = async () => {
+    if (!authFetch || exportingData) return;
+    setExportingData(true);
+    try {
+      const res = await authFetch("/api/muse/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "export-account" }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        showToast(d?.error || "Could not export your data");
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const header = res.headers.get("content-disposition") || "";
+      a.href = url;
+      a.download = (header.match(/filename="([^"]+)"/) || [])[1] || "muse-data-export.json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      showToast("Your data export has downloaded");
+    } catch {
+      showToast("Could not export your data");
+    } finally {
+      setExportingData(false);
+    }
+  };
+
   const legalItems = [
     { icon: <FiFile size={18} />, label: "Terms of Service", desc: "Legal terms", action: () => setShowTerms(true) },
     { icon: <FiFile size={18} />, label: "Privacy Policy", desc: "How we handle your data", action: () => setShowPrivacy(true) },
     { icon: <FiFile size={18} />, label: "Community Guidelines", desc: "Standards & expectations", action: () => setShowGuidelines(true) },
     { icon: <FiFile size={18} />, label: "DMCA / Copyright", desc: "Copyright infringement claims", action: () => window.open("/dmca", "_self") },
+    { icon: <FiDownload size={18} />, label: "Download My Data", desc: exportingData ? "Preparing your export…" : "Export your profile, posts, messages, and bookings", action: downloadMyData },
     { icon: <FiX size={18} />, label: "Delete Account", desc: "Remove account access and associated content", action: () => setShowDeleteConfirm(true) },
   ];
 

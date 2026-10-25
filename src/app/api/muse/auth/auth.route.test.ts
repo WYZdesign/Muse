@@ -194,4 +194,51 @@ describe("auth route (integration)", () => {
       budget_range: "$500-$2,000",
     });
   });
+
+  it("requires authentication for a data export", async () => {
+    mockGetUser.mockResolvedValue({ data: { user: null }, error: { message: "bad token" } });
+    const r = await POST(mockReq({ action: "export-account", access_token: "nope" }));
+    expect(r.status).toBe(401);
+  });
+
+  it("exports the caller's own data as a downloadable JSON document", async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { id: "auth-1", email: "me@example.com", created_at: "2026-01-01", last_sign_in_at: "2026-10-01" } }, error: null });
+
+    const profile = { id: "profile-1", name: "Me", email: "me@example.com" };
+    const rows: Record<string, unknown[]> = {
+      muse_feed_posts: [{ id: "p1", author_id: "profile-1" }],
+      muse_messages: [{ id: "m1", sender_id: "profile-1" }],
+      muse_bookings: [{ id: "b1", user_id: "profile-1" }],
+      muse_user_quests: [{ id: "q1" }],
+      muse_reports: [{ id: "r1" }],
+      muse_notifications: [{ id: "n1" }],
+    };
+    const chain = (data: unknown, single = false) => {
+      const q: Record<string, unknown> = {};
+      const self = () => q;
+      q.select = self; q.eq = self; q.or = self; q.order = self;
+      q.limit = async () => ({ data, error: null });
+      q.maybeSingle = async () => ({ data: single ? data : null, error: null });
+      return q;
+    };
+    (globalThis as any).__authServiceMock = {
+      from: vi.fn((t: string) => (t === "muse_profiles" ? chain(profile, true) : chain(rows[t] ?? []))),
+    };
+
+    const r = await POST(mockReq({ action: "export-account", access_token: "token" }));
+    expect(r.status).toBe(200);
+    expect(r.headers.get("content-disposition")).toMatch(/attachment; filename="muse-data-profile1-.*\.json"/);
+    const body = await r.json();
+    expect(body.meta.format).toBe("muse-data-export");
+    expect(body.account).toMatchObject({ id: "auth-1", email: "me@example.com" });
+    expect(body.profile).toMatchObject({ id: "profile-1", name: "Me" });
+    expect(body.feedPosts).toHaveLength(1);
+    expect(body.messages).toHaveLength(1);
+    expect(body.bookings).toHaveLength(1);
+    expect(body.quests).toHaveLength(1);
+    expect(body.reportsFiled).toHaveLength(1);
+    expect(body.notifications).toHaveLength(1);
+    // The export must never claim to include moderation records.
+    expect(body.meta.excluded.join(" ")).toMatch(/moderation/);
+  });
 });
