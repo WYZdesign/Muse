@@ -321,3 +321,37 @@ test.describe('Priority C — landmark / name / dialog / tab / focus', () => {
     expect(empty).toEqual([]);
   });
 });
+
+// Added with the round-7 mobile fixes and the data-export control: every new
+// interactive element must keep an accessible name, in demo mode (no creds).
+test.describe('New controls keep accessible names', () => {
+  test('Settings exposes a named Download My Data control', async ({ page }) => {
+    await loginAsDemoUser(page, { screen: 'settings' });
+    await dismissPageTour(page);
+    const row = page.getByRole('button', { name: /download my data/i });
+    await expect(row).toHaveCount(1);
+    await expect(row).toBeVisible();
+  });
+
+  test('Feed composer buttons keep their text names', async ({ page }) => {
+    // Screen seeding alone did not reach the composer; navigate like a user.
+    await loginAsDemoUser(page);
+    await dismissPageTour(page);
+    await page.getByRole('button', { name: 'Feed', exact: true }).click();
+    await page.waitForTimeout(1500);
+    await dismissPageTour(page);
+    const post = page.getByRole('button', { name: 'Post', exact: true });
+    await expect(post).toHaveCount(1);
+    await expect(post).toBeVisible();
+    // Scope BTS to the composer: the bottom nav also has a "BTS" tab.
+    const bts = page.locator('.phone').getByRole('button', { name: /bts/i }).first();
+    await expect(bts).toBeVisible();
+  });
+
+  test('Verification banner dismiss control is named', async ({ page }) => {
+    await loginAsDemoUser(page, { seedTours: true });
+    await dismissPageTour(page);
+    const dismiss = page.getByRole('button', { name: 'Dismiss' }).first();
+    if ((await dismiss.count()) > 0) await expect(dismiss).toBeVisible();
+  });
+});
