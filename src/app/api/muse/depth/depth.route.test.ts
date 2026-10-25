@@ -15,7 +15,15 @@ vi.mock("@/lib/supabase", () => ({
       ),
     },
   },
-  getServiceClient: vi.fn(() => ({})),
+  getServiceClient: vi.fn(() => ({
+    from: vi.fn(() => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: async () => ({ data: { id: "profile-1" }, error: null }),
+        }),
+      }),
+    })),
+  })),
 }));
 
 import { POST, depthEnabled } from "@/app/api/muse/depth/route";
@@ -31,7 +39,9 @@ function mockReq(body: unknown, headers: Record<string, string> = {}) {
 describe("depth route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
     vi.stubEnv("MUSE_DEMO_MODE", "false");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://x.supabase.co");
     vi.stubEnv("REPLICATE_API_TOKEN", "");
     vi.stubEnv("REPLICATE_DEPTH_MODEL_VERSION", "");
   });
@@ -95,8 +105,64 @@ describe("depth route", () => {
     );
     expect(r.status).toBe(429);
   });
+
+  it("400 for an attacker-hosted URL that merely contains /muse-uploads/", async () => {
+    vi.resetModules();
+    vi.stubEnv("REPLICATE_API_TOKEN", "r8_test");
+    vi.stubEnv("REPLICATE_DEPTH_MODEL_VERSION", ownerModelVersion());
+    const fresh = await import("@/app/api/muse/depth/route");
+    const r = await fresh.POST(
+      mockReq(
+        { url: "https://attacker.example/x/muse-uploads/profile-1/a.jpg" },
+        { authorization: "Bearer tok" },
+      ),
+    );
+    expect(r.status).toBe(400);
+    expect((await r.json()).error).toBe("Invalid image url");
+  });
+
+  it("400 for another member's real upload path", async () => {
+    vi.resetModules();
+    vi.stubEnv("REPLICATE_API_TOKEN", "r8_test");
+    vi.stubEnv("REPLICATE_DEPTH_MODEL_VERSION", ownerModelVersion());
+    const fresh = await import("@/app/api/muse/depth/route");
+    const r = await fresh.POST(
+      mockReq(
+        { url: "https://x.supabase.co/storage/v1/object/public/muse-uploads/someone-else/a.jpg" },
+        { authorization: "Bearer tok" },
+      ),
+    );
+    expect(r.status).toBe(400);
+  });
+
+  it("accepts the caller's own upload path", async () => {
+    vi.resetModules();
+    vi.stubEnv("REPLICATE_API_TOKEN", "r8_test");
+    vi.stubEnv("REPLICATE_DEPTH_MODEL_VERSION", ownerModelVersion());
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(JSON.stringify({ status: "succeeded", output: "https://cdn.example/depth.png" }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+      ),
+    );
+    const fresh = await import("@/app/api/muse/depth/route");
+    const r = await fresh.POST(
+      mockReq(
+        { url: "https://x.supabase.co/storage/v1/object/public/muse-uploads/profile-1/a.jpg" },
+        { authorization: "Bearer tok" },
+      ),
+    );
+    expect(r.status).toBe(200);
+    const body = await r.json();
+    expect(body.depthUrl).toBe("https://cdn.example/depth.png");
+  });
 });
 
 function ownerModelVersion() {
   return "owner/model:v1";
 }
+
+

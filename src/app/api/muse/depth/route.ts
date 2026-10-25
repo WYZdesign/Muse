@@ -1,6 +1,7 @@
 /** POST /api/muse/depth — depth map for the Discover parallax. */
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabase, getServiceClient } from "@/lib/supabase";
+import { parseOwnedAlbumStorageLocator } from "@/lib/muse-actions/albums";
 import { checkRate, clientIp } from "@/lib/rate-limit";
 import { demoModeUnavailable, isDemoMode } from "@/lib/demo-mode";
 
@@ -50,12 +51,27 @@ export function depthEnabled(): boolean {
   return REPLICATE_TOKEN.length > 0 && REPLICATE_MODEL_VERSION.length > 0;
 }
 
-async function isAuthed(req: NextRequest): Promise<boolean> {
+/**
+ * Resolve the caller's muse_profiles.id. Storage paths are keyed by profile id,
+ * not auth user id, so ownership checks need the mapping.
+ */
+async function authedProfileId(req: NextRequest): Promise<string | null> {
   const header = req.headers.get("authorization") || "";
   const bearer = header.replace(/^Bearer\s+/i, "").trim();
-  if (!bearer) return false;
+  if (!bearer) return null;
   const { data, error } = await supabase.auth.getUser(bearer);
-  return !error && !!data.user;
+  if (error || !data.user) return null;
+  try {
+    const sb = getServiceClient();
+    const { data: profile }: { data: { id?: string } | null } = await sb
+      .from("muse_profiles")
+      .select("id")
+      .eq("auth_id", data.user.id)
+      .maybeSingle();
+    return profile?.id ?? null;
+  } catch {
+    return null;
+  }
 }
 
 function normalizeOutput(out: unknown): string | null {
@@ -69,7 +85,8 @@ export async function POST(req: NextRequest) {
   try {
     if (isDemoMode()) return NextResponse.json(demoModeUnavailable("Depth generation"), { status: 409 });
     if (!depthEnabled()) return NextResponse.json({ error: "not_configured" }, { status: 501 });
-    if (!(await isAuthed(req))) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    const profileId = await authedProfileId(req);
+    if (!profileId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
     const ip = clientIp(req);
     if (!(await checkRate(ip, "depth", 20))) {
@@ -78,9 +95,14 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json().catch(() => ({}));
     const url = typeof body?.url === "string" ? body.url : "";
-    // Only ever generate depth for our own uploaded photos, never an
-    // arbitrary attacker-supplied URL (this endpoint is a paid API proxy).
-    if (!url || !/^https:\/\//.test(url) || !url.includes("/muse-uploads/")) {
+    // Only ever generate depth for this caller's own uploaded photo. A
+    // substring check on "/muse-uploads/" was satisfied by attacker-hosted URLs
+    // (https://attacker.example/x/muse-uploads/y.jpg) and by other members'
+    // real uploads. parseOwnedAlbumStorageLocator parses the URL, pins the host
+    // to our storage host, rejects traversal, and requires the path to start
+    // with the caller's profile id.
+    const owned = parseOwnedAlbumStorageLocator(url, profileId);
+    if (!url || !/^https:\/\//.test(url) || !owned || owned.bucket !== "muse-uploads") {
       return NextResponse.json({ error: "Invalid image url" }, { status: 400 });
     }
 

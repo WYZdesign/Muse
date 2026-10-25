@@ -1,5 +1,6 @@
 /** Media moderation: AWS Rekognition and Sightengine image scans, async video checks, incident logging, and NCMEC escalation. */
 import { getServiceClient } from "@/lib/supabase";
+import { notify, trySend } from "@/lib/email";
 
 // ═══ AWS Rekognition moderation (lazy-load SDK to avoid build-time cost) ═══
 // Constructor + instance types for the lazily-imported SDK classes, so the
@@ -348,23 +349,78 @@ export async function escalateToNcmec(meta: {
     // 1. Suspend the offending account immediately (fails-closed).
     await sb.from("muse_profiles").update({ suspended: true, suspended_at: new Date().toISOString() }).eq("id", meta.userId);
 
-    // 2. Stage a CyberTipline report for the designated reporter / admin review.
-    await sb.from("muse_ncmec_reports").insert({
-      user_id: meta.userId,
-      file_name: meta.fileName,
-      context: meta.context,
-      flagged_categories: meta.result.flaggedCategories,
-      confidence: meta.result.confidence,
-      // CyberTipline report payload — populated for a human/automated submitter.
-      report_type: "child_sexual_abuse_material",
-      incident_details: {
-        categories: meta.result.flaggedCategories,
+    // 2. Stage a CyberTipline report. The id is captured so the immediate
+    // submission can mark THIS row and so the retry cron has a target if it
+    // fails. Previously the insert was fire-and-forget, which is why a report
+    // could be staged and never transmitted.
+    const { data: staged }: { data: { id?: string } | null } = await sb
+      .from("muse_ncmec_reports")
+      .insert({
+        user_id: meta.userId,
+        file_name: meta.fileName,
+        context: meta.context,
+        flagged_categories: meta.result.flaggedCategories,
+        confidence: meta.result.confidence,
+        report_type: "child_sexual_abuse_material",
+        incident_details: {
+          categories: meta.result.flaggedCategories,
+          confidence: meta.result.confidence,
+          reported_at: new Date().toISOString(),
+          reporting_mechanism: "aws_rekognition_automated_detection",
+        },
+        status: "pending_submission",
+      })
+      .select("id")
+      .maybeSingle();
+    const reportId = staged?.id ?? null;
+
+    // 3. Submit immediately when ESP credentials exist. This used to happen
+    // only if something called transmitPendingNcmecReports(), and nothing did.
+    // A failure is logged and left staged for the retry cron; it never undoes
+    // the suspension above.
+    let submitted = false;
+    let submitError = "";
+    if (reportId && ncmecConfigured()) {
+      const r = await submitToCyberTipline({
+        report_id: reportId,
+        user_id: meta.userId,
+        file_name: meta.fileName,
+        context: meta.context,
+        flagged_categories: meta.result.flaggedCategories,
         confidence: meta.result.confidence,
         reported_at: new Date().toISOString(),
-        reporting_mechanism: "aws_rekognition_automated_detection",
-      },
-      status: "pending_submission",
-    });
+      });
+      submitted = r.submitted;
+      if (r.submitted) {
+        await sb
+          .from("muse_ncmec_reports")
+          .update({ status: "submitted", submitted_at: new Date().toISOString() })
+          .eq("id", reportId);
+      } else {
+        submitError = r.error || "unknown error";
+        console.error("[ncmec] immediate submission failed:", submitError);
+      }
+    }
+
+    // 4. Always alert a human. Waiting for someone to open the admin panel is
+    // how a legally time-boxed report goes unnoticed.
+    const admins = (process.env.ADMIN_EMAILS || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    for (const email of admins) {
+      trySend(
+        notify(
+          email,
+          submitted ? "NCMEC report submitted automatically" : "NCMEC report STAGED - action needed",
+          "CSAM detection escalated",
+          submitted
+            ? `Report ${reportId} was submitted to the CyberTipline automatically. The account is suspended.`
+            : `Report ${reportId ?? "(not persisted)"} is staged as pending_submission and must be filed. The account is suspended.` +
+              (submitError ? ` Submission error: ${submitError}` : ""),
+        ),
+      );
+    }
   } catch (e) {
     console.error("NCMEC escalation failed:", e);
   }
