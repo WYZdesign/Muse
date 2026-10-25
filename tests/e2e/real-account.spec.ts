@@ -1,6 +1,5 @@
 import { test, expect } from '../fixtures/test-fixtures';
 import { dismissPageTour } from '../helpers/test-helpers';
-import { navigateViaMenu } from '../helpers/accessibility-helpers';
 import fs from 'fs';
 
 /**
@@ -20,6 +19,10 @@ const EMAIL = process.env.E2E_MUSE_EMAIL || '';
 const PASSWORD = process.env.E2E_MUSE_PASSWORD || '';
 const enabled = Boolean(EMAIL && PASSWORD);
 
+// The bottom nav (and the Menu that reaches Settings) only renders at phone
+// widths; at desktop the app uses a different shell without those controls.
+test.use({ viewport: { width: 390, height: 844 } });
+
 async function signIn(page: import('@playwright/test').Page) {
   await page.goto('/muse', { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(2500);
@@ -27,6 +30,15 @@ async function signIn(page: import('@playwright/test').Page) {
   await page.fill('input[aria-label="Password"]', PASSWORD);
   await page.locator('button.btn-gold').last().click();
   await page.waitForTimeout(8000);
+  // The daily-login reward modal appears once per day and intercepts clicks.
+  const later = page.locator('.daily-login-dismiss');
+  for (let i = 0; i < 6; i++) {
+    if (await later.isVisible({ timeout: 1000 }).catch(() => false)) {
+      await later.click().catch(() => {});
+      break;
+    }
+    await page.waitForTimeout(500);
+  }
   await dismissPageTour(page);
 }
 
@@ -35,7 +47,9 @@ test.describe('Real account', () => {
 
   test('data export downloads a valid JSON document', async ({ page }) => {
     await signIn(page);
-    await navigateViaMenu(page, /settings/i);
+    await page.locator('.nav-item[aria-label="Menu"]').first().click();
+    await page.waitForTimeout(800);
+    await page.getByText('Settings', { exact: true }).first().click();
     await page.waitForTimeout(1500);
     await dismissPageTour(page);
 
@@ -68,7 +82,7 @@ test.describe('Real account', () => {
   test('chat opens with a named composer and no horizontal overflow', async ({ page }) => {
     await signIn(page);
 
-    await page.getByRole('button', { name: 'Musa', exact: true }).click();
+    await page.locator('.nav-item[aria-label^="Musa"]').first().click();
     await page.waitForTimeout(2000);
     await dismissPageTour(page);
 
@@ -79,7 +93,8 @@ test.describe('Real account', () => {
 
     const composer = page.locator('.chat-input-wrap').first();
     await expect(composer).toBeVisible();
-    const input = composer.locator('input, textarea').first();
+    // The first input in the composer is the hidden file picker; target the text field.
+    const input = composer.locator('.chat-inp').first();
     await expect(input).toBeVisible();
     // The composer input must be reachable by an accessible name.
     const name = (await input.getAttribute('aria-label')) || (await input.getAttribute('placeholder')) || '';
@@ -91,3 +106,6 @@ test.describe('Real account', () => {
     expect(overflow).toBeLessThanOrEqual(1);
   });
 });
+
+
+
