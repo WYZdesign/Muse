@@ -685,11 +685,9 @@ img{background-color:var(--card-bg)}
    fight; it's the one thing on this screen a blocked user must still be
    able to use. */
 .chat-input-wrap{position:relative;z-index:10000;display:flex;align-items:flex-end;padding:12px 14px;border-top:1px solid rgba(255,255,255,0.05);background:rgba(10,6,18,0.85);backdrop-filter:blur(30px);gap:10px}
-/* Chat has no bottom nav: its composer replaces the nav at a different height,
-   so the globally-positioned verify banner overlapped the composer (measured
-   at 320x568). Scope the offset to screens that actually render the composer.
-   !important because the component sets `bottom` as an inline style. */
-body:has(.chat-input-wrap) .verify-banner{bottom:calc(84px + env(safe-area-inset-bottom,0px))!important}
+/* Chat's banner offset is measured at runtime in VerificationBanner.tsx
+   (useFloorOffset) because screens stay mounted: a :has(.chat-input-wrap)
+   rule would leak onto every screen after a chat is opened. */
 .chat-inp{flex:1;min-width:0;background:var(--glass);border:1.5px solid rgba(255,255,255,0.06);border-radius:99px;padding:12px 20px;font-size:15px;color:var(--text);font-family:inherit;transition:all .3s}
 .chat-inp:focus{border-color:var(--gold);box-shadow:0 0 20px rgba(255,215,0,0.08)}
 .chat-inp{font-size:16px}.chat-inp::placeholder{color:rgba(255,255,255,0.55)}
