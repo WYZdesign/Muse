@@ -197,6 +197,21 @@ describe("GET dispatcher (read-only)", () => {
     expect(Array.isArray(body.profiles)).toBe(true);
   });
 
+  it("profiles listing orders by recent activity instead of an arbitrary/physical order", async () => {
+    // Without an ORDER BY, Postgres is free to return whatever's cheapest to
+    // produce (effectively physical/insertion order) — the candidate pool
+    // trends toward the oldest rows and new profiles can go unseen forever
+    // at real scale. Assert the query actually requests recency ordering.
+    const sb = installSb({
+      muse_profiles: (calls) => (selectArg(calls).includes("travel_dates") ? { data: [] } : { data: null }),
+    });
+    await GET(req("profiles"));
+    const calls = tableCalls(sb.__log, "muse_profiles");
+    const orderCall = [...calls].reverse().find((c) => c.method === "order");
+    expect(orderCall?.args[0]).toBe("last_seen_at");
+    expect(orderCall?.args[1]).toMatchObject({ ascending: false });
+  });
+
   it("returns a 200 for an unknown type (graceful, not a crash)", async () => {
     const r = await GET(req("totally-unknown-type"));
     expect([200, 400]).toContain(r.status);
@@ -413,7 +428,7 @@ describe("GET discover-ranked", () => {
   it("scores, strips self/blocks, and ranks boosted + complementary first", async () => {
     g.__authUser = { id: "auth-1" };
     const future = new Date(Date.now() + 86400000).toISOString();
-    installSb({
+    const sb = installSb({
       muse_profiles: (calls) => {
         const sel = selectArg(calls);
         if (sel === "id") return { data: { id: "me" } };
@@ -438,6 +453,14 @@ describe("GET discover-ranked", () => {
     expect(ids).not.toContain("blocked");
     expect(ids[0]).toBe("boosted");
     expect(body.profiles.every((p) => typeof p.matchScore === "number")).toBe(true);
+
+    // Same freshness-ordering fix as "profiles": the 400-row candidate pool
+    // this scores against must be requested in recent-activity order, not
+    // left to Postgres's arbitrary/physical default.
+    const calls = tableCalls(sb.__log, "muse_profiles");
+    const orderCall = [...calls].reverse().find((c) => c.method === "order");
+    expect(orderCall?.args[0]).toBe("last_seen_at");
+    expect(orderCall?.args[1]).toMatchObject({ ascending: false });
   });
 
   it("ranks a paying profile above an otherwise identical free one", async () => {

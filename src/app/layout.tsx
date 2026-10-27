@@ -231,6 +231,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="theme-color" content="#0a0612" />
         <meta name="format-detection" content="telephone=no" />
+        {/* Cuts the extra DNS+TLS round trip before the stylesheet below even
+            starts downloading. A full migration to next/font/google would
+            self-host and remove the round trip entirely, but that touches
+            every screen's font-family assumptions — too risky to do blind in
+            an audit pass without a way to visually verify every screen
+            afterward. This is the safe, zero-risk partial win. */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900" rel="stylesheet" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }} />
         <script dangerouslySetInnerHTML={{ __html: BLANK_SCREEN_WATCHDOG }} />

@@ -309,7 +309,15 @@ export async function GET(req: NextRequest) {
         const { data: vp }: { data: ViewerVerifiedRow | null } = await sb.from("muse_profiles").select("age_verified, age_verified_at").eq("id", profileId).maybeSingle();
         viewerVerified = isAgeVerificationCurrent(vp);
       }
-      const { data }: { data: ProfileRow[] | null } = await sb.from("muse_profiles").select("id, name, type, avatar, bio, loc, styles, looking, nsfw, suspended, travel_dates, availability_status, budget_range, travel_destinations, preferences, birthdate").limit(100);
+      // This had no ORDER BY at all, meaning Postgres was free to return
+      // whatever's cheapest to produce (effectively physical/insertion
+      // order) — the candidate pool trended toward the oldest-created rows
+      // and newer profiles could go unseen indefinitely. Order by recent
+      // activity instead, so the pool is at least biased toward profiles
+      // that are actually active right now; it's still a flat `limit(100)`
+      // over the whole table, not real pagination or random sampling, which
+      // is a bigger design question for genuine 100M-scale fairness.
+      const { data }: { data: ProfileRow[] | null } = await sb.from("muse_profiles").select("id, name, type, avatar, bio, loc, styles, looking, nsfw, suspended, travel_dates, availability_status, budget_range, travel_destinations, preferences, birthdate").order("last_seen_at", { ascending: false, nullsFirst: false }).limit(100);
       // Blocks were write-only until now — muse_blocks was never consulted
       // anywhere, so a blocked user could still show up in Discover, match,
       // and message the person who blocked them. Filter both directions:
@@ -350,8 +358,15 @@ export async function GET(req: NextRequest) {
         .eq("id", profileId).maybeSingle();
       if (!viewer) return NextResponse.json({ error: "Not found" }, { status: 404 });
       const viewerVerified = isAgeVerificationCurrent(viewer);
+      // Same unordered-`.limit()` issue as "profiles" above: with no ORDER
+      // BY, the 400-row candidate pool this scores against was effectively
+      // physical/insertion order, biased toward old rows and blind to who's
+      // actually active. Order by recent activity so the pool at least
+      // reflects who's really around right now — the boost/priority/match
+      // ranking below still decides final order within that pool.
       const { data }: { data: ProfileRow[] | null } = await sb.from("muse_profiles")
         .select("id, name, type, avatar, bio, loc, styles, looking, nsfw, suspended, zodiac, chinese, mbti, life_path, boost_expires_at, tier, preferences, birthdate, verified, last_seen_at")
+        .order("last_seen_at", { ascending: false, nullsFirst: false })
         .limit(400);
       let blockedIds = new Set<string>();
       {

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { type ModerationResult } from "@/lib/contentScan";
 
 type MockResult = { data?: unknown; error?: unknown };
@@ -258,5 +258,132 @@ describe("contentScan — NCMEC config gates", () => {
   it("transmitPendingNcmecReports no-ops without config", async () => {
     const r = await transmitPendingNcmecReports();
     expect(r).toEqual({ submitted: 0, failed: 0 });
+  });
+});
+
+// NCMEC_ENDPOINT/CLIENT_ID/CLIENT_SECRET are captured as module-level consts
+// at import time (see contentScan.ts), so exercising the "configured" branch
+// of submitToCyberTipline/transmitPendingNcmecReports needs a fresh module
+// instance with the env already set before import — the describe block above
+// can only ever see them unset. This is the highest-value gap to close: these
+// are the exact code paths that fire the moment NCMEC ESP credentials are
+// actually provisioned, and a bug here would otherwise go undiscovered until
+// a real CSAM incident, the worst possible time to find one.
+describe("contentScan — NCMEC live submission (configured)", () => {
+  async function freshModule() {
+    vi.resetModules();
+    vi.stubEnv("NCMEC_ENDPOINT", "https://cybertip.test");
+    vi.stubEnv("NCMEC_CLIENT_ID", "client-id");
+    vi.stubEnv("NCMEC_CLIENT_SECRET", "client-secret");
+    return import("@/lib/contentScan");
+  }
+
+  function mockTokenThenReport(reportResponse: { ok: boolean; status?: number }) {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    fetchSpy.mockImplementation(async (url: unknown) => {
+      const u = String(url);
+      if (u.includes("/oauth/token")) {
+        return { ok: true, json: async () => ({ access_token: "tok-123" }) } as Response;
+      }
+      if (u.includes("/reports")) {
+        return { ok: reportResponse.ok, status: reportResponse.status ?? (reportResponse.ok ? 200 : 500) } as Response;
+      }
+      throw new Error(`unexpected fetch: ${u}`);
+    });
+    return fetchSpy;
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  it("submitToCyberTipline reports the HTTP status when the CyberTipline POST fails", async () => {
+    const mod = await freshModule();
+    const fetchSpy = mockTokenThenReport({ ok: false, status: 503 });
+    const r = await mod.submitToCyberTipline({
+      report_id: "r1", user_id: "u1", file_name: "f.jpg", context: "",
+      flagged_categories: ["Child Sexual Abuse"], confidence: 97, reported_at: new Date().toISOString(),
+    });
+    expect(r).toEqual({ submitted: false, error: "NCMEC HTTP 503" });
+    fetchSpy.mockRestore();
+  });
+
+  it("submitToCyberTipline catches a thrown network error during the report POST", async () => {
+    const mod = await freshModule();
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (url: unknown) => {
+      const u = String(url);
+      if (u.includes("/oauth/token")) return { ok: true, json: async () => ({ access_token: "tok-123" }) } as Response;
+      throw new Error("ECONNRESET");
+    });
+    const r = await mod.submitToCyberTipline({
+      report_id: "r1", user_id: "u1", file_name: "f.jpg", context: "",
+      flagged_categories: [], confidence: 10, reported_at: new Date().toISOString(),
+    });
+    expect(r.submitted).toBe(false);
+    expect(r.error).toBe("ECONNRESET");
+    fetchSpy.mockRestore();
+  });
+
+  it("transmitPendingNcmecReports marks a report submitted and counts it", async () => {
+    const updates: { id: string; value: Record<string, unknown> }[] = [];
+    const sbMock = {
+      from: (tbl: string) => {
+        if (tbl === "muse_ncmec_reports") {
+          const q = {
+            select: () => q,
+            eq: () => q,
+            limit: async () => ({
+              data: [{ id: "rep-1", user_id: "u1", file_name: "f.jpg", context: "upload", flagged_categories: [], confidence: 90, created_at: "2026-01-01T00:00:00Z" }],
+            }),
+            update: (v: Record<string, unknown>) => ({ eq: async (_col: string, id: string) => { updates.push({ id, value: v }); return { error: null }; } }),
+          };
+          return q;
+        }
+        throw new Error(`unexpected table: ${tbl}`);
+      },
+    };
+    vi.doMock("@/lib/supabase", () => ({ getServiceClient: () => sbMock }));
+    vi.resetModules();
+    vi.stubEnv("NCMEC_ENDPOINT", "https://cybertip.test");
+    vi.stubEnv("NCMEC_CLIENT_ID", "client-id");
+    vi.stubEnv("NCMEC_CLIENT_SECRET", "client-secret");
+    const freshMod = await import("@/lib/contentScan");
+    const fetchSpy = mockTokenThenReport({ ok: true });
+    const r = await freshMod.transmitPendingNcmecReports();
+    expect(r).toEqual({ submitted: 1, failed: 0 });
+    expect(updates[0]?.value.status).toBe("submitted");
+    fetchSpy.mockRestore();
+    vi.doUnmock("@/lib/supabase");
+  });
+
+  it("transmitPendingNcmecReports counts a failed submission without throwing", async () => {
+    const sbMock = {
+      from: (tbl: string) => {
+        if (tbl === "muse_ncmec_reports") {
+          const q = {
+            select: () => q,
+            eq: () => q,
+            limit: async () => ({
+              data: [{ id: "rep-2", user_id: "u2", file_name: "g.jpg", context: "upload", flagged_categories: [], confidence: 50, created_at: "2026-01-01T00:00:00Z" }],
+            }),
+            update: () => ({ eq: async () => ({ error: null }) }),
+          };
+          return q;
+        }
+        throw new Error(`unexpected table: ${tbl}`);
+      },
+    };
+    vi.doMock("@/lib/supabase", () => ({ getServiceClient: () => sbMock }));
+    vi.resetModules();
+    vi.stubEnv("NCMEC_ENDPOINT", "https://cybertip.test");
+    vi.stubEnv("NCMEC_CLIENT_ID", "client-id");
+    vi.stubEnv("NCMEC_CLIENT_SECRET", "client-secret");
+    const freshMod = await import("@/lib/contentScan");
+    const fetchSpy = mockTokenThenReport({ ok: false, status: 500 });
+    const r = await freshMod.transmitPendingNcmecReports();
+    expect(r).toEqual({ submitted: 0, failed: 1 });
+    fetchSpy.mockRestore();
+    vi.doUnmock("@/lib/supabase");
   });
 });
