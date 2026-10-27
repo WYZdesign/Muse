@@ -487,7 +487,16 @@ export async function GET(req: NextRequest) {
       // last_seen_at joined so the client can render an online indicator on
       // each post's author, same presence signal already used for matches
       // (see useDiscoveryData.ts's `online` computation).
-      const { data }: { data: PostRow[] | null } = await sb.from("muse_feed_posts").select("*, author_id(id, name, avatar, last_seen_at, verified)").order("created_at", { ascending: false }).limit(50);
+      //
+      // Cursor pagination, same shape as "messages" above: an optional
+      // `before` (an ISO created_at from the last post the client already
+      // has) narrows to strictly older posts. Omitting it preserves the
+      // original behavior exactly — the newest 50 — so this is additive,
+      // not a breaking change for any existing caller.
+      const feedBefore = req.nextUrl.searchParams.get("before") || undefined;
+      let feedQuery = sb.from("muse_feed_posts").select("*, author_id(id, name, avatar, last_seen_at, verified)").order("created_at", { ascending: false }).limit(50);
+      if (feedBefore) feedQuery = feedQuery.lt("created_at", feedBefore);
+      const { data }: { data: PostRow[] | null } = await feedQuery;
       // Blocking was enforced for discover-ranked/profiles/matches and for
       // cleaning up an existing match (see userBlock in forum.ts), but this
       // listing — and briefs/forum right below it — never consulted
@@ -596,7 +605,12 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === "forum") {
-      const { data }: { data: PostRow[] | null } = await sb.from("muse_forum_posts").select("*, author_id(id, name, avatar)").order("created_at", { ascending: false }).limit(50);
+      // Same additive cursor pagination as "feed" above — `before` is
+      // optional and backward compatible with every existing caller.
+      const forumBefore = req.nextUrl.searchParams.get("before") || undefined;
+      let forumQuery = sb.from("muse_forum_posts").select("*, author_id(id, name, avatar)").order("created_at", { ascending: false }).limit(50);
+      if (forumBefore) forumQuery = forumQuery.lt("created_at", forumBefore);
+      const { data }: { data: PostRow[] | null } = await forumQuery;
       // Same gap as "feed" above — blocking never reached this listing.
       let posts = data || [];
       if (profileId) {

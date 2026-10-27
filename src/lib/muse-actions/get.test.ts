@@ -758,6 +758,39 @@ describe("GET feed/briefs/forum — blocking", () => {
   });
 });
 
+// Feed and forum previously had no way to reach anything past the newest 50
+// rows — a hardcoded .limit(50) with no cursor. Locks in the additive,
+// backward-compatible `before` param (same shape as "messages"'s own cursor).
+describe("GET feed/forum — cursor pagination", () => {
+  it("feed: passes `before` through as a created_at upper bound, and omits it when absent", async () => {
+    const sb = installSb({ muse_feed_posts: () => ({ data: [] }) });
+    await GET(req("feed", "", { before: "2026-01-01T00:00:00Z" }));
+    let calls = tableCalls(sb.__log, "muse_feed_posts");
+    let ltCall = calls.find((c) => c.method === "lt");
+    expect(ltCall?.args).toEqual(["created_at", "2026-01-01T00:00:00Z"]);
+
+    sb.__log.length = 0;
+    await GET(req("feed"));
+    calls = tableCalls(sb.__log, "muse_feed_posts");
+    ltCall = calls.find((c) => c.method === "lt");
+    expect(ltCall).toBeUndefined();
+  });
+
+  it("forum: passes `before` through as a created_at upper bound, and omits it when absent", async () => {
+    const sb = installSb({ muse_forum_posts: () => ({ data: [] }) });
+    await GET(req("forum", "", { before: "2026-01-01T00:00:00Z" }));
+    let calls = tableCalls(sb.__log, "muse_forum_posts");
+    let ltCall = calls.find((c) => c.method === "lt");
+    expect(ltCall?.args).toEqual(["created_at", "2026-01-01T00:00:00Z"]);
+
+    sb.__log.length = 0;
+    await GET(req("forum"));
+    calls = tableCalls(sb.__log, "muse_forum_posts");
+    ltCall = calls.find((c) => c.method === "lt");
+    expect(ltCall).toBeUndefined();
+  });
+});
+
 describe("GET messages — participant + limit logic", () => {
   function authed() {
     g.__authUser = { id: "a" };

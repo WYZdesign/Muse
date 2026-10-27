@@ -86,6 +86,13 @@ export async function checkRateUser(userId: string, action: string, maxPerMin: n
   return checkRate(`u:${userId}`, action, maxPerMin);
 }
 
+// Trusting x-forwarded-for's leftmost entry as the real client IP is only
+// safe because Vercel's edge strips and rewrites this header itself before
+// the request reaches app code — a client can't forge it on this specific
+// deployment. That's an infrastructure guarantee, not something this
+// function enforces: moving behind a different proxy/CDN without the same
+// header-stripping behavior would silently reopen IP spoofing (and with it,
+// rate-limit bypass) here. If that ever changes, this is the line to revisit.
 export function clientIp(req: { headers: { get(name: string): string | null } }): string {
   const real = req.headers.get("x-real-ip");
   if (real) return real.trim();
