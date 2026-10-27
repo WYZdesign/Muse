@@ -99,7 +99,14 @@ export async function GET(req: NextRequest) {
     const error = url.searchParams.get("error");
 
     if (!provider) return NextResponse.redirect(`${getMuseUrl()}?error=provider_missing`);
-    if (error) return NextResponse.redirect(`${getMuseUrl()}?error=${error}`);
+    // OAuth error codes are always short snake_case tokens per spec (access_denied,
+    // invalid_scope, server_error, ...) — restrict to that shape instead of
+    // reflecting the provider-supplied value verbatim into a redirect URL, so an
+    // attacker can't smuggle extra query params or markup through this param.
+    if (error) {
+      const safeError = /^[a-z0-9_]{1,40}$/i.test(error) ? error : "oauth_error";
+      return NextResponse.redirect(`${getMuseUrl()}?error=${safeError}`);
+    }
 
     if (!code || !state) {
       return NextResponse.redirect(`${getMuseUrl()}?error=invalid_callback`);

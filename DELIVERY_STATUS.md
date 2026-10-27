@@ -27,7 +27,68 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `9381d1dc`
+## Confirmed merged, last verified at: `a330b029`
+
+### Reconciliation — 2026-10-27 (Claude): `9381d1dc` → `a330b029` (59 commits)
+This header had been stuck at `9381d1dc` through several rounds of real, verified
+work that landed without anyone moving it forward in the same commit — exactly
+the failure mode `AGENTS.md` warns about by name. Caught it by diffing
+`git log --oneline -1 origin/main` against this file's own header per the rule
+above. Re-verified clean before writing this: `tsc` 0, **172 files / 1646 tests
+PASS**, `next build` clean, `audit-gate` PASS — independently re-run, not taken
+on faith from any of the batches below.
+
+What actually landed in this range (grouped, not commit-by-commit — see
+`git log 9381d1dc..a330b029 --oneline` for the full list of 59):
+- **Pricing-honesty enforcement batch** (`8a2c6144` … `a2e57612` and friends):
+  Free-tier 10-likes/day cap now server-enforced, "see who likes you" gated for
+  Free, Incognito + advanced Discover filters + priority placement all made
+  real and Musa Pro-only, read receipts made genuinely live instead of faked,
+  industry-brief response caps and placement claims made true, saved-talent
+  lists (uncapped for Studio), real human support with Studio priority, the
+  missing Musa Studio tier added to the public pricing page.
+- **Perf batch** (`8753304b`, `453a7dee`, `c63e6586`, `0812a5c2`, `cc4d0fd1`,
+  `750250b1`, `df83db1c`): Stripe Connect + LiveKit split out of the `/muse`
+  shell, SW cache bounded, removed a 90px blur that was holding the app at
+  ~5fps, stopped re-downloading card photos per tap, discovery cards use the
+  pre-culled Lightroom picks (max 4/model).
+- **Mobile audit rounds 7-9 + banner/toolbar fixes** (`0d8de31f`, `3500c5cf`,
+  `6ba55186` and the verify-banner/card-info lift fixes around them): four
+  320px defects, feed-toolbar wrap flex-basis bug, verify-banner
+  `useFloorOffset()` measurement fix (replacing a regressive `:has()` CSS rule
+  that leaked onto every screen after visiting Chat once).
+- **Security advisories** (`d3fb9905`, `32aa8fcb`, `0dea4146`): happy-dom
+  20.14.5→21.0.4 (GHSA-834V-8H66-3H79), 3 more high/critical advisories
+  cleared, a vite advisory patched alongside a talent-lists silent-failure fix.
+- **Round 10-12 (Claude + opencode)**: NCMEC CyberTipline reports were staged
+  but `transmitPendingNcmecReports()` was never called from anywhere — now
+  submits immediately when ESP creds exist, retried every 15 min via
+  `/api/cron/ncmec-retry`, and always emails `ADMIN_EMAILS` on a CSAM
+  detection regardless of submission outcome. `/api/muse/depth`'s "our own
+  uploads only" check was a bare `url.includes("/muse-uploads/")` substring
+  test — fixed to real hostname + per-caller ownership validation
+  (`a1d14d6f`). Sentry had been dead code since it was added — `next.config`
+  uploaded source maps but nothing ever called the v8 SDK's init path, so
+  zero errors had ever actually reached Sentry; fixed via
+  `instrumentation.ts`/`instrumentation-client.ts`/`sentry.edge.config.ts`
+  and verified live (`9a3582a3`). A logical restore drill now actually runs
+  against production and verifies row counts + checksums (`d59fbe05`) — the
+  backup had never been proven restorable before. Found the live Stripe
+  webhook was subscribed to only 4 of the 6 events the handler switches on
+  (`customer.subscription.deleted`, `charge.refunded`,
+  `invoice.payment_action_required` were silently never delivered) and
+  patched it to all 7 needed events. Authenticated-session E2E now runs
+  against production (`28431cff`, `a330b029`).
+- Full detail for the round 10-12 work: `_STATE/handovers/round10-handover.md`,
+  `round11-handover.md`, `round12-completion-pass.md`.
+
+**Still open, unaffected by any of the above** (owner/business-gated, not
+engineering — see `round12-completion-pass.md`'s own list): NCMEC ESP
+registration, DMCA agent phone/counter-notice, one real live Stripe
+subscription rehearsal, moderation queue/SLA/appeals exercised with real
+reports, legal review of Terms/Privacy/DMCA wording, RevenueCat keys +
+signing + store listings for mobile, real-device performance, load testing
+past the current ~130 req/s local floor, DMARC tightening to `p=quarantine`.
 
 ### Reconciliation — 2026-10-12 (opencode/WYZMIND): `4d89ff33` → `c00c847a`
 

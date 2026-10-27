@@ -77,6 +77,13 @@ describe("social callback route", () => {
     expect(await locationOf(r)).toContain("error=access_denied");
   });
 
+  it("sanitizes a malicious error param instead of reflecting it verbatim", async () => {
+    const r = await GET(req(`?provider=instagram&${encodeURIComponent("error")}=${encodeURIComponent("x&redirect=https://evil.example")}`));
+    const location = await locationOf(r);
+    expect(location).toContain("error=oauth_error");
+    expect(location).not.toContain("evil.example");
+  });
+
   it("redirects invalid_callback without code/state", async () => {
     const r = await GET(req("?provider=instagram"));
     expect(await locationOf(r)).toContain("error=invalid_callback");
