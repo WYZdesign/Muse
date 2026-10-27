@@ -29,6 +29,22 @@ same way.
 
 ## Confirmed merged, last verified at: `a330b029`
 
+### ⏳ PENDING, not yet merged — Round 13+14 bundle (Claude, 2026-10-27)
+Two commits exist **locally only** in the Claude sandbox, on top of this same
+`a330b029` tip, bundled and dropped at `V:\Muse\_to_delete\round14.bundle`
+(bundle verified: requires `a330b029...`, carries `ab6cb2d9` + `b2bce9fe` as
+HEAD). Handover doc at `V:\Muse\_STATE\handovers\round14-handover.md`. **Do
+not re-implement these from scratch** — merge the bundle:
+```
+ab6cb2d9  fix(security): sanitize OAuth callback error param; unstick DELIVERY_STATUS.md header
+b2bce9fe  fix(scale): order Discover's candidate pool by activity; close NCMEC test gap; font preconnect; add LICENSE
+```
+Both independently verified before bundling: `tsc` clean, `eslint` 0 errors,
+**172 files / 1652 tests PASS**, `next build` clean, `audit-gate` PASS. Once
+merged + pushed + confirmed as `origin/main`'s new tip, move the "Confirmed
+merged" header above to `b2bce9fe` and delete this entry — in the same
+commit, per this file's own rule.
+
 ### Reconciliation — 2026-10-27 (Claude): `9381d1dc` → `a330b029` (59 commits)
 This header had been stuck at `9381d1dc` through several rounds of real, verified
 work that landed without anyone moving it forward in the same commit — exactly
