@@ -2,6 +2,7 @@
 "use client";
 
 import React, { memo, useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { FiArrowLeft, FiUser, FiLink, FiStar, FiUsers, FiShield, FiInstagram, FiMusic, FiHeadphones, FiEye, FiMoreHorizontal, FiZap, FiDollarSign, FiGift, FiFile, FiX, FiLock, FiBell, FiCompass, FiFacebook, FiBriefcase, FiDownload } from "react-icons/fi";
 // Push subscribe/unsubscribe arrive as PROPS (page.tsx owns the real impls) —
 // importing the module fns here too shadowed them and invited drift.
@@ -740,7 +741,7 @@ export const SettingsScreen = memo(function SettingsScreen({
             blockedUsers.map(uid => (
               <div key={uid} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid var(--border-subtle)" }}>
                 <span style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "var(--text)" }}>
-                  {blockedProfiles[uid]?.avatar && <img src={blockedProfiles[uid].avatar} alt={`${blockedProfiles[uid]?.name || "Blocked user"}'s avatar`} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />}
+                  {blockedProfiles[uid]?.avatar && <Image loading="lazy" src={blockedProfiles[uid].avatar} alt={`${blockedProfiles[uid]?.name || "Blocked user"}'s avatar`} width={28} height={28} style={{ borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />}
                           {blockedProfiles[uid]?.name || "Unknown user"}
                 </span>
                     <button className="btn btn-outline" aria-label={`Unblock ${blockedProfiles[uid]?.name || "this user"}`} style={{ padding: "4px 12px", fontSize: 12 }} onClick={() => { const who = blockedProfiles[uid]?.name || "this user"; if (!window.confirm(`Unblock ${who}? They will be able to see your profile and contact you again.`)) return; setBlockedUsers(blockedUsers.filter(b => b !== uid)); if (apiFetch) { apiFetch("/api/muse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "unblock", target_id: uid }) }).catch(() => {}); } }}>Unblock</button>
