@@ -29,24 +29,27 @@ same way.
 
 ## Confirmed merged, last verified at: `a330b029`
 
-### ⏳ PENDING, not yet merged — Round 13+14+15 bundle (Claude, 2026-10-27)
-Four commits exist **locally only** in the Claude sandbox, on top of this
-same `a330b029` tip, bundled and dropped at `V:\Muse\_to_delete\round15.bundle`
-(supersedes `round14.bundle` — that one is now a strict prefix of this one;
-merge this one instead). Handover doc at
-`V:\Muse\_STATE\handovers\round15-handover.md`. **Do not re-implement these
-from scratch** — merge the bundle:
+### ⏳ PENDING, not yet merged — Round 13-16 bundle (Claude, 2026-10-28)
+Six commits exist **locally only** in the Claude sandbox, on top of this
+same `a330b029` tip, bundled and dropped at `V:\Muse\_to_delete\round16.bundle`
+(supersedes `round14.bundle`/`round15.bundle`; merge this one instead).
+Handover doc at `V:\Muse\_STATE\handovers\round16-handover.md`. **Do not
+re-implement these from scratch** — merge the bundle:
 ```
 ab6cb2d9  fix(security): sanitize OAuth callback error param; unstick DELIVERY_STATUS.md header
 b2bce9fe  fix(scale): order Discover's candidate pool by activity; close NCMEC test gap; font preconnect; add LICENSE
 adfd0267  docs: flag round 13+14 bundle as pending in DELIVERY_STATUS.md
 7a60f80d  fix(api): add cursor pagination to feed/forum; document x-forwarded-for trust
+c0c068c7  docs: update pending-bundle entry for round 15
+def804fe  fix(perf): fully lazy-split page.tsx's remaining screens; fix 2 raw <img> tags
 ```
 All independently verified before bundling: `tsc` clean, `eslint` 0 errors,
-**172 files / 1654 tests PASS**, `next build` clean, `audit-gate` PASS. Once
-merged + pushed + confirmed as `origin/main`'s new tip, move the "Confirmed
-merged" header above to `7a60f80d` (or whatever SHA it lands as) and delete
-this entry — in the same commit, per this file's own rule.
+**172 files / 1654 tests PASS**, `next build` clean, `audit-gate` PASS, plus
+a real headless-browser pass through all 10 newly-lazy screens (see
+round16-handover.md). Once merged + pushed + confirmed as `origin/main`'s
+new tip, move the "Confirmed merged" header above to `def804fe` (or
+whatever SHA it lands as) and delete this entry — in the same commit, per
+this file's own rule.
 
 ### Reconciliation — 2026-10-27 (Claude): `9381d1dc` → `a330b029` (59 commits)
 This header had been stuck at `9381d1dc` through several rounds of real, verified
