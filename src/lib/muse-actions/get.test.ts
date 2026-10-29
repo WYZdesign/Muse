@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createSb, tableCalls, type SbCall, type SbMock, type SbResult } from "@/test-support/sb";
 import type { NextRequest } from "next/server";
 
-vi.mock("@/lib/rate-limit", () => ({ checkRate: async () => true, checkRateUser: async () => true, clientIp: () => "10.0.0.1" }));
+vi.mock("@/lib/rate-limit", () => ({ checkRate: vi.fn(async () => true), checkRateUser: vi.fn(async () => true), clientIp: vi.fn(() => "10.0.0.1") }));
 vi.mock("@/lib/request-safety", () => ({ sanitizeText: (s: string, n: number) => String(s).slice(0, n) }));
 vi.mock("@/lib/http", () => ({
   safeServerError: () => new Response(JSON.stringify({ error: "Server error" }), { status: 500, headers: { "content-type": "application/json" } }),
@@ -23,6 +23,7 @@ vi.mock("@/lib/supabase", () => ({
 }));
 
 import { GET } from "@/lib/muse-actions/get";
+import { checkRate, checkRateUser } from "@/lib/rate-limit";
 
 // The mocked Supabase client returned by installSb().
 type SbAuth = {
@@ -215,6 +216,22 @@ describe("GET dispatcher (read-only)", () => {
   it("returns a 200 for an unknown type (graceful, not a crash)", async () => {
     const r = await GET(req("totally-unknown-type"));
     expect([200, 400]).toContain(r.status);
+  });
+
+  it("429s an unauthenticated request once checkRate denies it, keyed by IP + type", async () => {
+    vi.mocked(checkRate).mockResolvedValueOnce(false);
+    const r = await GET(req("profiles"));
+    expect(r.status).toBe(429);
+    expect(checkRate).toHaveBeenCalledWith("10.0.0.1", "get:profiles", 60);
+  });
+
+  it("429s an authenticated request once checkRateUser denies it, keyed by profile + type", async () => {
+    g.__authUser = { id: "auth-1" };
+    installSb({ muse_profiles: (calls) => profLookup(calls) ?? { data: null } });
+    vi.mocked(checkRateUser).mockResolvedValueOnce(false);
+    const r = await GET(req("feed", "tok"));
+    expect(r.status).toBe(429);
+    expect(checkRateUser).toHaveBeenCalledWith("me", "get:feed", 120);
   });
 
   it("community-members returns an empty roster for a non-UUID communityId", async () => {

@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, getServiceClient } from "@/lib/supabase";
 import { safeServerError } from "@/lib/http";
+import { checkRate, checkRateUser, clientIp } from "@/lib/rate-limit";
 import { sanitizeText } from "@/lib/request-safety";
 import { bearerTokenFromReq, isConvoParticipant, UUID_RE, isAdminEmail, isAgeVerificationCurrent, isPaidTier, applyLikeTierGate } from "./shared";
 import { getBoostStatus, isBoostActive } from "./misc";
@@ -297,6 +298,22 @@ export async function GET(req: NextRequest) {
         profileId = prof?.id ?? null;
       }
     }
+    // Every mutating action in this codebase gates through checkRate/
+    // checkRateUser (see rate-limit.ts), but this read-only dispatcher never
+    // did — 37 `type=` branches, including unauthenticated-reachable ones
+    // like "profiles"/"feed"/"forum"/"briefs", had no rate limit at any
+    // layer (not here, not in the edge proxy's SENSITIVE_ROUTES, nothing).
+    // At 100M-user scale that's a real scraping/abuse surface, not just a
+    // theoretical one: anyone, logged in or not, could pull the entire
+    // profiles table at an unbounded rate. Authenticated callers get a
+    // looser cap (identifiable, accountable, immune to IP rotation);
+    // anonymous callers are keyed by IP and capped tighter. Keyed per
+    // `type` so a scraper hammering the expensive discover-ranked path
+    // doesn't share a budget with (or get blocked by) normal, cheap reads.
+    const rateOk = profileId
+      ? await checkRateUser(profileId, `get:${type}`, 120)
+      : await checkRate(clientIp(req), `get:${type}`, 60);
+    if (!rateOk) return NextResponse.json({ error: "Rate limited" }, { status: 429 });
 
     if (type === "profiles") {
       // NSFW gating: only surface nsfw profiles/photos if the requesting user
