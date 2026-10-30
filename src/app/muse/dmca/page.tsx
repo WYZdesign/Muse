@@ -3,11 +3,11 @@ import type { Metadata } from "next";
 import { getMuseUrl } from "@/lib/urls";
 
 export const metadata: Metadata = {
-  title: "DMCA & Copyright — Musa by WYZ",
+  title: "DMCA & Copyright | Musa by WYZ",
   description: "How to submit a DMCA takedown notice for unauthorized use of your creative work on Musa by WYZ.",
   alternates: { canonical: getMuseUrl() + "/dmca" },
-  openGraph: { title: "DMCA & Copyright — Musa by WYZ", description: "How to submit a DMCA takedown notice for unauthorized use of your creative work on Musa by WYZ.", url: getMuseUrl() + "/dmca", siteName: "Musa by WYZ", type: "website" },
-  twitter: { card: "summary", title: "DMCA & Copyright — Musa by WYZ", description: "How to submit a DMCA takedown notice for unauthorized use of your creative work on Musa by WYZ." },
+  openGraph: { title: "DMCA & Copyright | Musa by WYZ", description: "How to submit a DMCA takedown notice for unauthorized use of your creative work on Musa by WYZ.", url: getMuseUrl() + "/dmca", siteName: "Musa by WYZ", type: "website" },
+  twitter: { card: "summary", title: "DMCA & Copyright | Musa by WYZ", description: "How to submit a DMCA takedown notice for unauthorized use of your creative work on Musa by WYZ." },
 };
 
 export default function DMCAPage() {
@@ -30,12 +30,12 @@ export default function DMCAPage() {
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>3. How to Submit a Takedown Notice</h2>
         <p style={{ marginBottom: 16 }}>To be effective under the DMCA, your notice must include all of the following:</p>
         <ul style={{ paddingLeft: 20, marginBottom: 24 }}>
-          <li><strong>Signature</strong> — Physical or electronic signature of the copyright owner or authorized agent.</li>
-          <li><strong>Identification of the copyrighted work</strong> — Describe the work you claim is infringed (e.g., title, URL, description).</li>
-          <li><strong>Identification of the infringing material</strong> — Provide the specific URL(s) on Musa where the infringing material appears.</li>
-          <li><strong>Contact information</strong> — Your name, address, phone number, and email address.</li>
-          <li><strong>Good faith statement</strong> — A statement that you have a good faith belief that the use is not authorized by the copyright owner, its agent, or the law.</li>
-          <li><strong>Accuracy statement</strong> — A statement that the information in your notice is accurate, and under penalty of perjury, that you are the copyright owner or authorized to act on their behalf.</li>
+          <li><strong>Signature</strong>: physical or electronic signature of the copyright owner or authorized agent.</li>
+          <li><strong>Identification of the copyrighted work</strong>: describe the work you claim is infringed (e.g., title, URL, description).</li>
+          <li><strong>Identification of the infringing material</strong>: provide the specific URL(s) on Musa where the infringing material appears.</li>
+          <li><strong>Contact information</strong>: your name, address, phone number, and email address.</li>
+          <li><strong>Good faith statement</strong>: a statement that you have a good faith belief that the use is not authorized by the copyright owner, its agent, or the law.</li>
+          <li><strong>Accuracy statement</strong>: a statement that the information in your notice is accurate, and under penalty of perjury, that you are the copyright owner or authorized to act on their behalf.</li>
         </ul>
         <p style={{ marginBottom: 24 }}>Email your complete notice to <a href="mailto:info@wyzdesign.com" style={{ color: "#ffd700" }}>info@wyzdesign.com</a>. Incomplete notices may be ignored or delayed.</p>
 
