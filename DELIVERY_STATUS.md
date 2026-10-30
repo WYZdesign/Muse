@@ -62,7 +62,8 @@ f9a431fa  docs: update pending-bundle entry for round 15
 082729ad  docs: update pending-bundle entry for round 16
 4de9511f  fix(scale): add missing indexes behind recent ORDER BY/filter additions (0046-0049)
 acbe0f8f  fix(security): rate-limit the read-only GET dispatcher (was completely open)
-1635d6e5  docs: update pending-bundle entry for round 17 (superseded by this entry)
+1635d6e5  docs: update pending-bundle entry for round 17
+d93f216a  docs: reconcile DELIVERY_STATUS.md header after Torree's direct push; round 18
 ```
 All independently re-verified after the rebase: `tsc` clean, `eslint` 0
 errors, **173 files / 1664 tests PASS**, `next build` clean, `audit-gate`
