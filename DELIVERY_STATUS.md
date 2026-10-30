@@ -27,35 +27,46 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `a330b029`
+## Confirmed merged, last verified at: `7f5e676a`
 
-### ⏳ PENDING, not yet merged — Round 13-17 bundle (Claude, 2026-10-29)
-Eight commits exist **locally only** in the Claude sandbox, on top of this
-same `a330b029` tip, bundled and dropped at `V:\Muse\_to_delete\round17.bundle`
-(supersedes `round14`/`15`/`16.bundle`; merge this one instead). Handover
-doc at `V:\Muse\_STATE\handovers\round17-handover.md`. **Includes 4 new SQL
+### Reconciliation — 2026-10-30 (Claude): `a330b029` → `7f5e676a` (2 commits)
+Caught via this file's own rule: `git fetch origin && git log --oneline -1
+origin/main` returned `7f5e676a`, not the `a330b029` this file still had
+recorded. Torreé pushed directly (not through the usual Claude-bundle or
+wyzmind-merge flow): `809d9939` (checkout "Invalid plan" fix on every paid
+tier, plus pricing annual/refund/blog SSG/i18n/MFA sanitize/logo sizing/DMCA
+page/unified legal contact) and `7f5e676a` (DMCA page em-dash copy cleanup).
+Neither touches any file the pending bundle below touches, so the bundle
+was rebased onto this new tip with no conflicts and no content changes —
+only its commit SHAs changed. Re-verified clean after rebasing: `tsc` 0,
+**173 files / 1664 tests PASS**, `next build` clean, `audit-gate` PASS.
+
+### ⏳ PENDING, not yet merged — Round 13-18 bundle (Claude, 2026-10-30)
+Ten commits exist **locally only** in the Claude sandbox, on top of this
+`7f5e676a` tip (rebased from the old `a330b029` base above — same content,
+new SHAs), bundled and dropped at `V:\Muse\_to_delete\round18.bundle`
+(supersedes `round14`-`17.bundle`; merge this one instead). Handover doc at
+`V:\Muse\_STATE\handovers\round18-handover.md`. **Includes 4 new SQL
 migrations (0046-0049) that are NOT yet applied to the live database** —
 merging the bundle only gets the `.sql` files into git; wyzmind still needs
 to run `python scripts/run_migrations.py --apply` against the real
 project afterward, same as every other migration here. **Do not
 re-implement any of this from scratch** — merge the bundle:
 ```
-ab6cb2d9  fix(security): sanitize OAuth callback error param; unstick DELIVERY_STATUS.md header
-b2bce9fe  fix(scale): order Discover's candidate pool by activity; close NCMEC test gap; font preconnect; add LICENSE
-adfd0267  docs: flag round 13+14 bundle as pending in DELIVERY_STATUS.md
-7a60f80d  fix(api): add cursor pagination to feed/forum; document x-forwarded-for trust
-c0c068c7  docs: update pending-bundle entry for round 15
-def804fe  fix(perf): fully lazy-split page.tsx's remaining screens; fix 2 raw <img> tags
-9642064c  docs: update pending-bundle entry for round 16
-3536ce85  fix(scale): add missing indexes behind recent ORDER BY/filter additions (0046-0049)
-49d7da97  fix(security): rate-limit the read-only GET dispatcher (was completely open)
+09d71205  fix(security): sanitize OAuth callback error param; unstick DELIVERY_STATUS.md header
+6dd685e5  fix(scale): order Discover's candidate pool by activity; close NCMEC test gap; font preconnect; add LICENSE
+7df6637a  docs: flag round 13+14 bundle as pending in DELIVERY_STATUS.md
+8ef1bb36  fix(api): add cursor pagination to feed/forum; document x-forwarded-for trust
+f9a431fa  docs: update pending-bundle entry for round 15
+111b0637  fix(perf): fully lazy-split page.tsx's remaining screens; fix 2 raw <img> tags
+082729ad  docs: update pending-bundle entry for round 16
+4de9511f  fix(scale): add missing indexes behind recent ORDER BY/filter additions (0046-0049)
+acbe0f8f  fix(security): rate-limit the read-only GET dispatcher (was completely open)
+1635d6e5  docs: update pending-bundle entry for round 17 (superseded by this entry)
 ```
-All independently verified before bundling: `tsc` clean, `eslint` 0 errors,
-**172 files / 1656 tests PASS**, `next build` clean, `audit-gate` PASS, plus
-a real headless-browser pass through all 10 newly-lazy screens (round16)
-and `python scripts/run_migrations.py` dry-run confirming the 4 new
-migrations queue correctly (round17 — see round17-handover.md for both).
-Once merged + pushed + confirmed as `origin/main`'s new tip AND the 4
+All independently re-verified after the rebase: `tsc` clean, `eslint` 0
+errors, **173 files / 1664 tests PASS**, `next build` clean, `audit-gate`
+PASS. Once merged + pushed + confirmed as `origin/main`'s new tip AND the 4
 migrations applied to the live database, move the "Confirmed merged"
 header above to the new tip SHA and delete this entry — in the same
 commit, per this file's own rule.
