@@ -42,7 +42,7 @@ export default function TermsPage() {
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>9. Payments &amp; Bookings</h2>
         <p style={{ marginBottom: 16 }}>All paid bookings are processed via Stripe Connect. Musa charges a combined 15% platform fee on each completed booking, split as a 7% host service fee and an 8% buyer service fee (both shown transparently before checkout). Refund disputes are between the provider and the client; Musa will mediate if needed. Tipping is non-refundable.</p>
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>10. DMCA &amp; Copyright</h2>
-        <p style={{ marginBottom: 16 }}>We respect intellectual property. If your work appears on Musa without authorization, submit a DMCA takedown notice to <a href="mailto:dmca@wyzdesign.com" style={{ color: "#ffd700" }}>dmca@wyzdesign.com</a>. Repeat infringers will have their accounts permanently banned. See our <a href="/dmca" style={{ color: "#ffd700" }}>DMCA page</a> for the full procedure.</p>
+        <p style={{ marginBottom: 16 }}>We respect intellectual property. If your work appears on Musa without authorization, submit a DMCA takedown notice to <a href="mailto:info@wyzdesign.com" style={{ color: "#ffd700" }}>info@wyzdesign.com</a>. Repeat infringers will have their accounts permanently banned. See our <a href="/dmca" style={{ color: "#ffd700" }}>DMCA page</a> for the full procedure.</p>
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>11. Content Moderation &amp; Safety</h2>
         <p style={{ marginBottom: 16 }}>Musa uses automated content scanning (AWS Rekognition) on every image upload. Flagged content is reviewed and, where legally required, reported to NCMEC CyberTipline. We also employ human review for escalated cases. Musa reserves the right to remove any content at our discretion.</p>
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>12. Account Suspension &amp; Termination</h2>
@@ -62,7 +62,7 @@ export default function TermsPage() {
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>19. Changes to Terms</h2>
         <p style={{ marginBottom: 16 }}>We may update these Terms from time to time. We will notify you of material changes. Continued use of the Platform after changes constitutes acceptance.</p>
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>20. Contact</h2>
-        <p>Questions? Reach us at <a href="mailto:legal@wyzdesign.com" style={{ color: "#ffd700" }}>legal@wyzdesign.com</a></p>
+        <p>Questions? Reach us at <a href="mailto:info@wyzdesign.com" style={{ color: "#ffd700" }}>info@wyzdesign.com</a></p>
       </div>
       <a href="/muse/landing" style={{ display: "inline-block", marginTop: 48, color: "#ffd700", fontSize: 14, textDecoration: "none" }}>&larr; Back to Musa by WYZ</a>
     </div>

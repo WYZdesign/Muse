@@ -2,7 +2,7 @@
 import type { Metadata } from "next";
 import { getMuseUrl } from "@/lib/urls";
 
-const PRICING_DESCRIPTION = "Musa by WYZ pricing: a free tier forever, Musa Pro at $9.99/month, and Musa Studio at $29.99/month for hiring teams. Founding members get lifetime Pro free.";
+const PRICING_DESCRIPTION = "Musa by WYZ pricing: a free tier forever, Musa Pro at $9.99/month ($79.99/year), and Musa Studio at $29.99/month for hiring teams. Founding members get lifetime Pro free.";
 
 export const metadata: Metadata = {
   title: "Pricing — Musa by WYZ",
@@ -66,7 +66,7 @@ export default function PricingPage() {
 
           <div style={{ border: "1px solid rgba(255,215,0,0.5)", borderRadius: 12, padding: 32, background: "rgba(255,215,0,0.04)" }}>
             <h2 style={{ fontSize: "1.25rem", fontWeight: 600, marginBottom: 4, color: "#fff" }}>Pro</h2>
-            <p style={{ fontSize: 28, fontWeight: 700, color: "#ffd700", marginBottom: 24 }}>$9.99<span style={{ fontSize: 14, color: "rgba(255,255,255,0.5)" }}>/mo</span></p>
+            <p style={{ fontSize: 28, fontWeight: 700, color: "#ffd700", marginBottom: 24 }}>$9.99<span style={{ fontSize: 14, color: "rgba(255,255,255,0.5)" }}>/mo</span><br /><span style={{ fontSize: 14, color: "rgba(255,215,0,0.7)" }}>• $79.99/year (save 33%)</span></p>
             <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
               {proFeatures.map((f, i) => (
                 <li key={i} style={{ padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>{f}</li>
@@ -84,7 +84,7 @@ export default function PricingPage() {
             </ul>
           </div>
         </div>
-        <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.45)", marginTop: 16 }}>Musa Studio is built for agencies, casting directors, and brands hiring at scale on the industry side.</p>
+        <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.45)", marginTop: 16 }}>Musa Studio is built for agencies, casting directors, and brands hiring at scale on the industry side. All plans come with a 14-day money-back guarantee — see our <a href="/muse/refund" style={{ color: "rgba(255,215,0,0.7)" }}>refund policy</a>.</p>
 
         <div style={{ textAlign: "center", marginTop: 48 }}>
           <a href="/muse/landing#join" style={{ display: "inline-block", padding: "14px 36px", borderRadius: 999, background: "#ffd700", color: "#000", fontWeight: 700, fontSize: 15, textDecoration: "none" }}>Join the Waitlist</a>

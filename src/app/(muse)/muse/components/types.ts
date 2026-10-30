@@ -238,24 +238,28 @@ export const FORUM_POSTS = [
   {id:310,title:"Collab wanted: fashion photographer + dancer",body:"Looking to create a movement-based editorial series. TFP or low budget.",author:"Sam Taylor",avatar:"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100",votes:18,comments:[],cat:"Collab",time:"6h ago",pinned:false},
 ];
 
+// `plan` is the canonical checkout key sent to /api/checkout. It is explicit on
+// purpose: deriving it from the display name broke every paid plan when the
+// brand changed from "Muse" to "Musa" (display "Musa Pro" derived "musa_pro",
+// but the billing keys are `muse_*`), which surfaced as "Invalid plan".
 export const TIERS = [
-  { name:"Free",price:"$0",period:"forever",features:["10 likes/day","Basic profile","Chat with matches","Standard discover"],current:true },
-  { name:"Musa Pro",price:"$9.99",period:"/month",features:["Unlimited likes","See who likes you","Advanced filters","Read receipts","Profile boost (x1/week)","Incognito mode","Priority discover"] },
-  { name:"Musa Pro Annual",price:"$79.99",period:"/year",features:["Everything in Musa Pro","Save ~33% vs monthly","Locked-in price for 12 months"] },
+  { plan:"free",name:"Free",price:"$0",period:"forever",features:["10 likes/day","Basic profile","Chat with matches","Standard discover"],current:true },
+  { plan:"muse_pro",name:"Musa Pro",price:"$9.99",period:"/month",features:["Unlimited likes","See who likes you","Advanced filters","Read receipts","Profile boost (x1/week)","Incognito mode","Priority discover"] },
+  { plan:"muse_pro_annual",name:"Musa Pro Annual",price:"$79.99",period:"/year",features:["Everything in Musa Pro","Save ~33% vs monthly","Locked-in price for 12 months"] },
 ];
 
 // Session 55 pricing pass: added the annual Musa Pro option (~33% off monthly) and a higher industry-side tier (Musa Studio) for agencies/casting directors/brands with real hiring budgets.
 
 export const TIERS_BY_SIDE: Record<"creative" | "industry", typeof TIERS> = {
   creative: [
-    { name:"Free",price:"$0",period:"forever",features:["10 likes/day","Basic profile","Chat with matches","Standard discover"],current:true },
-    { name:"Musa Pro",price:"$9.99",period:"/month",features:["Unlimited likes — never wait for a reset","See who liked you before you swipe","Advanced discovery filters (styles, distance, vibe)","Read receipts on every message","Profile boost (×1/week) — top of the stack","Incognito mode — browse without being seen","Priority placement in Discover"] },
-    { name:"Musa Pro Annual",price:"$79.99",period:"/year",features:["Everything in Musa Pro, billed yearly","Save ~33% vs. paying monthly","Price locked in for 12 months"] },
+    { plan:"free",name:"Free",price:"$0",period:"forever",features:["10 likes/day","Basic profile","Chat with matches","Standard discover"],current:true },
+    { plan:"muse_pro",name:"Musa Pro",price:"$9.99",period:"/month",features:["Unlimited likes — never wait for a reset","See who liked you before you swipe","Advanced discovery filters (styles, distance, vibe)","Read receipts on every message","Profile boost (×1/week) — top of the stack","Incognito mode — browse without being seen","Priority placement in Discover"] },
+    { plan:"muse_pro_annual",name:"Musa Pro Annual",price:"$79.99",period:"/year",features:["Everything in Musa Pro, billed yearly","Save ~33% vs. paying monthly","Price locked in for 12 months"] },
   ],
   industry: [
-    { name:"Free",price:"$0",period:"forever",features:["10 brief responses/day","Basic company profile","Chat with matched talent","Standard talent search"],current:true },
-    { name:"Musa Pro",price:"$9.99",period:"/month",features:["Unlimited brief responses — hire at scale","See who's interested before they apply","Advanced talent filters (skills, experience, rate)","Read receipts on every message","Talent-pool boost (×1/week) — front page","Incognito mode — scout discreetly","Priority placement in talent search"] },
-    { name:"Musa Studio",price:"$29.99",period:"/month",features:["Everything in Musa Pro","Boosted placement on every Brief you post","Unlimited saved-talent lists","Priority support"] },
+    { plan:"free",name:"Free",price:"$0",period:"forever",features:["10 brief responses/day","Basic company profile","Chat with matched talent","Standard talent search"],current:true },
+    { plan:"muse_pro",name:"Musa Pro",price:"$9.99",period:"/month",features:["Unlimited brief responses — hire at scale","See who's interested before they apply","Advanced talent filters (skills, experience, rate)","Read receipts on every message","Talent-pool boost (×1/week) — front page","Incognito mode — scout discreetly","Priority placement in talent search"] },
+    { plan:"muse_studio",name:"Musa Studio",price:"$29.99",period:"/month",features:["Everything in Musa Pro","Boosted placement on every Brief you post","Unlimited saved-talent lists","Priority support"] },
   ],
 };
 

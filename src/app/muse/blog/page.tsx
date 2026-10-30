@@ -3,16 +3,16 @@ import type { Metadata } from "next";
 import { getMuseUrl } from "@/lib/urls";
 
 export const metadata: Metadata = {
-  title: "Blog — Musa by WYZ",
+  title: "Blog | Musa by WYZ",
   description: "Updates, insights, and stories from the Musa by WYZ creative community and WYZ Design.",
   alternates: { canonical: getMuseUrl() + "/blog" },
-  openGraph: { title: "Blog — Musa by WYZ", description: "Updates, insights, and stories from the Musa by WYZ creative community and WYZ Design.", url: getMuseUrl() + "/blog", siteName: "Musa by WYZ", type: "website" },
-  twitter: { card: "summary", title: "Blog — Musa by WYZ", description: "Updates, insights, and stories from the Musa by WYZ creative community and WYZ Design." },
+  openGraph: { title: "Blog | Musa by WYZ", description: "Updates, insights, and stories from the Musa by WYZ creative community and WYZ Design.", url: getMuseUrl() + "/blog", siteName: "Musa by WYZ", type: "website" },
+  twitter: { card: "summary", title: "Blog | Musa by WYZ", description: "Updates, insights, and stories from the Musa by WYZ creative community and WYZ Design." },
 };
 
 const POSTS = [
-  { slug: "why-muse-exists", title: "Why Musa by WYZ Exists", date: "2026-09-01", tag: "Product", excerpt: "Creative collaboration shouldn't require a middleman. Musa connects artists directly — securely, privately, and on their own terms." },
-  { slug: "safety-by-design", title: "Safety by Design: How We Built Musa", date: "2026-08-20", tag: "Safety", excerpt: "Age verification, identity checks, and content moderation aren't afterthoughts — they're baked into the foundation." },
+  { slug: "why-muse-exists", title: "Why Musa by WYZ Exists", date: "2026-09-01", tag: "Product", excerpt: "Creative collaboration shouldn't require a middleman. Musa connects artists directly, securely, privately, and on their own terms." },
+  { slug: "safety-by-design", title: "Safety by Design: How We Built Musa", date: "2026-08-20", tag: "Safety", excerpt: "Age verification, identity checks, and content moderation aren't afterthoughts, they're baked into the foundation." },
   { slug: "behind-the-scenes-verification", title: "Behind the Scenes: Identity Verification", date: "2026-08-10", tag: "Engineering", excerpt: "How Stripe Identity, AWS Rekognition, and Supabase work together to verify creators without exposing their data." },
   { slug: "community-guidelines", title: "Community Guidelines: Our Commitment", date: "2026-07-28", tag: "Community", excerpt: "What we expect from Musa creators and what you can expect from us." },
   { slug: "launch-recap", title: "Musa Launch Recap", date: "2026-07-15", tag: "News", excerpt: "Our first month: the numbers, the stories, and what's next for the platform." },
@@ -41,7 +41,7 @@ export default function BlogPage() {
               </span>
               <time style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>{post.date}</time>
             </div>
-            <h2 style={{ fontSize: "1.25rem", fontWeight: 600, color: "#fff", marginBottom: 8 }}>{post.title}</h2>
+            <h2 style={{ fontSize: "1.25rem", fontWeight: 600, color: "#fff", marginBottom: 8 }}><a href={`/muse/blog/${post.slug}`}>{post.title}</a></h2>
             <p style={{ color: "rgba(255,255,255,0.6)", lineHeight: 1.7, fontSize: 14, margin: 0 }}>{post.excerpt}</p>
           </article>
         ))}
@@ -49,7 +49,7 @@ export default function BlogPage() {
 
       <div style={{ marginTop: 64, padding: 24, border: "1px solid rgba(255,215,0,0.2)", borderRadius: 8, textAlign: "center" }}>
         <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, margin: 0 }}>
-          Want to write for us? <a href="mailto:blog@muse.wyzdesign.com" style={{ color: "#ffd700", textDecoration: "none" }}>Get in touch</a>.
+          Want to write for us? <a href="mailto:info@wyzdesign.com" style={{ color: "#ffd700", textDecoration: "none" }}>Get in touch</a>.
         </p>
       </div>
 

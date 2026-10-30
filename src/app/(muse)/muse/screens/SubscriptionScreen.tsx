@@ -143,8 +143,8 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
             </div>
           )}
           {(TIERS_BY_SIDE[viewerSideOf(currentUser) as "creative" | "industry"] || TIERS).map(tier => {
-            const tierKey = tier.name.toLowerCase().replace(/ /g, "_");
-            const isCurrent = tierKey === userTier || (tierKey === "muse_pro" && currentUser.tier === "muse_pro");
+            const tierPlan = tier.plan;
+            const isCurrent = tierPlan === userTier || (tierPlan === "muse_pro" && currentUser.tier === "muse_pro");
             return (
               <div key={tier.name} className={"tier-card" + (isCurrent ? " current" : "")} style={{ position: "relative" }}>
                 {isCurrent && (
@@ -159,13 +159,13 @@ export const SubscriptionScreen = memo(function SubscriptionScreen({
                   className={"tier-btn" + (tier.name === "Musa Pro" ? " tier-btn-primary" : " tier-btn-outline")}
                   onClick={async () => {
                     if (isCurrent) return;
-                    if (tier.name === "Free") { showToast("You're on the Free plan"); return; }
+                    if (tierPlan === "free") { showToast("You're on the Free plan"); return; }
                     if (DEMO_MODE) { showToast("Plan checkout is unavailable in this demo."); return; }
-                    const url = await startSubscriptionCheckout(tierKey, authUser?.email, showToast, promo.trim() || undefined);
+                    const url = await startSubscriptionCheckout(tierPlan, authUser?.email, showToast, promo.trim() || undefined);
                     if (url) { window.location.href = url; }
                   }}
                 >
-                  {isCurrent ? "Current Plan" : tier.name === "Free" ? "Free Plan" : "Select " + tier.name}
+                  {isCurrent ? "Current Plan" : tierPlan === "free" ? "Free Plan" : "Select " + tier.name}
                 </button>
               </div>
             );

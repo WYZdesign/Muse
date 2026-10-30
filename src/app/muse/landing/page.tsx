@@ -413,8 +413,8 @@ export default function MuseLandingPage() {
       const data = await res.json().catch(() => ({}));
       if (res.ok) { setHeroDone(true); setSignupCount(c => c + 1); applyJoinResult(data); }
       else if (data?.code === "ALREADY_ON_LIST") { setHeroDone(true); }
-      else { setHeroError(data?.error || "Something went wrong — please try again."); }
-    } catch { setHeroError("Something went wrong — please try again."); }
+      else { setHeroError(data?.error || "Something went wrong, please try again."); }
+    } catch { setHeroError("Something went wrong, please try again."); }
     finally { setHeroSubmitting(false); }
   };
 
@@ -511,7 +511,7 @@ export default function MuseLandingPage() {
             </>
           ) : (
             <div className="muse-hero-email-done" data-depth="-0.3" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-              <span style={{ fontSize: 14, fontWeight: 600 }}>✓ You're on the list — we'll email you when it's your turn.</span>
+              <span style={{ fontSize: 14, fontWeight: 600 }}>✓ You're on the list, we'll email you when it's your turn.</span>
               {joinInfo && <span style={{ fontSize: 13, color: "#ffd700" }}>You're #{joinInfo.position}{joinInfo.total ? ` of ${joinInfo.total}` : ""} in line.</span>}
               <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Founding members get lifetime Pro free.{joinInfo ? " Each friend you bring moves you up the list." : ""}</span>
               <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
@@ -626,9 +626,9 @@ export default function MuseLandingPage() {
           </Reveal>
           <div className="muse-testimonials-grid">
             {[
-              { h: "Safety that isn't optional", p: "Structured content disclosures, pre-shoot check-ins, and verified identity on every paid booking — built in from day one." },
+              { h: "Safety that isn't optional", p: "Structured content disclosures, pre-shoot check-ins, and verified identity on every paid booking, built in from day one." },
               { h: "Book and get paid, escrowed", p: "Stripe-backed payments hold funds until the shoot wraps. No invoices, no chasing, no ghosting on either side." },
-              { h: "Matched by craft and vibe", p: "Discovery weighs your styles, looking-for, zodiac, MBTI and life path — so briefs and collabs find the right people." },
+              { h: "Matched by craft and vibe", p: "Discovery weighs your styles, looking-for, zodiac, MBTI and life path, so briefs and collabs find the right people." },
             ].map((t) => (
               <Reveal key={t.h}>
                 <figure className="muse-testimonial">
@@ -637,7 +637,7 @@ export default function MuseLandingPage() {
               </Reveal>
             ))}
           </div>
-          <p style={{ textAlign: "center", marginTop: 18, fontSize: "0.8rem", color: "var(--muted)" }}>Musa is in early access — real member stories will live here as the community grows.</p>
+          <p style={{ textAlign: "center", marginTop: 18, fontSize: "0.8rem", color: "var(--muted)" }}>Musa is in early access, real member stories will live here as the community grows.</p>
         </div>
       </section>
 

@@ -15,4 +15,57 @@ export const STRINGS = {
   save: "Save",
   block: "Block",
   unmatch: "Unmatch",
+  delete: "Delete",
+  confirm: "Confirm",
+  edit: "Edit",
+  submit: "Submit",
+  loading: "Loading...",
+  retry: "Retry",
+  back: "Back",
+  next: "Next",
+  done: "Done",
+  ok: "OK",
+  yes: "Yes",
+  no: "No",
+  remove: "Remove",
+  report: "Report",
+  send: "Send",
+  copy: "Copy",
+  copied: "Copied",
+  share: "Share",
+  download: "Download",
+  upload: "Upload",
+  search: "Search",
+  filter: "Filter",
+  sort: "Sort",
+  showMore: "Show more",
+  showLess: "Show less",
+  settings: "Settings",
+  profile: "Profile",
+  messages: "Messages",
+  notifications: "Notifications",
+  signOut: "Sign out",
+  signIn: "Sign in",
+  signUp: "Sign up",
+  forgotPassword: "Forgot password?",
+  privacy: "Privacy",
+  terms: "Terms",
 } as const;
+
+export type StringKey = keyof typeof STRINGS;
+
+// Locales currently supported. English is the source language; other
+// locales fall back to the English string until a translation is provided.
+const LOCALES: Record<string, Partial<Record<StringKey, string>>> = {
+  en: {},
+  // es: { cancel: "Cancelar", close: "Cerrar", save: "Guardar", ... },
+  // fr: { cancel: "Annuler", close: "Fermer", save: "Enregistrer", ... },
+};
+
+/**
+ * Resolve a UI string for the given locale. Falls back to English when
+ * the key has no translation in the target locale.
+ */
+export function t(key: StringKey, locale = "en"): string {
+  return LOCALES[locale]?.[key] ?? STRINGS[key];
+}

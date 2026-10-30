@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
 
   if (type === "mfa-factors") {
     const { data: factors, error } = await client.auth.mfa.listFactors();
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) return NextResponse.json({ error: "Server error" }, { status: 400 });
     return NextResponse.json({
       totp: factors.totp || [],
       all: [...(factors.totp || [])],
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
   // mfa-status = compact summary used by a Settings toggle.
   if (type === "mfa-status") {
     const { data: factors, error } = await client.auth.mfa.listFactors();
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) return NextResponse.json({ error: "Server error" }, { status: 400 });
     const totp = factors.totp || [];
     return NextResponse.json({
       enabled: totp.some((f) => f.status === "verified"),
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
       factorType: "totp",
       friendlyName: String(body.friendlyName || "Musa authenticator").slice(0, 30),
     });
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) return NextResponse.json({ error: "Server error" }, { status: 400 });
     return NextResponse.json({
       id: data.id,
       type: data.type,
@@ -114,9 +114,9 @@ export async function POST(req: NextRequest) {
     const { factorId, code } = body;
     if (!factorId || !code) return NextResponse.json({ error: "factorId and code required" }, { status: 400 });
     const { data: chData, error: chErr } = await client.auth.mfa.challenge({ factorId });
-    if (chErr || !chData) return NextResponse.json({ error: chErr?.message || "No challenge" }, { status: 400 });
+    if (chErr || !chData) return NextResponse.json({ error: "No challenge" }, { status: 400 });
     const { data, error } = await client.auth.mfa.verify({ factorId, challengeId: chData.id, code: String(code).replace(/\s/g, "") });
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) return NextResponse.json({ error: "Server error" }, { status: 400 });
     return NextResponse.json({ success: true });
   }
 
@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
     const { factorId } = body;
     if (!factorId) return NextResponse.json({ error: "factorId required" }, { status: 400 });
     const { data, error } = await client.auth.mfa.challenge({ factorId });
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) return NextResponse.json({ error: "Server error" }, { status: 400 });
     return NextResponse.json({ challengeId: data.id });
   }
 
@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
     const { factorId } = body;
     if (!factorId) return NextResponse.json({ error: "factorId required" }, { status: 400 });
     const { error } = await client.auth.mfa.unenroll({ factorId });
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) return NextResponse.json({ error: "Server error" }, { status: 400 });
     return NextResponse.json({ success: true });
   }
 

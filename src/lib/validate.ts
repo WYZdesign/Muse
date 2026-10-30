@@ -98,9 +98,18 @@ export const PushSchema = z.object({
 });
 export type PushInput = z.infer<typeof PushSchema>;
 
-/** Stripe checkout body. `plan` must be a known price-map key. */
+/** Stripe checkout body. `plan` must be a known price-map key.
+ *  `musa_*` aliases are accepted because the brand rename (Muse -> Musa) made the
+ *  old name-derived client send `musa_pro` while billing keys stay `muse_*`. The
+ *  route normalizes aliases to the canonical key, so neither spelling can 400. */
 export const CheckoutSchema = z.object({
-  plan: z.enum(["muse_pro", "muse_pro_annual", "muse_studio", "muse", "sovereign"], { error: "Invalid plan" }),
+  plan: z.enum(
+    [
+      "muse_pro", "muse_pro_annual", "muse_studio", "muse", "sovereign",
+      "musa_pro", "musa_pro_annual", "musa_studio", "musa",
+    ],
+    { error: "Invalid plan" },
+  ),
   email: emailField.optional(),
   promo: z.string().max(64).optional(),
   access_token: z.string().max(4096).optional(),

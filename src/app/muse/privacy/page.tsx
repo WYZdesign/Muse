@@ -25,7 +25,7 @@ export default function PrivacyPage() {
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>4. Data Retention</h2>
         <p style={{ marginBottom: 16 }}>When you delete your account, we remove account access immediately and permanently delete account data after 30 days. We may retain the minimum information necessary to comply with legal, tax, fraud-prevention, safety, dispute-resolution, and recordkeeping obligations. Content moderation and safety records may be retained where needed to investigate reports or comply with law.</p>
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>5. Your Rights</h2>
-        <p style={{ marginBottom: 16 }}>You may: access your data, correct inaccuracies, export your data, delete your account, opt out of marketing. Contact <a href="mailto:privacy@wyzdesign.com" style={{ color: "#ffd700" }}>privacy@wyzdesign.com</a> for requests. We respond within 30 days.</p>
+        <p style={{ marginBottom: 16 }}>You may: access your data, correct inaccuracies, export your data, delete your account, opt out of marketing. Contact <a href="mailto:info@wyzdesign.com" style={{ color: "#ffd700" }}>info@wyzdesign.com</a> for requests. We respond within 30 days.</p>
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>6. Data Security</h2>
         <p style={{ marginBottom: 16 }}>We use Supabase Row Level Security (RLS), HTTPS everywhere, DPAPI encryption for local credentials, and AWS KMS for secrets at rest. No system is perfectly secure, but we invest heavily in protecting your data.</p>
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>7. Children&apos;s Privacy</h2>
@@ -33,7 +33,7 @@ export default function PrivacyPage() {
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>8. Changes to This Policy</h2>
         <p style={{ marginBottom: 16 }}>We may update this policy. We will notify you of material changes via email or in-app notification. Your continued use after changes means you accept the new policy.</p>
         <h2 style={{ fontSize: "1.2rem", marginTop: 32, marginBottom: 12, color: "#fff" }}>9. Contact</h2>
-        <p>Privacy questions? Reach us at <a href="mailto:privacy@wyzdesign.com" style={{ color: "#ffd700" }}>privacy@wyzdesign.com</a></p>
+        <p>Privacy questions? Reach us at <a href="mailto:info@wyzdesign.com" style={{ color: "#ffd700" }}>info@wyzdesign.com</a></p>
       </div>
       <a href="/muse/landing" style={{ display: "inline-block", marginTop: 48, color: "#ffd700", fontSize: 14, textDecoration: "none" }}>&larr; Back to Musa by WYZ</a>
     </div>

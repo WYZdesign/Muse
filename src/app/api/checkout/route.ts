@@ -17,6 +17,16 @@ const PRICE_MAP: Record<string, string> = {
   sovereign: "price_muse_pro_monthly",
 };
 
+// Spelling aliases -> canonical PRICE_MAP key. The brand rename (Muse -> Musa)
+// left some clients (and any cached bundle) sending `musa_pro`, which used to
+// fail with "Invalid plan" even though the plan was real. Normalize instead.
+const PLAN_ALIASES: Record<string, string> = {
+  musa_pro: "muse_pro",
+  musa_pro_annual: "muse_pro_annual",
+  musa_studio: "muse_studio",
+  musa: "muse",
+};
+
 // Dev/test-mode fallback pricing (only used when STRIPE_SECRET_KEY isn't a live key) —
 // must match PRICE_MAP's keys so a test-mode checkout of any plan creates the right product/price
 // instead of always defaulting to the original $9.99/mo Musa Pro price regardless of which plan was requested.
@@ -48,9 +58,13 @@ export async function POST(req: NextRequest) {
     try { raw = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
     const parsed = parseWith(CheckoutSchema, raw);
     if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
-    const { plan, email, promo, access_token } = parsed.data;
+    const { plan: rawPlan, email, promo, access_token } = parsed.data;
+    // Normalize spelling aliases before anything bills against the key.
+    const plan = PLAN_ALIASES[rawPlan] ?? rawPlan;
 
-    if (!PRICE_MAP[plan]) return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
+    if (!PRICE_MAP[plan]) {
+      return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
+    }
 
     // Resolve identity from the verified session token — never trust a
     // client-supplied userId (that would let anyone tie a checkout to
