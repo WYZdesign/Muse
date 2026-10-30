@@ -1,0 +1,193 @@
+name: Mobile Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to build'
+        required: true
+        type: choice
+        options:
+          - android
+          - ios
+          - both
+      build_type:
+        description: 'Build type'
+        required: true
+        type: choice
+        options:
+          - debug
+          - release
+      version_name:
+        description: 'Version name (e.g., 1.0.0)'
+        required: false
+        type: string
+      version_code:
+        description: 'Version code (integer, Android only)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  NODE_VERSION: '20'
+  JAVA_VERSION: '17'
+
+jobs:
+  # ─── Android Build ──────────────────────────────────────────────
+  android:
+    if: github.event.inputs.platform == 'android' || github.event.inputs.platform == 'both'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: 'gradle'
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./V/Muse
+
+      - name: Build Next.js for static export
+        run: |
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env.production
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.production
+          echo "NEXT_PUBLIC_DEMO_MODE=false" >> .env.production
+          npm run build
+        working-directory: ./V/Muse
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: Export static site
+        run: npx next export
+        working-directory: ./V/Muse
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: 34
+          ndk-version: r26c
+          emulator: false
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+        working-directory: ./V/Muse
+
+      - name: Configure Gradle
+        run: |
+          echo "org.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8" >> android/gradle.properties
+          echo "android.enableJetifier=true" >> android/gradle.properties
+          echo "android.useAndroidX=true" >> android/gradle.properties
+        working-directory: ./V/Muse
+
+      - name: Build Android ${{ github.event.inputs.build_type }}
+        run: |
+          cd android
+          if [ "${{ github.event.inputs.build_type }}" = "release" ]; then
+            ./gradlew assembleRelease -PversionName=${{ github.event.inputs.version_name }} -PversionCode=${{ github.event.inputs.version_code }}
+          else
+            ./gradlew assembleDebug
+          fi
+        working-directory: ./V/Muse
+
+      - name: Upload Android Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-${{ github.event.inputs.build_type }}
+          path: |
+            V/Muse/android/app/build/outputs/apk/
+            V/Muse/android/app/build/outputs/bundle/
+          retention-days: 30
+
+  # ─── iOS Build (requires macOS) ─────────────────────────────────
+  ios:
+    if: github.event.inputs.platform == 'ios' || github.event.inputs.platform == 'both'
+    runs-on: macos-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./V/Muse
+
+      - name: Build Next.js for static export
+        run: |
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env.production
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.production
+          echo "NEXT_PUBLIC_DEMO_MODE=false" >> .env.production
+          npm run build
+        working-directory: ./V/Muse
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: Export static site
+        run: npx next export
+        working-directory: ./V/Muse
+
+      - name: Install CocoaPods
+        run: |
+          sudo gem install cocoapods -v 1.15.2
+          pod --version
+        working-directory: ./V/Muse
+
+      - name: Sync Capacitor
+        run: npx cap sync ios
+        working-directory: ./V/Muse
+
+      - name: Build iOS ${{ github.event.inputs.build_type }}
+        run: |
+          cd ios
+          if [ "${{ github.event.inputs.build_type }}" = "release" ]; then
+            xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -destination generic/platform=iOS -archivePath ./build/App.xcarchive archive
+            xcodebuild -exportArchive -archivePath ./build/App.xcarchive -exportPath ./build/Export -exportOptionsPlist ExportOptions.plist
+          else
+            xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -destination generic/platform=iOS build
+          fi
+        working-directory: ./V/Muse
+
+      - name: Upload iOS Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-${{ github.event.inputs.build_type }}
+          path: V/Muse/ios/build/
+          retention-days: 30
+
+  # ─── Notify on completion ───────────────────────────────────────
+  notify:
+    needs: [android, ios]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send completion notification
+        run: |
+          STATUS="${{ needs.android.result }}, ${{ needs.ios.result }}"
+          echo "Mobile build completed with status: $STATUS"
+          # Could add Slack/Discord webhook here
