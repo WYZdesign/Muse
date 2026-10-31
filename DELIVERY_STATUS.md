@@ -77,14 +77,33 @@ a73d6f2e  fix(scale): add missing indexes behind recent ORDER BY/filter addition
 f53e911e  docs: update pending-bundle entry for round 17
 599f560f  docs: reconcile DELIVERY_STATUS.md header after Torree's direct push; round 18
 9c53bb36  docs: list this round's own bookkeeping commit in the pending entry
+3bbb28e8  docs: reconcile DELIVERY_STATUS.md header after Torree's direct push; round 19
+21411bfb  fix(visual): broken/missing-photo fallback never actually showed an initial
 ```
-All independently re-verified after this second rebase: `tsc` clean,
-**173 files / 1664 tests PASS**, `next build` clean, `audit-gate` PASS.
-(`eslint` not re-run this round either — only commit history moved, no
-source file content changed.) Once merged + pushed + confirmed as
-`origin/main`'s new tip AND the 4 migrations applied to the live database,
-move the "Confirmed merged" header above to the new tip SHA and delete
-this entry — in the same commit, per this file's own rule.
+**New this round (21411bfb)**: a visual/frontend audit — done by actually
+running the app in a headless browser with demo auth seeded and local
+`next build`/`next start`, not just reading source — found that the
+broken/missing-photo fallback used everywhere (Discover cards, portfolio
+photos, the fullscreen gallery, chat/feed/match avatars) renders as an
+empty gradient block with no initial or icon, confirmed via
+`img.naturalWidth/Height === 0`. Root cause: three call sites tried to
+paint a glyph by setting `img.textContent`/`img.alt` after clearing
+`src` — `<img>` is a replaced element and never displays that. Fixed by
+routing all three through a new `lib/img-fallback.ts` that swaps the
+`<img>`'s `src` for a real rendered SVG via the already-existing, already-
+tested `initialsAvatarUrl()` utility instead. 5 new tests
+(`img-fallback.test.ts`). No infrastructure changed, nothing removed —
+purely additive, and visually re-verified (`img.naturalWidth/Height` now
+200/200). Full writeup in `round19-handover.md` and the master audit doc's
+new §9.
+All independently re-verified after this round: `tsc` clean,
+**174 files / 1669 tests PASS**, `next build` clean, `audit-gate` PASS.
+(`eslint` not re-run on the rebase portion — only commit history moved
+there, no source changed; it was run as part of normal verification on
+the new `21411bfb` commit's own files.) Once merged + pushed + confirmed
+as `origin/main`'s new tip AND the 4 migrations applied to the live
+database, move the "Confirmed merged" header above to the new tip SHA and
+delete this entry — in the same commit, per this file's own rule.
 
 ### Reconciliation — 2026-10-27 (Claude): `9381d1dc` → `a330b029` (59 commits)
 This header had been stuck at `9381d1dc` through several rounds of real, verified
