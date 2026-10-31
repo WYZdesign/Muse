@@ -3,6 +3,7 @@
 
 import { useEffect, useRef } from "react";
 import { createSafeObserver } from "../lib/safe-observer";
+import { applyImgFallback } from "../lib/img-fallback";
 import { trackError } from "@/lib/errorTracker";
 
 /**
@@ -25,15 +26,7 @@ export function useVisualEffects({ screen }: UseVisualEffectsArgs) {
     const onImgError = (e: Event) => {
       const img = e.target as HTMLImageElement;
       if (img.tagName !== "IMG" || img.dataset.fallback) return;
-      img.dataset.fallback = "1";
-      img.style.background = "linear-gradient(135deg, #FF6B9D 0%, #C86BFF 50%, #FFB366 100%)";
-      img.style.display = "flex";
-      img.style.alignItems = "center";
-      img.style.justifyContent = "center";
-      img.style.color = "#fff";
-      img.style.fontSize = "2em";
-      img.alt = img.alt?.charAt(0) || "👤";
-      img.removeAttribute("src");
+      applyImgFallback(img);
     };
     document.addEventListener("error", onImgError, true);
     // MutationObserver catches <img> mounted with an empty/missing or broken src
@@ -43,20 +36,7 @@ export function useVisualEffects({ screen }: UseVisualEffectsArgs) {
       if (img.dataset.fallback) return;
       const src = (img.getAttribute("src") || "").trim().toLowerCase();
       const broken = !src || src === "undefined" || src === "null" || src === "none";
-      if (broken) {
-        img.dataset.fallback = "1";
-        img.style.background = "linear-gradient(135deg, #FF6B9D 0%, #C86BFF 50%, #FFB366 100%)";
-        img.style.display = "flex";
-        img.style.alignItems = "center";
-        img.style.justifyContent = "center";
-        img.style.color = "#fff";
-        img.style.fontSize = "1.6em";
-        img.style.fontWeight = "700";
-        img.style.fontFamily = "'Playfair Display', serif";
-        img.alt = img.alt?.trim().charAt(0) || "👤";
-        img.textContent = img.alt || "👤";
-        img.removeAttribute("src");
-      }
+      if (broken) applyImgFallback(img);
     };
     // Wrapped in createSafeObserver (rate-based circuit breaker) as
     // defense-in-depth: this callback is already guarded against

@@ -7,6 +7,7 @@ import type { Quest, ViewProfile } from "../page-models";
 import type { OnboardingData } from "./useAuthOnboardingState";
 import { analytics } from "../lib/analytics";
 import { tourSeenKey, type TourScreenId } from "../components/pageTourContent";
+import { applyImgFallback } from "../lib/img-fallback";
 import { trackError } from "@/lib/errorTracker";
 
 export type MuseToastInput = string | { msg: string; onTap?: () => void; type?: "info" | "success" | "error" };
@@ -103,20 +104,7 @@ export function useMuseActions({
   }, [apiFetch, authUser]);
 
   const handleImgError = useCallback((e: SyntheticEvent<HTMLImageElement>) => {
-    const el = e.currentTarget;
-    if (el.dataset.fallback) return;
-    el.dataset.fallback = "1";
-    const initial = (el.alt || "").trim().charAt(0).toUpperCase();
-    el.style.background = "linear-gradient(135deg, #2a1a3e 0%, #1a0a2e 100%)";
-    el.style.display = "flex";
-    el.style.alignItems = "center";
-    el.style.justifyContent = "center";
-    el.style.color = "rgba(255,215,0,0.6)";
-    el.style.fontSize = initial ? "1.4em" : "1.8em";
-    el.style.fontWeight = "700";
-    el.style.fontFamily = "'Playfair Display', serif";
-    el.textContent = initial || "\uD83D\uDCF7";
-    el.removeAttribute("src");
+    applyImgFallback(e.currentTarget);
   }, []);
 
   // Onboarding multi-select toggle with a hard cap. Toggling off always works;
