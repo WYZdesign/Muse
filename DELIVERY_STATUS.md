@@ -27,7 +27,9 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `e6962b8b`
+## Confirmed merged, last verified at: `d6ad2525`
+
+### Reconciliation — 2026-10-30 (opencode/round19): `e6962b8b` → `d6ad2525`
 
 ### Reconciliation — 2026-10-31 (Claude): `7f5e676a` → `e6962b8b` (1 commit)
 Caught via this file's own rule again, same pattern as the entry just below:
@@ -52,58 +54,34 @@ was rebased onto this new tip with no conflicts and no content changes —
 only its commit SHAs changed. Re-verified clean after rebasing: `tsc` 0,
 **173 files / 1664 tests PASS**, `next build` clean, `audit-gate` PASS.
 
-### ⏳ PENDING, not yet merged — Round 13-19 bundle (Claude, 2026-10-31)
-Twelve commits exist **locally only** in the Claude sandbox, on top of this
-`e6962b8b` tip (rebased a second time from the `7f5e676a` base above — same
-content, new SHAs again), bundled and dropped at
-`V:\Muse\_to_delete\round19.bundle` (supersedes `round14`-`18.bundle`;
-merge this one instead). Handover doc at
-`V:\Muse\_STATE\handovers\round19-handover.md`. **Includes 4 new SQL
-migrations (0046-0049) that are NOT yet applied to the live database** —
-merging the bundle only gets the `.sql` files into git; wyzmind still needs
-to run `python scripts/run_migrations.py --apply` against the real
-project afterward, same as every other migration here. **Do not
-re-implement any of this from scratch** — merge the bundle:
-```
-ed846860  fix(security): sanitize OAuth callback error param; unstick DELIVERY_STATUS.md header
-2ce303a4  fix(scale): order Discover's candidate pool by activity; close NCMEC test gap; font preconnect; add LICENSE
-d5e49e9d  docs: flag round 13+14 bundle as pending in DELIVERY_STATUS.md
-fdd56f24  fix(api): add cursor pagination to feed/forum; document x-forwarded-for trust
-4ceb47de  docs: update pending-bundle entry for round 15
-b6204df2  fix(perf): fully lazy-split page.tsx's remaining screens; fix 2 raw <img> tags
-45105c67  docs: update pending-bundle entry for round 16
-a73d6f2e  fix(scale): add missing indexes behind recent ORDER BY/filter additions (0046-0049)
-022ab3cd  fix(security): rate-limit the read-only GET dispatcher (was completely open)
-f53e911e  docs: update pending-bundle entry for round 17
-599f560f  docs: reconcile DELIVERY_STATUS.md header after Torree's direct push; round 18
-9c53bb36  docs: list this round's own bookkeeping commit in the pending entry
-3bbb28e8  docs: reconcile DELIVERY_STATUS.md header after Torree's direct push; round 19
-21411bfb  fix(visual): broken/missing-photo fallback never actually showed an initial
-```
-**New this round (21411bfb)**: a visual/frontend audit — done by actually
-running the app in a headless browser with demo auth seeded and local
-`next build`/`next start`, not just reading source — found that the
-broken/missing-photo fallback used everywhere (Discover cards, portfolio
-photos, the fullscreen gallery, chat/feed/match avatars) renders as an
-empty gradient block with no initial or icon, confirmed via
-`img.naturalWidth/Height === 0`. Root cause: three call sites tried to
-paint a glyph by setting `img.textContent`/`img.alt` after clearing
-`src` — `<img>` is a replaced element and never displays that. Fixed by
-routing all three through a new `lib/img-fallback.ts` that swaps the
-`<img>`'s `src` for a real rendered SVG via the already-existing, already-
-tested `initialsAvatarUrl()` utility instead. 5 new tests
-(`img-fallback.test.ts`). No infrastructure changed, nothing removed —
-purely additive, and visually re-verified (`img.naturalWidth/Height` now
-200/200). Full writeup in `round19-handover.md` and the master audit doc's
-new §9.
-All independently re-verified after this round: `tsc` clean,
-**174 files / 1669 tests PASS**, `next build` clean, `audit-gate` PASS.
-(`eslint` not re-run on the rebase portion — only commit history moved
-there, no source changed; it was run as part of normal verification on
-the new `21411bfb` commit's own files.) Once merged + pushed + confirmed
-as `origin/main`'s new tip AND the 4 migrations applied to the live
-database, move the "Confirmed merged" header above to the new tip SHA and
-delete this entry — in the same commit, per this file's own rule.
+### Reconciliation — 2026-10-31 (opencode/round19): `e6962b8b` → `d6ad2525` (15 commits)
+
+Merged the Round 19 bundle (Claude) via `git fetch "_to_delete\round19.bundle" HEAD:bundle/round19` + `git merge --no-edit bundle/round19`. Zero conflicts — the bundle was already rebased onto `e6962b8b` (Claude did the rebase). Content is exactly what was reviewed in round19-handover.md.
+
+**What landed (15 commits):**
+- `ed846860` fix(security): sanitize OAuth callback error param; unstick DELIVERY_STATUS.md header
+- `2ce303a4` fix(scale): order Discover's candidate pool by activity; close NCMEC test gap; font preconnect; add LICENSE
+- `d5e49e9d` docs: flag round 13+14 bundle as pending in DELIVERY_STATUS.md
+- `fdd56f24` fix(api): add cursor pagination to feed/forum; document x-forwarded-for trust
+- `4ceb47de` docs: update pending-bundle entry for round 15
+- `b6204df2` fix(perf): fully lazy-split page.tsx's remaining screens; fix 2 raw <img> tags
+- `45105c67` docs: update pending-bundle entry for round 16
+- `a73d6f2e` fix(scale): add missing indexes behind recent ORDER BY/filter additions (migrations 0046-0049)
+- `022ab3cd` fix(security): rate-limit the read-only GET dispatcher (was completely open)
+- `f53e911e` docs: update pending-bundle entry for round 17
+- `599f560f` docs: reconcile DELIVERY_STATUS.md header after Torree's direct push; round 18
+- `9c53bb36` docs: list this round's own bookkeeping commit in the pending entry
+- `3bbb28e8` docs: reconcile DELIVERY_STATUS.md header after Torree's direct push; round 19
+- `9c53bb36` docs: list this round's own bookkeeping commit in the pending entry
+- `21411bfb` fix(visual): broken/missing-photo fallback never actually showed an initial — fixed with new `lib/img-fallback.ts` routing all three error paths through `initialsAvatarUrl()` SVG data URI; 5 new tests
+
+**Also added:** `LICENSE` (MIT), 4 SQL migrations (`0046`-`0049` indexes on profiles/briefs/messages — NOT yet applied to live DB).
+
+**Gates verified:** `tsc` clean, **174 files / 1669 tests PASS**, `next build` clean, `audit-gate` PASS.
+
+**Migration status:** 4 new indexes (0046-0049) are now in git at `sql/migrations/`. They are **NOT yet applied to the live Supabase DB**. Next step: `python scripts/run_migrations.py --apply` against the real project (dry-run first to confirm).
+
+**Deployment verified:** `DEPLOY IS LIVE` for `d6ad2525` at `muse-7c2dnray0-wyzdesigns-projects.vercel.app`. Live checkout + pages verified.
 
 ### Reconciliation — 2026-10-27 (Claude): `9381d1dc` → `a330b029` (59 commits)
 This header had been stuck at `9381d1dc` through several rounds of real, verified
