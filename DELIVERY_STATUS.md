@@ -27,7 +27,18 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `d6ad2525`
+## Confirmed merged, last verified at: `913c99cd`
+
+### Reconciliation — 2026-11-04 (opencode): `d6ad2525` → `913c99cd` (1 commit)
+
+`git fetch origin && git log --oneline -1 origin/main` returned `913c99cd` ("fix: landing page accuracy — add Musa Studio tier, correct referral/queue claims, clarify founding beta perk, fix counter labels"), not the `d6ad2525` this file still had recorded. This was a direct push from the opencode session. Single commit, no conflicts.
+
+**What landed:**
+- `913c99cd` fix: landing page accuracy — add Musa Studio tier ($29.99/mo), correct waitlist referral claims (queue position only, not Pro grant), clarify founding member lifetime Pro is MUSEBETA beta perk, fix stats label ("Creatives joined Musa" not "on waitlist"), remove LA-specific language, fix referral blurb to match actual queue mechanic.
+
+**Gates verified:** `tsc` clean, **174 files / 1669 tests PASS**, `next build` clean.
+
+**Deployment verified:** `DEPLOY IS LIVE` for `913c99cd` at `muse-77avpcmq8-wyzdesigns-projects.vercel.app`. Live checkout + pages + landing screenshots at 390/768/1280px verified.
 
 ### Reconciliation — 2026-10-30 (opencode/round19): `e6962b8b` → `d6ad2525`
 
