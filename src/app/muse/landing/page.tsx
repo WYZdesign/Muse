@@ -290,9 +290,9 @@ const SAFETY = [
 ];
 
 const TIERS = [
-  { cls: "founding", badge: "Founding", name: "First 150", perks: ["Lifetime Musa Pro", "Founders Page Spotlight", "Direct Feedback Channel", "Early Access to Everything", "Exclusive Founding Badge"] },
+  { cls: "founding", badge: "Founding", name: "First 150", perks: ["Lifetime Musa Pro (beta perk)", "Founders Page Spotlight", "Direct Feedback Channel", "Early Access to Everything", "Exclusive Founding Badge"] },
   { cls: "early", badge: "Early Member", name: "Up to 1,000", perks: ["6 Months Free Pro", "Early Access", "Early Member Badge", "Priority Support"] },
-  { cls: "standard", badge: "Standard", name: "Everyone Else", perks: ["Free Tier Forever", "Pro at $9.99/mo", "Earn Pro via Referrals"] },
+  { cls: "standard", badge: "Standard", name: "Everyone Else", perks: ["Free Tier Forever", "Musa Pro $9.99/mo", "Musa Studio $29.99/mo (industry)", "Waitlist referrals improve queue position"] },
 ];
 
 
@@ -300,7 +300,7 @@ const TIERS = [
 const FAQS = [
   { q: "When does Musa by WYZ launch?", a: "We're onboarding the first 150 founding members now, then rolling out to the full waitlist. Founding members get in first." },
   { q: "How does verification work?", a: "We use phone + face verification (Stripe Identity) before any paid booking. No self-reported ages, real verification only." },
-  { q: "What does it cost?", a: "Free tier forever. Musa Pro is $9.99/mo. Founding members get lifetime Pro free, and you can earn Pro by referring friends." },
+  { q: "What does it cost?", a: "Free tier forever. Musa Pro is $9.99/mo. Musa Studio is $29.99/mo for industry. Founding members get lifetime Pro free as a beta perk (MUSEBETA code). Waitlist referrals move you up the queue." },
   { q: "How is Musa by WYZ different from Instagram or a job board?", a: "It's not a feed and it's not a job board. It's where you discover creatives near you, collab safely, and get booked, all with safety built into every step." },
   { q: "Is it safe?", a: "Disclosure forms, 24hr check-ins, trusted contacts, instant block, and two-track enforcement. Safety isn't a feature, it's the foundation." },
 ];
@@ -487,7 +487,7 @@ export default function MuseLandingPage() {
           <div className="muse-orb lavender" data-depth="2.4" />
         </div>
         <div className="muse-hero-inner">
-          <div className="muse-hero-eyebrow" data-depth="-0.6"><span className="dot" /> <span className="muse-hero-eyebrow-text">Founding members get lifetime Pro — {Math.max(0, 150 - signupCount)} spots remaining</span></div>
+          <div className="muse-hero-eyebrow" data-depth="-0.6"><span className="dot" /> <span className="muse-hero-eyebrow-text">Founding members get lifetime Pro (beta) — {Math.max(0, 150 - signupCount)} spots remaining</span></div>
           <h1 className="muse-hero-title">
             <span className="line" data-depth="-0.4"><SplitText text="Where Creatives" delay={0.15} /></span>
             <span className="line" data-depth="-0.4"><SplitText text="Find Their" delay={0.38} /></span>
@@ -513,7 +513,7 @@ export default function MuseLandingPage() {
             <div className="muse-hero-email-done" data-depth="-0.3" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
               <span style={{ fontSize: 14, fontWeight: 600 }}>✓ You're on the list, we'll email you when it's your turn.</span>
               {joinInfo && <span style={{ fontSize: 13, color: "#ffd700" }}>You're #{joinInfo.position}{joinInfo.total ? ` of ${joinInfo.total}` : ""} in line.</span>}
-              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Founding members get lifetime Pro free.{joinInfo ? " Each friend you bring moves you up the list." : ""}</span>
+              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Founding members get lifetime Pro free (beta). {joinInfo ? "Each friend you bring moves you up the waitlist." : ""}</span>
               <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
                 <button onClick={() => { navigator.clipboard?.writeText(joinInfo?.shareUrl || `${window.location.origin}/muse/landing`); }} style={{ fontSize: 11, padding: "6px 14px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.25)", color: "#ffd700", cursor: "pointer" }}>Copy Invite Link</button>
                 <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent("Just joined the Musa by WYZ waitlist ✦ Creative professional network for photographers, models, and filmmakers")}&url=${encodeURIComponent(joinInfo?.shareUrl || `${window.location.origin}/muse/landing`)}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, padding: "6px 14px", borderRadius: 99, background: "rgba(255,215,0,0.12)", border: "1px solid rgba(255,215,0,0.25)", color: "#ffd700", textDecoration: "none" }}>Share on X</a>
@@ -533,7 +533,7 @@ export default function MuseLandingPage() {
       <section className="muse-stats">
         <Reveal>
           <div className="muse-stats-grid">
-            <div className="muse-stat">{signupCount > 0 ? <><span className="num"><CountUp end={signupCount} />+</span><span className="lbl">Creatives on the waitlist</span></> : <><span className="num">LA</span><span className="lbl">Founding cohort</span></>}</div>
+            <div className="muse-stat">{signupCount > 0 ? <><span className="num"><CountUp end={signupCount} />+</span><span className="lbl">Creatives joined Musa</span></> : <><span className="num">0</span><span className="lbl">Creatives joined Musa</span></>}</div>
             <div className="muse-stat"><span className="num">150</span><span className="lbl">Founding members</span></div>
             <div className="muse-stat"><span className="num">100%</span><span className="lbl">Verified at booking</span></div>
           </div>
@@ -665,7 +665,7 @@ export default function MuseLandingPage() {
             ))}
           </div>
           <Reveal delay={0.2}>
-            <div className="muse-referral-blurb"><FiGift size={24} /> Refer 3 friends and get Musa Pro free for a year, even before launch.</div>
+            <div className="muse-referral-blurb"><FiGift size={24} /> Share your invite link — each friend who joins moves you up the waitlist.</div>
           </Reveal>
         </div>
       </section>
@@ -678,7 +678,7 @@ export default function MuseLandingPage() {
           <Reveal>
             <div className="muse-cta-card">
               <h2>Ready to Find Your <span className="accent" style={{ color: "var(--gold)", fontStyle: "italic" }}>Musa?</span></h2>
-              <p>{signupCount > 0 ? `Join ${signupCount.toLocaleString()}+ creatives on the waitlist.` : "Join the LA founding cohort."} Founding member spots available.</p>
+              <p>{signupCount > 0 ? `Join ${signupCount.toLocaleString()}+ creatives who have joined Musa.` : "Join the founding cohort."} Founding member spots available.</p>
               <form onSubmit={handleSubmit} className="muse-form">
                 <div className="muse-form-row">
                   <div className="muse-form-group">
