@@ -27,7 +27,33 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `913c99cd`
+## Confirmed merged, last verified at: `262f3680`
+
+### ⏳ PENDING, not yet merged — Round 20 bundle (Claude, 2026-11-05)
+One commit exists **locally only** in the Claude sandbox, on top of this
+`262f3680` tip, bundled and dropped at `V:\Muse\_to_delete\round20.bundle`.
+Handover doc at `V:\Muse\_STATE\handovers\round20-handover.md`. **Do not
+re-implement from scratch** — merge the bundle:
+```
+dfd02f44  fix(visual): landing splash sun height, split "by WYZ" wordmark sizing app-wide
+```
+Two user-requested visual fixes, both verified with real headless-browser
+screenshots, not just by reading CSS: (1) the landing page's "tap to
+enter" splash had its sun floating well above the horizon, unlike every
+other sunset scene in the app — matched to the regular app-boot splash's
+sun height. (2) The "Musa by WYZ" wordmark's "by WYZ" sub-line, repeated
+across 6 places app-wide (landing hero/footer/enter-gate, the app-boot
+splash, the page-load splash, AuthScreen), now sizes "WYZ" 1.5x "by" and
+stays in the existing straight sans sub-line treatment under the larger
+Playfair "Musa" — the enter-gate was previously missing this sub-line
+styling entirely (a real pre-existing bug: "by WYZ" rendered at full
+"Musa" size there). No behavior change, no infrastructure touched, nothing
+removed — CSS sizing/markup only.
+All independently re-verified: `tsc` clean, **174 files / 1669 tests
+PASS** (unchanged — pure visual change), `next build` clean, `audit-gate`
+PASS. Once merged + pushed + confirmed as `origin/main`'s new tip, move
+the "Confirmed merged" header above to the new tip SHA and delete this
+entry — in the same commit, per this file's own rule.
 
 ### Reconciliation — 2026-11-04 (opencode): `d6ad2525` → `913c99cd` (1 commit)
 
