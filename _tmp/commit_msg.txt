@@ -1,0 +1,11 @@
+fix(visual): merge Round 20 bundle — wordmark 'by WYZ' sizing fix app-wide + sun height (already on HEAD)
+
+- Split 'by' and 'WYZ' into separate spans across 6 lockups (landing hero,
+  landing footer, landing enter-gate, app-boot splash, page-load splash,
+  AuthScreen). Both in straight Inter sans sub-line treatment, 'WYZ' sized
+  1.5x 'by', stacked under Playfair 'Musa'.
+- Fixed enter-gate's missing .muse-enter-logo-sub rule (was inheriting full
+  'Musa' gradient size).
+- Sun height already fixed in 71df7039; kept HEAD values.
+- Gates: tsc clean, 174 files / 1669 tests PASS, next build clean.
+- Deploy verified live.

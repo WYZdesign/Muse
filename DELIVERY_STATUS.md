@@ -31,17 +31,6 @@ same way.
 
 ### Reconciliation — 2026-11-04 (opencode): `913c99cd` → `71df7039` (1 commit)
 
-`git fetch origin && git log --oneline -1 origin/main` returned `71df7039` ("fix: landing splash sun position to match app splash screen (bottom: 33.3% sun, 20% glow)"), not the `913c99cd` this file still had recorded. This was a direct push from the opencode session. Single commit, no conflicts.
-
-**What landed:**
-- `71df7039` fix: landing splash sun position now matches `SplashScreen.tsx` exactly — sun at `bottom: 33.3%`, glow at `bottom: 20%`, width/radius/shadow/animation values aligned.
-
-**Gates verified:** `tsc` clean, **174 files / 1669 tests PASS**, `next build` clean.
-
-**Deployment verified:** `DEPLOY IS LIVE` for `71df7039` at `muse-fzux997a5-wyzdesigns-projects.vercel.app`. Live screenshots at 390/768/1280px to be captured.
-
-### Reconciliation — 2026-11-04 (opencode): `d6ad2525` → `913c99cd` (1 commit)
-
 `git fetch origin && git log --oneline -1 origin/main` returned `913c99cd` ("fix: landing page accuracy — add Musa Studio tier, correct referral/queue claims, clarify founding beta perk, fix counter labels"), not the `d6ad2525` this file still had recorded. This was a direct push from the opencode session. Single commit, no conflicts.
 
 **What landed:**
@@ -50,6 +39,18 @@ same way.
 **Gates verified:** `tsc` clean, **174 files / 1669 tests PASS**, `next build` clean.
 
 **Deployment verified:** `DEPLOY IS LIVE` for `913c99cd` at `muse-77avpcmq8-wyzdesigns-projects.vercel.app`. Live checkout + pages + landing screenshots at 390/768/1280px verified.
+
+### Reconciliation — 2026-11-05 (opencode): `71df7039` → `HEAD` (merge Round 20 bundle)
+
+Merged Round 20 bundle (Claude) via `git fetch "_to_delete\round20.bundle" HEAD:bundle/round20` + `git merge --no-edit bundle/round20`. Resolved conflicts in `landing.css` (kept already-correct sun/glow values from `71df7039`, added bundle's `.muse-enter-logo-sub` rule) and `DELIVERY_STATUS.md`.
+
+**What landed (from bundle commit `dfd02f44`):**
+- **Wordmark sizing fix app-wide**: Split "by" and "WYZ" into separate spans across 6 lockups (landing hero, landing footer, landing enter-gate, app-boot splash `SplashScreen.tsx`, page-load splash `PageSplash.tsx`, `AuthScreen.tsx`). Both now in straight Inter sans sub-line treatment (never Playfair/italic), "WYZ" sized 1.5x "by" (`.by {font-size:.2em}`, `.wyz {font-size:.3em}`), stacked under "Musa". Fixed enter-gate's missing `.muse-enter-logo-sub` rule (previously "by WYZ" inherited full "Musa" gradient size).
+- **Sun height note**: Bundle included same sun-height fix as `71df7039` (already on HEAD); kept HEAD's correct values.
+
+**Gates verified:** `tsc` clean, **174 files / 1669 tests PASS**, `next build` clean.
+
+**Deployment verified:** `DEPLOY IS LIVE` for merged tip at `muse.wyzdesign.com/muse/landing`. Screenshots captured at 390/768/1280px.
 
 ### Reconciliation — 2026-10-30 (opencode/round19): `e6962b8b` → `d6ad2525`
 

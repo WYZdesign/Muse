@@ -329,6 +329,13 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
   filter: drop-shadow(0 2px 24px rgba(255,215,0,0.5));
   margin-top: 0px;
 }
+.muse-enter-logo-sub {
+  display: block; margin-top: .05em;
+  font-family: 'Inter', system-ui, sans-serif; font-style: normal; font-weight: 800;
+  letter-spacing: .25em; text-transform: uppercase;
+}
+.muse-enter-logo-sub .by { font-size: .2em; }
+.muse-enter-logo-sub .wyz { font-size: .3em; }
 .muse-enter-sub {
   font-size: 9px; letter-spacing: 0.34em; text-transform: uppercase;
   color: rgba(255,255,255,0.45); margin-top: 4px; font-weight: 500;
