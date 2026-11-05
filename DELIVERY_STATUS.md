@@ -27,7 +27,7 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `71df7039`
+## Confirmed merged, last verified at: `25904486`
 
 ### Reconciliation — 2026-11-04 (opencode): `913c99cd` → `71df7039` (1 commit)
 
