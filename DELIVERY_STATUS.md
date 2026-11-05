@@ -27,7 +27,18 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `913c99cd`
+## Confirmed merged, last verified at: `71df7039`
+
+### Reconciliation — 2026-11-04 (opencode): `913c99cd` → `71df7039` (1 commit)
+
+`git fetch origin && git log --oneline -1 origin/main` returned `71df7039` ("fix: landing splash sun position to match app splash screen (bottom: 33.3% sun, 20% glow)"), not the `913c99cd` this file still had recorded. This was a direct push from the opencode session. Single commit, no conflicts.
+
+**What landed:**
+- `71df7039` fix: landing splash sun position now matches `SplashScreen.tsx` exactly — sun at `bottom: 33.3%`, glow at `bottom: 20%`, width/radius/shadow/animation values aligned.
+
+**Gates verified:** `tsc` clean, **174 files / 1669 tests PASS**, `next build` clean.
+
+**Deployment verified:** `DEPLOY IS LIVE` for `71df7039` at `muse-fzux997a5-wyzdesigns-projects.vercel.app`. Live screenshots at 390/768/1280px to be captured.
 
 ### Reconciliation — 2026-11-04 (opencode): `d6ad2525` → `913c99cd` (1 commit)
 
