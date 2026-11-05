@@ -134,13 +134,17 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 
 /* Sun + Horizon glow — half-circle setting into the ocean horizon */
 .sunset-sun-glow {
-  position: absolute; left: 50%; bottom: 18%; transform: translateX(-50%);
+  position: absolute; left: 50%; bottom: 20%; transform: translateX(-50%);
   width: 58vw; height: 32vw; border-radius: 58vw 58vw 0 0;
   background: radial-gradient(ellipse at 50% 100%, rgba(255,200,90,0.8) 0%, rgba(255,140,60,0.4) 45%, transparent 75%);
   filter: blur(16px); animation: sunsetSunPulse 5s ease-in-out infinite; z-index: 1;
 }
 .sunset-sun {
-  position: absolute; left: 50%; bottom: 41.5%; transform: translateX(-50%);
+  /* Matched to the regular app splash's sun height (SplashScreen.tsx's
+     .fusion-sun, bottom: 33.3%) — this was 41.5%, sitting well above the
+     horizon near the subtitle text instead of setting into it like every
+     other sunset scene in the app. */
+  position: absolute; left: 50%; bottom: 33.3%; transform: translateX(-50%);
   width: 16vw; min-width: 110px; max-width: 180px;
   height: 8vw; min-height: 55px; max-height: 90px;
   border-radius: 180px 180px 0 0;
@@ -329,6 +333,13 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
   filter: drop-shadow(0 2px 24px rgba(255,215,0,0.5));
   margin-top: 0px;
 }
+.muse-enter-logo-sub {
+  display: block; margin-top: .05em;
+  font-family: 'Inter', system-ui, sans-serif; font-style: normal; font-weight: 800;
+  letter-spacing: .25em; text-transform: uppercase;
+}
+.muse-enter-logo-sub .by { font-size: .2em; }
+.muse-enter-logo-sub .wyz { font-size: .3em; }
 .muse-enter-sub {
   font-size: 9px; letter-spacing: 0.34em; text-transform: uppercase;
   color: rgba(255,255,255,0.45); margin-top: 4px; font-weight: 500;

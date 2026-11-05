@@ -492,7 +492,7 @@ export default function MuseLandingPage() {
             <span className="line" data-depth="-0.4"><SplitText text="Where Creatives" delay={0.15} /></span>
             <span className="line" data-depth="-0.4"><SplitText text="Find Their" delay={0.38} /></span>
             <span className="line" data-depth="-0.4">
-              <span className="gradient muse-animated-gradient" style={{ display: "inline-block", padding: "0 0.1em" }}>Musa<span style={{ display: "block", fontFamily: "Inter, system-ui, sans-serif", fontStyle: "normal", fontSize: ".26em", fontWeight: 800, letterSpacing: ".3em", textTransform: "uppercase", marginTop: ".02em", textIndent: ".3em" }}>by WYZ</span></span>
+              <span className="gradient muse-animated-gradient" style={{ display: "inline-block", padding: "0 0.1em" }}>Musa<span style={{ display: "block", fontFamily: "Inter, system-ui, sans-serif", fontStyle: "normal", fontWeight: 800, letterSpacing: ".3em", textTransform: "uppercase", marginTop: ".02em", textIndent: ".3em" }}><span style={{ fontSize: ".2em" }}>by </span><span style={{ fontSize: ".3em" }}>WYZ</span></span></span>
             </span>
           </h1>
           <p className="muse-hero-sub" data-depth="-0.3">Connect with photographers, models, filmmakers, and more. Work together on real projects. Get booked, safely.</p>
@@ -740,7 +740,7 @@ export default function MuseLandingPage() {
         <div className="muse-container">
           <div className="muse-footer-grid">
             <div>
-              <div className="muse-footer-logo">Musa <span className="accent">by WYZ ✦</span></div>
+              <div className="muse-footer-logo">Musa <span className="accent" style={{ fontFamily: "Inter, system-ui, sans-serif", fontStyle: "normal" }}><span style={{ fontSize: ".6em" }}>by</span> <span style={{ fontSize: ".9em" }}>WYZ</span></span> <span className="accent">✦</span></div>
               <p>Where creatives converge.</p>
             </div>
             <nav><h4>Product</h4><ul><li><a href="#features">Features</a></li><li><a href="#safety">Safety</a></li><li><a href="/muse/pricing">Pricing</a></li><li><a href="/muse/faq">FAQ</a></li></ul></nav>
@@ -843,7 +843,7 @@ export default function MuseLandingPage() {
             <div className="muse-enter-icon-wrap">
               <Image src="/muse-app-icon.png" alt="Musa by WYZ app" className="muse-enter-icon" width={174} height={174} />
             </div>
-            <div className="muse-enter-logo">Musa <span>by WYZ</span></div>
+            <div className="muse-enter-logo">Musa <span className="muse-enter-logo-sub"><span className="by">by </span><span className="wyz">WYZ</span></span></div>
             <div className="muse-enter-sub">Creative Professional Network</div>
             <div className="muse-enter-prompt">Tap to Enter <span style={{fontSize:'1.5em',lineHeight:1}}>✦</span></div>
           </div>
