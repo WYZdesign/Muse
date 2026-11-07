@@ -22,7 +22,9 @@ const TAG_COLORS: Record<string, string> = {
   Product: "#ffd700",
   Safety: "#ef4444",
   Engineering: "#3b82f6",
-  Community: "#8b5cf6",
+  Community: "#a78bfa", // lighter violet than the original #8b5cf6 — that one
+  // measured under 4.5:1 at this badge's 11px/600 weight against the page
+  // background (axe-core color-contrast, round 22 a11y pass)
   News: "#10b981",
 };
 
@@ -39,7 +41,7 @@ export default function BlogPage() {
               <span style={{ fontSize: 11, fontWeight: 600, color: TAG_COLORS[post.tag] || "#ffd700", background: `${TAG_COLORS[post.tag] || "#ffd700"}15`, padding: "2px 8px", borderRadius: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>
                 {post.tag}
               </span>
-              <time style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>{post.date}</time>
+              <time style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>{post.date}</time>
             </div>
             <h2 style={{ fontSize: "1.25rem", fontWeight: 600, color: "#fff", marginBottom: 8 }}><a href={`/muse/blog/${post.slug}`}>{post.title}</a></h2>
             <p style={{ color: "rgba(255,255,255,0.6)", lineHeight: 1.7, fontSize: 14, margin: 0 }}>{post.excerpt}</p>

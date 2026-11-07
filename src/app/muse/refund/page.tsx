@@ -18,7 +18,7 @@ export default function RefundPolicyPage() {
         </p>
         <h2 style={{ fontSize: "1.25rem", fontWeight: 600, marginBottom: 8, color: "#fff" }}>How to request a refund</h2>
         <p style={{ marginBottom: 24 }}>
-          Email <a href="mailto:info@wyzdesign.com" style={{ color: "#ffd700" }}>info@wyzdesign.com</a> with your account email and the date of the charge. We process refunds within 5 business days.
+          Email <a href="mailto:info@wyzdesign.com" style={{ color: "#ffd700", textDecoration: "underline" }}>info@wyzdesign.com</a> with your account email and the date of the charge. We process refunds within 5 business days.
         </p>
         <h2 style={{ fontSize: "1.25rem", fontWeight: 600, marginBottom: 8, color: "#fff" }}>What is refunded</h2>
         <ul style={{ paddingLeft: 20, marginBottom: 24 }}>

@@ -8,7 +8,10 @@
   --surface: #120b1e;
   --text: #f0eaff;
   --text2: rgba(240, 234, 255, 0.72);
-  --muted: rgba(240, 234, 255, 0.42);
+  /* WCAG AA requires >=4.5:1 for normal text; 0.42 measured ~3.4:1 against
+     --bg. Bumped to 0.58 (~5.7:1) — still reads as muted/secondary, now
+     passes axe-core's color-contrast rule (round 22 a11y pass). */
+  --muted: rgba(240, 234, 255, 0.58);
   --gold: #ffd700;
   --coral: #ff8a80;
   --lavender: #d4a5ff;

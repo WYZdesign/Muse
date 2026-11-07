@@ -16,7 +16,7 @@ const TAG_COLORS: Record<string, string> = {
   Product: "#ffd700",
   Safety: "#ef4444",
   Engineering: "#3b82f6",
-  Community: "#8b5cf6",
+  Community: "#a78bfa", // same contrast fix as blog/page.tsx — round 22 a11y pass
   News: "#10b981",
 };
 
@@ -122,7 +122,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "120px 24px 80px", fontFamily: "'Inter', sans-serif" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
         <span style={{ fontSize: 11, fontWeight: 600, color, background: `${color}15`, padding: "2px 8px", borderRadius: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{post.tag}</span>
-        <time style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>{post.date}</time>
+        <time style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>{post.date}</time>
       </div>
       <h1 style={{ fontSize: "2rem", fontWeight: 700, marginBottom: 24, color: "#fff", lineHeight: 1.3 }}>{post.title}</h1>
       <div style={{ color: "rgba(255,255,255,0.75)", lineHeight: 1.9, fontSize: 16 }}>

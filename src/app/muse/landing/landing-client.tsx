@@ -719,8 +719,8 @@ export default function MuseLandingPage({ initialSignupCount = 0 }: { initialSig
               <div className="muse-qr">
                 <button type="button" className="muse-qr-btn" onClick={() => generateQrCode(selectedSource)}><FiLink size={16} /> Get Your Personal QR Code</button>
                 <div className="muse-qr-sources">
-                  <label>Track your referrals:</label>
-                  <select value={selectedSource} onChange={e => setSelectedSource(e.target.value)} className="muse-qr-select">
+                  <label htmlFor="muse-qr-source">Track your referrals:</label>
+                  <select id="muse-qr-source" value={selectedSource} onChange={e => setSelectedSource(e.target.value)} className="muse-qr-select">
                     <option value="default">General Link</option>
                     <option value="la_founder">LA Founder Outreach</option>
                     <option value="la_ambassador">LA Founding Ambassadors</option>
