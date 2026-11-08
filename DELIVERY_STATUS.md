@@ -27,7 +27,23 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `25904486`
+## Confirmed merged, last verified at: `a7323f18`
+
+### Reconciliation — 2026-11-07 (opencode): `25904486` → `a7323f18` (2 commits)
+
+Implemented the Claude public-site SEO audit (`CLAUDE_PUBLIC_SITE_AUDIT_2026-11-06.md`, copy at `W:\WYZ_Command_Center\_STATE\handovers\20261106-claude-to-opencode-muse-site-audit.md`).
+
+**What landed:**
+- `8d3dcfe9` fix(seo): **sitemap + every canonical were wrong** — `getMuseUrl()` returns `.../muse` and sitemap did `${base}${path}` where paths already start `/muse`, producing `.../muse/muse/*` on the wrong host (`www.wyzdesign.com`); all 22 entries 404'd. Added `getCanonicalOrigin()` (`NEXT_PUBLIC_CANONICAL_ORIGIN`, defaults `https://muse.wyzdesign.com`) and resolved `getMuseUrl`/`getLandingUrl` against it (leaving `NEXT_PUBLIC_APP_URL` untouched so OAuth redirects keep working). Rewrote `sitemap.ts` with canonical host + non-doubled paths, dropped the noindexed app shell and duplicate root entries. P2 in the same commit: CountUp no longer frozen at 0 for reduced-motion/preview users; footer link targets >=24px; footer wave z-index dropped below content so it stops covering the hero consent line; added Sentry `onRouterTransitionStart`; untracked `_tmp/*` + `*.original` (gitignored); `npm audit fix` (non-breaking).
+- `a7323f18` fix(seo): root `/privacy`, `/terms`, `/safety` canonicals were doubling to `.../muse/muse/*` because a relative canonical resolves against `metadataBase` (`.../muse`). Switched them to absolute `getMuseUrl("privacy"|"terms"|"safety")`.
+
+**Live verification (production):** sitemap = 18 URLs, canonical host, **0** doubled `/muse`, **0** `www`; all 18 sitemap URLs return **200** with no redirects; `/muse/pricing`, `/muse/landing`, `/privacy`, `/terms`, `/safety` canonicals all correct single-`/muse` on `muse.wyzdesign.com`; `/dmca` canonical = `/muse/dmca`.
+
+**Gates verified:** `tsc` clean, **174 files / 1671 tests PASS** (added 2 canonical-origin tests), `next build` clean.
+
+**Deployment verified:** `DEPLOY IS LIVE` for `a7323f18` at `muse-jz74rp05c-wyzdesigns-projects.vercel.app`.
+
+**Known limitation (documented in the audit addendum):** the landing "creatives joined" stat is fetched client-side, so raw SSR HTML for crawlers still shows 0. Every JS-enabled user (including reduced-motion) now shows the real live count. Fixing crawler SSR needs a server-fetched count (page is a 865-line client component) — left as a scoped follow-up.
 
 ### Reconciliation — 2026-11-04 (opencode): `913c99cd` → `71df7039` (1 commit)
 
