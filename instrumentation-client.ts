@@ -5,3 +5,8 @@
  * init definition shared by both entry points.
  */
 import "./sentry.client.config";
+import * as Sentry from "@sentry/nextjs";
+
+// Trace client-side navigations (App Router). Without this export the
+// @sentry/nextjs build warns that router transitions are not instrumented.
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

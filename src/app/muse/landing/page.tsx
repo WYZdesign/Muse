@@ -157,9 +157,27 @@ function useParallax<T extends HTMLElement>(strength = 16) {
 /* ── Count-up number ── */
 function CountUp({ end, duration = 1600 }: { end: number; duration?: number }) {
   const { ref, inView } = useInView<HTMLSpanElement>(0.5);
-  const [val, setVal] = useState(0);
+  // Initialise to the real value so SSR HTML, crawlers, share-preview bots and
+  // reduced-motion users all see the actual count (never "0"). Motion users get
+  // the count-up animation once it hydrates and scrolls into view.
+  const [val, setVal] = useState(end);
+  const [animate, setAnimate] = useState(false);
   useEffect(() => {
-    if (!inView) return;
+    const reduce = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    const hasIO = typeof IntersectionObserver !== "undefined";
+    if (reduce || !hasIO) return; // keep the real number
+    setAnimate(true);
+    setVal(0);
+  }, []);
+  // Keep the shown value in sync when we are NOT animating (reduced motion,
+  // no IntersectionObserver, or the count arrives after mount from the stats
+  // fetch). Previously val froze at its initial 0 and never picked up the
+  // real count for those users.
+  useEffect(() => {
+    if (!animate) setVal(end);
+  }, [animate, end]);
+  useEffect(() => {
+    if (!animate || !inView) return;
     let start = 0;
     const step = (ts: number) => {
       if (!start) start = ts;
@@ -168,7 +186,7 @@ function CountUp({ end, duration = 1600 }: { end: number; duration?: number }) {
       if (p < 1) requestAnimationFrame(step);
     };
     requestAnimationFrame(step);
-  }, [inView, end, duration]);
+  }, [animate, inView, end, duration]);
   return <span ref={ref}>{val.toLocaleString()}</span>;
 }
 

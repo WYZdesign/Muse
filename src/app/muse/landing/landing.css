@@ -670,13 +670,13 @@ html:has(.muse-landing), body:has(.muse-landing) { overflow-y: auto !important; 
 .muse-footer p { font-size: 0.86rem; color: var(--muted); line-height: 1.65; margin-top: 12px; }
 .muse-footer h4 { font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 18px; font-weight: 700; }
 .muse-footer ul { list-style: none; display: flex; flex-direction: column; gap: 11px; }
-.muse-footer a { font-size: 0.88rem; color: var(--text2); transition: color .2s, transform .2s; display: inline-block; }
+.muse-footer a { font-size: 0.88rem; color: var(--text2); transition: color .2s, transform .2s; display: inline-block; padding: 4px 0; }
 .muse-footer a:hover { color: var(--gold); transform: translateX(3px); }
 .muse-footer-bottom { text-align: center; padding-top: 28px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); }
 .muse-footer-bottom p { margin: 0; }
 
 /* ═══ FOOTER OCEAN WAVES (matches splash) ═══ */
-.muse-footer-wave { position: fixed; left: 0; right: 0; bottom: 0; height: 10vh; min-height: 70px; z-index: 60; pointer-events: none; }
+.muse-footer-wave { position: fixed; left: 0; right: 0; bottom: 0; height: 10vh; min-height: 70px; z-index: 1; pointer-events: none; }
 .muse-footer-wave-svg { position: absolute; bottom: 0; left: -8%; width: 116%; height: 100%; display: block; }
 .muse-footer-wave-svg .fww { transform-origin: center bottom; will-change: transform; }
 .fww-6 { fill: rgba(34,235,245,0.6); animation: waveRise6 12s ease-in-out infinite alternate; }

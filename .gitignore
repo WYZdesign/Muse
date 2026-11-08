@@ -40,6 +40,8 @@ coverage/
 
 # Repo hygiene (handover round 39): stray root artifacts that are not source
 page.tsx.original
+*.original
+_tmp/
 build.log
 build_output.txt
 audit_output.txt

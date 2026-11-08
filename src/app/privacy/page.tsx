@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Privacy Policy — Musa by WYZ",
   description: "Learn how Musa collects, uses, and protects your personal data.",
+  alternates: { canonical: "/muse/privacy" },
 };
 
 export default function PrivacyPage() {

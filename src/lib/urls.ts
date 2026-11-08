@@ -7,13 +7,23 @@ function getBaseUrl(): string {
   return process.env.NEXT_PUBLIC_APP_URL || "https://muse.wyzdesign.com";
 }
 
+/**
+ * Origin used for SEO signals (sitemap, canonical, metadataBase).
+ * Kept separate from NEXT_PUBLIC_APP_URL on purpose: that variable also builds
+ * the OAuth redirect URIs, which are registered on www.wyzdesign.com, so
+ * changing it to fix canonicals would silently break social connect.
+ */
+function getCanonicalOrigin(): string {
+  return process.env.NEXT_PUBLIC_CANONICAL_ORIGIN || "https://muse.wyzdesign.com";
+}
+
 function getMuseUrl(path: string = ""): string {
-  const base = getBaseUrl();
+  const base = getCanonicalOrigin();
   return `${base}/muse${path ? `/${path.replace(/^\//, "")}` : ""}`;
 }
 
 function getLandingUrl(path: string = ""): string {
-  const base = getBaseUrl();
+  const base = getCanonicalOrigin();
   return `${base}/muse/landing${path ? `/${path.replace(/^\//, "")}` : ""}`;
 }
 
@@ -117,6 +127,7 @@ function getProShareUrlWithRef(proId: string | number, refName: string): string 
 
 export {
   getBaseUrl,
+  getCanonicalOrigin,
   getMuseUrl,
   getLandingUrl,
   getProfileUrl,

@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Community Guidelines — Musa by WYZ",
   description: "Musa by WYZ community standards for creative professional networking.",
+  alternates: { canonical: "/muse/safety" },
 };
 
 export default function SafetyPage() {

@@ -4,6 +4,23 @@ describe("urls", () => {
   beforeEach(() => {
     vi.resetModules();
     process.env.NEXT_PUBLIC_APP_URL = "https://test.muse.com";
+    // SEO-facing helpers (getMuseUrl/getLandingUrl and friends) resolve against
+    // the canonical origin, separate from NEXT_PUBLIC_APP_URL (OAuth redirects).
+    process.env.NEXT_PUBLIC_CANONICAL_ORIGIN = "https://test.muse.com";
+  });
+
+  describe("getCanonicalOrigin", () => {
+    it("should return NEXT_PUBLIC_CANONICAL_ORIGIN when set", async () => {
+      const { getCanonicalOrigin } = await import("./urls");
+      expect(getCanonicalOrigin()).toBe("https://test.muse.com");
+    });
+
+    it("should default to muse.wyzdesign.com when unset", async () => {
+      vi.resetModules();
+      delete process.env.NEXT_PUBLIC_CANONICAL_ORIGIN;
+      const { getCanonicalOrigin } = await import("./urls");
+      expect(getCanonicalOrigin()).toBe("https://muse.wyzdesign.com");
+    });
   });
 
   describe("getBaseUrl", () => {

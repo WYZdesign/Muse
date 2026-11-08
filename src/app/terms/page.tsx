@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Terms of Service — Musa by WYZ",
   description: "Read Musa's Terms of Service for the creative professional networking platform.",
+  alternates: { canonical: "/muse/terms" },
 };
 
 export default function TermsPage() {
