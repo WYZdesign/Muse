@@ -1,10 +1,11 @@
 /** Top-level /privacy alias of the policy, used by email footers and external links. */
 import type { Metadata } from "next";
+import { getMuseUrl } from "@/lib/urls";
 
 export const metadata: Metadata = {
   title: "Privacy Policy — Musa by WYZ",
   description: "Learn how Musa collects, uses, and protects your personal data.",
-  alternates: { canonical: "/muse/privacy" },
+  alternates: { canonical: getMuseUrl("privacy") },
 };
 
 export default function PrivacyPage() {

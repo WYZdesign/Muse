@@ -1,10 +1,11 @@
 /** Top-level /terms alias of the terms of service. */
 import type { Metadata } from "next";
+import { getMuseUrl } from "@/lib/urls";
 
 export const metadata: Metadata = {
   title: "Terms of Service — Musa by WYZ",
   description: "Read Musa's Terms of Service for the creative professional networking platform.",
-  alternates: { canonical: "/muse/terms" },
+  alternates: { canonical: getMuseUrl("terms") },
 };
 
 export default function TermsPage() {

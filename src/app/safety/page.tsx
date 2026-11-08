@@ -1,10 +1,11 @@
 /** Top-level /safety route serving the community-guidelines content. */
 import type { Metadata } from "next";
+import { getMuseUrl } from "@/lib/urls";
 
 export const metadata: Metadata = {
   title: "Community Guidelines — Musa by WYZ",
   description: "Musa by WYZ community standards for creative professional networking.",
-  alternates: { canonical: "/muse/safety" },
+  alternates: { canonical: getMuseUrl("safety") },
 };
 
 export default function SafetyPage() {
