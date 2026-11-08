@@ -27,7 +27,7 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `a7323f18`
+## Confirmed merged, last verified at: `9be41377`
 
 ### Reconciliation — 2026-11-07 (opencode): `25904486` → `a7323f18` (2 commits)
 
@@ -44,6 +44,8 @@ Implemented the Claude public-site SEO audit (`CLAUDE_PUBLIC_SITE_AUDIT_2026-11-
 **Deployment verified:** `DEPLOY IS LIVE` for `a7323f18` at `muse-jz74rp05c-wyzdesigns-projects.vercel.app`.
 
 **Known limitation (documented in the audit addendum):** the landing "creatives joined" stat is fetched client-side, so raw SSR HTML for crawlers still shows 0. Every JS-enabled user (including reduced-motion) now shows the real live count. Fixing crawler SSR needs a server-fetched count (page is a 865-line client component) — left as a scoped follow-up.
+
+- `9be41377` feat(seo): **closed that follow-up.** Split the landing page into `page.tsx` (server, ISR 60s) + `landing-client.tsx`; the server seeds `signupCount` from `muse_profiles` (same source as `/api/muse/landing-stats`). Live raw HTML now contains `<span>35</span>+ Creatives joined Musa` (API count 35) with JS disabled. Client still refreshes after hydration. `DEPLOY IS LIVE` for `9be41377`.
 
 ### Reconciliation — 2026-11-04 (opencode): `913c99cd` → `71df7039` (1 commit)
 
