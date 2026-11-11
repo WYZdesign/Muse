@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   title: "Musa by WYZ — Where Creatives Connect",
   description: "Discover and connect with photographers, models, filmmakers, musicians, designers, and artists. The creative professional network.",
   manifest: "/manifest.webmanifest",
-  icons: { icon: "/muse-icon.png", apple: "/apple-touch-icon.png", shortcut: "/muse-icon.png" },
+  icons: { icon: "/favicon-192x192.png", apple: "/apple-touch-icon.png", shortcut: "/favicon-192x192.png" },
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Musa by WYZ", startupImage: "/apple-touch-icon.png" },
   // Deliberately NO openGraph/twitter here: this is the AUTHENTICATED app
   // layout (noindex, canonical null). Emitting generic preview metadata for
