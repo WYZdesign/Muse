@@ -29,6 +29,10 @@ same way.
 
 ## Confirmed merged, last verified at: `f316e542`
 
+### ⏳ PENDING — round 25 (Claude): icon-link perf fix, not yet merged
+
+- `perf: point favicon/apple-touch icons at right-sized PNGs` — bundle `V:\Muse\_to_delete\round25.bundle` (1 commit on `b581f5b4`). Handover: `_STATE/handovers/round25-perf-done.md`. Not merged until it is an ancestor of `origin/main`.
+
 ### Reconciliation — 2026-11-10 (opencode): `579cf278` → `f316e542` (1 code commit)
 
 - `f316e542` perf(landing): cut `BackgroundScene` per-frame main-thread work (comet tail `lineTo` stepped by 3, spark spawn 0.35→0.18, orb drift 30→20fps). Pure reduction, near-identical visuals. Gates: `tsc` 0, 174 files / 1671 tests PASS, build 0. `DEPLOY IS LIVE` for `f316e542`.
