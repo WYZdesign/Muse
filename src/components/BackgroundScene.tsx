@@ -42,7 +42,9 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
     let frame: number;
     let skip = 0;
     const animate = () => {
-      skip = (skip + 1) % 2;
+      // 20fps is plenty for these slow drifting orbs and cuts continuous
+      // style/layout recalculation (was every other frame).
+      skip = (skip + 1) % 3;
       if (skip === 0) {
       orbs.forEach((orb, i) => {
         const f = (i + 1) * 10;
@@ -118,18 +120,20 @@ export default function BackgroundScene({ flash, paused = false }: { flash: stri
         c.life++;
         if (c.life > c.maxLife) { c.active = false; comets.splice(i, 1); continue; }
         c.x += c.vx; c.y += c.vy;
-        if (Math.random() > 0.65) {
+        if (Math.random() > 0.82) {
           c.sparks.push({ x: c.x, y: c.y, vx: (Math.random()-0.5)*2.5, vy: (Math.random()-0.5)*2.5, life: 25+Math.random()*35, size: 1+Math.random()*2.5, color: c.color });
         }
         const fadeIn = Math.min(c.life / 25, 1);
         const fadeOut = c.life > c.maxLife - 70 ? (c.maxLife - c.life) / 70 : 1;
         const opacity = fadeIn * fadeOut;
 
-          // Super thin, smooth tail — follows velocity with a barely-there curve
+          // Super thin, smooth tail — follows velocity with a barely-there curve.
+          // Step by 3 keeps the same length/curve while drawing ~1/3 the points
+          // (this per-frame lineTo loop was the biggest canvas cost).
           const tailSteps = Math.floor(c.tailLen);
           ctx!.beginPath();
           ctx!.moveTo(c.x, c.y);
-          for (let t = 1; t <= tailSteps; t++) {
+          for (let t = 1; t <= tailSteps; t += 3) {
             const p = t / tailSteps;
             const tx = c.x - c.vx * t * 0.9 + Math.sin(t * 0.18 + c.life * 0.03) * (1 - p) * 2.2;
             const ty = c.y - c.vy * t * 0.9 + Math.cos(t * 0.16 + c.life * 0.03) * (1 - p) * 1.8;
