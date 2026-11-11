@@ -27,7 +27,13 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `9be41377`
+## Confirmed merged, last verified at: `f316e542`
+
+### Reconciliation — 2026-11-10 (opencode): `579cf278` → `f316e542` (1 code commit)
+
+- `f316e542` perf(landing): cut `BackgroundScene` per-frame main-thread work (comet tail `lineTo` stepped by 3, spark spawn 0.35→0.18, orb drift 30→20fps). Pure reduction, near-identical visuals. Gates: `tsc` 0, 174 files / 1671 tests PASS, build 0. `DEPLOY IS LIVE` for `f316e542`.
+
+Deep performance pass (LCP element ID, image byte optimization: `muse-icon.png` 377KB + `muse-app-icon.png` 768KB, gate-time paint, full route re-measure) handed to Claude in `_STATE/handovers/round24-perf-handover.md` — to be independently re-checked here. Note: local Lighthouse on the WYZMIND host is too noisy to trust (contention); measure in a clean environment.
 
 ### Reconciliation — 2026-11-07 (opencode): `25904486` → `a7323f18` (2 commits)
 
