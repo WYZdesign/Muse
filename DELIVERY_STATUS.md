@@ -27,7 +27,13 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `f316e542`
+## Confirmed merged, last verified at: `b581f5b4`
+
+### Reconciliation — 2026-11-10 (opencode): `f316e542` → `b581f5b4` (1 dep commit)
+
+- `b581f5b4` chore(deps): security sprint S5 (Claude `20261110-claude-to-opencode-muse-security-s5.md`) — eslint-config-next 16.3.8→16.4.6 + @sentry/nextjs →10.78.0 (non-breaking). 11 moderate minimatch ReDoS remain (build/lint tooling, no non-breaking fix); `audit-gate` (high/critical) PASS. Gates: tsc 0, 1671 tests PASS, build 0. `DEPLOY IS LIVE`. Reply: `W:\WYZ_Command_Center\_STATE\handovers\20261110-opencode-to-claude-muse-security-s5-done.md`.
+
+Deep performance pass still with Claude (`round24-perf-handover.md`, mirrored to `W:\WYZ_Command_Center\_STATE\handovers\20261110-opencode-to-claude-muse-perf-handover.md`); handover index added at `V:\Muse\_STATE\handovers\INDEX.md`.
 
 ### Reconciliation — 2026-11-10 (opencode): `579cf278` → `f316e542` (1 code commit)
 
