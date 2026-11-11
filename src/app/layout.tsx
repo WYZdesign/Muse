@@ -169,10 +169,14 @@ export const metadata: Metadata = {
   description: "Discover and connect with photographers, models, filmmakers, musicians, designers, and artists. The creative professional network.",
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Musa by WYZ", startupImage: "/apple-touch-icon.png" },
+  // Right-sized icons only. These used to all point at /muse-icon.png (a
+  // 512px, 377 KB master) which the browser then fetched ~3x per page load
+  // (~1.16 MB of a ~2 MB landing load). The 512 master stays for the PWA
+  // manifest and the JSON-LD logo, which only crawlers/installs request.
   icons: {
-    icon: "/muse-icon.png",
-    shortcut: "/muse-icon.png",
-    apple: "/muse-icon.png",
+    icon: [{ url: "/favicon-192x192.png", sizes: "192x192", type: "image/png" }],
+    shortcut: "/favicon-192x192.png",
+    apple: "/apple-touch-icon.png",
   },
   openGraph: { title: "Musa by WYZ — Where Creatives Connect", description: "Book creative shoots safely. Verified photographers, models, and talent, protected payments, real trust. Find your muse.", url: getMuseUrl(), siteName: "Musa by WYZ", type: "website", images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Musa by WYZ — Where Creatives Connect" }] },
   twitter: { card: "summary_large_image", title: "Musa by WYZ — Where Creatives Connect", description: "Book creative shoots safely. Verified photographers, models, and talent, protected payments, real trust. Find your muse.", images: ["/og-image.png"] },
@@ -221,10 +225,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
 <head>
-        <link rel="icon" type="image/png" sizes="192x192" href="/muse-icon.png" />
-        <link rel="icon" type="image/png" sizes="512x512" href="/muse-icon.png" />
-        <link rel="apple-touch-icon" href="/muse-icon.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/muse-icon.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Musa by WYZ" />
