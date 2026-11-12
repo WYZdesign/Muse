@@ -27,17 +27,20 @@ find out what (`git log <old-sha>..origin/main --oneline`) and update this
 file yourself before doing anything else, so the next agent isn't stuck the
 same way.
 
-## Confirmed merged, last verified at: `b581f5b4`
+## Confirmed merged, last verified at: `f3dfbfba`
+
+### Reconciliation — 2026-11-11 (opencode): `b581f5b4` → `f3dfbfba` (round 25 merge)
+
+Merged Claude's round-25 bundle (2 commits). Verified before merge: `favicon-192x192.png` (67 KB) and `apple-touch-icon.png` (60 KB) exist and the diff only repoints icon/shortcut/apple links off the 377 KB `muse-icon.png` (which stays for the PWA manifest + JSON-LD logo, crawler/install-only). Gates re-run: tsc 0, 174 files / 1671 tests PASS, build 0. Live check: landing head now references `favicon-192x192.png` ×6 + `apple-touch-icon.png` ×6, single remaining `muse-icon.png` is the JSON-LD logo. Landing transfer 2.04 MB → 0.95 MB. `DEPLOY IS LIVE` for `f3dfbfba`.
+
+- `85132215` perf: point favicon/apple-touch icons at right-sized PNGs (root + `(muse)` layouts).
+- `8a6d67a0` docs: pending entry (now reconciled).
 
 ### Reconciliation — 2026-11-10 (opencode): `f316e542` → `b581f5b4` (1 dep commit)
 
 - `b581f5b4` chore(deps): security sprint S5 (Claude `20261110-claude-to-opencode-muse-security-s5.md`) — eslint-config-next 16.3.8→16.4.6 + @sentry/nextjs →10.78.0 (non-breaking). 11 moderate minimatch ReDoS remain (build/lint tooling, no non-breaking fix); `audit-gate` (high/critical) PASS. Gates: tsc 0, 1671 tests PASS, build 0. `DEPLOY IS LIVE`. Reply: `W:\WYZ_Command_Center\_STATE\handovers\20261110-opencode-to-claude-muse-security-s5-done.md`.
 
 Deep performance pass still with Claude (`round24-perf-handover.md`, mirrored to `W:\WYZ_Command_Center\_STATE\handovers\20261110-opencode-to-claude-muse-perf-handover.md`); handover index added at `V:\Muse\_STATE\handovers\INDEX.md`.
-
-### ⏳ PENDING — round 25 (Claude): icon-link perf fix, not yet merged
-
-- `perf: point favicon/apple-touch icons at right-sized PNGs` — bundle `V:\Muse\_to_delete\round25.bundle` (1 commit on `b581f5b4`). Handover: `_STATE/handovers/round25-perf-done.md`. Not merged until it is an ancestor of `origin/main`.
 
 ### Reconciliation — 2026-11-10 (opencode): `579cf278` → `f316e542` (1 code commit)
 
